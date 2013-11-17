@@ -80,6 +80,8 @@ def get_language_id(language_code):
 
 def playGoogleTTS(text, language):
 	text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
+	text = re.sub("^\s+|\s+$", "", re.sub("\s+", " ", text))
+
 	address = TTS_ADDRESS+'?tl='+language+'&q='+ quote_plus(text)
 
 	if config.caching:

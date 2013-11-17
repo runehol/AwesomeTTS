@@ -348,6 +348,7 @@ def editConf():
 	form.cAutoQ.setChecked(config.automaticQuestions)
 	form.cAutoA.setChecked(config.automaticAnswers)
 	form.cSubprocessing.setChecked(config.subprocessing)
+	form.cCaching.setChecked(config.caching)
 	
 	form.rfilename_plain.setChecked((not config.quote_mp3))
 	form.rfilename_quoted.setChecked(config.quote_mp3)
@@ -367,6 +368,7 @@ def editConf():
 	config.automaticQuestions = form.cAutoQ.isChecked()
 	config.automaticAnswers = form.cAutoA.isChecked()
 	config.subprocessing = form.cSubprocessing.isChecked()
+	config.caching = form.cCaching.isChecked()
 	config.quote_mp3 = form.rfilename_quoted.isChecked()
 	config.saveConfig(config)
 

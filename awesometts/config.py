@@ -68,7 +68,17 @@ file_extension = r['file_extension']
 caching = r['caching']
 
 def saveConfig(config):
-	cursor.execute("UPDATE general SET automaticQuestions=?, automaticAnswers=?, file_howto_name=?, file_max_length=?, file_extension=?, subprocessing=?, TTS_KEY_Q=?, TTS_KEY_A=? ", (config.automaticQuestions, config.automaticAnswers, config.quote_mp3, config.file_max_length, config.file_extension, config.subprocessing, config.TTS_KEY_Q, config.TTS_KEY_A))
+	cursor.execute(
+		"UPDATE general SET "
+		"automaticQuestions=?, automaticAnswers=?,"
+		"file_howto_name=?, file_max_length=?,"
+		"file_extension=?, subprocessing=?,"
+		"TTS_KEY_Q=?, TTS_KEY_A=?, caching=?",
+		(config.automaticQuestions, config.automaticAnswers,
+		 config.quote_mp3, config.file_max_length,
+		 config.file_extension, config.subprocessing,
+		 config.TTS_KEY_Q, config.TTS_KEY_A, config.caching)
+	)
 
 
 TTS_service = {}

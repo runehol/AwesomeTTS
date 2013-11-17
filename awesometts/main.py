@@ -5,7 +5,7 @@
 # License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
 #
 #   AwesomeTTS plugin for Anki 2.0
-version = '1.0 Beta 10'
+version = '1.0 Beta 10 + Google Caching'
 #
 #
 #   Instrutions on the website:

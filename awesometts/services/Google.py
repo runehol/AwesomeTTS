@@ -126,7 +126,7 @@ def playGoogleTTS(text, language):
 				response.getcode() == 200 and
 				response.info().gettype() == 'audio/mpeg'
 			):
-				cacheOutput = open(cachePathname, 'w')
+				cacheOutput = open(cachePathname, 'wb')
 				cacheOutput.write(response.read())
 				cacheOutput.close()
 				response.close()

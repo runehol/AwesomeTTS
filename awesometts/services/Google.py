@@ -82,6 +82,55 @@ def playGoogleTTS(text, language):
 	text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
 	address = TTS_ADDRESS+'?tl='+language+'&q='+ quote_plus(text)
 
+	if config.caching:
+		import hashlib
+		import os
+
+		cacheDirectory = os.path.sep.join([
+			os.path.dirname(__file__),
+			'cache'
+		])
+
+		if not os.path.isdir(cacheDirectory):
+			os.mkdir(cacheDirectory)
+
+		cachePathname = os.path.sep.join([
+			cacheDirectory,
+			'.'.join([
+				'-'.join([
+					'google',
+					language,
+					hashlib.sha256(text).hexdigest()
+				]),
+				'mp3'
+			])
+		])
+
+		if os.path.isfile(cachePathname):
+			address = cachePathname
+
+		else:
+			import urllib2
+
+			response = urllib2.urlopen(
+				urllib2.Request(
+					address,
+					headers = { "User-Agent": "Mozilla/5.0" }
+				),
+				timeout = 10
+			)
+
+			if (
+				response.getcode() == 200 and
+				response.info().gettype() == 'audio/mpeg'
+			):
+				cacheOutput = open(cachePathname, 'w')
+				cacheOutput.write(response.read())
+				cacheOutput.close()
+				response.close()
+
+				address = cachePathname
+
 	if subprocess.mswindows:
 		param = ['mplayer.exe', '-ao', 'win32', '-slave', '-user-agent', "'Mozilla/5.0'", address]
 		if config.subprocessing:

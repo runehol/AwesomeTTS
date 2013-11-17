@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>670</width>
-    <height>512</height>
+    <height>558</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -201,6 +201,22 @@ If you are having problems, stick with the MP3 Generator.</string>
                 </property>
                 <property name="wordWrap">
                  <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox_4">
+             <property name="title">
+              <string>Caching</string>
+             </property>
+             <layout class="QVBoxLayout">
+              <item>
+               <widget class="QCheckBox" name="cCaching">
+                <property name="text">
+                 <string>Cache Downloads from Google TTS for Faster Repeat Playback</string>
                 </property>
                </widget>
               </item>

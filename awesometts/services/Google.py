@@ -100,7 +100,7 @@ def playGoogleTTS(text, language):
 			cacheDirectory,
 			'.'.join([
 				'-'.join([
-					'google',
+					'g',  # g is our TTS service key
 					language,
 					hashlib.sha256(text).hexdigest()
 				]),

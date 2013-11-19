@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>670</width>
-    <height>558</height>
+    <height>591</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -217,6 +217,13 @@ If you are having problems, stick with the MP3 Generator.</string>
                <widget class="QCheckBox" name="cCaching">
                 <property name="text">
                  <string>Cache Downloads from Google TTS for Faster Repeat Playback</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pushClearCache">
+                <property name="text">
+                 <string>Clear Cache</string>
                 </property>
                </widget>
               </item>

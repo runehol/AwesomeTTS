@@ -356,6 +356,37 @@ def editConf():
 	QtCore.QObject.connect(form.pushKeyQ, QtCore.SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyQ))
 	QtCore.QObject.connect(form.pushKeyA, QtCore.SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyA))
 	
+	import glob;
+	cacheListing = glob.glob(os.path.sep.join([
+		config.cachingDirectory,
+		'*.mp3'
+	]))
+	cacheCount = len(cacheListing)
+
+	if cacheCount > 0:
+		import locale
+		locale.setlocale(locale.LC_ALL, '')
+
+		form.pushClearCache.setEnabled(True)
+		form.pushClearCache.setText(
+			'Clear Cache (%s item%s)' %
+			(
+				locale.format('%d', cacheCount, grouping = True),
+				cacheCount != 1 and 's' or ''
+			)
+		)
+
+		def pushClearCacheClicked():
+			form.pushClearCache.setEnabled(False)
+			for cacheFilepath in cacheListing:
+				os.remove(cacheFilepath)
+			form.pushClearCache.setText('Successfully Emptied Cache')
+		form.pushClearCache.clicked.connect(pushClearCacheClicked)
+
+	else:
+		form.pushClearCache.setEnabled(False)
+		form.pushClearCache.setText('Clear Cache (no items)')
+
 	d.setWindowModality(Qt.WindowModal)
 	
 	form.label_version.setText("Version "+ version)

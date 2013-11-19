@@ -91,10 +91,7 @@ def playGoogleTTS(text, language):
 		import hashlib
 		import os
 
-		cacheDirectory = os.path.sep.join([
-			os.path.dirname(__file__),
-			'cache'
-		])
+		cacheDirectory = config.cachingDirectory
 
 		if not os.path.isdir(cacheDirectory):
 			os.mkdir(cacheDirectory)

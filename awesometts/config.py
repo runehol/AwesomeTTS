@@ -65,7 +65,13 @@ quote_mp3 = r['file_howto_name']
 subprocessing = r['subprocessing']
 file_max_length = r['file_max_length']
 file_extension = r['file_extension']
+
 caching = r['caching']
+cachingDirectory = os.path.sep.join([
+	os.path.dirname(__file__),
+	'services',
+	'cache'
+])
 
 def saveConfig(config):
 	cursor.execute(

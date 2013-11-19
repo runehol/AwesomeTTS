@@ -376,6 +376,13 @@ def editConf():
 			)
 		)
 
+		def pushClearCacheClicked():
+			form.pushClearCache.setEnabled(False)
+			for cacheFilepath in cacheListing:
+				os.remove(cacheFilepath)
+			form.pushClearCache.setText('Successfully Emptied Cache')
+		form.pushClearCache.clicked.connect(pushClearCacheClicked)
+
 	else:
 		form.pushClearCache.setEnabled(False)
 		form.pushClearCache.setText('Clear Cache (no items)')

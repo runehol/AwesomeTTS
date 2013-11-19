@@ -69,7 +69,6 @@ file_extension = r['file_extension']
 caching = r['caching']
 cachingDirectory = os.path.sep.join([
 	os.path.dirname(__file__),
-	'services',
 	'cache'
 ])
 

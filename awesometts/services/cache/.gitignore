@@ -1,6 +1,0 @@
-# Files in this directory are automatically downloaded by the caching code in
-# the Google TTS service implementation at ../Google.py and do not need to be
-# checked into version control.
-
-*
-!.gitignore

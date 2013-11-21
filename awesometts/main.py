@@ -378,9 +378,29 @@ def editConf():
 
 		def pushClearCacheClicked():
 			form.pushClearCache.setEnabled(False)
+
+			countSuccess = 0
+			countError = 0
 			for cacheFilepath in cacheListing:
-				os.remove(cacheFilepath)
-			form.pushClearCache.setText('Successfully Emptied Cache')
+				try:
+					os.remove(cacheFilepath)
+					countSuccess += 1
+				except Exception, exception:
+					countError += 1
+
+			if countError > 0:
+				if countSuccess > 0:
+					form.pushClearCache.setText(
+						'Partially Emptied Cache (%s item%s remaining)' %
+						(
+							locale.format('%d', countError, grouping = True),
+							countError != 1 and 's' or ''
+						)
+					)
+				else:
+					form.pushClearCache.setText('Unable to Empty Cache')
+			else:
+				form.pushClearCache.setText('Successfully Emptied Cache')
 		form.pushClearCache.clicked.connect(pushClearCacheClicked)
 
 	else:

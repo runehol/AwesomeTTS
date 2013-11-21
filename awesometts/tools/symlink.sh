@@ -23,18 +23,18 @@ fi
 
 oldPwd=$PWD
 
-cd `dirname $0`/..
+cd "`dirname "$0"`/.."
 ./tools/build_ui.sh
 
 cd ..
 
 echo "Cleaning up.."
-rm -fv $target/AwesomeTTS.py
-rm -fv $target/AwesomeTTS.pyc
-rm -rfv $target/awesometts
+rm -fv "$target/AwesomeTTS.py"
+rm -fv "$target/AwesomeTTS.pyc"
+rm -rfv "$target/awesometts"
 
 echo "Linking.."
-ln -sv $PWD/AwesomeTTS.py $target
-ln -sv $PWD/awesometts $target
+ln -sv "$PWD/AwesomeTTS.py" "$target"
+ln -sv "$PWD/awesometts" "$target"
 
-cd $oldPwd
+cd "$oldPwd"

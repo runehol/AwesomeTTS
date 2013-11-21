@@ -23,11 +23,11 @@ fi
 
 oldPwd=$PWD
 
-cd `dirname $0`/..
+cd "`dirname "$0"`/.."
 ./tools/build_ui.sh
 
 cd ..
 echo "Packing zip file.."
-zip -9R $target \*.py \*.vbs
+zip -9R "$target" \*.py \*.vbs
 
-cd $oldPwd
+cd "$oldPwd"

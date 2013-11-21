@@ -23,23 +23,23 @@ fi
 
 oldPwd=$PWD
 
-cd `dirname $0`/..
+cd "`dirname "$0"`/.."
 ./tools/build_ui.sh
 
 cd ..
 
 echo "Cleaning up.."
-rm -fv $target/AwesomeTTS.py
-rm -fv $target/AwesomeTTS.pyc
-rm -rfv $target/awesometts
+rm -fv "$target/AwesomeTTS.py"
+rm -fv "$target/AwesomeTTS.pyc"
+rm -rfv "$target/awesometts"
 
 echo "Installing.."
-cp -v AwesomeTTS.py $target/AwesomeTTS.py
-mkdir -v $target/awesometts
-cp -v awesometts/*.py $target/awesometts
-mkdir -v $target/awesometts/services
-cp -v awesometts/services/*.py awesometts/services/*.vbs $target/awesometts/services
-mkdir -v $target/awesometts/forms
-cp -v awesometts/forms/*.py $target/awesometts/forms
+cp -v AwesomeTTS.py "$target/AwesomeTTS.py"
+mkdir -v "$target/awesometts"
+cp -v awesometts/*.py "$target/awesometts"
+mkdir -v "$target/awesometts/services"
+cp -v awesometts/services/*.py awesometts/services/*.vbs "$target/awesometts/services"
+mkdir -v "$target/awesometts/forms"
+cp -v awesometts/forms/*.py "$target/awesometts/forms"
 
-cd $oldPwd
+cd "$oldPwd"

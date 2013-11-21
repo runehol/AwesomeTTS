@@ -8,7 +8,7 @@ More information about the original add-on can be found on its
 [AnkiWeb add-on page](https://ankiweb.net/shared/info/301952613).
 
 Assuming Anki is already installed but the original AwesomeTTS add-on is not,
-one way to activate this alternate version is to clone the repository, build
+one way to tinker with this alternate version is to clone the repository, build
 the user interface, and then symlink it into Anki's `addons` directory, e.g.
 
     $ git clone https://github.com/corpulentcoffee/AwesomeTTS.git
@@ -17,6 +17,13 @@ the user interface, and then symlink it into Anki's `addons` directory, e.g.
     $ cd ..
     $ ln -s $PWD/awesometts ~/Anki/addons
     $ ln -s $PWD/AwesomeTTS.py ~/Anki/addons
+
+If you just want to zip the add-on, you can use the package helper, which
+generates the user interface and zips the necessary files. It is called with the
+target zip filename to export to, e.g.
+
+    $ git clone https://github.com/corpulentcoffee/AwesomeTTS.git
+    $ AwesomeTTS/awesometts/tools/package.sh ~/AwesomeTTS.zip
 
 ## Caching/Offline Support for On-the-Fly Google TTS
 

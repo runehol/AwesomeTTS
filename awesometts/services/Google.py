@@ -78,9 +78,96 @@ def get_language_id(language_code):
 		x = x + 1
 
 
+displayedErrorNetwork = False
+displayedErrorResponse = False
+
 def playGoogleTTS(text, language):
 	text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
+	text = re.sub("^\s+|\s+$", "", re.sub("\s+", " ", text))
+
 	address = TTS_ADDRESS+'?tl='+language+'&q='+ quote_plus(text)
+
+	if config.caching:
+		import hashlib
+		import os
+
+		cacheDirectory = config.cachingDirectory
+
+		if not os.path.isdir(cacheDirectory):
+			os.mkdir(cacheDirectory)
+
+		cachePathname = os.path.sep.join([
+			cacheDirectory,
+			'.'.join([
+				'-'.join([
+					'g',  # g is our TTS service key
+					language,
+					hashlib.sha256(text).hexdigest()
+				]),
+				'mp3'
+			])
+		])
+
+		if os.path.isfile(cachePathname):
+			address = cachePathname
+
+		else:
+			import sys
+			import urllib2
+
+			try:
+				response = urllib2.urlopen(
+					urllib2.Request(
+						address,
+						headers = { "User-Agent": "Mozilla/5.0" }
+					),
+					timeout = 10  # urlopen() blocks, so keep timeout low
+				)
+
+				if (
+					response.getcode() == 200 and
+					response.info().gettype() == 'audio/mpeg'
+				):
+					cacheOutput = open(cachePathname, 'wb')
+					cacheOutput.write(response.read())
+					cacheOutput.close()
+					response.close()
+
+					address = cachePathname
+
+				else:
+					global displayedErrorResponse
+					if not displayedErrorResponse:
+						sys.stderr.write('\n'.join([
+							'Google TTS did not return an MP3.',
+							address,
+							'',
+							'Report this error if it persists. '
+							'This will only be displayed once this session.',
+							''
+						]))
+						displayedErrorResponse = True
+
+					return
+
+			except Exception, exception:
+				global displayedErrorNetwork
+				if not displayedErrorNetwork:
+					type, value, tb = sys.exc_info()
+					sys.stderr.write('\n'.join([
+						'The download from Google TTS failed.',
+						address,
+						'',
+						str(exception),
+						'',
+						'Check your network connectivity, '
+						'or report this error if it persists. '
+						'This will only be displayed once this session.',
+						''
+					]))
+					displayedErrorNetwork = True
+
+				return
 
 	if subprocess.mswindows:
 		param = ['mplayer.exe', '-ao', 'win32', '-slave', '-user-agent', "'Mozilla/5.0'", address]

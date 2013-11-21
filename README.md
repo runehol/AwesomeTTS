@@ -7,25 +7,39 @@ maintained by [Arthur Helfstein Fragoso](https://github.com/imsys) for the
 More information about the original add-on can be found on its
 [AnkiWeb add-on page](https://ankiweb.net/shared/info/301952613).
 
-Assuming Anki is already installed but the original AwesomeTTS add-on is not,
-one way to tinker with this alternate version is to clone the repository, build
-the user interface, and then symlink it into Anki's `addons` directory, e.g.
+## Building and Installing
 
-    $ git clone https://github.com/corpulentcoffee/AwesomeTTS.git
-    $ cd AwesomeTTS/awesometts
-    $ tools/build_ui.sh
-    $ cd ..
-    $ ln -s $PWD/awesometts ~/Anki/addons
-    $ ln -s $PWD/AwesomeTTS.py ~/Anki/addons
+There are a few different ways one can build/install this fork.
 
-If you just want to zip the add-on, you can use the package helper, which
-generates the user interface and zips the necessary files. It is called with the
-target zip filename to export to, e.g.
+- **Straight Install:**
+  Build and copy the files into your Anki `addons` directory using the
+  `install.sh` helper, removing any other installation of AwesomeTTS.
 
-    $ git clone https://github.com/corpulentcoffee/AwesomeTTS.git
-    $ AwesomeTTS/awesometts/tools/package.sh ~/AwesomeTTS.zip
+        $ git clone https://github.com/corpulentcoffee/AwesomeTTS.git
+        $ ./AwesomeTTS/awesometts/tools/install.sh ~/Anki/addons
 
-## Caching/Offline Support for On-the-Fly Google TTS
+- **Using Symlinks for Development:**
+  Build and symlink the files into your Anki `addons` directory using the
+  `symlink.sh` helper, removing any other installation of AwesomeTTS. If changes
+  are later made to the `designer/*.ui` files, then just the `build_ui.sh`
+  helper by itself can be used to rebuild those.
+
+        $ git clone https://github.com/corpulentcoffee/AwesomeTTS.git
+        $ ./AwesomeTTS/awesometts/tools/symlink.sh ~/Anki/addons
+            . . .
+        $ cd AwesomeTTS/awesometts
+        $ ./tools/build_ui.sh
+
+- **Package into a Zip File:**
+  Build and package the files into a zip archive for installation somewhere else
+  using the `package.sh` helper.
+
+        $ git clone https://github.com/corpulentcoffee/AwesomeTTS.git
+        $ AwesomeTTS/awesometts/tools/package.sh ~/AwesomeTTS.zip
+
+## Added Features
+
+### Caching/Offline Support for On-the-Fly Google TTS
 
 Ordinarily, the download URL for every unique on-the-fly `<tts>` tag is passed
 to `mplayer` for it to stream, and the file must be downloaded again each time

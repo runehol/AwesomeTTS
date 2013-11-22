@@ -21,6 +21,13 @@ then
     exit
 fi
 
+if [[ -f "$target/awesometts/conf.db" ]]
+then
+    echo "Saving configuration.."
+    saveConf=`mktemp`
+    cp -v "$target/awesometts/conf.db" "$saveConf"
+fi
+
 oldPwd=$PWD
 
 cd "`dirname "$0"`/.."
@@ -41,5 +48,11 @@ mkdir -v "$target/awesometts/services"
 cp -v awesometts/services/*.py awesometts/services/*.vbs "$target/awesometts/services"
 mkdir -v "$target/awesometts/forms"
 cp -v awesometts/forms/*.py "$target/awesometts/forms"
+
+if [[ -n "$saveConf" ]]
+then
+    echo "Restoring configuration.."
+    mv -v "$saveConf" "$target/awesometts/conf.db"
+fi
 
 cd "$oldPwd"

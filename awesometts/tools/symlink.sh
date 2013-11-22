@@ -21,6 +21,13 @@ then
     exit
 fi
 
+if [[ -f "$target/awesometts/conf.db" ]]
+then
+    echo "Saving configuration.."
+    saveConf=`mktemp`
+    cp -v "$target/awesometts/conf.db" "$saveConf"
+fi
+
 oldPwd=$PWD
 
 cd "`dirname "$0"`/.."
@@ -36,5 +43,11 @@ rm -rfv "$target/awesometts"
 echo "Linking.."
 ln -sv "$PWD/AwesomeTTS.py" "$target"
 ln -sv "$PWD/awesometts" "$target"
+
+if [[ -n "$saveConf" ]]
+then
+    echo "Restoring configuration.."
+    mv -v "$saveConf" "$target/awesometts/conf.db"
+fi
 
 cd "$oldPwd"

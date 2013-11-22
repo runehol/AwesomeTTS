@@ -13,16 +13,20 @@ There are a few different ways one can build/install this fork.
 
 - **Straight Install:**
   Build and copy the files into your Anki `addons` directory using the
-  `install.sh` helper, removing any other installation of AwesomeTTS.
+  `install.sh` helper, removing any other installation of AwesomeTTS. If you
+  have an existing configuration file, it will be saved, but your cache will be
+  cleared.
 
         $ git clone https://github.com/corpulentcoffee/AwesomeTTS.git
         $ ./AwesomeTTS/awesometts/tools/install.sh ~/Anki/addons
 
 - **Using Symlinks for Development:**
   Build and symlink the files into your Anki `addons` directory using the
-  `symlink.sh` helper, removing any other installation of AwesomeTTS. If changes
-  are later made to the `designer/*.ui` files, then just the `build_ui.sh`
-  helper by itself can be used to rebuild those.
+  `symlink.sh` helper, removing any other installation of AwesomeTTS. If you
+  have an existing configuration file, it will be saved, but your cache will be
+  cleared _unless_ your new symlink happens to have a cache directory. If
+  changes are later made to the `designer/*.ui` files, then just the
+  `build_ui.sh` helper by itself can be used to rebuild those.
 
         $ git clone https://github.com/corpulentcoffee/AwesomeTTS.git
         $ ./AwesomeTTS/awesometts/tools/symlink.sh ~/Anki/addons

@@ -173,6 +173,9 @@ def playGoogleTTS(text, language):
 
 				return
 
+	playGoogleTTS_mplayer(address)
+
+def playGoogleTTS_mplayer(address):
 	if subprocess.mswindows:
 		param = ['mplayer.exe', '-ao', 'win32', '-slave', '-user-agent', "'Mozilla/5.0'", address]
 		if config.subprocessing:

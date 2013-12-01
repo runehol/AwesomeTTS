@@ -316,10 +316,13 @@ addHook("browser.setupMenus", setupMenu)
 ######### Configurator
 
 def KeyToString (val):
-	for k,v in vars(Qt).iteritems():
-		if v==val and k[:4] == "Key_":
-			return k[4:]
-	return 'Unknown'
+	if val:
+		for k,v in vars(Qt).iteritems():
+			if v==val and k[:4] == "Key_":
+				return k[4:]
+		return 'Unknown'
+	else:
+		return 'Unassigned'
 
 def Conf_keyPressEvent(button, e):
 	if button.getkey:

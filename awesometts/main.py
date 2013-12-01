@@ -5,7 +5,7 @@
 # License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
 #
 #   AwesomeTTS plugin for Anki 2.0
-version = '1.0 Beta 10 + Google Caching'
+version = '1.0 Beta 10 (fork)'
 #
 #
 #   Instrutions on the website:
@@ -316,15 +316,25 @@ addHook("browser.setupMenus", setupMenu)
 ######### Configurator
 
 def KeyToString (val):
-	for k,v in vars(Qt).iteritems():
-		if v==val and k[:4] == "Key_":
-			return k[4:]
-	return 'Unknown'
+	if val:
+		for k,v in vars(Qt).iteritems():
+			if v==val and k[:4] == "Key_":
+				return k[4:]
+		return 'Unknown'
+	else:
+		return 'Unassigned'
 
 def Conf_keyPressEvent(button, e):
 	if button.getkey:
-		button.setText(KeyToString(e.key()))
-		button.keyval = e.key()
+		button.keyval = (
+			None if e.key() in [
+				Qt.Key_Escape,
+				Qt.Key_Backspace,
+				Qt.Key_Delete
+			]
+			else e.key()
+		)
+		button.setText(KeyToString(button.keyval))
 		button.getkey = False
 
 def getKey (button):

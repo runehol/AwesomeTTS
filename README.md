@@ -63,3 +63,20 @@ The files in cache directory are handled by hashing the phrases within each
 `<tts>` tag after some minimal normalization (e.g. removal of excess whitespace
 and HTML). The cache directory can be emptied from the user interface with the
 "Clear Cache" button on the Configuration screen.
+
+### Unbind Keyboard Shortcuts
+
+In the original version of AwesomeTTS, there is no easy way to unbind the
+on-the-fly keyboard shortcuts without editing the SQLite configuration file.
+
+In this fork, when the user clicks to modify a keyboard shortcut, the `Esc`,
+`Delete`, and `Backspace` keys are instead treated as a request to unbind the
+keyboard shortcut in the event that the user does not wish to use it.
+
+### Updated Language List
+
+Google has added some additional languages to their TTS service since AwesomeTTS
+1.0 Beta 10 was released.
+
+This fork adds support for Bosnian (`bs`), Esperanto (`eo`), Tamil (`ta`), and
+Thai (`th`) to be processed.

@@ -9,6 +9,7 @@ slanguages = [['af', 'Afrikaans', 'cp1252'], #or iso-8859-1
 ['sq', 'Albanian',	'cp1250'], #or iso 8859-16
 ['ar', 'Arabic',	'cp1256'], #or iso-8859-6
 ['hy', 'Armenian',	'armscii-8'],
+['bs', 'Bosnian',	'cp1250'], #or iso-8859-2
 ['ca', 'Catalan',	'cp1252'], #or iso-8859-1
 ['zh', 'Chinese',	'cp936'],
 ['hr', 'Croatian',	'cp1250'], #or iso-8859-2
@@ -16,6 +17,7 @@ slanguages = [['af', 'Afrikaans', 'cp1252'], #or iso-8859-1
 ['da', 'Danish',	'cp1252'], #or iso-8859-1
 ['nl', 'Dutch',		'cp1252'], #or iso-8859-1
 ['en', 'English',	'cp1252'], #or iso-8859-1
+['eo', 'Esperanto',	'cp28593'], #or iso-8859-3
 ['fi', 'Finnish',	'cp1252'], #or iso-8859-1
 ['fr', 'French',	'cp1252'], #or iso-8859-1
 ['de', 'German',	'cp1252'], #or iso-8859-1
@@ -41,6 +43,8 @@ slanguages = [['af', 'Afrikaans', 'cp1252'], #or iso-8859-1
 ['es', 'Spanish',	'cp1252'], #or iso-8859-1
 ['sw', 'Swahili',	'cp1252'], #or iso-8859-1
 ['sv', 'Swedish',	'cp1252'], #or iso-8859-1
+['ta', 'Tamil',		'cp57004'], #or x-iscii-ta
+['th', 'Thai',		'cp874'], #or iso-8859-11
 ['tr', 'Turkish',	'cp1254'], #or iso-8859-9
 ['vi', 'Vietnamese',	'cp1258'],
 ['cy', 'Welsh',		'iso-8859-14']]

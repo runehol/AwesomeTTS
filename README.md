@@ -67,8 +67,8 @@ and HTML). The cache directory can be emptied from the user interface with the
 ### Unbind Keyboard Shortcuts
 
 In the original version of AwesomeTTS, there is no easy way to unbind the
-on-the-fly keyboard shortcuts because `ESC` is considered a valid key for this
-functionality on the Configuration screen.
+on-the-fly keyboard shortcuts without editing the SQLite configuration file.
 
-In this fork, the `ESC` key is instead treated as a request to unbind the
+In this fork, when the user clicks to modify a keyboard shortcut, the `Esc`,
+`Delete`, and `Backspace` keys are instead treated as a request to unbind the
 keyboard shortcut in the event that the user does not wish to use it.

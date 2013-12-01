@@ -82,8 +82,83 @@ def get_language_id(language_code):
 		x = x + 1
 
 
-displayedErrorNetwork = False
-displayedErrorResponse = False
+class PlayGoogleTTSDownloader:
+	hadNetworkError = False
+	hadResponseError = False
+	seen = { }
+	threads = { }
+
+	@staticmethod
+	def fetch(address, cacheToken, cachePathname):
+		for key in PlayGoogleTTSDownloader.threads.keys():
+			if PlayGoogleTTSDownloader.threads[key].isFinished():
+				del PlayGoogleTTSDownloader.threads[key]
+
+		if not cacheToken in PlayGoogleTTSDownloader.seen:
+			PlayGoogleTTSDownloader.seen[cacheToken] = True
+			PlayGoogleTTSDownloader.threads[cacheToken] = PlayGoogleTTSWorker(
+				address,
+				cachePathname
+			)
+			PlayGoogleTTSDownloader.threads[cacheToken].start()
+
+class PlayGoogleTTSWorker(QtCore.QThread):
+	def __init__(self, address, cachePathname):
+		QtCore.QThread.__init__(self)
+		self.address = address
+		self.cachePathname = cachePathname
+
+	def run(self):
+		import sys
+		import urllib2
+
+		try:
+			response = urllib2.urlopen(
+				urllib2.Request(
+					self.address,
+					headers = { "User-Agent": "Mozilla/5.0" }
+				),
+				timeout = 15
+			)
+
+			if (
+				response.getcode() == 200 and
+				response.info().gettype() == 'audio/mpeg'
+			):
+				cacheOutput = open(self.cachePathname, 'wb')
+				cacheOutput.write(response.read())
+				cacheOutput.close()
+				response.close()
+
+				playGoogleTTS_mplayer(self.cachePathname)
+
+			else:
+				if not PlayGoogleTTSDownloader.hadResponseError:
+					sys.stderr.write('\n'.join([
+						'Google TTS did not return an MP3.',
+						self.address,
+						'',
+						'Report this error if it persists. '
+						'This will only be displayed once this session.',
+						''
+					]))
+					PlayGoogleTTSDownloader.hadResponseError = True
+
+		except Exception, exception:
+			if not PlayGoogleTTSDownloader.hadNetworkError:
+				type, value, tb = sys.exc_info()
+				sys.stderr.write('\n'.join([
+					'The download from Google TTS failed.',
+					self.address,
+					'',
+					str(exception),
+					'',
+					'Check your network connectivity, '
+					'or report this error if it persists. '
+					'This will only be displayed once this session.',
+					''
+				]))
+				PlayGoogleTTSDownloader.hadNetworkError = True
 
 def playGoogleTTS(text, language):
 	text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
@@ -100,79 +175,36 @@ def playGoogleTTS(text, language):
 		if not os.path.isdir(cacheDirectory):
 			os.mkdir(cacheDirectory)
 
+		cacheToken = '-'.join([
+			language,
+			hashlib.sha256(text).hexdigest()
+		])
+
 		cachePathname = os.path.sep.join([
 			cacheDirectory,
 			'.'.join([
 				'-'.join([
 					'g',  # g is our TTS service key
-					language,
-					hashlib.sha256(text).hexdigest()
+					cacheToken
 				]),
 				'mp3'
 			])
 		])
 
 		if os.path.isfile(cachePathname):
-			address = cachePathname
+			playGoogleTTS_mplayer(cachePathname)
 
 		else:
-			import sys
-			import urllib2
+			PlayGoogleTTSDownloader.fetch(
+				address,
+				cacheToken,
+				cachePathname
+			)
 
-			try:
-				response = urllib2.urlopen(
-					urllib2.Request(
-						address,
-						headers = { "User-Agent": "Mozilla/5.0" }
-					),
-					timeout = 10  # urlopen() blocks, so keep timeout low
-				)
+	else:
+		playGoogleTTS_mplayer(address)
 
-				if (
-					response.getcode() == 200 and
-					response.info().gettype() == 'audio/mpeg'
-				):
-					cacheOutput = open(cachePathname, 'wb')
-					cacheOutput.write(response.read())
-					cacheOutput.close()
-					response.close()
-
-					address = cachePathname
-
-				else:
-					global displayedErrorResponse
-					if not displayedErrorResponse:
-						sys.stderr.write('\n'.join([
-							'Google TTS did not return an MP3.',
-							address,
-							'',
-							'Report this error if it persists. '
-							'This will only be displayed once this session.',
-							''
-						]))
-						displayedErrorResponse = True
-
-					return
-
-			except Exception, exception:
-				global displayedErrorNetwork
-				if not displayedErrorNetwork:
-					type, value, tb = sys.exc_info()
-					sys.stderr.write('\n'.join([
-						'The download from Google TTS failed.',
-						address,
-						'',
-						str(exception),
-						'',
-						'Check your network connectivity, '
-						'or report this error if it persists. '
-						'This will only be displayed once this session.',
-						''
-					]))
-					displayedErrorNetwork = True
-
-				return
-
+def playGoogleTTS_mplayer(address):
 	if subprocess.mswindows:
 		param = ['mplayer.exe', '-ao', 'win32', '-slave', '-user-agent', "'Mozilla/5.0'", address]
 		if config.subprocessing:

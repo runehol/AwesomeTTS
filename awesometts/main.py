@@ -326,12 +326,15 @@ def KeyToString (val):
 
 def Conf_keyPressEvent(button, e):
 	if button.getkey:
-		if e.key() in [ Qt.Key_Escape, Qt.Key_Backspace, Qt.Key_Delete ]:
-			button.setText('Unassigned');
-			button.keyval = None
-		else:
-			button.setText(KeyToString(e.key()))
-			button.keyval = e.key()
+		button.keyval = (
+			None if e.key() in [
+				Qt.Key_Escape,
+				Qt.Key_Backspace,
+				Qt.Key_Delete
+			]
+			else e.key()
+		)
+		button.setText(KeyToString(button.keyval))
 		button.getkey = False
 
 def getKey (button):

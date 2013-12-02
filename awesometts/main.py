@@ -452,7 +452,7 @@ def newKeyHandler(self, evt):
 	if (self.state == 'answer' or self.state == 'question'):
 		if (pkey == config.TTS_KEY_Q):
 			playTTSFromText(self.card.q())  #read the TTS tags
-		elif (self.state=='answer' and pkey == config.TTS_KEY_A):
+		if (self.state=='answer' and pkey == config.TTS_KEY_A):
 			playTTSFromText(self.card.a()) #read the TTS tags
 	evt.accept()
 

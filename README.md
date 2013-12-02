@@ -64,10 +64,27 @@ The files in cache directory are handled by hashing the phrases within each
 and HTML). The cache directory can be emptied from the user interface with the
 "Clear Cache" button on the Configuration screen.
 
-### Unbind Keyboard Shortcuts
+### Keyboard Shortcuts
 
 In the original version of AwesomeTTS, there is no easy way to unbind the
-on-the-fly keyboard shortcuts without editing the SQLite configuration file.
+on-the-fly keyboard shortcuts without editing the SQLite configuration file and
+it is not possible to use the same key for the fronts and backs of cards.
+
+#### Allow Same Key for Front & Back (partial support)
+
+The key press handler event is relaxed in this fork such that the same key can
+be used for both the front and back of a card, instead of only running TTS from
+the front of the card.
+
+This is handy when you have a set of cards where there is TTS on *only* the
+front *or* back of each card, and you do not want to have to remember which key
+to press to hear the playback again.
+
+However, this feature **does not work** as expected if there is TTS on *both*
+sides of cards. This is because there is currently no queue implementation for
+playback (see issue imsys/AwesomeTTS#10 for more).
+
+#### Unbinding
 
 In this fork, when the user clicks to modify a keyboard shortcut, the `Esc`,
 `Delete`, and `Backspace` keys are instead treated as a request to unbind the

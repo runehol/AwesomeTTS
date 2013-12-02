@@ -85,7 +85,6 @@ def get_language_id(language_code):
 class PlayGoogleTTSDownloader:
 	hadNetworkError = False
 	hadResponseError = False
-	seen = { }
 	threads = { }
 
 	@staticmethod
@@ -94,8 +93,7 @@ class PlayGoogleTTSDownloader:
 			if PlayGoogleTTSDownloader.threads[key].isFinished():
 				del PlayGoogleTTSDownloader.threads[key]
 
-		if not cacheToken in PlayGoogleTTSDownloader.seen:
-			PlayGoogleTTSDownloader.seen[cacheToken] = True
+		if not cacheToken in PlayGoogleTTSDownloader.threads:
 			PlayGoogleTTSDownloader.threads[cacheToken] = PlayGoogleTTSWorker(
 				address,
 				cachePathname

@@ -1,6 +1,6 @@
 # AwesomeTTS, with some additions
 
-This is a fork of the [AwesomeTTS add-on](https://github.com/imsys/AwesomeTTS)
+This is a fork of the [AwesomeTTS add-on](https://github.com/AwesomeTTS/AwesomeTTS)
 maintained by [Arthur Helfstein Fragoso](https://github.com/imsys) for the
 [Anki flashcard program](http://ankisrs.net/).
 
@@ -82,7 +82,7 @@ to press to hear the playback again.
 
 However, this feature **does not work** as expected if there is TTS on *both*
 sides of cards. This is because there is currently no queue implementation for
-playback (see issue imsys/AwesomeTTS#10 for more).
+playback (see issue AwesomeTTS/AwesomeTTS#10 for more).
 
 #### Unbinding
 

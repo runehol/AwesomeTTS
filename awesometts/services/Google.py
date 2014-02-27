@@ -9,6 +9,7 @@ slanguages = [['af', 'Afrikaans', 'cp1252'], #or iso-8859-1
 ['sq', 'Albanian',	'cp1250'], #or iso 8859-16
 ['ar', 'Arabic',	'cp1256'], #or iso-8859-6
 ['hy', 'Armenian',	'armscii-8'],
+['bs', 'Bosnian',	'cp1250'], #or iso-8859-2
 ['ca', 'Catalan',	'cp1252'], #or iso-8859-1
 ['zh', 'Chinese',	'cp936'],
 ['hr', 'Croatian',	'cp1250'], #or iso-8859-2
@@ -16,6 +17,7 @@ slanguages = [['af', 'Afrikaans', 'cp1252'], #or iso-8859-1
 ['da', 'Danish',	'cp1252'], #or iso-8859-1
 ['nl', 'Dutch',		'cp1252'], #or iso-8859-1
 ['en', 'English',	'cp1252'], #or iso-8859-1
+['eo', 'Esperanto',	'cp28593'], #or iso-8859-3
 ['fi', 'Finnish',	'cp1252'], #or iso-8859-1
 ['fr', 'French',	'cp1252'], #or iso-8859-1
 ['de', 'German',	'cp1252'], #or iso-8859-1
@@ -41,6 +43,8 @@ slanguages = [['af', 'Afrikaans', 'cp1252'], #or iso-8859-1
 ['es', 'Spanish',	'cp1252'], #or iso-8859-1
 ['sw', 'Swahili',	'cp1252'], #or iso-8859-1
 ['sv', 'Swedish',	'cp1252'], #or iso-8859-1
+['ta', 'Tamil',		'cp57004'], #or x-iscii-ta
+['th', 'Thai',		'cp874'], #or iso-8859-11
 ['tr', 'Turkish',	'cp1254'], #or iso-8859-9
 ['vi', 'Vietnamese',	'cp1258'],
 ['cy', 'Welsh',		'iso-8859-14']]
@@ -78,10 +82,127 @@ def get_language_id(language_code):
 		x = x + 1
 
 
+class PlayGoogleTTSDownloader:
+	hadNetworkError = False
+	hadResponseError = False
+	threads = { }
+
+	@staticmethod
+	def fetch(address, cacheToken, cachePathname):
+		for key in PlayGoogleTTSDownloader.threads.keys():
+			if PlayGoogleTTSDownloader.threads[key].isFinished():
+				del PlayGoogleTTSDownloader.threads[key]
+
+		if not cacheToken in PlayGoogleTTSDownloader.threads:
+			PlayGoogleTTSDownloader.threads[cacheToken] = PlayGoogleTTSWorker(
+				address,
+				cachePathname
+			)
+			PlayGoogleTTSDownloader.threads[cacheToken].start()
+
+class PlayGoogleTTSWorker(QtCore.QThread):
+	def __init__(self, address, cachePathname):
+		QtCore.QThread.__init__(self)
+		self.address = address
+		self.cachePathname = cachePathname
+
+	def run(self):
+		import sys
+		import urllib2
+
+		try:
+			response = urllib2.urlopen(
+				urllib2.Request(
+					self.address,
+					headers = { "User-Agent": "Mozilla/5.0" }
+				),
+				timeout = 15
+			)
+
+			if (
+				response.getcode() == 200 and
+				response.info().gettype() == 'audio/mpeg'
+			):
+				cacheOutput = open(self.cachePathname, 'wb')
+				cacheOutput.write(response.read())
+				cacheOutput.close()
+				response.close()
+
+				playGoogleTTS_mplayer(self.cachePathname)
+
+			else:
+				if not PlayGoogleTTSDownloader.hadResponseError:
+					sys.stderr.write('\n'.join([
+						'Google TTS did not return an MP3.',
+						self.address,
+						'',
+						'Report this error if it persists. '
+						'This will only be displayed once this session.',
+						''
+					]))
+					PlayGoogleTTSDownloader.hadResponseError = True
+
+		except Exception, exception:
+			if not PlayGoogleTTSDownloader.hadNetworkError:
+				type, value, tb = sys.exc_info()
+				sys.stderr.write('\n'.join([
+					'The download from Google TTS failed.',
+					self.address,
+					'',
+					str(exception),
+					'',
+					'Check your network connectivity, '
+					'or report this error if it persists. '
+					'This will only be displayed once this session.',
+					''
+				]))
+				PlayGoogleTTSDownloader.hadNetworkError = True
+
 def playGoogleTTS(text, language):
 	text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
+	text = re.sub("^\s+|\s+$", "", re.sub("\s+", " ", text))
+
 	address = TTS_ADDRESS+'?tl='+language+'&q='+ quote_plus(text)
 
+	if config.caching:
+		import hashlib
+		import os
+
+		cacheDirectory = config.cachingDirectory
+
+		if not os.path.isdir(cacheDirectory):
+			os.mkdir(cacheDirectory)
+
+		cacheToken = '-'.join([
+			language,
+			hashlib.sha256(text).hexdigest()
+		])
+
+		cachePathname = os.path.sep.join([
+			cacheDirectory,
+			'.'.join([
+				'-'.join([
+					'g',  # g is our TTS service key
+					cacheToken
+				]),
+				'mp3'
+			])
+		])
+
+		if os.path.isfile(cachePathname):
+			playGoogleTTS_mplayer(cachePathname)
+
+		else:
+			PlayGoogleTTSDownloader.fetch(
+				address,
+				cacheToken,
+				cachePathname
+			)
+
+	else:
+		playGoogleTTS_mplayer(address)
+
+def playGoogleTTS_mplayer(address):
 	if subprocess.mswindows:
 		param = ['mplayer.exe', '-ao', 'win32', '-slave', '-user-agent', "'Mozilla/5.0'", address]
 		if config.subprocessing:

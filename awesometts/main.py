@@ -5,7 +5,7 @@
 # License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
 #
 #   AwesomeTTS plugin for Anki 2.0
-version = '1.0 Beta 10'
+version = '1.0 Beta 11 (prerelease)'
 #
 #
 #   Instrutions on the website:
@@ -316,15 +316,25 @@ addHook("browser.setupMenus", setupMenu)
 ######### Configurator
 
 def KeyToString (val):
-	for k,v in vars(Qt).iteritems():
-		if v==val and k[:4] == "Key_":
-			return k[4:]
-	return 'Unknown'
+	if val:
+		for k,v in vars(Qt).iteritems():
+			if v==val and k[:4] == "Key_":
+				return k[4:]
+		return 'Unknown'
+	else:
+		return 'Unassigned'
 
 def Conf_keyPressEvent(button, e):
 	if button.getkey:
-		button.setText(KeyToString(e.key()))
-		button.keyval = e.key()
+		button.keyval = (
+			None if e.key() in [
+				Qt.Key_Escape,
+				Qt.Key_Backspace,
+				Qt.Key_Delete
+			]
+			else e.key()
+		)
+		button.setText(KeyToString(button.keyval))
 		button.getkey = False
 
 def getKey (button):
@@ -348,6 +358,7 @@ def editConf():
 	form.cAutoQ.setChecked(config.automaticQuestions)
 	form.cAutoA.setChecked(config.automaticAnswers)
 	form.cSubprocessing.setChecked(config.subprocessing)
+	form.cCaching.setChecked(config.caching)
 	
 	form.rfilename_plain.setChecked((not config.quote_mp3))
 	form.rfilename_quoted.setChecked(config.quote_mp3)
@@ -355,6 +366,57 @@ def editConf():
 	QtCore.QObject.connect(form.pushKeyQ, QtCore.SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyQ))
 	QtCore.QObject.connect(form.pushKeyA, QtCore.SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyA))
 	
+	import glob;
+	cacheListing = glob.glob(os.path.sep.join([
+		config.cachingDirectory,
+		'*.mp3'
+	]))
+	cacheCount = len(cacheListing)
+
+	if cacheCount > 0:
+		import locale
+		locale.setlocale(locale.LC_ALL, '')
+
+		form.pushClearCache.setEnabled(True)
+		form.pushClearCache.setText(
+			'Clear Cache (%s item%s)' %
+			(
+				locale.format('%d', cacheCount, grouping = True),
+				cacheCount != 1 and 's' or ''
+			)
+		)
+
+		def pushClearCacheClicked():
+			form.pushClearCache.setEnabled(False)
+
+			countSuccess = 0
+			countError = 0
+			for cacheFilepath in cacheListing:
+				try:
+					os.remove(cacheFilepath)
+					countSuccess += 1
+				except Exception, exception:
+					countError += 1
+
+			if countError > 0:
+				if countSuccess > 0:
+					form.pushClearCache.setText(
+						'Partially Emptied Cache (%s item%s remaining)' %
+						(
+							locale.format('%d', countError, grouping = True),
+							countError != 1 and 's' or ''
+						)
+					)
+				else:
+					form.pushClearCache.setText('Unable to Empty Cache')
+			else:
+				form.pushClearCache.setText('Successfully Emptied Cache')
+		form.pushClearCache.clicked.connect(pushClearCacheClicked)
+
+	else:
+		form.pushClearCache.setEnabled(False)
+		form.pushClearCache.setText('Clear Cache (no items)')
+
 	d.setWindowModality(Qt.WindowModal)
 	
 	form.label_version.setText("Version "+ version)
@@ -367,6 +429,7 @@ def editConf():
 	config.automaticQuestions = form.cAutoQ.isChecked()
 	config.automaticAnswers = form.cAutoA.isChecked()
 	config.subprocessing = form.cSubprocessing.isChecked()
+	config.caching = form.cCaching.isChecked()
 	config.quote_mp3 = form.rfilename_quoted.isChecked()
 	config.saveConfig(config)
 
@@ -389,7 +452,7 @@ def newKeyHandler(self, evt):
 	if (self.state == 'answer' or self.state == 'question'):
 		if (pkey == config.TTS_KEY_Q):
 			playTTSFromText(self.card.q())  #read the TTS tags
-		elif (self.state=='answer' and pkey == config.TTS_KEY_A):
+		if (self.state=='answer' and pkey == config.TTS_KEY_A):
 			playTTSFromText(self.card.a()) #read the TTS tags
 	evt.accept()
 

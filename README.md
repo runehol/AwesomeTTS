@@ -6,6 +6,9 @@ GoogleTTS, the Mac OS X `say` command, and Microsoft's Speech API (SAPI 5).
 More information about the add-on and how to use it can be found on its
 [AnkiWeb add-on page](https://ankiweb.net/shared/info/301952613).
 
+AwesomeTTS is free and open source software, released under version 3 of the
+GNU General Public License.
+
 ## Building and Installing
 
 There are a few different ways one can build/install this add-on.

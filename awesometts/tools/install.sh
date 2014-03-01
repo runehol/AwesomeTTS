@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2013       Anki AwesomeTTS Development Team
-# Copyright (C) 2013       Dave Shifflett
+# Copyright (C) 2013-2014  Anki AwesomeTTS Development Team
+# Copyright (C) 2013-2014  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -61,6 +61,7 @@ rm -rfv "$target/awesometts"
 echo "Installing.."
 cp -v AwesomeTTS.py "$target/AwesomeTTS.py"
 mkdir -v "$target/awesometts"
+cp -v awesometts/LICENSE.txt "$target/awesometts"
 cp -v awesometts/*.py "$target/awesometts"
 mkdir -v "$target/awesometts/services"
 cp -v awesometts/services/*.py awesometts/services/*.vbs "$target/awesometts/services"

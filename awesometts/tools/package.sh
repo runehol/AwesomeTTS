@@ -28,6 +28,6 @@ cd "`dirname "$0"`/.."
 
 cd ..
 echo "Packing zip file.."
-zip -9R "$target" \*.py \*.vbs
+zip -9R "$target" awesometts/LICENSE.txt \*.py \*.vbs
 
 cd "$oldPwd"

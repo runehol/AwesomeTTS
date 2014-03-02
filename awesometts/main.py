@@ -5,6 +5,7 @@
 # Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
 # Copyright (C) 2013-2014  Dave Shifflett
+# Copyright (C) 2013       mistaecko on GitHub
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -165,7 +166,8 @@ def ATTS_Factedit_button(self):
 		srv = getService_byName(serv_list[serviceField])
 		TTS_service[srv]['filegenerator_run'](form)
 		filename = TTS_service[srv]['filegenerator_run'](form)
-		self.addMedia(filename)
+		if filename:
+			self.addMedia(filename)
 
 def ATTS_Fact_edit_setupFields(self):
 	AwesomeTTS = QPushButton(self.widget)
@@ -224,13 +226,14 @@ def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
 		
 		filename = TTS_service[service]['record'](frm, note[srcField_name])
 		
-		if frm.radioOverwrite.isChecked():
-			if frm.checkBoxSndTag.isChecked():
-				note[dstField_name] = '[sound:'+ filename +']'
+		if filename:
+			if frm.radioOverwrite.isChecked():
+				if frm.checkBoxSndTag.isChecked():
+					note[dstField_name] = '[sound:'+ filename +']'
+				else:
+					note[dstField_name] = filename
 			else:
-				note[dstField_name] = filename
-		else:
-			note[dstField_name] += ' [sound:'+ filename +']'
+				note[dstField_name] += ' [sound:'+ filename +']'
 		note.flush()
 		
 	return returnval

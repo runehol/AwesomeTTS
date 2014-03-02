@@ -33,12 +33,39 @@ from anki.utils import isMac, stripHTML
 from awesometts.util import generateFileName
 
 
-if isMac:
-    SERVICE = 'say'
+VOICES = None
 
-    VOICES = check_output("say -v ? |sed 's/  .*//'", shell=True)
-    VOICES = VOICES.split('\n')
-    VOICES.pop()
+if isMac:
+    try:
+        VOICES = [
+            line.split()[0]
+            for line
+            in [
+                line.strip()
+                for line
+                in check_output(['say', '-v', '?']).split('\n')
+            ]
+            if line
+        ]
+
+        if not VOICES:
+            raise EnvironmentError("No usable output from call to `say -v ?`")
+
+    except:  # allow recovery from any exception, pylint:disable=W0702
+        from sys import stderr
+        from traceback import format_exc
+
+        stderr.write(
+            "Although you are running OS X, the voice list from the `say` "
+            "utility could not be retrieved. Any cards using `say` will not "
+            "be speakable during this session. If this persists, please open "
+            "an issue at <https://github.com/AwesomeTTS/AwesomeTTS/issues>.\n"
+            "\n" +
+            format_exc()
+        )
+
+if VOICES:
+    SERVICE = 'say'
 
     def play(text, voice):
         text = re.sub(

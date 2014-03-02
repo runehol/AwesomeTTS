@@ -6,6 +6,7 @@
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
 # Copyright (C) 2013-2014  Dave Shifflett
 # Copyright (C) 2013       mistaecko on GitHub
+# Copyright (C) 2013       PtrToVoid on GitHub
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -164,7 +165,6 @@ def ATTS_Factedit_button(self):
 	if d.exec_() and form.texttoTTS.toPlainText() != '' and not form.texttoTTS.toPlainText().isspace():
 		serviceField = form.comboBoxService.currentIndex() # set default
 		srv = getService_byName(serv_list[serviceField])
-		TTS_service[srv]['filegenerator_run'](form)
 		filename = TTS_service[srv]['filegenerator_run'](form)
 		if filename:
 			self.addMedia(filename)

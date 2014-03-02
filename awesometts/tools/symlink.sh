@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2013       Anki AwesomeTTS Development Team
-# Copyright (C) 2013       Dave Shifflett
+# Copyright (C) 2013-2014  Anki AwesomeTTS Development Team
+# Copyright (C) 2013-2014  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ then
     echo 1>&2
     echo "    Usage: $0 <target>" 1>&2
     echo "     e.g.: $0 ~/Anki/addons" 1>&2
-    exit
+    exit 1
 fi
 
 target=$1
@@ -36,7 +36,7 @@ fi
 if [[ ! -d "$target" ]]
 then
     echo "$target is not a directory." 1>&2
-    exit
+    exit 1
 fi
 
 if [[ -f "$target/awesometts/conf.db" ]]

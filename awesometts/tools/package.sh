@@ -24,7 +24,7 @@ then
     echo 1>&2
     echo "    Usage: $0 <target>" 1>&2
     echo "     e.g.: $0 ~/AwesomeTTS.zip" 1>&2
-    exit
+    exit 1
 fi
 
 target=$1
@@ -36,7 +36,7 @@ fi
 if [[ -e "$target" ]]
 then
     echo "$target already exists." 1>&2
-    exit
+    exit 1
 fi
 
 oldPwd=$PWD

@@ -24,7 +24,7 @@ then
     echo 1>&2
     echo "    Usage: $0 <target>" 1>&2
     echo "     e.g.: $0 ~/Anki/addons" 1>&2
-    exit
+    exit 1
 fi
 
 target=$1
@@ -36,7 +36,7 @@ fi
 if [[ ! -d "$target" ]]
 then
     echo "$target is not a directory." 1>&2
-    exit
+    exit 1
 fi
 
 if [[ -f "$target/awesometts/conf.db" ]]

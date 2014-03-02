@@ -13,9 +13,21 @@ GNU General Public License.
 
 There are a few different ways one can build/install this add-on.
 
-- **Stable Package:**
-  The [AnkiWeb add-on page](https://ankiweb.net/shared/info/301952613) has the
-  latest *stable* version of the add-on.
+### Stable Package
+
+The [AnkiWeb add-on page](https://ankiweb.net/shared/info/301952613) has the
+latest [stable branch](https://github.com/AwesomeTTS/AwesomeTTS/tree/stable)
+of the add-on, which can be installed directly within the Anki user interface
+using add-on code `301952613`.
+
+### Development and Other Versions
+
+The [develop branch](https://github.com/AwesomeTTS/AwesomeTTS/tree/develop),
+[hotfixes and previews](https://github.com/AwesomeTTS/AwesomeTTS/branches),
+and [specific releases](https://github.com/AwesomeTTS/AwesomeTTS/releases) can
+be pulled in and installed with Git. Beyond basic shell access, one will also
+need the `pyuic4` tool from the [PyQt project](http://pyqt.sourceforge.net/)
+to build the `.ui` user interface files.
 
 - **Straight Install:**
   Build and copy the files into your Anki `addons` directory using the
@@ -24,7 +36,9 @@ There are a few different ways one can build/install this add-on.
   be cleared.
 
         $ git clone https://github.com/AwesomeTTS/AwesomeTTS.git
-        $ ./AwesomeTTS/awesometts/tools/install.sh ~/Anki/addons
+        $ cd AwesomeTTS
+        $ git checkout [ref]  (if not using "develop", e.g. pre/v1.0-beta11)
+        $ awesometts/tools/install.sh [addons directory]  (e.g. ~/Anki/addons)
 
 - **Using Symlinks for Development:**
   Build and symlink the files into your Anki `addons` directory using the
@@ -35,14 +49,19 @@ There are a few different ways one can build/install this add-on.
   `build_ui.sh` helper by itself can be used to rebuild those.
 
         $ git clone https://github.com/AwesomeTTS/AwesomeTTS.git
-        $ ./AwesomeTTS/awesometts/tools/symlink.sh ~/Anki/addons
+        $ cd AwesomeTTS
+        $ git checkout [ref]  (if not using "develop", e.g. pre/v1.0-beta11)
+        $ awesometts/tools/symlink.sh [addons directory]  (e.g. ~/Anki/addons)
             . . .
-        $ cd AwesomeTTS/awesometts
-        $ ./tools/build_ui.sh
+        $ cd awesometts
+        $ tools/build_ui.sh
 
 - **Package into a Zip File:**
   Build and package the files into a zip archive for installation somewhere
-  else using the `package.sh` helper.
+  else using the `package.sh` helper. This is also how the package is built
+  for AnkiWeb.
 
         $ git clone https://github.com/AwesomeTTS/AwesomeTTS.git
-        $ AwesomeTTS/awesometts/tools/package.sh ~/AwesomeTTS.zip
+        $ cd AwesomeTTS
+        $ git checkout [ref]  (if not using "develop", e.g. pre/v1.0-beta11)
+        $ awesometts/tools/package.sh [zip target]  (e.g. ~/AwesomeTTS.zip)

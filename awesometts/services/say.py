@@ -36,17 +36,28 @@ from awesometts.util import generateFileName
 VOICES = None
 
 if isMac:
+    # n.b. voices *can* have spaces; optionally also capture language code
+    RE_VOICE = re.compile(r'^\s*([-\w]+( [-\w]+)*)(\s+([-\w]+))?')
+
     try:
-        VOICES = [
-            line.split()[0]
-            for line
+        VOICES = sorted([
+            (
+                # voice name
+                match.group(1),
+
+                # dropdown description
+                "%s (%s)" % (match.group(1), match.group(4).replace('_', '-'))
+                if match.group(4)
+                else match.group(1),
+            )
+            for match
             in [
-                line.strip()
+                RE_VOICE.match(line)
                 for line
                 in check_output(['say', '-v', '?']).split('\n')
             ]
-            if line
-        ]
+            if match
+        ], key=lambda voice: str.lower(voice[0]))
 
         if not VOICES:
             raise EnvironmentError("No usable output from call to `say -v ?`")
@@ -100,7 +111,7 @@ if VOICES:
             '',
             stripHTML(text.replace('\n', '')).encode('utf-8'),
         )
-        voice = VOICES[form.comboBoxSay.currentIndex()]
+        voice = VOICES[form.comboBoxSay.currentIndex()][0]
 
         filename_aiff = generateFileName(text, SERVICE, 'iso-8859-1', '.aiff')
         filename_mp3 = generateFileName(text, SERVICE, 'iso-8859-1', '.mp3')
@@ -130,7 +141,7 @@ if VOICES:
 
     def fg_layout(form):
         form.comboBoxSay = QtGui.QComboBox()
-        form.comboBoxSay.addItems(VOICES)
+        form.comboBoxSay.addItems([voice[1] for voice in VOICES])
         form.comboBoxSay.setCurrentIndex(fg_layout.default_voice)
 
         text_label = QtGui.QLabel()
@@ -145,7 +156,7 @@ if VOICES:
     def fg_preview(form):
         return play(
             unicode(form.texttoTTS.toPlainText()),
-            VOICES[form.comboBoxSay.currentIndex()]
+            VOICES[form.comboBoxSay.currentIndex()][0]
         )
 
     def fg_run(form):

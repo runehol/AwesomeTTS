@@ -39,6 +39,17 @@ then
     exit 1
 fi
 
+oldPwd=$PWD
+cd "`dirname "$0"`/.."
+
+if [[ "$PWD" == "$target"* ]]
+then
+    echo "$target is a parent directory of the package to be installed." 1>&2
+    echo "This is probably not what you meant. Are you inside a symlink?" 1>&2
+    cd "$oldPwd"
+    exit 1
+fi
+
 if [[ -f "$target/awesometts/conf.db" ]]
 then
     echo "Saving configuration.."
@@ -46,9 +57,6 @@ then
     cp -v "$target/awesometts/conf.db" "$saveConf"
 fi
 
-oldPwd=$PWD
-
-cd "`dirname "$0"`/.."
 ./tools/build_ui.sh
 
 cd ..

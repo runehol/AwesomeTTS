@@ -370,12 +370,17 @@ def editConf():
 	
 	QtCore.QObject.connect(form.pushKeyQ, QtCore.SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyQ))
 	QtCore.QObject.connect(form.pushKeyA, QtCore.SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyA))
-	
-	import glob;
-	cacheListing = glob.glob(os.path.sep.join([
-		config.cachingDirectory,
-		'*.mp3'
-	]))
+
+	cacheListing = (
+		[
+			filename
+			for filename
+			in os.listdir(config.cachingDirectory)
+			if filename.endswith('.mp3')
+		]
+		if os.path.isdir(config.cachingDirectory)
+		else []
+	)
 	cacheCount = len(cacheListing)
 
 	if cacheCount > 0:
@@ -398,9 +403,12 @@ def editConf():
 			countError = 0
 			for cacheFilepath in cacheListing:
 				try:
-					os.remove(cacheFilepath)
+					os.remove(os.path.join(
+						config.cachingDirectory,
+						cacheFilepath,
+					))
 					countSuccess += 1
-				except Exception, exception:
+				except OSError:
 					countError += 1
 
 			if countError > 0:

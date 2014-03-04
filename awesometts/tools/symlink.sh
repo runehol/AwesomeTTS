@@ -62,8 +62,7 @@ fi
 cd ..
 
 echo "Cleaning up.."
-rm -fv "$target/AwesomeTTS.py"
-rm -fv "$target/AwesomeTTS.pyc"
+rm -fv "$target/AwesomeTTS.py"{,c,o}
 rm -rfv "$target/awesometts"
 
 echo "Linking.."

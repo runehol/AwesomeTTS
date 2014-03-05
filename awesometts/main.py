@@ -329,8 +329,16 @@ def KeyToString (val):
 	else:
 		return 'Unassigned'
 
-def Conf_keyPressEvent(buttons, e):
-	for button in [button for button in buttons if button.getkey]:
+def Conf_keyPressEvent(dialog_buttons_tuple, e):
+	dialog, buttons = dialog_buttons_tuple
+	buttons = [button for button in buttons if button.getkey]
+
+	if not buttons:
+		if e.key() == Qt.Key_Escape:
+			dialog.reject()
+		return
+
+	for button in buttons:
 		button.keyval = (
 			None if e.key() in [
 				Qt.Key_Escape,
@@ -356,7 +364,7 @@ def editConf():
 	form.pushKeyQ.getkey = form.pushKeyA.getkey = False
 	d.keyPressEvent = types.MethodType(
 		Conf_keyPressEvent,
-		[form.pushKeyQ, form.pushKeyA],
+		(d, [form.pushKeyQ, form.pushKeyA]),
 	)
 	form.pushKeyQ.setText(KeyToString(config.TTS_KEY_Q))
 	form.pushKeyA.setText(KeyToString(config.TTS_KEY_A))

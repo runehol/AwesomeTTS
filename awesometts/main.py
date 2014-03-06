@@ -5,6 +5,7 @@
 # Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
 # Copyright (C) 2013-2014  Dave Shifflett
+# Copyright (C) 2012       Dusan Arsenijevic
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

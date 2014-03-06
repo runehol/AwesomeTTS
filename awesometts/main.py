@@ -46,7 +46,6 @@ TTS_service = {}
 import awesometts.services
 
 modules = {}
-#modulespath = os.path.dirname(__file__)+"/services/"
 modulespath = os.path.dirname(__file__)+"/services/"
 modulesfiles = os.listdir(modulespath)
 for i in range(len(modulesfiles)):
@@ -58,13 +57,6 @@ for i in range(len(modulesfiles)):
 				TTS_service.update(modules[name[0]].TTS_service)
 			else:
 				del modules[name[0]]
-		
-#for path in glob.glob(os.path.dirname(__file__)+"/services/[!_]*.py"):
-#	name, ext = os.path.splitext(os.path.basename(path))
-#	modules[name] = imp.load_source(name, path)
-#	TTS_service.update(modules[name].TTS_service)
-
-
 
 file_max_length = 255 # Max filename length for Unix
 
@@ -177,7 +169,6 @@ def ATTS_Fact_edit_setupFields(self):
 	AwesomeTTS.setToolTip(_("AwesomeTTS :: MP3 File Generator"))
 	AwesomeTTS.setShortcut(_("Ctrl+g"))
 	AwesomeTTS.setFocusPolicy(Qt.NoFocus)
-	#AwesomeTTS.setEnabled(False)
 	self.iconsBox.addWidget(AwesomeTTS)
 	AwesomeTTS.setStyle(self.plastiqueStyle)
 

@@ -157,6 +157,17 @@ def ATTS_Factedit_button(self):
 	form.comboBoxService.setCurrentIndex(serviceField) #get defaults
 	form.stackedWidget.setCurrentIndex(serviceField)
 	
+	# TODO: It would be nice if a service that sometimes cannot fulfill
+	# given text (e.g. one using a finite set of prerecorded dictionary
+	# words) be made to explicitly return False (instead of None) from its
+	# filegenerator_preview callable so that there would be some sort of
+	# notification to the user that the entered text is not playable.
+	# Alternatively, an exception could be used, but then other bits of
+	# code might need updating for consistency (e.g. record functionality,
+	# mass generation, on-the-fly playback).
+	# A convention for this can be established as soon as AwesomeTTS
+	# begins shipping with at least one bundled service that sometimes
+	# returns without successfully playing back some text.
 	
 	QtCore.QObject.connect(form.previewbutton, QtCore.SIGNAL("clicked()"), lambda form=form: TTS_service[getService_byName(serv_list[form.comboBoxService.currentIndex()])]['filegenerator_preview'](form))
 	

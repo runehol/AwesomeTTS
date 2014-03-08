@@ -215,13 +215,11 @@ def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
 		
 		if not (srcField_name in note.keys() and dstField_name in note.keys()):
 			returnval['fieldname_error'] += 1
-			note.flush()
 			continue
 				
 		mw.progress.update(label="Generating MP3 files...\n%s of %s\n%s" % (c+1, nelements,note[srcField_name]))
 
 		if note[srcField_name] == '' or note[srcField_name].isspace(): #check if the field is blank
-			note.flush()
 			continue
 		
 		filename = TTS_service[service]['record'](frm, note[srcField_name])
@@ -234,7 +232,8 @@ def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
 					note[dstField_name] = filename
 			else:
 				note[dstField_name] += ' [sound:'+ filename +']'
-		note.flush()
+
+			note.flush()
 		
 	return returnval
 

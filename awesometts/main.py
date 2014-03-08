@@ -204,7 +204,17 @@ def take_a_break(ndone, ntotal):
 		if t==0: break
 
 def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
-	returnval = {'fieldname_error': 0}
+	update_count = 0
+	skip_counts = {
+		key: [0, message]
+		for key, message
+		in [
+			('fields', 'Missing source and/or destination field'),
+			('empty', 'Empty value in the source field'),
+			('unfulfilled', 'Service returned an empty response'),
+		]
+	}
+
 	nelements = len(factIds)
 	batch = 900
 	
@@ -214,12 +224,13 @@ def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
 		note = mw.col.getNote(id)
 		
 		if not (srcField_name in note.keys() and dstField_name in note.keys()):
-			returnval['fieldname_error'] += 1
+			skip_counts['fields'][0] += 1
 			continue
 				
 		mw.progress.update(label="Generating MP3 files...\n%s of %s\n%s" % (c+1, nelements,note[srcField_name]))
 
 		if note[srcField_name] == '' or note[srcField_name].isspace(): #check if the field is blank
+			skip_counts['empty'][0] += 1
 			continue
 		
 		filename = TTS_service[service]['record'](frm, note[srcField_name])
@@ -233,9 +244,13 @@ def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
 			else:
 				note[dstField_name] += ' [sound:'+ filename +']'
 
+			update_count += 1
 			note.flush()
+
+		else:
+			skip_counts['unfulfilled'][0] += 1
 		
-	return returnval
+	return nelements, update_count, skip_counts.values()
 
 
 def onGenerate(self):
@@ -297,20 +312,42 @@ def onGenerate(self):
 	
 	self.model.beginReset()
 
-	result = generate_audio_files(sf, frm, service, fieldlist[srcField], fieldlist[dstField])
+	process_count, update_count, skip_counts = generate_audio_files(
+		sf,
+		frm,
+		service,
+		fieldlist[srcField],
+		fieldlist[dstField],
+	)
 
 	self.model.endReset()
 	self.mw.progress.finish()
-	nupdated = len(sf) - result['fieldname_error']
-	utils.showInfo((ngettext(
-		"%s note updated",
-		"%s notes updated", nupdated) % (nupdated))+  
-		
-		((ngettext(
-		"\n%s fieldname error. A note doesn't have the Source Field '%s' or the Destination Field '%s'",
-		"\n%s fieldname error. Those notes don't have the Source Field '%s' or the Destination Field '%s'", result['fieldname_error'])
-		% (result['fieldname_error'], fieldlist[srcField], fieldlist[dstField])) if result['fieldname_error'] > 0 else "")
-		)
+
+	utils.showInfo(
+		(
+			"Note processed and updated." if process_count == 1
+			else "%d notes processed and updated." % process_count
+		) if process_count == update_count
+
+		else "\n".join(
+			["Could not process note:"] +
+			[message for count, message in skip_counts if count],
+		) if process_count == 1
+
+		else "\n".join([
+			"Of the %d processed notes..." % process_count,
+			"",
+		] + [
+			"- %s: %d %s" % (
+				message,
+				count,
+				"note" if count == 1 else "notes",
+			)
+			for count, message
+			in [(update_count, "Successful update")] + skip_counts
+			if count
+		])
+	)
 
 
 def setupMenu(editor):

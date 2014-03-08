@@ -6,6 +6,8 @@
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
 # Copyright (C) 2013-2014  Dave Shifflett
 # Copyright (C) 2012       Dusan Arsenijevic
+# Copyright (C) 2013       mistaecko on GitHub
+# Copyright (C) 2013       PtrToVoid on GitHub
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -148,6 +150,17 @@ def ATTS_Factedit_button(self):
 	form.comboBoxService.setCurrentIndex(serviceField) #get defaults
 	form.stackedWidget.setCurrentIndex(serviceField)
 	
+	# TODO: It would be nice if a service that sometimes cannot fulfill
+	# given text (e.g. one using a finite set of prerecorded dictionary
+	# words) be made to explicitly return False (instead of None) from its
+	# filegenerator_preview callable so that there would be some sort of
+	# notification to the user that the entered text is not playable.
+	# Alternatively, an exception could be used, but then other bits of
+	# code might need updating for consistency (e.g. record functionality,
+	# mass generation, on-the-fly playback).
+	# A convention for this can be established as soon as AwesomeTTS
+	# begins shipping with at least one bundled service that sometimes
+	# returns without successfully playing back some text.
 	
 	QtCore.QObject.connect(form.previewbutton, QtCore.SIGNAL("clicked()"), lambda form=form: TTS_service[getService_byName(serv_list[form.comboBoxService.currentIndex()])]['filegenerator_preview'](form))
 	
@@ -156,9 +169,11 @@ def ATTS_Factedit_button(self):
 	if d.exec_() and form.texttoTTS.toPlainText() != '' and not form.texttoTTS.toPlainText().isspace():
 		serviceField = form.comboBoxService.currentIndex() # set default
 		srv = getService_byName(serv_list[serviceField])
-		TTS_service[srv]['filegenerator_run'](form)
 		filename = TTS_service[srv]['filegenerator_run'](form)
-		self.addMedia(filename)
+		if filename:
+			self.addMedia(filename)
+		else:
+			utils.showWarning("No audio available for text.")
 
 def ATTS_Fact_edit_setupFields(self):
 	AwesomeTTS = QPushButton(self.widget)
@@ -194,7 +209,17 @@ def take_a_break(ndone, ntotal):
 		if t==0: break
 
 def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
-	returnval = {'fieldname_error': 0}
+	update_count = 0
+	skip_counts = {
+		key: [0, message]
+		for key, message
+		in [
+			('fields', 'Missing source and/or destination field'),
+			('empty', 'Empty value in the source field'),
+			('unfulfilled', 'Service returned an empty response'),
+		]
+	}
+
 	nelements = len(factIds)
 	batch = 900
 	
@@ -204,28 +229,33 @@ def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
 		note = mw.col.getNote(id)
 		
 		if not (srcField_name in note.keys() and dstField_name in note.keys()):
-			returnval['fieldname_error'] += 1
-			note.flush()
+			skip_counts['fields'][0] += 1
 			continue
 				
 		mw.progress.update(label="Generating MP3 files...\n%s of %s\n%s" % (c+1, nelements,note[srcField_name]))
 
 		if note[srcField_name] == '' or note[srcField_name].isspace(): #check if the field is blank
-			note.flush()
+			skip_counts['empty'][0] += 1
 			continue
 		
 		filename = TTS_service[service]['record'](frm, note[srcField_name])
 		
-		if frm.radioOverwrite.isChecked():
-			if frm.checkBoxSndTag.isChecked():
-				note[dstField_name] = '[sound:'+ filename +']'
+		if filename:
+			if frm.radioOverwrite.isChecked():
+				if frm.checkBoxSndTag.isChecked():
+					note[dstField_name] = '[sound:'+ filename +']'
+				else:
+					note[dstField_name] = filename
 			else:
-				note[dstField_name] = filename
+				note[dstField_name] += ' [sound:'+ filename +']'
+
+			update_count += 1
+			note.flush()
+
 		else:
-			note[dstField_name] += ' [sound:'+ filename +']'
-		note.flush()
+			skip_counts['unfulfilled'][0] += 1
 		
-	return returnval
+	return nelements, update_count, skip_counts.values()
 
 
 def onGenerate(self):
@@ -287,20 +317,43 @@ def onGenerate(self):
 	
 	self.model.beginReset()
 
-	result = generate_audio_files(sf, frm, service, fieldlist[srcField], fieldlist[dstField])
+	process_count, update_count, skip_counts = generate_audio_files(
+		sf,
+		frm,
+		service,
+		fieldlist[srcField],
+		fieldlist[dstField],
+	)
 
 	self.model.endReset()
 	self.mw.progress.finish()
-	nupdated = len(sf) - result['fieldname_error']
-	utils.showInfo((ngettext(
-		"%s note updated",
-		"%s notes updated", nupdated) % (nupdated))+  
-		
-		((ngettext(
-		"\n%s fieldname error. A note doesn't have the Source Field '%s' or the Destination Field '%s'",
-		"\n%s fieldname error. Those notes don't have the Source Field '%s' or the Destination Field '%s'", result['fieldname_error'])
-		% (result['fieldname_error'], fieldlist[srcField], fieldlist[dstField])) if result['fieldname_error'] > 0 else "")
+
+	if process_count == update_count:
+		utils.showInfo(
+			"Note processed and updated." if process_count == 1
+			else "%d notes processed and updated." % process_count
 		)
+
+	elif process_count == 1:
+		utils.showWarning("\n".join(
+			["Could not process note:"] +
+			[message for count, message in skip_counts if count],
+		))
+
+	else:
+		utils.showWarning("\n".join([
+			"Of the %d processed notes..." % process_count,
+			"",
+		] + [
+			"- %s: %d %s" % (
+				message,
+				count,
+				"note" if count == 1 else "notes",
+			)
+			for count, message
+			in [(update_count, "Successful update")] + skip_counts
+			if count
+		]))
 
 
 def setupMenu(editor):

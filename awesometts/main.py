@@ -334,18 +334,20 @@ def onGenerate(self):
 	self.model.endReset()
 	self.mw.progress.finish()
 
-	utils.showInfo(
-		(
+	if process_count == update_count:
+		utils.showInfo(
 			"Note processed and updated." if process_count == 1
 			else "%d notes processed and updated." % process_count
-		) if process_count == update_count
+		)
 
-		else "\n".join(
+	elif process_count == 1:
+		utils.showWarning("\n".join(
 			["Could not process note:"] +
 			[message for count, message in skip_counts if count],
-		) if process_count == 1
+		))
 
-		else "\n".join([
+	else:
+		utils.showWarning("\n".join([
 			"Of the %d processed notes..." % process_count,
 			"",
 		] + [
@@ -357,8 +359,7 @@ def onGenerate(self):
 			for count, message
 			in [(update_count, "Successful update")] + skip_counts
 			if count
-		])
-	)
+		]))
 
 
 def setupMenu(editor):

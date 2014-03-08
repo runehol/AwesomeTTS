@@ -179,6 +179,8 @@ def ATTS_Factedit_button(self):
 		filename = TTS_service[srv]['filegenerator_run'](form)
 		if filename:
 			self.addMedia(filename)
+		else:
+			utils.showWarning("No audio available for text.")
 
 def ATTS_Fact_edit_setupFields(self):
 	AwesomeTTS = QPushButton(self.widget)

@@ -265,18 +265,13 @@ def onGenerate(self):
 		utils.showInfo("Select the notes and then use the MP3 Mass Generator")
 		return
 	import anki.find
-	fields = sorted(anki.find.fieldNames(self.col, downcase=False))
+	fieldlist = sorted(anki.find.fieldNames(mw.col, downcase=False))
 	d = QDialog(self)
 	frm = forms.massgenerator.Ui_Dialog()
 	frm.setupUi(d)
 	d.setWindowModality(Qt.WindowModal)
 	
 	frm.label_version.setText("Version "+ version)
-	
-	fieldlist = []
-	for f in mw.col.models.all():
-		for a in f['flds']:
-			fieldlist.append(a['name'])
 
 	#service list start
 	serv_list = [TTS_service[service]['name'] for service in TTS_service]

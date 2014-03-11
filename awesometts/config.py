@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2013  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
-# Copyright (C) 2013       Dave Shifflett
+# Copyright (C) 2014       Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,13 +19,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Storage and management of add-on configuration
+"""
+
+# TODO Clean-up all imports
+# TODO Eliminate unused items (e.g. file_max_length, file_extension?)
+# TODO Specify configuration slots with a data structure
+# TODO Based on the data structure, add code paths to automatically...
+#          - create and populate configuration table when none exists
+#          - add new configuration slots to table
+#          - remove disused configuration slots from table
+# TODO Fix saving (it looks like the passed parameter is this module itself)
+# TODO Simplify interface, e.g.
+#          - get (maybe overloaded for get all)
+#          - set (maybe overloaded for set many)
+# TODO Correctly advertise interface with __all__
 
 from PyQt4.QtCore import *
 import os, sys, sqlite3
 
+
 conffile = os.path.join(os.path.dirname(os.path.realpath(__file__)), "conf.db")
 conffile = conffile.decode(sys.getfilesystemencoding())
- 
+
 conn = sqlite3.connect(conffile, isolation_level=None)
 conn.row_factory = sqlite3.Row
 
@@ -36,36 +53,36 @@ cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='gene
 tblexit = cursor.fetchall()
 
 
-if len (tblexit) < 1:
-	cursor.execute(
-		"CREATE TABLE general ("
-			"automaticQuestions numeric,"
-			"automaticAnswers numeric,"
-			"file_howto_name numeric,"
-			"file_max_length numeric,"
-			"file_extension text,"
-			"subprocessing numeric,"
-			"TTS_KEY_Q numeric,"
-			"TTS_KEY_A numeric,"
-			"caching numeric"
-		")"
-	)
-	cursor.execute(
-		"INSERT INTO general "
-		"VALUES (0, 0, 1, 100, 'mp3', 1, ?, ?, 1)",
-		(Qt.Key_F3, Qt.Key_F4)
-	)
+if len(tblexit) < 1:
+    cursor.execute(
+        "CREATE TABLE general ("
+            "automaticQuestions numeric,"
+            "automaticAnswers numeric,"
+            "file_howto_name numeric,"
+            "file_max_length numeric,"
+            "file_extension text,"
+            "subprocessing numeric,"
+            "TTS_KEY_Q numeric,"
+            "TTS_KEY_A numeric,"
+            "caching numeric"
+        ")"
+    )
+    cursor.execute(
+        "INSERT INTO general "
+        "VALUES (0, 0, 1, 100, 'mp3', 1, ?, ?, 1)",
+        (Qt.Key_F3, Qt.Key_F4)
+    )
 
 else:
-	cursor.execute("PRAGMA table_info(general)")
-	for r in cursor:
-		if r['name'] == 'caching':
-			break
-	else:
-		cursor.execute(
-			"ALTER TABLE general "
-			"ADD COLUMN caching numeric DEFAULT 1"
-		)
+    cursor.execute("PRAGMA table_info(general)")
+    for r in cursor:
+        if r['name'] == 'caching':
+            break
+    else:
+        cursor.execute(
+            "ALTER TABLE general "
+            "ADD COLUMN caching numeric DEFAULT 1"
+        )
 
 cursor.execute("SELECT * FROM general")
 
@@ -88,22 +105,22 @@ file_extension = r['file_extension']
 
 caching = r['caching']
 cachingDirectory = os.path.sep.join([
-	os.path.dirname(__file__),
-	'cache'
+    os.path.dirname(__file__),
+    'cache'
 ])
 
 def saveConfig(config):
-	cursor.execute(
-		"UPDATE general SET "
-		"automaticQuestions=?, automaticAnswers=?,"
-		"file_howto_name=?, file_max_length=?,"
-		"file_extension=?, subprocessing=?,"
-		"TTS_KEY_Q=?, TTS_KEY_A=?, caching=?",
-		(config.automaticQuestions, config.automaticAnswers,
-		 config.quote_mp3, config.file_max_length,
-		 config.file_extension, config.subprocessing,
-		 config.TTS_KEY_Q, config.TTS_KEY_A, config.caching)
-	)
+    cursor.execute(
+        "UPDATE general SET "
+        "automaticQuestions=?, automaticAnswers=?,"
+        "file_howto_name=?, file_max_length=?,"
+        "file_extension=?, subprocessing=?,"
+        "TTS_KEY_Q=?, TTS_KEY_A=?, caching=?",
+        (config.automaticQuestions, config.automaticAnswers,
+         config.quote_mp3, config.file_max_length,
+         config.file_extension, config.subprocessing,
+         config.TTS_KEY_Q, config.TTS_KEY_A, config.caching)
+    )
 
 
 TTS_service = {}

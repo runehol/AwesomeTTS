@@ -23,9 +23,9 @@
 Storage and management of add-on configuration
 """
 
-# TODO Clean-up all imports
 # TODO Eliminate unused items (e.g. file_max_length, file_extension?)
 # TODO Specify configuration slots with a data structure
+# TODO Can/should we be using the "with" statement with the sqlite connection?
 # TODO Based on the data structure, add code paths to automatically...
 #          - create and populate configuration table when none exists
 #          - add new configuration slots to table
@@ -36,24 +36,25 @@ Storage and management of add-on configuration
 #          - set (maybe overloaded for set many)
 # TODO Correctly advertise interface with __all__
 
-from PyQt4.QtCore import *
-import os, sys, sqlite3
+from os import path
+import sqlite3
+from sys import getfilesystemencoding as fs_encoding
+
+from PyQt4.QtCore import Qt
 
 
-conffile = os.path.join(os.path.dirname(os.path.realpath(__file__)), "conf.db")
-conffile = conffile.decode(sys.getfilesystemencoding())
+ADDON_DIRECTORY = path.dirname(path.realpath(__file__))
+CACHE_DIRECTORY = path.join(ADDON_DIRECTORY, 'cache').decode(fs_encoding())
+SQLITE_PATH = path.join(ADDON_DIRECTORY, 'conf.db').decode(fs_encoding())
 
-conn = sqlite3.connect(conffile, isolation_level=None)
+conn = sqlite3.connect(SQLITE_PATH, isolation_level=None)
 conn.row_factory = sqlite3.Row
 
 cursor = conn.cursor()
 
 cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='general'")
 
-tblexit = cursor.fetchall()
-
-
-if len(tblexit) < 1:
+if len(cursor.fetchall()) < 1:
     cursor.execute(
         "CREATE TABLE general ("
             "automaticQuestions numeric,"
@@ -104,10 +105,7 @@ file_max_length = r['file_max_length']
 file_extension = r['file_extension']
 
 caching = r['caching']
-cachingDirectory = os.path.sep.join([
-    os.path.dirname(__file__),
-    'cache'
-])
+cachingDirectory = CACHE_DIRECTORY
 
 def saveConfig(config):
     cursor.execute(

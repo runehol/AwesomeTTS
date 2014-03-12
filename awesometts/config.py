@@ -23,7 +23,7 @@
 Storage and management of add-on configuration
 """
 
-# TODO Specify configuration slots with a data structure
+# TODO Consider specifying mappers (e.g. sqlite-to-python int-to-boolean)
 # TODO Make a way to migrate keys, needed for file_howto_name -> quote_mp3
 # TODO Can/should we be using the "with" statement with the sqlite connection?
 # TODO Based on the data structure, add code paths to automatically...
@@ -34,7 +34,10 @@ Storage and management of add-on configuration
 # TODO Simplify interface, e.g.
 #          - get (maybe overloaded for get all)
 #          - set (maybe overloaded for set many)
+#          OR https://stackoverflow.com/questions/2447353/getattr-on-a-module
+#              (however, this might not play nicely with pylint...)
 # TODO Correctly advertise interface with __all__
+#          (can this be set using ATTRIBUTES.keys() maybe?)
 
 from os import path
 import sqlite3
@@ -45,7 +48,26 @@ from PyQt4.QtCore import Qt
 
 ADDON_DIRECTORY = path.dirname(path.realpath(__file__))
 CACHE_DIRECTORY = path.join(ADDON_DIRECTORY, 'cache').decode(fs_encoding())
+
 SQLITE_PATH = path.join(ADDON_DIRECTORY, 'conf.db').decode(fs_encoding())
+SQLITE_TABLE = 'general'
+
+ATTRIBUTES = {
+    # name to data type, default value
+    'automaticAnswers': ('numeric', 0),
+    'automaticQuestions': ('numeric', 0),
+    'caching': ('numeric', 1),
+    'quote_mp3': ('numeric', 1),
+    'subprocessing': ('numeric', 1),
+    'TTS_KEY_A': ('numeric', Qt.Key_F4),
+    'TTS_KEY_Q': ('numeric', Qt.Key_F3),
+}
+
+RENAMED = {
+    # old name to new name
+    'file_howto_name': 'quote_mp3',
+}
+
 
 conn = sqlite3.connect(SQLITE_PATH, isolation_level=None)
 conn.row_factory = sqlite3.Row

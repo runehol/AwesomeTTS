@@ -23,8 +23,8 @@
 Storage and management of add-on configuration
 """
 
-# TODO Eliminate unused items (e.g. file_max_length, file_extension?)
 # TODO Specify configuration slots with a data structure
+# TODO Make a way to migrate keys, needed for file_howto_name -> quote_mp3
 # TODO Can/should we be using the "with" statement with the sqlite connection?
 # TODO Based on the data structure, add code paths to automatically...
 #          - create and populate configuration table when none exists
@@ -60,8 +60,6 @@ if len(cursor.fetchall()) < 1:
             "automaticQuestions numeric,"
             "automaticAnswers numeric,"
             "file_howto_name numeric,"
-            "file_max_length numeric,"
-            "file_extension text,"
             "subprocessing numeric,"
             "TTS_KEY_Q numeric,"
             "TTS_KEY_A numeric,"
@@ -70,7 +68,7 @@ if len(cursor.fetchall()) < 1:
     )
     cursor.execute(
         "INSERT INTO general "
-        "VALUES (0, 0, 1, 100, 'mp3', 1, ?, ?, 1)",
+        "VALUES (0, 0, 1, 1, ?, ?, 1)",
         (Qt.Key_F3, Qt.Key_F4)
     )
 
@@ -101,8 +99,6 @@ automaticQuestions = r['automaticQuestions']
 automaticAnswers = r['automaticAnswers']
 quote_mp3 = r['file_howto_name']
 subprocessing = r['subprocessing']
-file_max_length = r['file_max_length']
-file_extension = r['file_extension']
 
 caching = r['caching']
 cachingDirectory = CACHE_DIRECTORY
@@ -111,12 +107,12 @@ def saveConfig(config):
     cursor.execute(
         "UPDATE general SET "
         "automaticQuestions=?, automaticAnswers=?,"
-        "file_howto_name=?, file_max_length=?,"
-        "file_extension=?, subprocessing=?,"
+        "file_howto_name=?,"
+        "subprocessing=?,"
         "TTS_KEY_Q=?, TTS_KEY_A=?, caching=?",
         (config.automaticQuestions, config.automaticAnswers,
-         config.quote_mp3, config.file_max_length,
-         config.file_extension, config.subprocessing,
+         config.quote_mp3,
+         config.subprocessing,
          config.TTS_KEY_Q, config.TTS_KEY_A, config.caching)
     )
 

@@ -23,13 +23,22 @@
 Storage and management of add-on configuration
 """
 
-# TODO Consider specifying mappers (e.g. sqlite-to-python int-to-boolean)
+# TODO Consider converting this to a new two-column 'config' table that just
+#      stores everything as key/value essentially... if a row doesn't exist
+#      for a particular key, then, the default could just be initialized...
+#      N.B. Be careful about using text storage for the values, though, as in
+#          Python, bool('0') is True but bool(int('0')) is False
+# TODO If staying with the current layout, consider using integer instead of
+#      numeric for these; since sqlite3 really just stores everything as text,
+#      this should not affect existing databases.
 # TODO Make a way to migrate keys, needed for file_howto_name -> quote_mp3
 # TODO Can/should we be using the "with" statement with the sqlite connection?
 # TODO Based on the data structure, add code paths to automatically...
 #          - create and populate configuration table when none exists
 #          - add new configuration slots to table
 #          - remove disused configuration slots from table
+#      N.B. sqlite columns are NOT case-sensitive, keep this in mind when
+#          doing any and all checks against column names
 # TODO Fix saving (it looks like the passed parameter is this module itself)
 # TODO Simplify interface, e.g.
 #          - get (maybe overloaded for get all)
@@ -53,14 +62,14 @@ SQLITE_PATH = path.join(ADDON_DIRECTORY, 'conf.db').decode(fs_encoding())
 SQLITE_TABLE = 'general'
 
 ATTRIBUTES = {
-    # name to data type, default value
-    'automaticAnswers': ('numeric', 0),
-    'automaticQuestions': ('numeric', 0),
-    'caching': ('numeric', 1),
-    'quote_mp3': ('numeric', 1),
-    'subprocessing': ('numeric', 1),
-    'TTS_KEY_A': ('numeric', Qt.Key_F4),
-    'TTS_KEY_Q': ('numeric', Qt.Key_F3),
+    # name to type, default, sqlite-to-Python mapper, Python-to-sqlite mapper
+    'automaticAnswers': ('numeric', 0, bool, int),
+    'automaticQuestions': ('numeric', 0, bool, int),
+    'caching': ('numeric', 1, bool, int),
+    'quote_mp3': ('numeric', 1, bool, int),
+    'subprocessing': ('numeric', 1, bool, int),
+    'TTS_KEY_A': ('numeric', Qt.Key_F4, Qt.Key, int),
+    'TTS_KEY_Q': ('numeric', Qt.Key_F3, Qt.Key, int),
 }
 
 RENAMED = {

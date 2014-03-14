@@ -23,32 +23,19 @@
 Storage and management of add-on configuration
 """
 
-# TODO Consider converting this to a new two-column 'config' table that just
-#      stores everything as key/value essentially... if a row doesn't exist
-#      for a particular key, then, the default could just be initialized...
-#      N.B. Be careful about using text storage for the values, though, as in
-#          Python, bool('0') is True but bool(int('0')) is False
-# TODO If staying with the current layout, consider using integer instead of
-#      numeric for these; since sqlite3 really just stores everything as text,
-#      this should not affect existing databases.
-# TODO Make a way to migrate keys, needed for file_howto_name -> quote_mp3
-# TODO Can/should we be using the "with" statement with the sqlite connection?
-# TODO Based on the data structure, add code paths to automatically...
-#          - create and populate configuration table when none exists
-#          - add new configuration slots to table
-#          - remove disused configuration slots from table
-#      N.B. sqlite columns are NOT case-sensitive, keep this in mind when
+# TODO Would it be possible to get these configuration options to sync with
+#      AnkiWeb, e.g. by moving them into the collections sqlite database?
+# FIXME sqlite columns are NOT case-sensitive, keep this in mind when
 #          doing any and all checks against column names
-# TODO Fix saving (it looks like the passed parameter is this module itself)
 # TODO Simplify interface, e.g.
 #          - get (maybe overloaded for get all)
 #          - set (maybe overloaded for set many)
 #          OR https://stackoverflow.com/questions/2447353/getattr-on-a-module
 #              (however, this might not play nicely with pylint...)
 # TODO Correctly advertise interface with __all__
-#          (can this be set using ATTRIBUTES.keys() maybe?)
 
 from os import path
+from re import compile as re
 import sqlite3
 from sys import getfilesystemencoding as fs_encoding
 
@@ -56,93 +43,170 @@ from PyQt4.QtCore import Qt
 
 
 ADDON_DIRECTORY = path.dirname(path.realpath(__file__))
-CACHE_DIRECTORY = path.join(ADDON_DIRECTORY, 'cache').decode(fs_encoding())
-
 SQLITE_PATH = path.join(ADDON_DIRECTORY, 'conf.db').decode(fs_encoding())
 SQLITE_TABLE = 'general'
 
-ATTRIBUTES = {
-    # name to type, default, sqlite-to-Python mapper, Python-to-sqlite mapper
-    'automaticAnswers': ('numeric', 0, bool, int),
-    'automaticQuestions': ('numeric', 0, bool, int),
-    'caching': ('numeric', 1, bool, int),
-    'quote_mp3': ('numeric', 1, bool, int),
-    'subprocessing': ('numeric', 1, bool, int),
-    'TTS_KEY_A': ('numeric', Qt.Key_F4, Qt.Key, int),
-    'TTS_KEY_Q': ('numeric', Qt.Key_F3, Qt.Key, int),
-}
+COLUMN_DEFINITIONS = [
+    # column, type, default, sqlite-to-Python mapper, Python-to-sqlite mapper
+    ('automaticAnswers', 'integer', 0, bool, int),
+    ('automaticQuestions', 'integer', 0, bool, int),
+    ('caching', 'integer', 1, bool, int),
+    ('file_howto_name', 'integer', 1, bool, int),
+    ('subprocessing', 'integer', 1, bool, int),
+    ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
+    ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),
+]
 
-RENAMED = {
-    # old name to new name
-    'file_howto_name': 'quote_mp3',
-}
-
-
-conn = sqlite3.connect(SQLITE_PATH, isolation_level=None)
-conn.row_factory = sqlite3.Row
-
-cursor = conn.cursor()
-
-cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='general'")
-
-if len(cursor.fetchall()) < 1:
-    cursor.execute(
-        "CREATE TABLE general ("
-            "automaticQuestions numeric,"
-            "automaticAnswers numeric,"
-            "file_howto_name numeric,"
-            "subprocessing numeric,"
-            "TTS_KEY_Q numeric,"
-            "TTS_KEY_A numeric,"
-            "caching numeric"
-        ")"
-    )
-    cursor.execute(
-        "INSERT INTO general "
-        "VALUES (0, 0, 1, 1, ?, ?, 1)",
-        (Qt.Key_F3, Qt.Key_F4)
-    )
-
-else:
-    cursor.execute("PRAGMA table_info(general)")
-    for r in cursor:
-        if r['name'] == 'caching':
-            break
-    else:
-        cursor.execute(
-            "ALTER TABLE general "
-            "ADD COLUMN caching numeric DEFAULT 1"
-        )
-
-cursor.execute("SELECT * FROM general")
-
-r = cursor.fetchone()
+COLUMN_ALIASES = [
+    # caller-friendly name to database name
+    ('quote_mp3', 'file_howto_name'),
+]
 
 
-# Key to get the [TTS::] tags in the Question field pronounced
-TTS_KEY_Q=r['TTS_KEY_Q']
+class Config(object):
+    __slots__ = [
+        '_db',                  # path to sqlite3 database
+        '_table',               # table where preferences are stored
+        '_column_definitions',  # map of get() names to column definitions
+        '_column_aliases',      # map of aliased names to their actual names
+        '_cache',               # in-memory lookup of preferences
+    ]
 
-# Key to get the [TTS::] tags in the Answer field pronounced
-TTS_KEY_A=r['TTS_KEY_A']
+    _RE_NONALPHANUMERIC = re(r'[^a-z0-9]')
+
+    # FIXME temporary; this should not be in this module
+    cachingDirectory = path.join(ADDON_DIRECTORY, 'cache').decode(fs_encoding())
+
+    @classmethod
+    def _normalize(cls, name):
+
+        return cls._RE_NONALPHANUMERIC.sub('', name.lower())
+
+    def __init__(self, db, table, column_definitions, column_aliases):
+
+        self._db = db
+
+        self._table = table
+
+        self._column_definitions = {
+            self._normalize(definition[0]): definition
+            for definition
+            in column_definitions
+        }
+
+        self._column_aliases = {
+            self._normalize(friendly_name): self._normalize(database_name)
+            for friendly_name, database_name
+            in column_aliases
+        }
+
+        self._cache = {}
+        self._load()
+
+    def _load(self):
+
+        connection = sqlite3.connect(self._db, isolation_level=None)
+        connection.row_factory = sqlite3.Row
+        cursor = connection.cursor()
+
+        if len(cursor.execute(
+            'SELECT name FROM sqlite_master WHERE type=? AND name=?',
+            ('table', self._table),
+        ).fetchall()):
+            missing_definitions = [
+                definition
+                for definition
+                in self._column_definitions.values()
+                if definition[0] not in [
+                    column['name']
+                    for column
+                    in cursor.execute('PRAGMA table_info(%s)' % self._table)
+                ]
+            ]
+
+            if missing_definitions:
+                for definition in missing_definitions:
+                    cursor.execute('ALTER TABLE %s ADD COLUMN %s %s' % (
+                        self._table,
+                        definition[0],
+                        definition[1],
+                    ))
+
+                cursor.execute(
+                    'UPDATE %s SET ' + ', '.join([
+                        "%s=?" % definition[0]
+                        for definition
+                        in missing_definitions
+                    ]) % self._table,
+                    tuple(
+                        definition[4](definition[2])
+                        for definition
+                        in missing_definitions
+                    ),
+                )
+
+        else:
+            all_definitions = self._column_definitions.values()
+
+            cursor.execute('CREATE TABLE %s (%s)' % (
+                self._table,
+                ', '.join([
+                    '%s %s' % (definition[0], definition[1])
+                    for definition
+                    in all_definitions
+                ]),
+            ))
+
+            cursor.execute(
+                'INSERT INTO %s VALUES(%s)' % (
+                    self._table,
+                    ', '.join(['?' for definition in all_definitions]),
+                ),
+                tuple(
+                    definition[4](definition[2])
+                    for definition
+                    in all_definitions
+                ),
+            )
+
+        row = cursor.execute('SELECT * FROM %s' % self._table).fetchone()
+        for name, definition in self._column_definitions.items():
+            self._cache[name] = definition[3](row[definition[0]])
+
+        cursor.close()
+        connection.close()
+
+    def get(self, *args):
+
+        def single(name):
+            name = self._normalize(name)
+            if name in self._column_aliases:
+                name = self._column_aliases[name]
+
+            return self._cache[name]
+
+        if len(args):
+            return (
+                single(args[0]) if len(args) == 1
+                else {name: single(name) for name in args}
+            )
+
+    # FIXME temporary
+    def __getattr__(self, name):
+
+        return self.get(name)
+
+    def set(self, **kwargs):
+
+        # TODO implement
+        raise NotImplementedError
 
 
-automaticQuestions = r['automaticQuestions']
-automaticAnswers = r['automaticAnswers']
-quote_mp3 = r['file_howto_name']
-subprocessing = r['subprocessing']
+from sys import modules
 
-caching = r['caching']
-cachingDirectory = CACHE_DIRECTORY
-
-def saveConfig(config):
-    cursor.execute(
-        "UPDATE general SET "
-        "automaticQuestions=?, automaticAnswers=?,"
-        "file_howto_name=?,"
-        "subprocessing=?,"
-        "TTS_KEY_Q=?, TTS_KEY_A=?, caching=?",
-        (config.automaticQuestions, config.automaticAnswers,
-         config.quote_mp3,
-         config.subprocessing,
-         config.TTS_KEY_Q, config.TTS_KEY_A, config.caching)
-    )
+modules[__name__] = Config(
+    SQLITE_PATH,
+    SQLITE_TABLE,
+    COLUMN_DEFINITIONS,
+    COLUMN_ALIASES,
+)

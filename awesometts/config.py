@@ -25,14 +25,14 @@ Storage and management of add-on configuration
 
 # TODO Would it be possible to get these configuration options to sync with
 #      AnkiWeb, e.g. by moving them into the collections sqlite database?
+# TODO Double-check all migration pathways for correct behavior
 # FIXME sqlite columns are NOT case-sensitive, keep this in mind when
-#          doing any and all checks against column names
-# TODO Simplify interface, e.g.
-#          - get (maybe overloaded for get all)
-#          - set (maybe overloaded for set many)
-#          OR https://stackoverflow.com/questions/2447353/getattr-on-a-module
-#              (however, this might not play nicely with pylint...)
-# TODO Correctly advertise interface with __all__
+#       doing any and all checks against column names (e.g. PRAGMA check)
+
+__all__ = [
+    'get',
+    'save',
+]
 
 from os import path
 from re import compile as re
@@ -61,6 +61,22 @@ COLUMN_ALIASES = [
     # caller-friendly name to database name
     ('quote_mp3', 'file_howto_name'),
 ]
+
+
+def get(*dummy):
+    """
+    Replaced by get method from the Config class instance.
+    """
+
+    pass
+
+
+def save(**dummy):
+    """
+    Replaced by save method from the Config class instance.
+    """
+
+    pass
 
 
 class Config(object):
@@ -196,7 +212,7 @@ class Config(object):
 
         return self.get(name)
 
-    def set(self, **kwargs):
+    def save(self, **kwargs):
 
         # TODO implement
         raise NotImplementedError

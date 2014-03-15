@@ -27,38 +27,48 @@ Storage and management of add-on configuration
 #      AnkiWeb, e.g. by moving them into the collections sqlite database?
 # TODO Double-check all migration pathways for correct behavior
 
-__all__ = [
-    'get',
-    'put',
-]
+__all__ = ['get', 'put']
 
 from re import compile as re
 from PyQt4.QtCore import Qt
 from .paths import CONFIG_DB
 
 
+# Name of the table to use in the sqlite3 data for storing configuration
+
 SQLITE_TABLE = 'general'
 
+
+# Our column definition, list of tuples each containing:
+#     0th: sqlite3 column name
+#     1st: sqlite3 column affinity
+#     2nd: default Python value to use when introducing new configuration
+#     3rd: mapping function from sqlite3 type to Python type
+#     4th: mapping function from Python type to sqlite3 type
+
 COLUMN_DEFINITIONS = [
-    # column, type, default, sqlite-to-Python mapper, Python-to-sqlite mapper
-    ('automaticAnswers', 'integer', 0, bool, int),
-    ('automaticQuestions', 'integer', 0, bool, int),
-    ('caching', 'integer', 1, bool, int),
-    ('file_howto_name', 'integer', 1, bool, int),
-    ('subprocessing', 'integer', 1, bool, int),
+    ('automaticAnswers', 'integer', False, bool, int),
+    ('automaticQuestions', 'integer', False, bool, int),
+    ('caching', 'integer', True, bool, int),
+    ('file_howto_name', 'integer', True, bool, int),
+    ('subprocessing', 'integer', True, bool, int),
     ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
     ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),
 ]
 
+
+# Acceptable aliases for our columns, list of tuples each containing:
+#     0th: caller-friendly name of the column
+#     1st: official name of column in the sqlite3 database
+
 COLUMN_ALIASES = [
-    # caller-friendly name to database name
     ('quote_mp3', 'file_howto_name'),
 ]
 
 
 def get(dummy):
     """
-    Replaced by get method from the Config class instance.
+    Replaced by get() method from the Config class instance.
     """
 
     return
@@ -66,13 +76,19 @@ def get(dummy):
 
 def put(**dummy):
     """
-    Replaced by put method from the Config class instance.
+    Replaced by put() method from the Config class instance.
     """
 
     pass
 
 
 class Config(object):
+    """
+    Exposes a get() and put() method for handling retrieving, caching,
+    and serializing configuration information stored in a given sqlite3
+    database table.
+    """
+
     __slots__ = [
         '_db',           # path to sqlite3 database
         '_table',        # sqlite3 table where preferences are stored
@@ -81,14 +97,23 @@ class Config(object):
         '_cache',        # in-memory lookup of preferences
     ]
 
+    # Matches non-alphanumeric characters for normalizing column names
     _RE_NONALPHANUMERIC = re(r'[^a-z0-9]')
 
     @classmethod
     def _normalize(cls, name):
+        """
+        Returns a lowercase version of the name with only alphanumeric
+        characters.
+        """
 
         return cls._RE_NONALPHANUMERIC.sub('', name.lower())
 
     def __init__(self, db, table, definitions, aliases):
+        """
+        Given a database path, table name, list of column definitions,
+        and list of column aliases, loads the configuration state.
+        """
 
         self._db = db
 
@@ -110,22 +135,33 @@ class Config(object):
         self._load()
 
     def _load(self):
+        """
+        Reads the state of the sqlite3 database to populate our cache.
+        If necessary, the database or table will be created with the
+        default values. If they already exist, but a new column has been
+        added, the already-existing table will be migrated to support
+        the new column(s) using the default value(s).
+        """
 
+        # open database connection
         import sqlite3
         connection = sqlite3.connect(self._db, isolation_level=None)
         connection.row_factory = sqlite3.Row
         cursor = connection.cursor()
 
+        # check for existence of the configuration table
         if len(cursor.execute(
             'SELECT name FROM sqlite_master WHERE type=? AND name=?',
             ('table', self._table),
         ).fetchall()):
+            # detect existing columns
             existing_columns = [
                 column['name'].lower()
                 for column
                 in cursor.execute('PRAGMA table_info(%s)' % self._table)
             ]
 
+            # detect any new columns not present in database
             missing_definitions = [
                 definition
                 for definition
@@ -134,6 +170,7 @@ class Config(object):
             ]
 
             if missing_definitions:
+                # insert any missing columns
                 for definition in missing_definitions:
                     cursor.execute('ALTER TABLE %s ADD COLUMN %s %s' % (
                         self._table,
@@ -141,6 +178,7 @@ class Config(object):
                         definition[1],
                     ))
 
+                # set default values for newly-inserted columns
                 cursor.execute(
                     'UPDATE %s SET %s' % (
                         self._table,
@@ -160,6 +198,7 @@ class Config(object):
         else:
             all_definitions = self._definitions.values()
 
+            # create the table
             cursor.execute('CREATE TABLE %s (%s)' % (
                 self._table,
                 ', '.join([
@@ -169,6 +208,7 @@ class Config(object):
                 ]),
             ))
 
+            # set the default values
             cursor.execute(
                 'INSERT INTO %s VALUES(%s)' % (
                     self._table,
@@ -181,30 +221,42 @@ class Config(object):
                 ),
             )
 
+        # populate in-memory store of the values
         row = cursor.execute('SELECT * FROM %s' % self._table).fetchone()
         for name, definition in self._definitions.items():
             self._cache[name] = definition[3](row[definition[0]])
 
+        # close database connection
         cursor.close()
         connection.close()
 
     def get(self, name):
+        """
+        Retrieve the current value for the given named configuration
+        option. The name will be normalized and may be an alias.
+
+        Raises KeyError if the argument is not a supported name.
+        """
 
         name = self._normalize(name)
         return self._cache[
+            # check aliases list to see if the passed name is unofficial
             self._aliases[name] if name in self._aliases
             else name
         ]
 
     def put(self, **updates):
+        """
+        Updates the value(s) of the given configuration option(s) passed
+        as kwargs-style arguments, and persists those values back to the
+        database.
+
+        Raises KeyError if any argument is not a supported name.
+        """
 
         # remap dict into a list of (name, definition, new value)-tuples
         updates = [
-            (
-                name,
-                self._definitions[name],
-                value,
-            )
+            (name, self._definitions[name], value)
             for name, value
             in [
                 (

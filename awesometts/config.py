@@ -33,10 +33,7 @@ __all__ = [
 ]
 
 from re import compile as re
-import sqlite3
-
 from PyQt4.QtCore import Qt
-
 from .paths import CONFIG_DB
 
 
@@ -114,6 +111,7 @@ class Config(object):
 
     def _load(self):
 
+        import sqlite3
         connection = sqlite3.connect(self._db, isolation_level=None)
         connection.row_factory = sqlite3.Row
         cursor = connection.cursor()
@@ -144,11 +142,14 @@ class Config(object):
                     ))
 
                 cursor.execute(
-                    'UPDATE %s SET ' + ', '.join([
-                        "%s=?" % definition[0]
-                        for definition
-                        in missing_definitions
-                    ]) % self._table,
+                    'UPDATE %s SET %s' % (
+                        self._table,
+                        ', '.join([
+                            "%s=?" % definition[0]
+                            for definition
+                            in missing_definitions
+                        ]),
+                    ),
                     tuple(
                         definition[4](definition[2])
                         for definition
@@ -206,13 +207,56 @@ class Config(object):
 
         return self.get(name)
 
-    def put(self, column_values):
+    def put(self, column_updates):
 
-        if not isinstance(column_values, dict):
-            raise TypeError
+        # remap dict into a list of (name, definition, new value)-tuples
+        column_updates = [
+            (
+                name,
+                self._column_definitions[
+                    self._column_aliases[name] if name in self._column_aliases
+                    else name
+                ],
+                value,
+            )
+            for name, value
+            in [
+                (self._normalize(unnormalized_name), value)
+                for unnormalized_name, value
+                in column_updates.items()
+            ]
+            if value != self._cache[name]  # filter out unchanged values
+        ]
 
-        # TODO implement
-        raise NotImplementedError
+        # update in-memory store of the values
+        for name, definition, value in column_updates:
+            self._cache[name] = value
+
+        # open database connection
+        import sqlite3
+        connection = sqlite3.connect(self._db, isolation_level=None)
+        cursor = connection.cursor()
+
+        # persist to sqlite3 database
+        cursor.execute(
+            'UPDATE %s SET %s' % (
+                self._table,
+                ', '.join([
+                    "%s=?" % definition[0]
+                    for name, definition, value
+                    in column_updates
+                ]),
+            ),
+            tuple(
+                definition[4](value)
+                for name, definition, value
+                in column_updates
+            ),
+        )
+
+        # close database connection
+        cursor.close()
+        connection.close()
 
 
 from sys import modules

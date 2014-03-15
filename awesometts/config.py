@@ -39,6 +39,13 @@ from .paths import CONFIG_DB
 SQLITE_TABLE = 'general'
 
 
+# Carefully converts sqlite3 value to boolean; this is to handle the
+# situation where we might encounter a string from the database driver.
+# In which case, bool('0') => True yet TO_BOOL('0') => False.
+
+TO_BOOL = lambda value: bool(int(value))
+
+
 # Our column definition, list of tuples each containing:
 #     0th: sqlite3 column name
 #     1st: sqlite3 column affinity
@@ -47,11 +54,11 @@ SQLITE_TABLE = 'general'
 #     4th: mapping function from Python type to sqlite3 type
 
 COLUMN_DEFINITIONS = [
-    ('automaticAnswers', 'integer', False, bool, int),
-    ('automaticQuestions', 'integer', False, bool, int),
-    ('caching', 'integer', True, bool, int),
-    ('file_howto_name', 'integer', True, bool, int),
-    ('subprocessing', 'integer', True, bool, int),
+    ('automaticAnswers', 'integer', False, TO_BOOL, int),
+    ('automaticQuestions', 'integer', False, TO_BOOL, int),
+    ('caching', 'integer', True, TO_BOOL, int),
+    ('file_howto_name', 'integer', True, TO_BOOL, int),
+    ('subprocessing', 'integer', True, TO_BOOL, int),
     ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
     ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),
 ]

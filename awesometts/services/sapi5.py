@@ -2,8 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2012  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
+# Copyright (C) 2014       Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,7 +51,7 @@ if subprocess.mswindows:
 	def playsapi5TTS(text, voice):
 		text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")))
 		param = [vbs_launcher, sapi5_path,'-hex', '-voice', util.dumpUnicodeStr(voice), util.dumpUnicodeStr(text)]
-		if config.subprocessing:
+		if config.get('subprocessing'):
 			subprocess.Popen(param, startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
 		else:
 			subprocess.Popen(param, startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()

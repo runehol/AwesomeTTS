@@ -2,8 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2012  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
+# Copyright (C) 2014       Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +28,7 @@ import awesometts.config as config
 file_max_length = 255 # Max filename length for Unix
 
 def generateFileName(text, service, winencode='iso-8859-1', extention=".mp3"):
-	if config.quote_mp3: #re.sub removes \/:*?"<>|[]. from the file name
+	if config.get('quote_mp3'): #re.sub removes \/:*?"<>|[]. from the file name
 		file = quote_plus(re.sub('[\\\/\:\*\?"<>|\[\]\.]*', "",text)).replace("%", "")+extention
 		if len(file) > file_max_length:
 			file = file[0:file_max_length-len(extention)] + extention

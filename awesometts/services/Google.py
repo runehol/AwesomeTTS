@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2013  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
-# Copyright (C) 2013       Dave Shifflett
+# Copyright (C) 2013-2014  Dave Shifflett
 # Copyright (C) 2013       mistaecko on GitHub
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,6 +21,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from PyQt4 import QtGui,QtCore
+
+from awesometts.paths import CACHE_DIR, relative
 
 #Supported Languages       
 # code , Language, windows charset encoding
@@ -183,22 +185,20 @@ def playGoogleTTS(text, language):
 
 	address = TTS_ADDRESS+'?tl='+language+'&q='+ quote_plus(text)
 
-	if config.caching:
+	if config.get('caching'):
 		import hashlib
 		import os
 
-		cacheDirectory = config.cachingDirectory
-
-		if not os.path.isdir(cacheDirectory):
-			os.mkdir(cacheDirectory)
+		if not os.path.isdir(CACHE_DIR):
+			os.mkdir(CACHE_DIR)
 
 		cacheToken = '-'.join([
 			language,
 			hashlib.sha256(text).hexdigest()
 		])
 
-		cachePathname = os.path.sep.join([
-			cacheDirectory,
+		cachePathname = relative(
+			CACHE_DIR,
 			'.'.join([
 				'-'.join([
 					'g',  # g is our TTS service key
@@ -206,7 +206,7 @@ def playGoogleTTS(text, language):
 				]),
 				'mp3'
 			])
-		])
+		)
 
 		if os.path.isfile(cachePathname):
 			playGoogleTTS_mplayer(cachePathname)
@@ -224,13 +224,13 @@ def playGoogleTTS(text, language):
 def playGoogleTTS_mplayer(address):
 	if subprocess.mswindows:
 		param = ['mplayer.exe', '-ao', 'win32', '-slave', '-user-agent', "'Mozilla/5.0'", address]
-		if config.subprocessing:
+		if config.get('subprocessing'):
 			subprocess.Popen(param, startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
 		else:
 			subprocess.Popen(param, startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
 	else:
 		param = ['mplayer', '-slave', '-user-agent', "'Mozilla/5.0'", address]
-		if config.subprocessing:
+		if config.get('subprocessing'):
 			subprocess.Popen(param, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
 		else:
 			subprocess.Popen(param, stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
@@ -259,7 +259,7 @@ def TTS_record_old(text, language):
 	file = util.generateFileName(text, 'g', slanguages[get_language_id(language)][2])
 	if subprocess.mswindows:
 		subprocess.Popen(['mplayer.exe', '-ao', 'win32', '-slave', '-user-agent', "'Mozilla/5.0'", address, '-dumpstream', '-dumpfile', file], startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
-		if not config.quote_mp3:
+		if not config.get('quote_mp3'):
 			return file.decode(slanguages[get_language_id(language)][2])
 	else:
 		subprocess.Popen(['mplayer', '-slave', '-user-agent', "'Mozilla/5.0'", address, '-dumpstream', '-dumpfile', file], stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()

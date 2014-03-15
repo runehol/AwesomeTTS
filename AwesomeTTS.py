@@ -22,10 +22,22 @@
 # Instructions on the AnkiWeb at <https://ankiweb.net/shared/info/301952613>.
 # Problems or comments? Visit <https://github.com/AwesomeTTS/AwesomeTTS>.
 
+"""
+Entry point for AwesomeTTS add-on from Anki
+"""
 
-if __name__ != "__main__":
-	import awesometts.main as main
+__all__ = []
 
-else:
-	print "This is a plugin for the Anki Spaced Repition learning system and cannot be run directly."
-	print "Please download Anki from <http://ichi2.net/anki/>"
+
+if __name__ == "__main__":
+    from sys import stderr
+
+    stderr.write(
+        "AwesomeTTS is a text-to-speech add-on for Anki.\n"
+        "It is not intended to be run directly.\n"
+        "To learn more or download Anki, please visit <http://ankisrs.net>.\n"
+    )
+    exit(1)
+
+
+import awesometts.main  # imported for side effects, pylint: disable=W0611

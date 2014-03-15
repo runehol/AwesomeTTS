@@ -95,6 +95,8 @@ class Config(object):
     database table.
     """
 
+    __name__ = __name__  # enables help() on instance-as-a-module methods
+
     __slots__ = [
         '_db',           # path to sqlite3 database
         '_table',        # sqlite3 table where preferences are stored
@@ -258,6 +260,16 @@ class Config(object):
             self._aliases[name] if name in self._aliases
             else name
         ]
+
+    def __getattr__(self, name):
+        """
+        Alternative to the get() method for backward compatibility.
+        """
+
+        try:
+            return self.get(name)
+        except KeyError:
+            raise AttributeError
 
     def put(self, **updates):
         """

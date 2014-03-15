@@ -77,4 +77,4 @@ def relative(start_dir, to_path, *addl_paths):
 
 CACHE_DIR = relative(_CODE_DIR, 'cache')
 
-CONFIG_DB = relative(_CODE_DIR, 'config.db')
+CONFIG_DB = relative(_CODE_DIR, 'conf.db')

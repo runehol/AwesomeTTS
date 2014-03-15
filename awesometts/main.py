@@ -224,6 +224,9 @@ def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
 
 	nelements = len(factIds)
 	batch = 900
+
+	if not frm.radioOverwrite.isChecked() and frm.checkBoxSndTag.isChecked():
+		RE_SOUND = re.compile(r'\[sound:[^\]]+\]', re.IGNORECASE)
 	
 	for c, id in enumerate(factIds):
 		if service == 'g' and (c+1)%batch == 0: # GoogleTTS has to take a break once in a while
@@ -249,6 +252,11 @@ def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
 				else:
 					note[dstField_name] = filename
 			else:
+				if frm.checkBoxSndTag.isChecked():
+					note[dstField_name] = RE_SOUND.sub(
+						'',
+						note[dstField_name],
+					).strip()
 				note[dstField_name] += ' [sound:'+ filename +']'
 
 			update_count += 1
@@ -295,6 +303,19 @@ def onGenerate(self):
 	
 	QtCore.QObject.connect(frm.comboBoxService, QtCore.SIGNAL("currentIndexChanged(QString)"), lambda selected,frm=frm,serv_list=serv_list: filegenerator_onCBoxChange(selected, frm, serv_list))
 	#service list end
+
+	def dest_handling_changed():
+		"""Update checkbox label given the new handling behavior."""
+		frm.checkBoxSndTag.setText(
+			dest_handling_changed.OVERWRITE_TEXT
+			if frm.radioOverwrite.isChecked()
+			else dest_handling_changed.ENDOF_TEXT
+		)
+	dest_handling_changed.ENDOF_TEXT = frm.checkBoxSndTag.text()
+	dest_handling_changed.OVERWRITE_TEXT = "Wrap Path in [sound:xxx] Tag"
+
+	frm.radioEndof.toggled.connect(dest_handling_changed)
+	frm.radioOverwrite.toggled.connect(dest_handling_changed)
 	
 	
 	if not d.exec_():

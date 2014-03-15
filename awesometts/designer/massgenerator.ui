@@ -111,7 +111,7 @@
        <item>
         <widget class="QRadioButton" name="radioEndof">
          <property name="text">
-          <string>Write the [sound:] tag at the end of the Destination Field.</string>
+          <string>Append [sound:xxx] Tag onto the Destination Field</string>
          </property>
          <property name="checked">
           <bool>true</bool>
@@ -121,7 +121,7 @@
        <item>
         <widget class="QRadioButton" name="radioOverwrite">
          <property name="text">
-          <string>Overwrite the Destination Field with the sound file path.</string>
+          <string>Overwrite the Destination Field w/ Media Path</string>
          </property>
         </widget>
        </item>
@@ -131,7 +131,7 @@
           <bool>true</bool>
          </property>
          <property name="text">
-          <string>Generate the sound file path within the [sound:] tag.</string>
+          <string>Remove Existing [sound:xxx] Tag(s)</string>
          </property>
          <property name="checked">
           <bool>true</bool>

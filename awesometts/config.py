@@ -25,7 +25,6 @@ Storage and management of add-on configuration
 
 # TODO Would it be possible to get these configuration options to sync with
 #      AnkiWeb, e.g. by moving them into the collections sqlite database?
-# TODO Double-check all migration pathways for correct behavior
 
 __all__ = ['get', 'put']
 

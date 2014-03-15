@@ -43,6 +43,8 @@ from PyQt4.QtGui import *
 from aqt.reviewer import Reviewer
 
 import awesometts.forms as forms
+from .paths import CACHE_DIR
+
 
 TTS_service = {}
 
@@ -426,10 +428,10 @@ def editConf():
 		[
 			filename
 			for filename
-			in os.listdir(config.cachingDirectory)
+			in os.listdir(CACHE_DIR)
 			if filename.endswith('.mp3')
 		]
-		if os.path.isdir(config.cachingDirectory)
+		if os.path.isdir(CACHE_DIR)
 		else []
 	)
 	cacheCount = len(cacheListing)
@@ -455,7 +457,7 @@ def editConf():
 			for cacheFilepath in cacheListing:
 				try:
 					os.remove(os.path.join(
-						config.cachingDirectory,
+						CACHE_DIR,
 						cacheFilepath,
 					))
 					countSuccess += 1

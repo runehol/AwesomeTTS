@@ -34,16 +34,14 @@ __all__ = [
     'save',
 ]
 
-from os import path
 from re import compile as re
 import sqlite3
-from sys import getfilesystemencoding as fs_encoding
 
 from PyQt4.QtCore import Qt
 
+from .paths import CONFIG_DB
 
-ADDON_DIRECTORY = path.dirname(path.realpath(__file__))
-SQLITE_PATH = path.join(ADDON_DIRECTORY, 'conf.db').decode(fs_encoding())
+
 SQLITE_TABLE = 'general'
 
 COLUMN_DEFINITIONS = [
@@ -89,9 +87,6 @@ class Config(object):
     ]
 
     _RE_NONALPHANUMERIC = re(r'[^a-z0-9]')
-
-    # FIXME temporary; this should not be in this module
-    cachingDirectory = path.join(ADDON_DIRECTORY, 'cache').decode(fs_encoding())
 
     @classmethod
     def _normalize(cls, name):
@@ -221,7 +216,7 @@ class Config(object):
 from sys import modules
 
 modules[__name__] = Config(
-    SQLITE_PATH,
+    CONFIG_DB,
     SQLITE_TABLE,
     COLUMN_DEFINITIONS,
     COLUMN_ALIASES,

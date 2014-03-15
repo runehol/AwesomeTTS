@@ -213,17 +213,22 @@ class Config(object):
         column_updates = [
             (
                 name,
-                self._column_definitions[
-                    self._column_aliases[name] if name in self._column_aliases
-                    else name
-                ],
+                self._column_definitions[name],
                 value,
             )
             for name, value
             in [
-                (self._normalize(unnormalized_name), value)
-                for unnormalized_name, value
-                in column_updates.items()
+                (
+                    name_or_alias if name_or_alias not in self._column_aliases
+                    else self._column_aliases[name_or_alias],
+                    value,
+                )
+                for name_or_alias, value
+                in [
+                    (self._normalize(unnormalized_name_or_alias), value)
+                    for unnormalized_name_or_alias, value
+                    in column_updates.items()
+                ]
             ]
             if value != self._cache[name]  # filter out unchanged values
         ]

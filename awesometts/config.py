@@ -202,6 +202,11 @@ class Config(object):
                     ),
                 )
 
+            # populate in-memory store of the values from database
+            row = cursor.execute('SELECT * FROM %s' % self._table).fetchone()
+            for name, definition in self._definitions.items():
+                self._cache[name] = definition[3](row[definition[0]])
+
         else:
             all_definitions = self._definitions.values()
 
@@ -228,10 +233,9 @@ class Config(object):
                 ),
             )
 
-        # populate in-memory store of the values
-        row = cursor.execute('SELECT * FROM %s' % self._table).fetchone()
-        for name, definition in self._definitions.items():
-            self._cache[name] = definition[3](row[definition[0]])
+            # populate in-memory store with the defaults we just inserted
+            for name, definition in self._definitions.items():
+                self._cache[name] = definition[2]
 
         # close database connection
         cursor.close()

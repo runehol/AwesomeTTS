@@ -222,6 +222,10 @@ class Config(object):
             if value != self._cache[name]  # filter out unchanged values
         ]
 
+        # return if no updates
+        if not updates:
+            return
+
         # update in-memory store of the values
         for name, definition, value in updates:
             self._cache[name] = value

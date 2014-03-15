@@ -31,7 +31,7 @@ Storage and management of add-on configuration
 
 __all__ = [
     'get',
-    'save',
+    'put',
 ]
 
 from re import compile as re
@@ -61,7 +61,7 @@ COLUMN_ALIASES = [
 ]
 
 
-def get(*dummy):
+def get(dummy, *dummy_addl):
     """
     Replaced by get method from the Config class instance.
     """
@@ -69,9 +69,9 @@ def get(*dummy):
     pass
 
 
-def save(**dummy):
+def put(dummy):
     """
-    Replaced by save method from the Config class instance.
+    Replaced by put method from the Config class instance.
     """
 
     pass
@@ -187,7 +187,7 @@ class Config(object):
         cursor.close()
         connection.close()
 
-    def get(self, *args):
+    def get(self, name, *addl_names):
 
         def single(name):
             name = self._normalize(name)
@@ -196,18 +196,20 @@ class Config(object):
 
             return self._cache[name]
 
-        if len(args):
-            return (
-                single(args[0]) if len(args) == 1
-                else {name: single(name) for name in args}
-            )
+        return (
+            single(name) if not addl_names
+            else {name: single(name) for name in [name] + list(addl_names)}
+        )
 
     # FIXME temporary
     def __getattr__(self, name):
 
         return self.get(name)
 
-    def save(self, **kwargs):
+    def put(self, column_values):
+
+        if not isinstance(column_values, dict):
+            raise TypeError
 
         # TODO implement
         raise NotImplementedError

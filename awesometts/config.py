@@ -61,7 +61,7 @@ def get(dummy, *dummy_addl):
     Replaced by get method from the Config class instance.
     """
 
-    pass
+    return {}
 
 
 def put(dummy):

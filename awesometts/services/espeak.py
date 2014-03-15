@@ -2,8 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2012  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
+# Copyright (C) 2014       Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,8 +19,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-#import awesometts.config as config
 
 from PyQt4 import QtGui,QtCore
 
@@ -78,7 +77,6 @@ TTS_ADDRESS = 'http://translate.google.com/translate_tts'
 import re, subprocess
 from anki.utils import stripHTML
 from urllib import quote_plus
-import awesometts.config as config
 import awesometts.util as util
 from subprocess import Popen, PIPE, STDOUT
 

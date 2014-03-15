@@ -408,18 +408,18 @@ def editConf():
 		Conf_keyPressEvent,
 		(d, [form.pushKeyQ, form.pushKeyA]),
 	)
-	form.pushKeyQ.setText(KeyToString(config.TTS_KEY_Q))
-	form.pushKeyA.setText(KeyToString(config.TTS_KEY_A))
-	form.pushKeyQ.keyval = config.TTS_KEY_Q
-	form.pushKeyA.keyval = config.TTS_KEY_A
+	form.pushKeyQ.keyval = config.get('TTS_KEY_Q')
+	form.pushKeyQ.setText(KeyToString(form.pushKeyQ.keyval))
+	form.pushKeyA.keyval = config.get('TTS_KEY_A')
+	form.pushKeyA.setText(KeyToString(form.pushKeyA.keyval))
 
-	form.cAutoQ.setChecked(config.automaticQuestions)
-	form.cAutoA.setChecked(config.automaticAnswers)
-	form.cSubprocessing.setChecked(config.subprocessing)
-	form.cCaching.setChecked(config.caching)
+	form.cAutoQ.setChecked(config.get('automatic_questions'))
+	form.cAutoA.setChecked(config.get('automatic_answers'))
+	form.cSubprocessing.setChecked(config.get('subprocessing'))
+	form.cCaching.setChecked(config.get('caching'))
 	
-	form.rfilename_plain.setChecked((not config.quote_mp3))
-	form.rfilename_quoted.setChecked(config.quote_mp3)
+	form.rfilename_plain.setChecked(not config.get('quote_mp3'))
+	form.rfilename_quoted.setChecked(config.get('quote_mp3'))
 	
 	QtCore.QObject.connect(form.pushKeyQ, QtCore.SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyQ))
 	QtCore.QObject.connect(form.pushKeyA, QtCore.SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyA))
@@ -490,14 +490,15 @@ def editConf():
 	if not d.exec_():
 		return
 
-	config.TTS_KEY_Q = form.pushKeyQ.keyval
-	config.TTS_KEY_A = form.pushKeyA.keyval
-	config.automaticQuestions = form.cAutoQ.isChecked()
-	config.automaticAnswers = form.cAutoA.isChecked()
-	config.subprocessing = form.cSubprocessing.isChecked()
-	config.caching = form.cCaching.isChecked()
-	config.quote_mp3 = form.rfilename_quoted.isChecked()
-	config.saveConfig(config)
+	config.put(
+		TTS_KEY_Q=form.pushKeyQ.keyval,
+		TTS_KEY_A=form.pushKeyA.keyval,
+		automatic_questions=form.cAutoQ.isChecked(),
+		automatic_answers=form.cAutoA.isChecked(),
+		subprocessing=form.cSubprocessing.isChecked(),
+		caching=form.cCaching.isChecked(),
+		quote_mp3=form.rfilename_quoted.isChecked(),
+	)
 
 
 # create a new menu item, "test"
@@ -516,9 +517,9 @@ mw.form.menuTools.addAction(menuconf)
 def newKeyHandler(self, evt):
 	pkey = evt.key()
 	if (self.state == 'answer' or self.state == 'question'):
-		if (pkey == config.TTS_KEY_Q):
+		if (pkey == config.get('TTS_KEY_Q')):
 			playTTSFromText(self.card.q())  #read the TTS tags
-		if (self.state=='answer' and pkey == config.TTS_KEY_A):
+		if (self.state=='answer' and pkey == config.get('TTS_KEY_A')):
 			playTTSFromText(self.card.a()) #read the TTS tags
 	evt.accept()
 
@@ -530,10 +531,10 @@ def ATTSautoread(toread, automatic):
 			playTTSFromText(toread)
 
 def ATTS_OnQuestion(self):
-	ATTSautoread(self.card.q(), config.automaticQuestions)
+	ATTSautoread(self.card.q(), config.get('automatic_questions'))
 
 def ATTS_OnAnswer(self):
-	ATTSautoread(self.card.a(), config.automaticAnswers)
+	ATTSautoread(self.card.a(), config.get('automatic_answers'))
 
 
 

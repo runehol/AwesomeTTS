@@ -185,7 +185,7 @@ def playGoogleTTS(text, language):
 
 	address = TTS_ADDRESS+'?tl='+language+'&q='+ quote_plus(text)
 
-	if config.caching:
+	if config.get('caching'):
 		import hashlib
 		import os
 
@@ -224,13 +224,13 @@ def playGoogleTTS(text, language):
 def playGoogleTTS_mplayer(address):
 	if subprocess.mswindows:
 		param = ['mplayer.exe', '-ao', 'win32', '-slave', '-user-agent', "'Mozilla/5.0'", address]
-		if config.subprocessing:
+		if config.get('subprocessing'):
 			subprocess.Popen(param, startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
 		else:
 			subprocess.Popen(param, startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
 	else:
 		param = ['mplayer', '-slave', '-user-agent', "'Mozilla/5.0'", address]
-		if config.subprocessing:
+		if config.get('subprocessing'):
 			subprocess.Popen(param, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
 		else:
 			subprocess.Popen(param, stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
@@ -259,7 +259,7 @@ def TTS_record_old(text, language):
 	file = util.generateFileName(text, 'g', slanguages[get_language_id(language)][2])
 	if subprocess.mswindows:
 		subprocess.Popen(['mplayer.exe', '-ao', 'win32', '-slave', '-user-agent', "'Mozilla/5.0'", address, '-dumpstream', '-dumpfile', file], startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
-		if not config.quote_mp3:
+		if not config.get('quote_mp3'):
 			return file.decode(slanguages[get_language_id(language)][2])
 	else:
 		subprocess.Popen(['mplayer', '-slave', '-user-agent', "'Mozilla/5.0'", address, '-dumpstream', '-dumpfile', file], stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()

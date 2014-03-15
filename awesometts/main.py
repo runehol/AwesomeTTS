@@ -43,7 +43,7 @@ from PyQt4.QtGui import *
 from aqt.reviewer import Reviewer
 
 import awesometts.forms as forms
-from .paths import CACHE_DIR
+from .paths import CACHE_DIR, relative
 
 
 TTS_service = {}
@@ -456,7 +456,7 @@ def editConf():
 			countError = 0
 			for cacheFilepath in cacheListing:
 				try:
-					os.remove(os.path.join(
+					os.remove(relative(
 						CACHE_DIR,
 						cacheFilepath,
 					))

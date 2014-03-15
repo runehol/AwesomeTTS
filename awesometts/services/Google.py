@@ -22,7 +22,7 @@
 
 from PyQt4 import QtGui,QtCore
 
-from awesometts.paths import CACHE_DIR
+from awesometts.paths import CACHE_DIR, relative
 
 #Supported Languages       
 # code , Language, windows charset encoding
@@ -197,7 +197,7 @@ def playGoogleTTS(text, language):
 			hashlib.sha256(text).hexdigest()
 		])
 
-		cachePathname = os.path.sep.join([
+		cachePathname = relative(
 			CACHE_DIR,
 			'.'.join([
 				'-'.join([
@@ -206,7 +206,7 @@ def playGoogleTTS(text, language):
 				]),
 				'mp3'
 			])
-		])
+		)
 
 		if os.path.isfile(cachePathname):
 			playGoogleTTS_mplayer(cachePathname)

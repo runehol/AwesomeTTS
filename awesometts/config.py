@@ -122,15 +122,17 @@ class Config(object):
             'SELECT name FROM sqlite_master WHERE type=? AND name=?',
             ('table', self._table),
         ).fetchall()):
+            existing_columns = [
+                column['name'].lower()
+                for column
+                in cursor.execute('PRAGMA table_info(%s)' % self._table)
+            ]
+
             missing_definitions = [
                 definition
                 for definition
                 in self._column_definitions.values()
-                if definition[0].lower() not in [
-                    column['name'].lower()
-                    for column
-                    in cursor.execute('PRAGMA table_info(%s)' % self._table)
-                ]
+                if definition[0].lower() not in existing_columns
             ]
 
             if missing_definitions:

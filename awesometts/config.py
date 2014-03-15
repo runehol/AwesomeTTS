@@ -26,8 +26,6 @@ Storage and management of add-on configuration
 # TODO Would it be possible to get these configuration options to sync with
 #      AnkiWeb, e.g. by moving them into the collections sqlite database?
 # TODO Double-check all migration pathways for correct behavior
-# FIXME sqlite columns are NOT case-sensitive, keep this in mind when
-#       doing any and all checks against column names (e.g. PRAGMA check)
 
 __all__ = [
     'get',
@@ -128,8 +126,8 @@ class Config(object):
                 definition
                 for definition
                 in self._column_definitions.values()
-                if definition[0] not in [
-                    column['name']
+                if definition[0].lower() not in [
+                    column['name'].lower()
                     for column
                     in cursor.execute('PRAGMA table_info(%s)' % self._table)
                 ]

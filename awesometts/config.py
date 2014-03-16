@@ -33,11 +33,6 @@ from PyQt4.QtCore import Qt
 from .paths import CONFIG_DB
 
 
-# Name of the table to use in the sqlite3 data for storing configuration
-
-SQLITE_TABLE = 'general'
-
-
 # Carefully converts sqlite3 value to boolean; this is to handle the
 # situation where we might encounter a string from the database driver.
 # In which case, bool('0') => True yet TO_BOOL('0') => False.
@@ -63,12 +58,9 @@ COLUMN_DEFINITIONS = [
 ]
 
 
-# Acceptable aliases for our columns, list of tuples each containing:
-#     0th: caller-friendly name of the column
-#     1st: official name of column in the sqlite3 database
+# Name of the table to use in the sqlite3 data for storing configuration
 
-COLUMN_ALIASES = [
-]
+SQLITE_TABLE = 'general'
 
 
 def get(name, tokenize=False):  # for linting only, pylint: disable=W0613
@@ -100,7 +92,6 @@ class Config(object):
         '_db',           # path to sqlite3 database
         '_table',        # sqlite3 table where preferences are stored
         '_definitions',  # map of official lookup names to column definitions
-        '_aliases',      # map of alias lookup names to official lookup names
         '_cache',        # in-memory lookup of preferences
     ]
 
@@ -116,10 +107,10 @@ class Config(object):
 
         return cls._RE_NONALPHANUMERIC.sub('', name.lower())
 
-    def __init__(self, db, table, definitions, aliases):
+    def __init__(self, db, table, definitions):
         """
-        Given a database path, table name, list of column definitions,
-        and list of column aliases, loads the configuration state.
+        Given a database path, table name, and list of column
+        definitions, loads the configuration state.
         """
 
         self._db = db
@@ -130,12 +121,6 @@ class Config(object):
             self._normalize(definition[0]): definition
             for definition
             in definitions
-        }
-
-        self._aliases = {
-            self._normalize(alias_name): self._normalize(official_name)
-            for alias_name, official_name
-            in aliases
         }
 
         self._cache = {}
@@ -248,7 +233,7 @@ class Config(object):
     def get(self, name, tokenize=False):
         """
         Retrieve the current value for the given named configuration
-        option. The name will be normalized and may be an alias.
+        option. The name will be normalized.
 
         If the caller asks to tokenize the value, it will be cast to a
         string and broken up into a list of words based on delimiting
@@ -257,14 +242,7 @@ class Config(object):
         Raises KeyError if the argument is not a supported name.
         """
 
-        name = self._normalize(name)
-
-        value = self._cache[
-            # check aliases list to see if the passed name is unofficial
-            self._aliases[name] if name in self._aliases
-            else name
-        ]
-
+        value = self._cache[self._normalize(name)]
         return str(value).split() if tokenize else value
 
     def __getattr__(self, name):
@@ -291,17 +269,9 @@ class Config(object):
             (name, self._definitions[name], value)
             for name, value
             in [
-                (
-                    name_or_alias if name_or_alias not in self._aliases
-                    else self._aliases[name_or_alias],
-                    value,
-                )
-                for name_or_alias, value
-                in [
-                    (self._normalize(unnormalized_name_or_alias), value)
-                    for unnormalized_name_or_alias, value
-                    in updates.items()
-                ]
+                (self._normalize(unnormalized_name), value)
+                for unnormalized_name, value
+                in updates.items()
             ]
             if value != self._cache[name]  # filter out unchanged values
         ]
@@ -347,5 +317,4 @@ modules[__name__] = Config(
     CONFIG_DB,
     SQLITE_TABLE,
     COLUMN_DEFINITIONS,
-    COLUMN_ALIASES,
 )

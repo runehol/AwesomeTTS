@@ -25,7 +25,11 @@ import os, re, subprocess, sys
 from anki.utils import stripHTML
 from urllib import quote_plus
 import awesometts.config as config
-import awesometts.util as util
+from awesometts.paths import media_filename
+from awesometts.util import (
+    STARTUP_INFO,
+    hex_string,
+)
 from subprocess import Popen, PIPE, STDOUT
 
 
@@ -36,7 +40,7 @@ if subprocess.mswindows:
 	sapi5_path = os.path.join(os.path.dirname(__file__),"sapi5.vbs")
 	
 
-	exec_command = subprocess.Popen([vbs_launcher, sapi5_path, '-vl'], startupinfo=util.si, stdout=subprocess.PIPE)
+	exec_command = subprocess.Popen([vbs_launcher, sapi5_path, '-vl'], startupinfo=STARTUP_INFO, stdout=subprocess.PIPE)
 	voicelist = exec_command.stdout.read().split('\n')
 	exec_command.wait()
 
@@ -50,11 +54,11 @@ if subprocess.mswindows:
 		
 	def playsapi5TTS(text, voice):
 		text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")))
-		param = [vbs_launcher, sapi5_path,'-hex', '-voice', util.dumpUnicodeStr(voice), util.dumpUnicodeStr(text)]
+		param = [vbs_launcher, sapi5_path,'-hex', '-voice', hex_string(voice), hex_string(text)]
 		if config.get('subprocessing'):
-			subprocess.Popen(param, startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+			subprocess.Popen(param, startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
 		else:
-			subprocess.Popen(param, startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
+			subprocess.Popen(param, startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
 
 	def playfromtagsapi5TTS(fromtag):
 		for item in fromtag:
@@ -69,14 +73,15 @@ if subprocess.mswindows:
 
 	def recordsapi5TTS(text, voice):
 		text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")))
-		filename_wav = util.generateFileName(text.encode('utf-8'), 'sapi5', 'iso-8859-1', '.wav').decode('utf-8').encode(sys.getfilesystemencoding())
-		filename_mp3 = util.generateFileName(text.encode('utf-8'), 'sapi5', 'iso-8859-1', '.mp3').decode('utf-8').encode(sys.getfilesystemencoding())
-		subprocess.Popen([vbs_launcher, sapi5_path, '-hex', '-o', filename_wav, '-voice', util.dumpUnicodeStr(voice), util.dumpUnicodeStr(text)], startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
+		filename_wav = media_filename(text, 'sapi5', voice, 'wav')
+		filename_mp3 = media_filename(text, 'sapi5', voice, 'mp3')
+		subprocess.Popen([vbs_launcher, sapi5_path, '-hex', '-o',
+		filename_wav, '-voice', hex_string(voice), hex_string(text)], startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
 		subprocess.Popen(
 			['lame.exe'] +
 			config.get('lame_flags', tokenize=True) +
 			[filename_wav, filename_mp3],
-			startupinfo=util.si,
+			startupinfo=STARTUP_INFO,
 			stdin=PIPE,
 			stdout=PIPE,
 			stderr=STDOUT,

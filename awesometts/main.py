@@ -63,10 +63,6 @@ for i in range(len(modulesfiles)):
 			else:
 				del modules[name[0]]
 
-file_max_length = 255 # Max filename length for Unix
-
-
-
 
 
 ######## utils

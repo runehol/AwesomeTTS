@@ -24,6 +24,8 @@ Processes and operating system details
 """
 
 # TODO The filename-related stuff should probably move to the paths module
+# TODO Presumably the same fs encoding fixes from the paths module need to
+#      be applied to the logic of media_filename
 # TODO The awkwardness of the quoted filenames really shows why a hashed
 #      filename solution is necessary
 # TODO Switch over other modules to the new interfaces.
@@ -34,27 +36,23 @@ __all__ = [
     'STARTUP_INFO',    # Windows only
 ]
 
+from hashlib import md5
 import os
 from re import compile as re
 import subprocess
 from sys import argv
-from urllib import quote_plus
-import awesometts.config as config
 
 
-# Max filename length for Unix; set below for Windows
-FILE_MAX_LENGTH = 255
+# Filter pattern to remove non-alphanumeric and non-dash characters
+RE_NONDASHEDALPHANUMERIC = re(r'[^-a-z0-9]')
 
-# Filter pattern to remove dangerous characters from filenames: \/:*?"<>|[]
-RE_UNSAFE_CHARACTERS = re(r'[\\\/\:\*\?"<>|\[\]\.]*')
+# Filter pattern to collapse whitespace
+RE_WHITESPACE = re(r'\s+')
 
 # Startup information for Windows only; None on other platforms
 STARTUP_INFO = None
 
 if subprocess.mswindows:
-    # guess filename max length for Windows (where path + filename <= 255)
-    FILE_MAX_LENGTH = 100
-
     # enable mplayer binary to be called in the path
     os.environ['PATH'] += ";" + os.path.dirname(os.path.abspath(argv[0]))
 
@@ -66,38 +64,41 @@ if subprocess.mswindows:
         STARTUP_INFO.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
 
 
-def media_filename(
-    text, service, voice=None,
-    win_encode='iso-8859-1', extension='.mp3',
-):
+def media_filename(text, service, voice=None, extension='mp3'):
     """
-    Given the user's preferences about filenames, return a usable media
-    filename given the passed text, service, and voice. Attempts to
-    correct for encoding.
+    Return a usable media filename given the passed text, service,
+    voice, and extension.
     """
 
-    name = "%s by %s %s" % (
-        RE_UNSAFE_CHARACTERS.sub('', text),
-        service,
-        voice or 'voice',
+    def normalize_identifier(source):
+        """
+        Return a lowercase version of the string with only alphanumeric
+        characters and intermediate dashes.
+        """
+
+        return RE_NONDASHEDALPHANUMERIC.sub('', source.lower()).strip('-')
+
+    def hash_phrase(source):
+        """
+        Return an MD5-hashed version of a string normalized to lowercase
+        with any whitespace collapsed and stripped off.
+        """
+
+        return md5(RE_WHITESPACE.sub(' ', source).strip()).hexdigest().lower()
+
+    return (
+        "%s-%s-%s.%s" % (
+            normalize_identifier(service),
+            normalize_identifier(voice),
+            hash_phrase(text),
+            normalize_identifier(extension),
+        ) if voice
+        else "%s-%s.%s" % (
+            normalize_identifier(service),
+            hash_phrase(text),
+            normalize_identifier(extension),
+        )
     )
-
-    if config.get('quote_mp3'):
-        name = quote_plus(name).replace('%', '') + extension
-
-        if len(name) > FILE_MAX_LENGTH:
-            name = name[0:FILE_MAX_LENGTH - len(extension)] + extension
-
-    else:
-        name = name + extension
-
-        if len(name) > FILE_MAX_LENGTH:
-            name = name[0:FILE_MAX_LENGTH - len(extension)] + extension
-
-        if subprocess.mswindows:
-            name = name.decode('utf-8').encode(win_encode)
-
-    return name
 
 
 def hex_string(src):
@@ -108,18 +109,17 @@ def hex_string(src):
     return ''.join(['%04X' % ord(x) for x in src])
 
 
-# backward-compatibility section follows, pylint: disable=C0103
+# backward-compatibility section follows, pylint: disable=C0103,W0613
 
-def generateFileName(text, service, winencode='iso-8859-1', extention=".mp3"):
+def generateFileName(text, service, winencode='iso-8859-1', extention='.mp3'):
     """
-    Old function name and call signature media_filename().
+    Old function name and call signature replaced by media_filename().
     """
 
     return media_filename(
         text,
         service,
-        win_encode=winencode,
-        extension=extention,
+        extension=extention.strip('.'),
     )
 
 dumpUnicodeStr = hex_string

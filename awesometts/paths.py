@@ -29,9 +29,6 @@ can also be used in other modules for easily formulating full paths to
 individual files.
 """
 
-# TODO Presumably the same fs encoding fixes from the paths module need to
-#      be applied to the logic of media_filename
-
 __all__ = [
     'media_filename',
     'relative',
@@ -88,9 +85,10 @@ CONFIG_DB = relative(_CODE_DIR, 'conf.db')
 
 def media_filename(text, service, voice=None, extension='mp3'):
     """
-    Return a usable media filename given the passed text, service,
-    voice, and extension. If the voice is omitted, it will also be
-    omitted from the resulting filename.
+    Return a portable media filename using the operating system's file
+    system encoding given the passed text, service, optional voice, and
+    extension. If voice is omitted, it will also be omitted from the
+    resulting filename. If extension is omitted, it will default to MP3.
     """
 
     text = re.WHITESPACE.sub(' ', text).strip()
@@ -100,7 +98,9 @@ def media_filename(text, service, voice=None, extension='mp3'):
 
     if voice:
         voice = re.NOT_ALPHANUMERIC_DASH.sub('', voice.lower()).strip('-')
-        return "%s-%s-%s.%s" % (service, voice, md5text, extension)
+        filename = "%s-%s-%s.%s" % (service, voice, md5text, extension)
 
     else:
-        return "%s-%s.%s" % (service, md5text, extension)
+        filename = "%s-%s.%s" % (service, md5text, extension)
+
+    return filename.decode(_ENCODING)

@@ -26,8 +26,7 @@ Processes and operating system details
 # TODO The filename-related stuff should probably move to the paths module
 # TODO Presumably the same fs encoding fixes from the paths module need to
 #      be applied to the logic of media_filename
-# TODO The awkwardness of the quoted filenames really shows why a hashed
-#      filename solution is necessary
+# TODO The regex stuff should probably move to a new patterns module
 # TODO Switch over other modules to the new interfaces.
 
 __all__ = [
@@ -43,8 +42,14 @@ import subprocess
 from sys import argv
 
 
+# Filter pattern to remove non-alphanumeric characters
+RE_NONALPHANUMERIC = re(r'[^a-z0-9]')
+
 # Filter pattern to remove non-alphanumeric and non-dash characters
 RE_NONDASHEDALPHANUMERIC = re(r'[^-a-z0-9]')
+
+# Filter pattern to remove non-alphanumeric and non-period characters
+RE_NONDOTTEDALPHANUMERIC = re(r'[^\.a-z0-9]')
 
 # Filter pattern to collapse whitespace
 RE_WHITESPACE = re(r'\s+')
@@ -67,38 +72,21 @@ if subprocess.mswindows:
 def media_filename(text, service, voice=None, extension='mp3'):
     """
     Return a usable media filename given the passed text, service,
-    voice, and extension.
+    voice, and extension. If the voice is omitted, it will also be
+    omitted from the resulting filename.
     """
 
-    def normalize_identifier(source):
-        """
-        Return a lowercase version of the string with only alphanumeric
-        characters and intermediate dashes.
-        """
+    text = RE_WHITESPACE.sub(' ', text).strip()
+    md5text = md5(text).hexdigest().lower()
+    service = RE_NONALPHANUMERIC.sub('', service.lower())
+    extension = RE_NONDOTTEDALPHANUMERIC.sub('', extension.lower()).strip('.')
 
-        return RE_NONDASHEDALPHANUMERIC.sub('', source.lower()).strip('-')
+    if voice:
+        voice = RE_NONDASHEDALPHANUMERIC.sub('', voice.lower()).strip('-')
+        return "%s-%s-%s.%s" % (service, voice, md5text, extension)
 
-    def hash_phrase(source):
-        """
-        Return an MD5-hashed version of a string normalized to lowercase
-        with any whitespace collapsed and stripped off.
-        """
-
-        return md5(RE_WHITESPACE.sub(' ', source).strip()).hexdigest().lower()
-
-    return (
-        "%s-%s-%s.%s" % (
-            normalize_identifier(service),
-            normalize_identifier(voice),
-            hash_phrase(text),
-            normalize_identifier(extension),
-        ) if voice
-        else "%s-%s.%s" % (
-            normalize_identifier(service),
-            hash_phrase(text),
-            normalize_identifier(extension),
-        )
-    )
+    else:
+        return "%s-%s.%s" % (service, md5text, extension)
 
 
 def hex_string(src):
@@ -119,7 +107,7 @@ def generateFileName(text, service, winencode='iso-8859-1', extention='.mp3'):
     return media_filename(
         text,
         service,
-        extension=extention.strip('.'),
+        extension=extention,
     )
 
 dumpUnicodeStr = hex_string

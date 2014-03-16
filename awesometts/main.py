@@ -441,6 +441,8 @@ def editConf():
 	
 	form.rfilename_plain.setChecked(not config.get('quote_mp3'))
 	form.rfilename_quoted.setChecked(config.get('quote_mp3'))
+
+	form.lame_flags_edit.setText(config.get('lame_flags'))
 	
 	QtCore.QObject.connect(form.pushKeyQ, QtCore.SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyQ))
 	QtCore.QObject.connect(form.pushKeyA, QtCore.SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyA))
@@ -519,6 +521,7 @@ def editConf():
 		subprocessing=form.cSubprocessing.isChecked(),
 		caching=form.cCaching.isChecked(),
 		quote_mp3=form.rfilename_quoted.isChecked(),
+		lame_flags=form.lame_flags_edit.text(),
 	)
 
 

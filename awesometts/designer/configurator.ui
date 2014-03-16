@@ -311,6 +311,45 @@ If you are having problems, stick with the MP3 Generator.</string>
             <string>Options of how AwesomeTTS will generate MP3 files.</string>
            </property>
           </widget>
+          <widget class="QGroupBox">
+           <property name="geometry">
+            <rect>
+             <x>9</x>
+             <y>140</y>
+             <width>631</width>
+             <height>80</height>
+            </rect>
+           </property>
+           <property name="title">
+            <string>LAME Transcoder (used by eSpeak, SAPI, and Mac OS X Say)</string>
+           </property>
+           <widget class="QLabel">
+            <property name="geometry">
+             <rect>
+              <x>17</x>
+              <y>25</y>
+              <width>605</width>
+              <height>15</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Specify the flags to the passed to the lame tool when generating MP3s. Edit with caution.</string>
+            </property>
+           </widget>
+           <widget class="QLineEdit" name="lame_flags_edit">
+            <property name="geometry">
+             <rect>
+              <x>17</x>
+              <y>46</y>
+              <width>590</width>
+              <height>25</height>
+             </rect>
+            </property>
+            <property name="placeholderText">
+             <string>e.g. &quot;-q 5&quot; for medium quality, &quot;-m m&quot; for mono</string>
+            </property>
+           </widget>
+          </widget>
          </widget>
         </widget>
        </item>

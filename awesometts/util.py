@@ -41,7 +41,7 @@ if subprocess.mswindows:
     STARTUP_INFO = subprocess.STARTUPINFO()
     try:
         STARTUP_INFO.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-    except AttributeError:  # Python 2.7+
+    except AttributeError:  # workaround for some Python implementations
         STARTUP_INFO.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
 
 

@@ -73,30 +73,12 @@ COLUMN_ALIASES = [
 ]
 
 
-def get(name, tokenize=False):  # for linting only, pylint: disable=W0613
-    """
-    Replaced by get() method from the Config class instance.
-    """
-
-    return
-
-
-def put(**updates):  # for linting only, pylint: disable=W0613
-    """
-    Replaced by put() method from the Config class instance.
-    """
-
-    pass
-
-
 class Config(object):
     """
     Exposes a get() and put() method for handling retrieving, caching,
     and serializing configuration information stored in a given sqlite3
     database table.
     """
-
-    __name__ = __name__  # enables help() on instance-as-a-module methods
 
     __slots__ = [
         '_db',           # path to sqlite3 database
@@ -269,16 +251,6 @@ class Config(object):
 
         return str(value).split() if tokenize else value
 
-    def __getattr__(self, name):
-        """
-        Alternative to the get() method for backward compatibility.
-        """
-
-        try:
-            return self.get(name)
-        except KeyError:
-            raise AttributeError
-
     def put(self, **updates):
         """
         Updates the value(s) of the given configuration option(s) passed
@@ -343,11 +315,14 @@ class Config(object):
         connection.close()
 
 
-from sys import modules
+# Expose singleton from module w/ get/put methods, pylint: disable=C0103
 
-modules[__name__] = Config(
+_config = Config(
     CONFIG_DB,
     SQLITE_TABLE,
     COLUMN_DEFINITIONS,
     COLUMN_ALIASES,
 )
+
+get = _config.get
+put = _config.put

@@ -38,26 +38,46 @@ __all__ = [
 
 from hashlib import md5
 from os.path import (
+    abspath,
     dirname,
     join,
     normpath,
-    realpath,
 )
-from sys import getfilesystemencoding
+from subprocess import mswindows
+from sys import (
+    argv,
+    getfilesystemencoding,
+)
 from . import regex as re
 
+
+# Set the encoding type we should use for all path and filename strings.
 
 _ENCODING = getfilesystemencoding()
 
 
-# When determining the code directory, realpath() is needed since the
-# __file__ constant is not a full path by itself. However, this is done
-# using realpath(dirname(...)) rather than dirname(realpath(...)) to
-# correctly handle the edge case of there being a paths.py symlink in
-# the code directory pointing to the physical source file living
-# somewhere else on the file system.
+# Determine the Anki binary's directory. On Linux and Mac OS X, this is
+# not particularly interesting, but on Windows, this directory will also
+# contain the mplayer.exe binary.
+#
+# Note that the decode() call is deferred until after the PATH setup for
+# Windows. This is done so as to not convert the PATH value from a
+# regular string to a unicode one.
 
-_CODE_DIR = realpath(dirname(__file__)).decode(_ENCODING)
+_ANKI_DIR = dirname(abspath(argv[0]))
+
+if mswindows or True:
+    # Enable mplayer.exe binary to be called from the environment PATH.
+    from os import environ
+    environ['PATH'] += ';' + _ANKI_DIR
+
+_ANKI_DIR = _ANKI_DIR.decode(_ENCODING)
+
+
+# When determining the code directory, abspath() is needed since the
+# __file__ constant is not a full path by itself.
+
+_CODE_DIR = dirname(abspath(__file__)).decode(_ENCODING)
 
 
 def relative(start_dir, to_path, *addl_paths):

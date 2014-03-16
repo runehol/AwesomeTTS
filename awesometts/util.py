@@ -23,7 +23,6 @@
 Processes and operating system details
 """
 
-# TODO The Windows path stuff should probably move to the paths module
 # TODO Switch over other modules to the new interfaces.
 
 __all__ = [
@@ -31,18 +30,13 @@ __all__ = [
     'STARTUP_INFO',    # Windows only
 ]
 
-import os
 import subprocess
-from sys import argv
 
 
 # Startup information for Windows only; None on other platforms
 STARTUP_INFO = None
 
 if subprocess.mswindows:
-    # enable mplayer binary to be called in the path
-    os.environ['PATH'] += ";" + os.path.dirname(os.path.abspath(argv[0]))
-
     # initialize startup information object
     STARTUP_INFO = subprocess.STARTUPINFO()
     try:

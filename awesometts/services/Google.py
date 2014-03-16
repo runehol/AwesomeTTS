@@ -271,10 +271,7 @@ def filegenerator_layout(form):
 	textEditlabel = QtGui.QLabel()
 	textEditlabel.setText("Language:")
 
-	font = QtGui.QFont()
-       	font.setFamily("Monospace")
 	form.comboBoxGoogle = QtGui.QComboBox()
-	form.comboBoxGoogle.setFont(font)
 	form.comboBoxGoogle.addItems([d[0] +' - '+ d[1] for d in slanguages])
 	form.comboBoxGoogle.setCurrentIndex(DefaultGoogleVoice) # get Default
 

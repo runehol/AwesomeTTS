@@ -259,8 +259,6 @@ def TTS_record_old(text, language):
 	file = util.generateFileName(text, 'g', slanguages[get_language_id(language)][2])
 	if subprocess.mswindows:
 		subprocess.Popen(['mplayer.exe', '-ao', 'win32', '-slave', '-user-agent', "'Mozilla/5.0'", address, '-dumpstream', '-dumpfile', file], startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
-		if not config.get('quote_mp3'):
-			return file.decode(slanguages[get_language_id(language)][2])
 	else:
 		subprocess.Popen(['mplayer', '-slave', '-user-agent', "'Mozilla/5.0'", address, '-dumpstream', '-dumpfile', file], stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
 	return file.decode('utf-8')

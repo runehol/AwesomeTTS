@@ -56,7 +56,6 @@ COLUMN_DEFINITIONS = [
     ('automaticAnswers', 'integer', False, TO_BOOL, int),
     ('automaticQuestions', 'integer', False, TO_BOOL, int),
     ('caching', 'integer', True, TO_BOOL, int),
-    ('file_howto_name', 'integer', True, TO_BOOL, int),
     ('lame_flags', 'text', '--quiet -q 2', str, str),
     ('subprocessing', 'integer', True, TO_BOOL, int),
     ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
@@ -69,7 +68,6 @@ COLUMN_DEFINITIONS = [
 #     1st: official name of column in the sqlite3 database
 
 COLUMN_ALIASES = [
-    ('quote_mp3', 'file_howto_name'),
 ]
 
 

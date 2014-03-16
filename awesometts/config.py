@@ -29,8 +29,8 @@ Storage and management of add-on configuration
 __all__ = ['get', 'put']
 
 from PyQt4.QtCore import Qt
-from . import regex as re
 from .paths import CONFIG_DB
+from .regex import NOT_ALPHANUMERIC
 
 
 # Carefully converts sqlite3 value to boolean; this is to handle the
@@ -73,31 +73,28 @@ class Config(object):
     __slots__ = [
         '_db',           # path to sqlite3 database
         '_table',        # sqlite3 table where preferences are stored
+        '_sanitize',     # regex object for sanitizing names
         '_definitions',  # map of official lookup names to column definitions
         '_cache',        # in-memory lookup of preferences
     ]
 
-    _re = re  # reference to our regex module
-
-    @classmethod
-    def _normalize(cls, name):
+    def _normalize(self, name):
         """
-        Returns a lowercase version of the name with only alphanumeric
-        characters.
+        Returns a lowercase version of the name with only characters
+        permitted by the sanitization regex object.
         """
 
-        return cls._re.NOT_ALPHANUMERIC.sub('', name.lower())
+        return self._sanitize.sub('', name.lower())
 
-    def __init__(self, db, table, definitions):
+    def __init__(self, db, table, sanitize, definitions):
         """
         Given a database path, table name, and list of column
         definitions, loads the configuration state.
         """
 
         self._db = db
-
         self._table = table
-
+        self._sanitize = sanitize
         self._definitions = {
             self._normalize(definition[0]): definition
             for definition
@@ -287,6 +284,7 @@ class Config(object):
 _config = Config(
     CONFIG_DB,
     SQLITE_TABLE,
+    NOT_ALPHANUMERIC,
     COLUMN_DEFINITIONS,
 )
 

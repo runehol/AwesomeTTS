@@ -23,22 +23,17 @@
 Processes and operating system details
 """
 
-# TODO The filename-related stuff should probably move to the paths module
-# TODO Presumably the same fs encoding fixes from the paths module need to
-#      be applied to the logic of media_filename
+# TODO The Windows path stuff should probably move to the paths module
 # TODO Switch over other modules to the new interfaces.
 
 __all__ = [
-    'media_filename',
     'hex_string',
     'STARTUP_INFO',    # Windows only
 ]
 
-from hashlib import md5
 import os
 import subprocess
 from sys import argv
-from . import regex as re
 
 
 # Startup information for Windows only; None on other platforms
@@ -56,26 +51,6 @@ if subprocess.mswindows:
         STARTUP_INFO.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
 
 
-def media_filename(text, service, voice=None, extension='mp3'):
-    """
-    Return a usable media filename given the passed text, service,
-    voice, and extension. If the voice is omitted, it will also be
-    omitted from the resulting filename.
-    """
-
-    text = re.WHITESPACE.sub(' ', text).strip()
-    md5text = md5(text).hexdigest().lower()
-    service = re.NOT_ALPHANUMERIC.sub('', service.lower())
-    extension = re.NOT_ALPHANUMERIC_DOT.sub('', extension.lower()).strip('.')
-
-    if voice:
-        voice = re.NOT_ALPHANUMERIC_DASH.sub('', voice.lower()).strip('-')
-        return "%s-%s-%s.%s" % (service, voice, md5text, extension)
-
-    else:
-        return "%s-%s.%s" % (service, md5text, extension)
-
-
 def hex_string(src):
     """
     Returns a hexadecimal string representation of what is passed.
@@ -88,9 +63,11 @@ def hex_string(src):
 
 def generateFileName(text, service, winencode='iso-8859-1', extention='.mp3'):
     """
-    Old function name and call signature replaced by media_filename().
+    Old function name and call signature, replaced by media_filename()
+    in the paths module.
     """
 
+    from .paths import media_filename
     return media_filename(
         text,
         service,

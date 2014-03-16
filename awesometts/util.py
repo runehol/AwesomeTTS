@@ -26,7 +26,6 @@ Processes and operating system details
 # TODO The filename-related stuff should probably move to the paths module
 # TODO Presumably the same fs encoding fixes from the paths module need to
 #      be applied to the logic of media_filename
-# TODO The regex stuff should probably move to a new patterns module
 # TODO Switch over other modules to the new interfaces.
 
 __all__ = [
@@ -37,22 +36,10 @@ __all__ = [
 
 from hashlib import md5
 import os
-from re import compile as re
 import subprocess
 from sys import argv
+from . import regex as re
 
-
-# Filter pattern to remove non-alphanumeric characters
-RE_NONALPHANUMERIC = re(r'[^a-z0-9]')
-
-# Filter pattern to remove non-alphanumeric and non-dash characters
-RE_NONDASHEDALPHANUMERIC = re(r'[^-a-z0-9]')
-
-# Filter pattern to remove non-alphanumeric and non-period characters
-RE_NONDOTTEDALPHANUMERIC = re(r'[^\.a-z0-9]')
-
-# Filter pattern to collapse whitespace
-RE_WHITESPACE = re(r'\s+')
 
 # Startup information for Windows only; None on other platforms
 STARTUP_INFO = None
@@ -76,13 +63,13 @@ def media_filename(text, service, voice=None, extension='mp3'):
     omitted from the resulting filename.
     """
 
-    text = RE_WHITESPACE.sub(' ', text).strip()
+    text = re.WHITESPACE.sub(' ', text).strip()
     md5text = md5(text).hexdigest().lower()
-    service = RE_NONALPHANUMERIC.sub('', service.lower())
-    extension = RE_NONDOTTEDALPHANUMERIC.sub('', extension.lower()).strip('.')
+    service = re.NOT_ALPHANUMERIC.sub('', service.lower())
+    extension = re.NOT_ALPHANUMERIC_DOT.sub('', extension.lower()).strip('.')
 
     if voice:
-        voice = RE_NONDASHEDALPHANUMERIC.sub('', voice.lower()).strip('-')
+        voice = re.NOT_ALPHANUMERIC_DASH.sub('', voice.lower()).strip('-')
         return "%s-%s-%s.%s" % (service, voice, md5text, extension)
 
     else:

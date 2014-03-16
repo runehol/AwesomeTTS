@@ -28,8 +28,8 @@ Storage and management of add-on configuration
 
 __all__ = ['get', 'put']
 
-from re import compile as re
 from PyQt4.QtCore import Qt
+from . import regex as re
 from .paths import CONFIG_DB
 
 
@@ -95,8 +95,7 @@ class Config(object):
         '_cache',        # in-memory lookup of preferences
     ]
 
-    # Matches non-alphanumeric characters for normalizing column names
-    _RE_NONALPHANUMERIC = re(r'[^a-z0-9]')
+    _re = re  # reference to our regex module
 
     @classmethod
     def _normalize(cls, name):
@@ -105,7 +104,7 @@ class Config(object):
         characters.
         """
 
-        return cls._RE_NONALPHANUMERIC.sub('', name.lower())
+        return cls._re.NOT_ALPHANUMERIC.sub('', name.lower())
 
     def __init__(self, db, table, definitions):
         """

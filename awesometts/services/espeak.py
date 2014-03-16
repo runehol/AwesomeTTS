@@ -21,6 +21,7 @@
 
 
 from PyQt4 import QtGui,QtCore
+import awesometts.config as config
 
 #Supported Languages       
 # code , Language
@@ -108,7 +109,13 @@ def recordEspeakTTS(text, language):
 	text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
 	filename = util.generateFileName(text, 'espeak', 'iso-8859-1', '.mp3')
 	espeak_exec = subprocess.Popen(['espeak', '-v', language, text, '--stdout'], stdin=PIPE, stdout=PIPE, stderr=STDOUT)
-	lame_exec = Popen(["lame", "-", filename], stdin=espeak_exec.stdout, stdout = PIPE)
+	lame_exec = Popen(
+		['lame'] +
+		config.get('lame_flags', tokenize=True) +
+		['-', filename],
+		stdin=espeak_exec.stdout,
+		stdout=PIPE,
+	)
 	espeak_exec.stdout.close()
 	result = lame_exec.communicate()[0]
 	espeak_exec.wait()

@@ -193,21 +193,8 @@ def playGoogleTTS(text, language):
 		if not os.path.isdir(CACHE_DIR):
 			os.mkdir(CACHE_DIR)
 
-		cacheToken = '-'.join([
-			language,
-			hashlib.sha256(text).hexdigest()
-		])
-
-		cachePathname = relative(
-			CACHE_DIR,
-			'.'.join([
-				'-'.join([
-					'g',  # g is our TTS service key
-					cacheToken
-				]),
-				'mp3'
-			])
-		)
+		cacheFilename = media_filename(text, 'g', language, 'mp3')
+		cachePathname = relative(CACHE_DIR, cacheFilename)
 
 		if os.path.isfile(cachePathname):
 			playGoogleTTS_mplayer(cachePathname)
@@ -215,7 +202,7 @@ def playGoogleTTS(text, language):
 		else:
 			PlayGoogleTTSDownloader.fetch(
 				address,
-				cacheToken,
+				cacheFilename,
 				cachePathname
 			)
 

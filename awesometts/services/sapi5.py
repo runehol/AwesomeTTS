@@ -72,7 +72,15 @@ if subprocess.mswindows:
 		filename_wav = util.generateFileName(text.encode('utf-8'), 'sapi5', 'iso-8859-1', '.wav').decode('utf-8').encode(sys.getfilesystemencoding())
 		filename_mp3 = util.generateFileName(text.encode('utf-8'), 'sapi5', 'iso-8859-1', '.mp3').decode('utf-8').encode(sys.getfilesystemencoding())
 		subprocess.Popen([vbs_launcher, sapi5_path, '-hex', '-o', filename_wav, '-voice', util.dumpUnicodeStr(voice), util.dumpUnicodeStr(text)], startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
-		subprocess.Popen(['lame.exe', '--quiet', filename_wav, filename_mp3], startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
+		subprocess.Popen(
+			['lame.exe'] +
+			config.get('lame_flags', tokenize=True) +
+			[filename_wav, filename_mp3],
+			startupinfo=util.si,
+			stdin=PIPE,
+			stdout=PIPE,
+			stderr=STDOUT,
+		).wait()
 		os.unlink(filename_wav)
 		return filename_mp3.decode(sys.getfilesystemencoding())
 

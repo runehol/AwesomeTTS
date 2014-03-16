@@ -57,6 +57,7 @@ COLUMN_DEFINITIONS = [
     ('automaticQuestions', 'integer', False, TO_BOOL, int),
     ('caching', 'integer', True, TO_BOOL, int),
     ('file_howto_name', 'integer', True, TO_BOOL, int),
+    ('lame_flags', 'text', '--quiet -q 2', str, str),
     ('subprocessing', 'integer', True, TO_BOOL, int),
     ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
     ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),
@@ -72,7 +73,7 @@ COLUMN_ALIASES = [
 ]
 
 
-def get(dummy):
+def get(name, tokenize=False):  # for linting only, pylint: disable=W0613
     """
     Replaced by get() method from the Config class instance.
     """
@@ -80,7 +81,7 @@ def get(dummy):
     return
 
 
-def put(**dummy):
+def put(**updates):  # for linting only, pylint: disable=W0613
     """
     Replaced by put() method from the Config class instance.
     """
@@ -246,20 +247,27 @@ class Config(object):
         cursor.close()
         connection.close()
 
-    def get(self, name):
+    def get(self, name, tokenize=False):
         """
         Retrieve the current value for the given named configuration
         option. The name will be normalized and may be an alias.
+
+        If the caller asks to tokenize the value, it will be cast to a
+        string and broken up into a list of words based on delimiting
+        whitespace.
 
         Raises KeyError if the argument is not a supported name.
         """
 
         name = self._normalize(name)
-        return self._cache[
+
+        value = self._cache[
             # check aliases list to see if the passed name is unofficial
             self._aliases[name] if name in self._aliases
             else name
         ]
+
+        return str(value).split() if tokenize else value
 
     def __getattr__(self, name):
         """

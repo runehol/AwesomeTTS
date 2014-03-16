@@ -19,40 +19,55 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Processes and operating system details
+"""
 
-import os, sys, re, subprocess
-from anki.utils import stripHTML
-from urllib import quote_plus
-import awesometts.config as config
+# TODO Switch over other modules to the new interfaces.
 
-file_max_length = 255 # Max filename length for Unix
+__all__ = [
+    'hex_string',
+    'STARTUP_INFO',    # Windows only
+]
 
-def generateFileName(text, service, winencode='iso-8859-1', extention=".mp3"):
-	if config.get('quote_mp3'): #re.sub removes \/:*?"<>|[]. from the file name
-		file = quote_plus(re.sub('[\\\/\:\*\?"<>|\[\]\.]*', "",text)).replace("%", "")+extention
-		if len(file) > file_max_length:
-			file = file[0:file_max_length-len(extention)] + extention
-	else:
-		file = re.sub('[\\\/\:\*\?"<>|\[\]\.]*', "",text)+ extention
-		if len(file) > file_max_length:
-			file = file[0:file_max_length-len(extention)] + extention
-		if subprocess.mswindows:
-			file = file.decode('utf-8').encode(slanguages[get_language_id(language)][2])
-	return file
+import subprocess
 
-# mplayer for MS Windows
+
+# Startup information for Windows only; None on other platforms
+STARTUP_INFO = None
+
 if subprocess.mswindows:
-	file_max_length = 100 #guess of a filename max length for Windows (filename +path = 255)
-	dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-	os.environ['PATH'] += ";" + dir
-	si = subprocess.STARTUPINFO()
-	try:
-		si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-	except:
-		# python2.7+
-		si.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
-else:
-	si = None #for plataforms other than MS Windows
-	
-def dumpUnicodeStr(src):
-	return ''.join(["%04X" % ord(x) for x in src])
+    # initialize startup information object
+    STARTUP_INFO = subprocess.STARTUPINFO()
+    try:
+        STARTUP_INFO.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    except AttributeError:  # workaround for some Python implementations
+        STARTUP_INFO.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
+
+
+def hex_string(src):
+    """
+    Returns a hexadecimal string representation of what is passed.
+    """
+
+    return ''.join(['%04X' % ord(x) for x in src])
+
+
+# backward-compatibility section follows, pylint: disable=C0103,W0613
+
+def generateFileName(text, service, winencode='iso-8859-1', extention='.mp3'):
+    """
+    Old function name and call signature, replaced by media_filename()
+    in the paths module.
+    """
+
+    from .paths import media_filename
+    return media_filename(
+        text,
+        service,
+        extension=extention,
+    )
+
+dumpUnicodeStr = hex_string
+
+si = STARTUP_INFO

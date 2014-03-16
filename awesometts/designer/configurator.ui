@@ -256,66 +256,27 @@ If you are having problems, stick with the MP3 Generator.</string>
           <attribute name="title">
            <string>MP3 Generator</string>
           </attribute>
-          <widget class="QGroupBox" name="groupBox_4">
-           <property name="geometry">
-            <rect>
-             <x>9</x>
-             <y>40</y>
-             <width>631</width>
-             <height>91</height>
-            </rect>
-           </property>
-           <property name="title">
-            <string>Filename</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_3">
-            <item>
-             <widget class="QLabel" name="label_5">
-              <property name="text">
-               <string>How should AwesomeTTS name the files it generate?</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QRadioButton" name="rfilename_plain">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Unix users can choose this option without problem.&lt;br/&gt;It will work alright sync with AnkiMobile, but it won't work with AnkiWeb&lt;br/&gt;&lt;br/&gt;Examples:&lt;br/&gt;sp&amp;#233;cial.mp3&lt;br/&gt;&amp;#12399;&amp;#12356;.mp3&lt;br/&gt;&amp;#20320;&amp;#22909;.mp3&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Use the input text without quotation for special characters (it doesn't work well on Windows)</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QRadioButton" name="rfilename_quoted">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Examples:&lt;br/&gt;spC3A9cial.mp3&lt;br/&gt;E381AFE38184.mp3&lt;br/&gt;E4BDA0E5A5BD.mp3&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Use the input text with quotation for special characters</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
           <widget class="QLabel" name="label_6">
            <property name="geometry">
             <rect>
              <x>10</x>
              <y>10</y>
-             <width>481</width>
-             <height>16</height>
+             <width>621</width>
+             <height>91</height>
             </rect>
            </property>
            <property name="text">
-            <string>Options of how AwesomeTTS will generate MP3 files.</string>
+            <string>Options of how AwesomeTTS will generate MP3 files. Note that as of Beta 11, AwesomeTTS does not generate filenames using the input phrases directly. Instead, filenames are based on a combination of the selected service, voice, and hash of the input phrase. This change should ensure unique and portable filenames across different devices, services, and voices.</string>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
            </property>
           </widget>
           <widget class="QGroupBox">
            <property name="geometry">
             <rect>
              <x>9</x>
-             <y>140</y>
+             <y>100</y>
              <width>631</width>
              <height>80</height>
             </rect>

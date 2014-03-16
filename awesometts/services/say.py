@@ -31,7 +31,7 @@ from subprocess import check_output, Popen, PIPE, STDOUT
 from PyQt4 import QtGui
 from anki.utils import isMac, stripHTML
 import awesometts.config as config
-from awesometts.util import generateFileName
+from awesometts.paths import media_filename
 
 
 VOICES = None
@@ -114,8 +114,8 @@ if VOICES:
         )
         voice = VOICES[form.comboBoxSay.currentIndex()][0]
 
-        filename_aiff = generateFileName(text, SERVICE, 'iso-8859-1', '.aiff')
-        filename_mp3 = generateFileName(text, SERVICE, 'iso-8859-1', '.mp3')
+        filename_aiff = media_filename(text, SERVICE, voice, 'aiff')
+        filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')
 
         Popen(
             ['say', '-v', voice, '-o', filename_aiff, text],

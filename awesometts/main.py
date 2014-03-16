@@ -434,9 +434,6 @@ def editConf():
 	form.cAutoA.setChecked(config.get('automatic_answers'))
 	form.cSubprocessing.setChecked(config.get('subprocessing'))
 	form.cCaching.setChecked(config.get('caching'))
-	
-	form.rfilename_plain.setChecked(not config.get('quote_mp3'))
-	form.rfilename_quoted.setChecked(config.get('quote_mp3'))
 
 	form.lame_flags_edit.setText(config.get('lame_flags'))
 	
@@ -516,7 +513,6 @@ def editConf():
 		automatic_answers=form.cAutoA.isChecked(),
 		subprocessing=form.cSubprocessing.isChecked(),
 		caching=form.cCaching.isChecked(),
-		quote_mp3=form.rfilename_quoted.isChecked(),
 		lame_flags=form.lame_flags_edit.text(),
 	)
 

@@ -30,31 +30,54 @@ individual files.
 """
 
 __all__ = [
+    'media_filename',
     'relative',
     'CACHE_DIR',
     'CONFIG_DB',
 ]
 
+from hashlib import md5
 from os.path import (
+    abspath,
     dirname,
     join,
     normpath,
-    realpath,
 )
-from sys import getfilesystemencoding
+from subprocess import mswindows
+from sys import (
+    argv,
+    getfilesystemencoding,
+)
+from . import regex as re
 
+
+# Set the encoding type we should use for all path and filename strings.
 
 _ENCODING = getfilesystemencoding()
 
 
-# When determining the code directory, realpath() is needed since the
-# __file__ constant is not a full path by itself. However, this is done
-# using realpath(dirname(...)) rather than dirname(realpath(...)) to
-# correctly handle the edge case of there being a paths.py symlink in
-# the code directory pointing to the physical source file living
-# somewhere else on the file system.
+# Determine the Anki binary's directory. On Linux and Mac OS X, this is
+# not particularly interesting, but on Windows, this directory will also
+# contain the mplayer.exe binary.
+#
+# Note that the decode() call is deferred until after the PATH setup for
+# Windows. This is done so as to not convert the PATH value from a
+# regular string to a unicode one.
 
-_CODE_DIR = realpath(dirname(__file__)).decode(_ENCODING)
+_ANKI_DIR = dirname(abspath(argv[0]))
+
+if mswindows or True:
+    # Enable mplayer.exe binary to be called from the environment PATH.
+    from os import environ
+    environ['PATH'] += ';' + _ANKI_DIR
+
+_ANKI_DIR = _ANKI_DIR.decode(_ENCODING)
+
+
+# When determining the code directory, abspath() is needed since the
+# __file__ constant is not a full path by itself.
+
+_CODE_DIR = dirname(abspath(__file__)).decode(_ENCODING)
 
 
 def relative(start_dir, to_path, *addl_paths):
@@ -78,3 +101,26 @@ def relative(start_dir, to_path, *addl_paths):
 CACHE_DIR = relative(_CODE_DIR, 'cache')
 
 CONFIG_DB = relative(_CODE_DIR, 'conf.db')
+
+
+def media_filename(text, service, voice=None, extension='mp3'):
+    """
+    Return a portable media filename using the operating system's file
+    system encoding given the passed text, service, optional voice, and
+    extension. If voice is omitted, it will also be omitted from the
+    resulting filename. If extension is omitted, it will default to MP3.
+    """
+
+    text = re.WHITESPACE.sub(' ', text).strip()
+    md5text = md5(text).hexdigest().lower()
+    service = re.NOT_ALPHANUMERIC.sub('', service.lower())
+    extension = re.NOT_ALPHANUMERIC_DOT.sub('', extension.lower()).strip('.')
+
+    if voice:
+        voice = re.NOT_ALPHANUMERIC_DASH.sub('', voice.lower()).strip('-')
+        filename = "%s-%s-%s.%s" % (service, voice, md5text, extension)
+
+    else:
+        filename = "%s-%s.%s" % (service, md5text, extension)
+
+    return filename.decode(_ENCODING)

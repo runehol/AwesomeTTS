@@ -79,8 +79,9 @@ import re, subprocess, urllib
 from anki.utils import stripHTML
 from urllib import quote_plus
 import awesometts.config as config
-import awesometts.util as util
 from subprocess import Popen, PIPE, STDOUT
+from awesometts.paths import media_filename
+from awesometts.util import STARTUP_INFO
 
 
 
@@ -192,21 +193,8 @@ def playGoogleTTS(text, language):
 		if not os.path.isdir(CACHE_DIR):
 			os.mkdir(CACHE_DIR)
 
-		cacheToken = '-'.join([
-			language,
-			hashlib.sha256(text).hexdigest()
-		])
-
-		cachePathname = relative(
-			CACHE_DIR,
-			'.'.join([
-				'-'.join([
-					'g',  # g is our TTS service key
-					cacheToken
-				]),
-				'mp3'
-			])
-		)
+		cacheFilename = media_filename(text, 'g', language, 'mp3')
+		cachePathname = relative(CACHE_DIR, cacheFilename)
 
 		if os.path.isfile(cachePathname):
 			playGoogleTTS_mplayer(cachePathname)
@@ -214,7 +202,7 @@ def playGoogleTTS(text, language):
 		else:
 			PlayGoogleTTSDownloader.fetch(
 				address,
-				cacheToken,
+				cacheFilename,
 				cachePathname
 			)
 
@@ -225,9 +213,9 @@ def playGoogleTTS_mplayer(address):
 	if subprocess.mswindows:
 		param = ['mplayer.exe', '-ao', 'win32', '-slave', '-user-agent', "'Mozilla/5.0'", address]
 		if config.get('subprocessing'):
-			subprocess.Popen(param, startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+			subprocess.Popen(param, startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
 		else:
-			subprocess.Popen(param, startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
+			subprocess.Popen(param, startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
 	else:
 		param = ['mplayer', '-slave', '-user-agent', "'Mozilla/5.0'", address]
 		if config.get('subprocessing'):
@@ -256,11 +244,9 @@ def TTS_record_old(text, language):
 	text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
 	address = TTS_ADDRESS+'?tl='+language+'&q='+ quote_plus(text)
 	
-	file = util.generateFileName(text, 'g', slanguages[get_language_id(language)][2])
+	file = media_filename(text, 'g', language, 'mp3')
 	if subprocess.mswindows:
-		subprocess.Popen(['mplayer.exe', '-ao', 'win32', '-slave', '-user-agent', "'Mozilla/5.0'", address, '-dumpstream', '-dumpfile', file], startupinfo=util.si, stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
-		if not config.get('quote_mp3'):
-			return file.decode(slanguages[get_language_id(language)][2])
+		subprocess.Popen(['mplayer.exe', '-ao', 'win32', '-slave', '-user-agent', "'Mozilla/5.0'", address, '-dumpstream', '-dumpfile', file], startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
 	else:
 		subprocess.Popen(['mplayer', '-slave', '-user-agent', "'Mozilla/5.0'", address, '-dumpstream', '-dumpfile', file], stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
 	return file.decode('utf-8')

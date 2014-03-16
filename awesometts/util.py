@@ -19,40 +19,109 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Processes and operating system details
+"""
 
-import os, sys, re, subprocess
-from anki.utils import stripHTML
+# TODO The filename-related stuff should probably move to the paths module
+# TODO The awkwardness of the quoted filenames really shows why a hashed
+#      filename solution is necessary
+# TODO Switch over other modules to the new interfaces.
+
+__all__ = [
+    'media_filename',
+    'hex_string',
+    'STARTUP_INFO',    # Windows only
+]
+
+import os
+from re import compile as re
+import subprocess
+from sys import argv
 from urllib import quote_plus
 import awesometts.config as config
 
-file_max_length = 255 # Max filename length for Unix
+
+# Max filename length for Unix; set below for Windows
+FILE_MAX_LENGTH = 255
+
+# Filter pattern to remove dangerous characters from filenames: \/:*?"<>|[]
+RE_UNSAFE_CHARACTERS = re(r'[\\\/\:\*\?"<>|\[\]\.]*')
+
+# Startup information for Windows only; None on other platforms
+STARTUP_INFO = None
+
+if subprocess.mswindows:
+    # guess filename max length for Windows (where path + filename <= 255)
+    FILE_MAX_LENGTH = 100
+
+    # enable mplayer binary to be called in the path
+    os.environ['PATH'] += ";" + os.path.dirname(os.path.abspath(argv[0]))
+
+    # initialize startup information object
+    STARTUP_INFO = subprocess.STARTUPINFO()
+    try:
+        STARTUP_INFO.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    except AttributeError:  # Python 2.7+
+        STARTUP_INFO.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
+
+
+def media_filename(
+    text, service, voice=None,
+    win_encode='iso-8859-1', extension='.mp3',
+):
+    """
+    Given the user's preferences about filenames, return a usable media
+    filename given the passed text, service, and voice. Attempts to
+    correct for encoding.
+    """
+
+    name = "%s by %s %s" % (
+        RE_UNSAFE_CHARACTERS.sub('', text),
+        service,
+        voice or 'voice',
+    )
+
+    if config.get('quote_mp3'):
+        name = quote_plus(name).replace('%', '') + extension
+
+        if len(name) > FILE_MAX_LENGTH:
+            name = name[0:FILE_MAX_LENGTH - len(extension)] + extension
+
+    else:
+        name = name + extension
+
+        if len(name) > FILE_MAX_LENGTH:
+            name = name[0:FILE_MAX_LENGTH - len(extension)] + extension
+
+        if subprocess.mswindows:
+            name = name.decode('utf-8').encode(win_encode)
+
+    return name
+
+
+def hex_string(src):
+    """
+    Returns a hexadecimal string representation of what is passed.
+    """
+
+    return ''.join(['%04X' % ord(x) for x in src])
+
+
+# backward-compatibility section follows, pylint: disable=C0103
 
 def generateFileName(text, service, winencode='iso-8859-1', extention=".mp3"):
-	if config.get('quote_mp3'): #re.sub removes \/:*?"<>|[]. from the file name
-		file = quote_plus(re.sub('[\\\/\:\*\?"<>|\[\]\.]*', "",text)).replace("%", "")+extention
-		if len(file) > file_max_length:
-			file = file[0:file_max_length-len(extention)] + extention
-	else:
-		file = re.sub('[\\\/\:\*\?"<>|\[\]\.]*', "",text)+ extention
-		if len(file) > file_max_length:
-			file = file[0:file_max_length-len(extention)] + extention
-		if subprocess.mswindows:
-			file = file.decode('utf-8').encode(slanguages[get_language_id(language)][2])
-	return file
+    """
+    Old function name and call signature media_filename().
+    """
 
-# mplayer for MS Windows
-if subprocess.mswindows:
-	file_max_length = 100 #guess of a filename max length for Windows (filename +path = 255)
-	dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-	os.environ['PATH'] += ";" + dir
-	si = subprocess.STARTUPINFO()
-	try:
-		si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-	except:
-		# python2.7+
-		si.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
-else:
-	si = None #for plataforms other than MS Windows
-	
-def dumpUnicodeStr(src):
-	return ''.join(["%04X" % ord(x) for x in src])
+    return media_filename(
+        text,
+        service,
+        win_encode=winencode,
+        extension=extention,
+    )
+
+dumpUnicodeStr = hex_string
+
+si = STARTUP_INFO

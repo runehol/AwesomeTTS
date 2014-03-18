@@ -66,14 +66,6 @@ for i in range(len(modulesfiles)):
 
 
 ######## utils
-def get_language_id(language_code):
-	x = 0
-	for d in slanguages:
-		if d[0]==language_code:
-			return x
-		x = x + 1
-	
-
 def playTTSFromText(text):
 	tospeakHTML = getTTSFromHTML(text)
 	tospeak = getTTSFromText(text)

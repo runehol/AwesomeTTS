@@ -257,7 +257,7 @@ def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
 
 
 def onGenerate(self):
-	global TTS_language, dstField, srcField, serviceField
+	global dstField, srcField, serviceField
 	sf = self.selectedNotes()
 	if not sf:
 		utils.showInfo("Select the notes and then use the MP3 Mass Generator")
@@ -406,7 +406,7 @@ def getKey (button):
 	button.getkey = True
 
 def editConf():
-	global TTS_language, dstField, srcField, serviceField, Conf_keyPressEvent
+	global dstField, srcField, serviceField, Conf_keyPressEvent
 	d = QDialog()
 	
 	form = forms.configurator.Ui_Dialog()

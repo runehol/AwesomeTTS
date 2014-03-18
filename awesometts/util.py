@@ -20,20 +20,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Processes and operating system details
+Utility module
+
+Stuff that does not fit anywhere else.
 """
 
-# TODO Switch over other modules to the new interfaces.
-
 __all__ = [
-    'hex_string',
-    'STARTUP_INFO',    # Windows only
+    'STARTUP_INFO',  # Windows only
+    'TO_BOOL',
+    'TO_HEXSTR',
 ]
 
 import subprocess
 
 
 # Startup information for Windows only; None on other platforms
+
 STARTUP_INFO = None
 
 if subprocess.mswindows:
@@ -45,29 +47,13 @@ if subprocess.mswindows:
         STARTUP_INFO.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
 
 
-def hex_string(src):
-    """
-    Returns a hexadecimal string representation of what is passed.
-    """
+# Carefully convert an unknown value to a boolean; this is to handle the
+# situation where we convert from a string. So, TO_BOOL('0') => False
+# as one might expect, but bool('0') => True, as one might not expect.
 
-    return ''.join(['%04X' % ord(x) for x in src])
+TO_BOOL = lambda value: bool(int(value))
 
 
-# backward-compatibility section follows, pylint: disable=C0103,W0613
+# Returns a hexadecimal string representation of what is passed.
 
-def generateFileName(text, service, winencode='iso-8859-1', extention='.mp3'):
-    """
-    Old function name and call signature, replaced by media_filename()
-    in the paths module.
-    """
-
-    from .paths import media_filename
-    return media_filename(
-        text,
-        service,
-        extension=extention,
-    )
-
-dumpUnicodeStr = hex_string
-
-si = STARTUP_INFO
+TO_HEXSTR = lambda value: ''.join(['%04X' % ord(x) for x in value])

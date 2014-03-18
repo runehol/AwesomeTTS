@@ -19,3 +19,32 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+Add-on package initialization
+"""
+
+# We expose instances here used across the add-on, pylint: disable=C0103
+
+__all__ = [
+    'conf',
+]
+
+from PyQt4.QtCore import Qt
+from . import classes, paths, regex, util
+
+
+conf = classes.Conf(
+    db=paths.CONF_DB,
+    table='general',
+    sanitize=regex.NOT_ALPHANUMERIC,
+    definitions=[
+        ('automaticAnswers', 'integer', False, util.TO_BOOL, int),
+        ('automaticQuestions', 'integer', False, util.TO_BOOL, int),
+        ('caching', 'integer', True, util.TO_BOOL, int),
+        ('lame_flags', 'text', '--quiet -q 2', str, str),
+        ('subprocessing', 'integer', True, util.TO_BOOL, int),
+        ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
+        ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),
+    ],
+)

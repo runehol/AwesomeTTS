@@ -28,7 +28,7 @@ import awesometts.config as config
 from awesometts.paths import media_filename
 from awesometts.util import (
     STARTUP_INFO,
-    hex_string,
+    TO_HEXSTR,
 )
 from subprocess import Popen, PIPE, STDOUT
 
@@ -54,7 +54,7 @@ if subprocess.mswindows:
 		
 	def playsapi5TTS(text, voice):
 		text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")))
-		param = [vbs_launcher, sapi5_path,'-hex', '-voice', hex_string(voice), hex_string(text)]
+		param = [vbs_launcher, sapi5_path,'-hex', '-voice', TO_HEXSTR(voice), TO_HEXSTR(text)]
 		if config.get('subprocessing'):
 			subprocess.Popen(param, startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
 		else:
@@ -76,7 +76,7 @@ if subprocess.mswindows:
 		filename_wav = media_filename(text, 'sapi5', voice, 'wav')
 		filename_mp3 = media_filename(text, 'sapi5', voice, 'mp3')
 		subprocess.Popen([vbs_launcher, sapi5_path, '-hex', '-o',
-		filename_wav, '-voice', hex_string(voice), hex_string(text)], startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
+		filename_wav, '-voice', TO_HEXSTR(voice), TO_HEXSTR(text)], startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
 		subprocess.Popen(
 			['lame.exe'] +
 			config.get('lame_flags', tokenize=True) +

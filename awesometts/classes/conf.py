@@ -197,6 +197,19 @@ class Conf(object):
         value = self._cache[self._normalize(name)]
         return str(value).split() if tokenize else value
 
+    def __getattr__(self, name):
+        """
+        Convenience sugar instead of using get().
+
+        Unlike get(), raises AttributeError on an unsupported name
+        rather than a KeyError.
+        """
+
+        try:
+            return self.get(name)
+        except KeyError:
+            raise AttributeError("'%s' is not a suported name" % name)
+
     def put(self, **updates):
         """
         Updates the value(s) of the given configuration option(s) passed

@@ -24,7 +24,7 @@ from PyQt4 import QtGui,QtCore
 import os, re, subprocess, sys
 from anki.utils import stripHTML
 from urllib import quote_plus
-import awesometts.config as config
+from awesometts import conf
 from awesometts.paths import media_filename
 from awesometts.util import (
     STARTUP_INFO,
@@ -55,7 +55,7 @@ if subprocess.mswindows:
 	def playsapi5TTS(text, voice):
 		text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")))
 		param = [vbs_launcher, sapi5_path,'-hex', '-voice', TO_HEXSTR(voice), TO_HEXSTR(text)]
-		if config.get('subprocessing'):
+		if conf.subprocessing:
 			subprocess.Popen(param, startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
 		else:
 			subprocess.Popen(param, startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
@@ -79,7 +79,7 @@ if subprocess.mswindows:
 		filename_wav, '-voice', TO_HEXSTR(voice), TO_HEXSTR(text)], startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
 		subprocess.Popen(
 			['lame.exe'] +
-			config.get('lame_flags', tokenize=True) +
+			conf.get('lame_flags', tokenize=True) +
 			[filename_wav, filename_mp3],
 			startupinfo=STARTUP_INFO,
 			stdin=PIPE,

@@ -28,7 +28,7 @@ version = '1.0 Beta 11 (develop)'
 from PyQt4.QtCore import *
 
 
-import awesometts.config as config
+from awesometts import conf
 
 import os, subprocess, re, sys, urllib, imp, types, time
 from aqt import mw, utils
@@ -417,17 +417,17 @@ def editConf():
 		Conf_keyPressEvent,
 		(d, [form.pushKeyQ, form.pushKeyA]),
 	)
-	form.pushKeyQ.keyval = config.get('TTS_KEY_Q')
+	form.pushKeyQ.keyval = conf.tts_key_q
 	form.pushKeyQ.setText(KeyToString(form.pushKeyQ.keyval))
-	form.pushKeyA.keyval = config.get('TTS_KEY_A')
+	form.pushKeyA.keyval = conf.tts_key_a
 	form.pushKeyA.setText(KeyToString(form.pushKeyA.keyval))
 
-	form.cAutoQ.setChecked(config.get('automatic_questions'))
-	form.cAutoA.setChecked(config.get('automatic_answers'))
-	form.cSubprocessing.setChecked(config.get('subprocessing'))
-	form.cCaching.setChecked(config.get('caching'))
+	form.cAutoQ.setChecked(conf.automatic_questions)
+	form.cAutoA.setChecked(conf.automatic_answers)
+	form.cSubprocessing.setChecked(conf.subprocessing)
+	form.cCaching.setChecked(conf.caching)
 
-	form.lame_flags_edit.setText(config.get('lame_flags'))
+	form.lame_flags_edit.setText(conf.lame_flags)
 	
 	QtCore.QObject.connect(form.pushKeyQ, QtCore.SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyQ))
 	QtCore.QObject.connect(form.pushKeyA, QtCore.SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyA))
@@ -498,9 +498,9 @@ def editConf():
 	if not d.exec_():
 		return
 
-	config.put(
-		TTS_KEY_Q=form.pushKeyQ.keyval,
-		TTS_KEY_A=form.pushKeyA.keyval,
+	conf.put(
+		tts_key_q=form.pushKeyQ.keyval,
+		tts_key_a=form.pushKeyA.keyval,
 		automatic_questions=form.cAutoQ.isChecked(),
 		automatic_answers=form.cAutoA.isChecked(),
 		subprocessing=form.cSubprocessing.isChecked(),
@@ -525,9 +525,9 @@ mw.form.menuTools.addAction(menuconf)
 def newKeyHandler(self, evt):
 	pkey = evt.key()
 	if (self.state == 'answer' or self.state == 'question'):
-		if (pkey == config.get('TTS_KEY_Q')):
+		if (pkey == conf.tts_key_q):
 			playTTSFromText(self.card.q())  #read the TTS tags
-		if (self.state=='answer' and pkey == config.get('TTS_KEY_A')):
+		if (self.state=='answer' and pkey == conf.tts_key_a):
 			playTTSFromText(self.card.a()) #read the TTS tags
 	evt.accept()
 
@@ -539,10 +539,10 @@ def ATTSautoread(toread, automatic):
 			playTTSFromText(toread)
 
 def ATTS_OnQuestion(self):
-	ATTSautoread(self.card.q(), config.get('automatic_questions'))
+	ATTSautoread(self.card.q(), conf.automatic_questions)
 
 def ATTS_OnAnswer(self):
-	ATTSautoread(self.card.a(), config.get('automatic_answers'))
+	ATTSautoread(self.card.a(), conf.automatic_answers)
 
 
 

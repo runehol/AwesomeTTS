@@ -78,7 +78,7 @@ TTS_ADDRESS = 'http://translate.google.com/translate_tts'
 import re, subprocess, urllib
 from anki.utils import stripHTML
 from urllib import quote_plus
-import awesometts.config as config
+from awesometts import conf
 from subprocess import Popen, PIPE, STDOUT
 from awesometts.paths import media_filename
 from awesometts.util import STARTUP_INFO
@@ -186,7 +186,7 @@ def playGoogleTTS(text, language):
 
 	address = TTS_ADDRESS+'?tl='+language+'&q='+ quote_plus(text)
 
-	if config.get('caching'):
+	if conf.caching:
 		import hashlib
 		import os
 
@@ -212,13 +212,13 @@ def playGoogleTTS(text, language):
 def playGoogleTTS_mplayer(address):
 	if subprocess.mswindows:
 		param = ['mplayer.exe', '-ao', 'win32', '-slave', '-user-agent', "'Mozilla/5.0'", address]
-		if config.get('subprocessing'):
+		if conf.subprocessing:
 			subprocess.Popen(param, startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
 		else:
 			subprocess.Popen(param, startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
 	else:
 		param = ['mplayer', '-slave', '-user-agent', "'Mozilla/5.0'", address]
-		if config.get('subprocessing'):
+		if conf.subprocessing:
 			subprocess.Popen(param, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
 		else:
 			subprocess.Popen(param, stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()

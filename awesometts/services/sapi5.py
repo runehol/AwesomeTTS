@@ -29,6 +29,7 @@ from awesometts.paths import media_filename
 from awesometts.util import (
     STARTUP_INFO,
     TO_HEXSTR,
+    TO_TOKENS,
 )
 from subprocess import Popen, PIPE, STDOUT
 
@@ -79,7 +80,7 @@ if subprocess.mswindows:
 		filename_wav, '-voice', TO_HEXSTR(voice), TO_HEXSTR(text)], startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
 		subprocess.Popen(
 			['lame.exe'] +
-			conf.get('lame_flags', tokenize=True) +
+			TO_TOKENS(conf.lame_flags) +
 			[filename_wav, filename_mp3],
 			startupinfo=STARTUP_INFO,
 			stdin=PIPE,

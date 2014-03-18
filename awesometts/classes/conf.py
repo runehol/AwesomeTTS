@@ -182,20 +182,15 @@ class Conf(object):
         cursor.close()
         connection.close()
 
-    def get(self, name, tokenize=False):
+    def get(self, name):
         """
         Retrieve the current value for the given named configuration
         option. The name will be normalized.
 
-        If the caller asks to tokenize the value, it will be cast to a
-        string and broken up into a list of words based on delimiting
-        whitespace.
-
         Raises KeyError if the argument is not a supported name.
         """
 
-        value = self._cache[self._normalize(name)]
-        return str(value).split() if tokenize else value
+        return self._cache[self._normalize(name)]
 
     def __getattr__(self, name):
         """

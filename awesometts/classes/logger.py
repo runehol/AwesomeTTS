@@ -25,19 +25,20 @@ Logger support across entire add-on
 __all__ = ['Logger']
 
 import logging
-from sys import stdout
+import logging.handlers
 
 
-def Logger(  # factory masquerading as a constructor, pylint: disable=C0103
+def Logger(  # function masquerading as factory, pylint: disable=C0103
     name,
-    stdout_flag, file_flag, file_path, file_encoding,
+    handlers, formatter=None,
 ):
     """
-    Returns a logger with the given name after configuring it. If called
-    again with the same name, the same logger will be returned, but its
-    configuration will be updated.
+    Returns a logger with the given name after configuring it. Any given
+    name may be used only once; successive calls with the same name will
+    raise an AssertionError.
 
-    See the BufferedLogger configure() method for more information.
+    See the BufferedLogger configure() method for more information on
+    the configuration options following the logger name.
     """
 
     default_cls = logging.getLoggerClass()
@@ -47,10 +48,8 @@ def Logger(  # factory masquerading as a constructor, pylint: disable=C0103
     logging.setLoggerClass(default_cls)
 
     new_instance.configure(  # will be a BufferedLogger, pylint: disable=E1103
-        stdout_flag,
-        file_flag,
-        file_path,
-        file_encoding,
+        handlers,
+        formatter,
     )
     return new_instance
 
@@ -63,19 +62,13 @@ class BufferedLogger(logging.Logger):  # lots inherited, pylint: disable=R0904
     wants logging to take place.
     """
 
-    __slots__ = [
-        '_activated',    # True if we are activated, False otherwise
-        '_buffer',       # list of log messages that come in before activation
-        '_stdout_flag',  # key to look for in activate() call for stdout
-        '_stdout_sh',    # StreamHandler to stdout; always initialized
-        '_file_flag',    # key to look for in activate() call for file output
-        '_file_fh',      # FileHandler for log file; delayed initialization
-    ]
+    BUFFER_LIMIT = 10000
 
-    FORMATTER = logging.Formatter(
-        '[%(asctime)s %(module)s@%(lineno)d %(levelname)s] %(message)s',
-        '%H:%M:%S',
-    )
+    __slots__ = [
+        '_handlers',    # map of flags to possible handlers
+        '_configured',  # True if configure() has been called
+        '_activated',   # True if activate() has been called at least once
+    ]
 
     def __init__(self, *args, **kwargs):
         """
@@ -83,87 +76,62 @@ class BufferedLogger(logging.Logger):  # lots inherited, pylint: disable=R0904
         logging module does the calling and only knows about names, some
         setup is deferred until the configure() method. If calling code
         uses the Logger factory function defined at the module level,
-        this will be called automatically.
+        both __init__ and configure() will be called automatically.
         """
 
         super(BufferedLogger, self).__init__(*args, **kwargs)
+
+        self._handlers = None
+        self._configured = False
         self._activated = False
-        self._buffer = []
-        self._stdout_flag = None
-        self._stdout_sh = logging.StreamHandler(stdout)
-        self._stdout_sh.setFormatter(self.FORMATTER)
-        self._file_flag = None
-        self._file_fh = None
+        self.setLevel(logging.DEBUG)
 
-    def configure(self, stdout_flag, file_flag, file_path, file_encoding):
+    def configure(self, handlers, formatter=None):
         """
-        Configures the flags that will trigger the logger to use stdout
-        and file-based logging. Additionally, configures the logging
-        path and encoding to be used. If the logging path or encoding
-        has changed, the file will be closed, reopened, and reattached
-        to the logger.
+        Configures the flags that will trigger the logger to use various
+        handlers. In the passed dict, each key should be a possible key
+        to be passed to activate(), and each value should be a handler.
         """
 
-        if (
-            not self._file_fh or
-            self._file_fh.baseFilename != file_path or
-            self._file_fh.encoding != file_encoding
-        ):
-            need_reattachment = False
-            if self._file_fh:
-                if self._file_fh in self.handlers:
-                    need_reattachment = True
-                self.removeHandler(self._file_fh)
-                self._file_fh.close()
+        assert not self._configured, "Loggers may only be configured once"
 
-            self._file_fh = logging.FileHandler(
-                file_path,
-                encoding=file_encoding,
-                delay=True,
-            )
-            self._file_fh.setFormatter(self.FORMATTER)
+        self._handlers = {
+            flag: (logging.handlers.MemoryHandler(self.BUFFER_LIMIT), handler)
+            for flag, handler
+            in handlers.items()
+        }
+        self._configured = True
 
-            if need_reattachment:
-                self.addHandler(self._file_fh)
-
-        self._stdout_flag = stdout_flag
-        self._file_flag = file_flag
-
-    def _log(self, *args, **kwargs):
-        """
-        If we are activated, passes log messages to super class. If not,
-        buffers them to be passed after activation.
-        """
-
-        if self._activated:
-            if self.handlers:
-                super(BufferedLogger, self)._log(*args, **kwargs)
-
-        else:
-            self._buffer.append((args, kwargs))
+        for temp_handler, final_handler in self._handlers.values():
+            if formatter:
+                final_handler.setFormatter(formatter)
+            self.addHandler(temp_handler)
 
     def activate(self, lookup):
         """
         Attach or detach handlers based on the lookup dict passed and
-        the stdout_flag and file_flag that were passed to configure().
+        the handlers that were registered with the configure() method.
         If this is the first time being activated, any buffered log
         messages will be flushed out.
         """
 
-        if self._stdout_flag and lookup[self._stdout_flag]:
-            self.addHandler(self._stdout_sh)
+        assert self._configured, "Must configure Loggers before activation"
+
+        if self._activated:
+            for flag, handler in self._handlers.items():
+                if lookup[flag]:
+                    self.addHandler(handler)
+                else:
+                    self.removeHandler(handler)
+
         else:
-            self.removeHandler(self._stdout_sh)
+            for flag, (temp_handler, final_handler) in self._handlers.items():
+                if lookup[flag]:
+                    temp_handler.setTarget(final_handler)
+                    temp_handler.flush()
 
-        if self._file_fh:
-            if self._file_flag and lookup[self._file_flag]:
-                self.addHandler(self._file_fh)
-            else:
-                self.removeHandler(self._file_fh)
+                self.removeHandler(temp_handler)
+                if lookup[flag]:
+                    self.addHandler(final_handler)
 
-        if not self._activated:
-            self._activated = True
-
-            while len(self._buffer):
-                args, kwargs = self._buffer.pop(0)
-                self._log(*args, **kwargs)  # use magic, pylint: disable=W0142
+                self._handlers[flag] = final_handler

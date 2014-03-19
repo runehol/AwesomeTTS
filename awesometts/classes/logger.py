@@ -72,6 +72,11 @@ class BufferedLogger(logging.Logger):  # lots inherited, pylint: disable=R0904
         '_file_fh',      # FileHandler for log file; delayed initialization
     ]
 
+    FORMATTER = logging.Formatter(
+        '[%(asctime)s %(module)s@%(lineno)d %(levelname)s] %(message)s',
+        '%H:%M:%S',
+    )
+
     def __init__(self, *args, **kwargs):
         """
         Note that because we do not call this directly and instead the
@@ -86,6 +91,7 @@ class BufferedLogger(logging.Logger):  # lots inherited, pylint: disable=R0904
         self._buffer = []
         self._stdout_flag = None
         self._stdout_sh = logging.StreamHandler(stdout)
+        self._stdout_sh.setFormatter(self.FORMATTER)
         self._file_flag = None
         self._file_fh = None
 
@@ -115,6 +121,7 @@ class BufferedLogger(logging.Logger):  # lots inherited, pylint: disable=R0904
                 encoding=file_encoding,
                 delay=True,
             )
+            self._file_fh.setFormatter(self.FORMATTER)
 
             if need_reattachment:
                 self.addHandler(self._file_fh)

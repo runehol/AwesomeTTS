@@ -38,10 +38,12 @@ class Conf(object):
     database table.
     """
 
-    class _LoggableCursor(sqlite3.Cursor):
+    class _LoggableCursor(sqlite3.Cursor):  # no init, pylint: disable=W0232
         """
         Extends the SQLite3 Cursor class to support logging during
-        execute() calls.
+        execute() calls. Note that SQLite3 cursors are not initialized
+        in the normal way, and a separate call to set_logger() is
+        needed to correctly setup the object.
         """
 
         def set_logger(self, logger):
@@ -50,7 +52,7 @@ class Conf(object):
             called on new instances.
             """
 
-            self._logger = logger
+            self._logger = logger  # no init, pylint: disable=W0201
 
         def execute(self, sql, parameters=None):
             """

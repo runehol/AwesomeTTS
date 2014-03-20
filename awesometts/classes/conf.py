@@ -28,6 +28,8 @@ Storage and management of add-on configuration
 
 __all__ = ['Conf']
 
+import sqlite3
+
 
 class Conf(object):
     """
@@ -35,6 +37,32 @@ class Conf(object):
     and serializing configuration information stored in a given SQLite3
     database table.
     """
+
+    class _LoggableCursor(sqlite3.Cursor):
+        """
+        Extends the SQLite3 Cursor class to support logging during
+        execute() calls.
+        """
+
+        def set_logger(self, logger):
+            """
+            Initializes our reference to the target logger. This must be
+            called on new instances.
+            """
+
+            self._logger = logger
+
+        def execute(self, sql, parameters=None):
+            """
+            Makes a debug() call and then proxies the call to parent.
+            """
+
+            if parameters:
+                self._logger.debug("Executing '%s' with %s", sql, parameters)
+                return sqlite3.Cursor.execute(self, sql, parameters)
+            else:
+                self._logger.debug("Executing '%s'", sql)
+                return sqlite3.Cursor.execute(self, sql)
 
     __slots__ = [
         '_path',         # path to SQLite3 database
@@ -97,10 +125,10 @@ class Conf(object):
         """
 
         # open database connection
-        import sqlite3
         connection = sqlite3.connect(self._path, isolation_level=None)
         connection.row_factory = sqlite3.Row
-        cursor = connection.cursor()
+        cursor = connection.cursor(self._LoggableCursor)
+        cursor.set_logger(self._logger)
 
         # check for existence of the configuration table
         if len(cursor.execute(
@@ -123,6 +151,15 @@ class Conf(object):
             ]
 
             if missing_definitions:
+                self._logger.info(
+                    "Performing table update for %s",
+                    ", ".join([
+                        definition[0]
+                        for definition
+                        in missing_definitions
+                    ]),
+                )
+
                 # insert any missing columns
                 for definition in missing_definitions:
                     cursor.execute('ALTER TABLE %s ADD COLUMN %s %s' % (
@@ -159,6 +196,8 @@ class Conf(object):
 
         else:
             all_definitions = self._definitions.values()
+
+            self._logger.info("Creating new configuration table")
 
             # create the table
             cursor.execute('CREATE TABLE %s (%s)' % (
@@ -244,9 +283,9 @@ class Conf(object):
             self._cache[name] = value
 
         # open database connection
-        import sqlite3
         connection = sqlite3.connect(self._path, isolation_level=None)
-        cursor = connection.cursor()
+        cursor = connection.cursor(self._LoggableCursor)
+        cursor.set_logger(self._logger)
 
         # persist to SQLite3 database
         cursor.execute(

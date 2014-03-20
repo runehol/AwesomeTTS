@@ -57,8 +57,8 @@ conf = classes.Conf(
     definitions=[
         ('automaticAnswers', 'integer', False, util.TO_BOOL, int),
         ('automaticQuestions', 'integer', False, util.TO_BOOL, int),
-        # TODO debug_file
-        # TODO debug_stdout
+        ('debug_file', 'integer', False, util.TO_BOOL, int),
+        ('debug_stdout', 'integer', False, util.TO_BOOL, int),
         ('caching', 'integer', True, util.TO_BOOL, int),
         ('lame_flags', 'text', '--quiet -q 2', str, str),
         ('subprocessing', 'integer', True, util.TO_BOOL, int),
@@ -73,5 +73,7 @@ conf = classes.Conf(
 # OR conf.on(['debug_file', 'debug_stdout'], logger.activate)
 
 # TEMPORARY, FIXME
-import logging
-logger.activate({'debug_stdout': True, 'debug_file': False})
+logger.activate({
+    'debug_file': conf.debug_file,
+    'debug_stdout': conf.debug_stdout,
+})

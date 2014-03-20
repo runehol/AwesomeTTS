@@ -32,6 +32,7 @@ individual files.
 __all__ = [
     'media_filename',
     'relative',
+    'ADDON_LOG',
     'CACHE_DIR',
     'CONF_DB',
 ]
@@ -97,6 +98,8 @@ def relative(start_dir, to_path, *addl_paths):
         join(*components)  # join() takes *args, pylint: disable=W0142
     ).decode(_ENCODING)
 
+
+ADDON_LOG = relative(_CODE_DIR, 'addon.log')
 
 CACHE_DIR = relative(_CODE_DIR, 'cache')
 

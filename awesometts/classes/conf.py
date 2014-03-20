@@ -37,11 +37,12 @@ class Conf(object):
     """
 
     __slots__ = [
-        '_db',           # path to SQLite3 database
+        '_path',         # path to SQLite3 database
         '_table',        # SQLite3 table where preferences are stored
         '_sanitize',     # regex object for sanitizing names
         '_definitions',  # map of official lookup names to column definitions
         '_cache',        # in-memory lookup of preferences
+        '_logger',       # where to send logging messages
     ]
 
     def _normalize(self, name):
@@ -52,10 +53,16 @@ class Conf(object):
 
         return self._sanitize.sub('', name.lower())
 
-    def __init__(self, db, table, sanitize, definitions):
+    def __init__(self, db, definitions, logger):
         """
-        Given a database path, table name, and list of column
-        definitions, loads the configuration state.
+        Given a database specification, list of column definitions, and
+        logger, loads the configuration state.
+
+        The database specification should be a single tuple, with:
+
+        - 0th: full path to database
+        - 1st: table name
+        - 2nd: sanitization function for normalizing columns
 
         The column definitions should be a list of tuples, each with:
 
@@ -64,16 +71,18 @@ class Conf(object):
         - 2nd: default Python value to use when introducing new configuration
         - 3rd: mapping function from SQLite3 type to Python type
         - 4th: mapping function from Python type to SQLite3 type
+
+        The logger is a reference to any class instance or module with a
+        logger-like interface (e.g. debug(), info(), warn() callables).
         """
 
-        self._db = db
-        self._table = table
-        self._sanitize = sanitize
+        self._path, self._table, self._sanitize = db
         self._definitions = {
             self._normalize(definition[0]): definition
             for definition
             in definitions
         }
+        self._logger = logger
 
         self._cache = {}
         self._load()
@@ -89,7 +98,7 @@ class Conf(object):
 
         # open database connection
         import sqlite3
-        connection = sqlite3.connect(self._db, isolation_level=None)
+        connection = sqlite3.connect(self._path, isolation_level=None)
         connection.row_factory = sqlite3.Row
         cursor = connection.cursor()
 
@@ -236,7 +245,7 @@ class Conf(object):
 
         # open database connection
         import sqlite3
-        connection = sqlite3.connect(self._db, isolation_level=None)
+        connection = sqlite3.connect(self._path, isolation_level=None)
         cursor = connection.cursor()
 
         # persist to SQLite3 database

@@ -26,7 +26,11 @@ Storage and management of add-on configuration
 # TODO Would it be possible to get these configuration options to sync with
 #      AnkiWeb, e.g. by moving them into the collections database?
 
+# TODO Consider making this more dict-like, e.g. update() instead of put()
+
 __all__ = ['Conf']
+
+import sqlite3
 
 
 class Conf(object):
@@ -36,12 +40,42 @@ class Conf(object):
     database table.
     """
 
+    class _LoggableCursor(sqlite3.Cursor):  # no init, pylint: disable=W0232
+        """
+        Extends the SQLite3 Cursor class to support logging during
+        execute() calls. Note that SQLite3 cursors are not initialized
+        in the normal way, and a separate call to set_logger() is
+        needed to correctly setup the object.
+        """
+
+        def set_logger(self, logger):
+            """
+            Initializes our reference to the target logger. This must be
+            called on new instances.
+            """
+
+            self._logger = logger  # no init, pylint: disable=W0201
+
+        def execute(self, sql, parameters=None):
+            """
+            Makes a debug() call and then proxies the call to parent.
+            """
+
+            if parameters:
+                self._logger.debug("Executing '%s' with %s", sql, parameters)
+                return sqlite3.Cursor.execute(self, sql, parameters)
+            else:
+                self._logger.debug("Executing '%s'", sql)
+                return sqlite3.Cursor.execute(self, sql)
+
     __slots__ = [
-        '_db',           # path to SQLite3 database
+        '_path',         # path to SQLite3 database
         '_table',        # SQLite3 table where preferences are stored
         '_sanitize',     # regex object for sanitizing names
         '_definitions',  # map of official lookup names to column definitions
         '_cache',        # in-memory lookup of preferences
+        '_logger',       # where to send logging messages
+        '_events',       # map of lookup names to the callable(s) they trigger
     ]
 
     def _normalize(self, name):
@@ -52,10 +86,16 @@ class Conf(object):
 
         return self._sanitize.sub('', name.lower())
 
-    def __init__(self, db, table, sanitize, definitions):
+    def __init__(self, db, definitions, logger, events=None):
         """
-        Given a database path, table name, and list of column
-        definitions, loads the configuration state.
+        Given a database specification, list of column definitions,
+        logger, and optional event list, loads the configuration state.
+
+        The database specification should be a single tuple, with:
+
+        - 0th: full path to database
+        - 1st: table name
+        - 2nd: sanitization function for normalizing columns
 
         The column definitions should be a list of tuples, each with:
 
@@ -64,19 +104,53 @@ class Conf(object):
         - 2nd: default Python value to use when introducing new configuration
         - 3rd: mapping function from SQLite3 type to Python type
         - 4th: mapping function from Python type to SQLite3 type
+
+        The logger is a reference to any class instance or module with a
+        logger-like interface (e.g. debug(), info(), warn() callables).
+
+        The event list should be a list of tuples, each with:
+
+        - 0th: list of column names or single column name to trigger the event
+        - 1th: callable to callback to when this value is loaded or updated
         """
 
-        self._db = db
-        self._table = table
-        self._sanitize = sanitize
+        self._path, self._table, self._sanitize = db
         self._definitions = {
             self._normalize(definition[0]): definition
             for definition
             in definitions
         }
+        self._logger = logger
+
+        self._events = {}
+        if events:
+            for triggers, callback in events:
+                self.bind(triggers, callback)
 
         self._cache = {}
         self._load()
+
+    def bind(self, triggers, callback):
+        """
+        Registers a callable to be called with the current state of the
+        configuration instance whenever a column in the triggers list is
+        loaded or updated.
+
+        The triggers may be a list of column names or a single string
+        containing one column.
+        """
+
+        if isinstance(triggers, basestring):
+            triggers = [triggers]
+
+        for trigger in triggers:
+            trigger = self._normalize(trigger)
+            assert trigger in self._definitions, "%s does not exist" % trigger
+
+            try:
+                self._events[trigger].append(callback)
+            except KeyError:
+                self._events[trigger] = [callback]
 
     def _load(self):
         """
@@ -88,10 +162,10 @@ class Conf(object):
         """
 
         # open database connection
-        import sqlite3
-        connection = sqlite3.connect(self._db, isolation_level=None)
+        connection = sqlite3.connect(self._path, isolation_level=None)
         connection.row_factory = sqlite3.Row
-        cursor = connection.cursor()
+        cursor = connection.cursor(self._LoggableCursor)
+        cursor.set_logger(self._logger)
 
         # check for existence of the configuration table
         if len(cursor.execute(
@@ -114,6 +188,15 @@ class Conf(object):
             ]
 
             if missing_definitions:
+                self._logger.info(
+                    "Performing table update for %s",
+                    ", ".join([
+                        definition[0]
+                        for definition
+                        in missing_definitions
+                    ]),
+                )
+
                 # insert any missing columns
                 for definition in missing_definitions:
                     cursor.execute('ALTER TABLE %s ADD COLUMN %s %s' % (
@@ -151,6 +234,8 @@ class Conf(object):
         else:
             all_definitions = self._definitions.values()
 
+            self._logger.info("Creating new configuration table")
+
             # create the table
             cursor.execute('CREATE TABLE %s (%s)' % (
                 self._table,
@@ -182,6 +267,13 @@ class Conf(object):
         cursor.close()
         connection.close()
 
+        # since this is the initial load, notify all registered event handlers
+        unique_callbacks = set()
+        for callbacks in self._events.values():
+            unique_callbacks.update(callbacks)
+        for callback in unique_callbacks:
+            callback(self)
+
     def get(self, name):
         """
         Retrieve the current value for the given named configuration
@@ -204,6 +296,13 @@ class Conf(object):
             return self.get(name)
         except KeyError:
             raise AttributeError("'%s' is not a suported name" % name)
+
+    def __getitem__(self, name):
+        """
+        Convenience sugar instead of using get().
+        """
+
+        return self.get(name)
 
     def put(self, **updates):
         """
@@ -230,14 +329,19 @@ class Conf(object):
         if not updates:
             return
 
-        # update in-memory store of the values
+        # update in-memory store of the values and notify callback handlers
+        unique_callbacks = set()
         for name, definition, value in updates:
             self._cache[name] = value
+            if name in self._events:
+                unique_callbacks.update(self._events[name])
+        for callback in unique_callbacks:
+            callback(self)
 
         # open database connection
-        import sqlite3
-        connection = sqlite3.connect(self._db, isolation_level=None)
-        cursor = connection.cursor()
+        connection = sqlite3.connect(self._path, isolation_level=None)
+        cursor = connection.cursor(self._LoggableCursor)
+        cursor.set_logger(self._logger)
 
         # persist to SQLite3 database
         cursor.execute(

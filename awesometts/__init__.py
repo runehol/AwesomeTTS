@@ -66,14 +66,10 @@ conf = classes.Conf(
         ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),
     ],
     logger=logger,
-    # TODO on=[
-    #     (['debug_file', 'debug_stdout'], logger.activate)
-    # ],
+    events=[
+        (
+            ['debug_file', 'debug_stdout'],
+            logger.activate,  # BufferedLogger instance, pylint: disable=E1103
+        ),
+    ],
 )
-# OR conf.on(['debug_file', 'debug_stdout'], logger.activate)
-
-# TEMPORARY, FIXME
-logger.activate({
-    'debug_file': conf.debug_file,
-    'debug_stdout': conf.debug_stdout,
-})

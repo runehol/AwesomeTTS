@@ -26,6 +26,8 @@ Storage and management of add-on configuration
 # TODO Would it be possible to get these configuration options to sync with
 #      AnkiWeb, e.g. by moving them into the collections database?
 
+# TODO Consider making this more dict-like, e.g. update() instead of put()
+
 __all__ = ['Conf']
 
 import sqlite3
@@ -73,6 +75,7 @@ class Conf(object):
         '_definitions',  # map of official lookup names to column definitions
         '_cache',        # in-memory lookup of preferences
         '_logger',       # where to send logging messages
+        '_events',       # map of lookup names to the callable(s) they trigger
     ]
 
     def _normalize(self, name):
@@ -83,10 +86,10 @@ class Conf(object):
 
         return self._sanitize.sub('', name.lower())
 
-    def __init__(self, db, definitions, logger):
+    def __init__(self, db, definitions, logger, events=None):
         """
-        Given a database specification, list of column definitions, and
-        logger, loads the configuration state.
+        Given a database specification, list of column definitions,
+        logger, and optional event list, loads the configuration state.
 
         The database specification should be a single tuple, with:
 
@@ -104,6 +107,11 @@ class Conf(object):
 
         The logger is a reference to any class instance or module with a
         logger-like interface (e.g. debug(), info(), warn() callables).
+
+        The event list should be a list of tuples, each with:
+
+        - 0th: list of column names or single column name to trigger the event
+        - 1th: callable to callback to when this value is loaded or updated
         """
 
         self._path, self._table, self._sanitize = db
@@ -114,8 +122,35 @@ class Conf(object):
         }
         self._logger = logger
 
+        self._events = {}
+        if events:
+            for triggers, callback in events:
+                self.bind(triggers, callback)
+
         self._cache = {}
         self._load()
+
+    def bind(self, triggers, callback):
+        """
+        Registers a callable to be called with the current state of the
+        configuration instance whenever a column in the triggers list is
+        loaded or updated.
+
+        The triggers may be a list of column names or a single string
+        containing one column.
+        """
+
+        if isinstance(triggers, basestring):
+            triggers = [triggers]
+
+        for trigger in triggers:
+            trigger = self._normalize(trigger)
+            assert trigger in self._definitions, "%s does not exist" % trigger
+
+            try:
+                self._events[trigger].append(callback)
+            except KeyError:
+                self._events[trigger] = [callback]
 
     def _load(self):
         """
@@ -232,6 +267,13 @@ class Conf(object):
         cursor.close()
         connection.close()
 
+        # since this is the initial load, notify all registered event handlers
+        unique_callbacks = set()
+        for callbacks in self._events.values():
+            unique_callbacks.update(callbacks)
+        for callback in unique_callbacks:
+            callback(self)
+
     def get(self, name):
         """
         Retrieve the current value for the given named configuration
@@ -254,6 +296,13 @@ class Conf(object):
             return self.get(name)
         except KeyError:
             raise AttributeError("'%s' is not a suported name" % name)
+
+    def __getitem__(self, name):
+        """
+        Convenience sugar instead of using get().
+        """
+
+        return self.get(name)
 
     def put(self, **updates):
         """
@@ -280,9 +329,14 @@ class Conf(object):
         if not updates:
             return
 
-        # update in-memory store of the values
+        # update in-memory store of the values and notify callback handlers
+        unique_callbacks = set()
         for name, definition, value in updates:
             self._cache[name] = value
+            if name in self._events:
+                unique_callbacks.update(self._events[name])
+        for callback in unique_callbacks:
+            callback(self)
 
         # open database connection
         connection = sqlite3.connect(self._path, isolation_level=None)

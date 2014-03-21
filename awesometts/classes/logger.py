@@ -135,3 +135,5 @@ class BufferedLogger(logging.Logger):  # lots inherited, pylint: disable=R0904
                     self.addHandler(final_handler)
 
                 self._handlers[flag] = final_handler
+
+            self._activated = True

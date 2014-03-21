@@ -32,8 +32,9 @@ individual files.
 __all__ = [
     'media_filename',
     'relative',
+    'ADDON_LOG',
     'CACHE_DIR',
-    'CONFIG_DB',
+    'CONF_DB',
 ]
 
 from hashlib import md5
@@ -98,9 +99,11 @@ def relative(start_dir, to_path, *addl_paths):
     ).decode(_ENCODING)
 
 
+ADDON_LOG = relative(_CODE_DIR, 'addon.log')
+
 CACHE_DIR = relative(_CODE_DIR, 'cache')
 
-CONFIG_DB = relative(_CODE_DIR, 'conf.db')
+CONF_DB = relative(_CODE_DIR, 'conf.db')
 
 
 def media_filename(text, service, voice=None, extension='mp3'):

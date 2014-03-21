@@ -30,8 +30,9 @@ import re
 from subprocess import check_output, Popen, PIPE, STDOUT
 from PyQt4 import QtGui
 from anki.utils import isMac, stripHTML
-import awesometts.config as config
+from awesometts import conf
 from awesometts.paths import media_filename
+from awesometts.util import TO_TOKENS
 
 
 VOICES = None
@@ -126,7 +127,7 @@ if VOICES:
 
         Popen(
             ['lame'] +
-            config.get('lame_flags', tokenize=True) +
+            TO_TOKENS(conf.lame_flags) +
             [filename_aiff, filename_mp3],
             stdin=PIPE,
             stdout=PIPE,

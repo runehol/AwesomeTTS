@@ -25,7 +25,6 @@ Logger support across entire add-on
 __all__ = ['Logger']
 
 import logging
-import logging.handlers
 
 
 def Logger(  # function masquerading as factory, pylint: disable=C0103
@@ -62,7 +61,61 @@ class BufferedLogger(logging.Logger):  # lots inherited, pylint: disable=R0904
     wants logging to take place.
     """
 
-    BUFFER_LIMIT = 10000
+    class _MemoryHandler(logging.Handler):
+        """
+        The logging.handlers package is not available on all the various
+        distributions of Anki, so this is a slimmed-down version of the
+        logging.handlers.MemoryHandler for use within this class.
+        """
+
+        __slots__ = [
+            '_buffer',  # the queue of messages written, stored in memory
+        ]
+
+        def __init__(self, *args, **kwargs):
+            """
+            Initialize the buffer as an empty list.
+            """
+
+            logging.Handler.__init__(self, *args, **kwargs)
+            self._buffer = []
+
+        def emit(self, record):
+            """
+            Append the record to the buffer.
+            """
+
+            self._buffer.append(record)
+
+        def flush(self, target=None):  # allow target, pylint: disable=W0221
+            """
+            Sends the buffered records to the given target.
+            """
+
+            self.acquire()
+            try:
+                if target:
+                    for record in self._buffer:
+                        target.handle(record)
+                self._buffer = []
+            finally:
+                self.release()
+
+        def close(self):
+            """
+            Lose the buffer and call parent's close() method.
+
+            Note that unlike the logging.handlers version of this class,
+            closing the buffer does NOT automatically flush it to a
+            target handler.
+            """
+
+            self.acquire()
+            try:
+                self._buffer = []
+                logging.Handler.close(self)
+            finally:
+                self.release()
 
     __slots__ = [
         '_handlers',    # map of flags to possible handlers
@@ -96,7 +149,7 @@ class BufferedLogger(logging.Logger):  # lots inherited, pylint: disable=R0904
         assert not self._configured, "Loggers may only be configured once"
 
         self._handlers = {
-            flag: (logging.handlers.MemoryHandler(self.BUFFER_LIMIT), handler)
+            flag: (self._MemoryHandler(), handler)
             for flag, handler
             in handlers.items()
         }
@@ -127,8 +180,8 @@ class BufferedLogger(logging.Logger):  # lots inherited, pylint: disable=R0904
         else:
             for flag, (temp_handler, final_handler) in self._handlers.items():
                 if lookup[flag]:
-                    temp_handler.setTarget(final_handler)
-                    temp_handler.flush()
+                    temp_handler.flush(final_handler)
+                temp_handler.close()
 
                 self.removeHandler(temp_handler)
                 if lookup[flag]:

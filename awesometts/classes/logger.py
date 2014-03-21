@@ -155,6 +155,7 @@ class BufferedLogger(logging.Logger):  # lots inherited, pylint: disable=R0904
         }
         self._configured = True
 
+        self.addHandler(logging.NullHandler())  # avoid "no handlers" message
         for temp_handler, final_handler in self._handlers.values():
             if formatter:
                 final_handler.setFormatter(formatter)

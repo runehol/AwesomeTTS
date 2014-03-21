@@ -28,6 +28,7 @@ Add-on package initialization
 
 __all__ = [
     'conf',
+    'logger',
 ]
 
 import logging

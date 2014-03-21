@@ -498,7 +498,7 @@ def editConf():
 	if not d.exec_():
 		return
 
-	conf.put(
+	conf.update(
 		tts_key_q=form.pushKeyQ.keyval,
 		tts_key_a=form.pushKeyA.keyval,
 		automatic_questions=form.cAutoQ.isChecked(),

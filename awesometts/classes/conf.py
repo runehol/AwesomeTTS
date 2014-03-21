@@ -26,8 +26,6 @@ Storage and management of add-on configuration
 # TODO Would it be possible to get these configuration options to sync with
 #      AnkiWeb, e.g. by moving them into the collections database?
 
-# TODO Consider making this more dict-like, e.g. update() instead of put()
-
 __all__ = ['Conf']
 
 import sqlite3
@@ -35,9 +33,12 @@ import sqlite3
 
 class Conf(object):
     """
-    Exposes a get() and put() method for handling retrieving, caching,
-    and serializing configuration information stored in a given SQLite3
-    database table.
+    Exposes a class whose instances have a dict-like interface for
+    handling retrieving, caching, and serializing configuration stored
+    in a given SQLite3 database table.
+
+    As an alternative to the dict-like interface, attributes may be used
+    for both reading and assigning, and kwargs may be used for update().
     """
 
     class _LoggableCursor(sqlite3.Cursor):  # no init, pylint: disable=W0232
@@ -274,44 +275,48 @@ class Conf(object):
         for callback in unique_callbacks:
             callback(self)
 
-    def get(self, name):
+    def get(self, name, default=None):
         """
         Retrieve the current value for the given named configuration
-        option. The name will be normalized.
+        option. If the name does not exist, default will be returned.
+        """
 
-        Raises KeyError if the argument is not a supported name.
+        name = self._normalize(name)
+        return self._cache[name] if name in self._cache else default
+
+    def __getattr__(self, name):
+        """
+        Retrieve a configuration value using the conf.xxx syntax,
+        raising an AttributeError if the name does not exist.
+        """
+
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError("'%s' is not a supported name" % name)
+
+    def __getitem__(self, name):
+        """
+        Retrieve a configuration value using the conf['xxx'] syntax,
+        raising a KeyError if the name does not exist.
         """
 
         return self._cache[self._normalize(name)]
 
-    def __getattr__(self, name):
-        """
-        Convenience sugar instead of using get().
-
-        Unlike get(), raises AttributeError on an unsupported name
-        rather than a KeyError.
-        """
-
-        try:
-            return self.get(name)
-        except KeyError:
-            raise AttributeError("'%s' is not a suported name" % name)
-
-    def __getitem__(self, name):
-        """
-        Convenience sugar instead of using get().
-        """
-
-        return self.get(name)
-
-    def put(self, **updates):
+    def update(self, *updates_dict, **kw_updates):
         """
         Updates the value(s) of the given configuration option(s) passed
-        as kwargs-style arguments, and persists those values back to the
-        database.
+        as a dict, and persists those values back to the database.
 
-        Raises KeyError if any argument is not a supported name.
+        Raises KeyError if any key is not a supported name.
         """
+
+        assert (
+            bool(len(kw_updates)) !=  # xor
+            bool(len(updates_dict) == 1 and isinstance(updates_dict[0], dict))
+        ), "Must call update() with a dict or kwargs-style arguments"
+
+        updates = kw_updates or updates_dict[0]
 
         # remap dict into a list of (name, definition, new value)-tuples
         updates = [
@@ -363,3 +368,29 @@ class Conf(object):
         # close database connection
         cursor.close()
         connection.close()
+
+    def __setattr__(self, name, value):
+        """
+        Handled the same as for update(), but with a single name using
+        the conf.xxx = yyy syntax.
+
+        Raises KeyError if any key is not a supported name.
+        """
+
+        if name not in self.__slots__:
+            name = self._normalize(name)
+            if name in self._definitions:
+                self.update({name: value})
+                return
+
+        object.__setattr__(self, name, value)
+
+    def __setitem__(self, name, value):
+        """
+        Handled the same as for update(), but with a single name using
+        the conf['xxx'] = yyy syntax.
+
+        Raises KeyError if any key is not a supported name.
+        """
+
+        self.update({name: value})

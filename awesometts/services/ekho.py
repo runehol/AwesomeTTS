@@ -20,9 +20,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from PyQt4 import QtGui,QtCore
+from PyQt4 import QtGui
 
-#Supported Languages       
+#Supported Languages
 # code , Language
 slanguages = [
 ['Cantonese', 'Chinese Cantonese'],
@@ -32,18 +32,16 @@ slanguages = [
 ]
 
 
-import re, subprocess
+import re
 from anki.utils import stripHTML
-from urllib import quote_plus
-from subprocess import Popen, PIPE, STDOUT
-from random import randint, seed
+from subprocess import Popen, PIPE, STDOUT, mswindows
 from awesometts.paths import media_filename
 
 
 
 def playEkhoTTS(text, language):
 	text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
-	subprocess.Popen(['ekho', '-v', language, text], stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
+	Popen(['ekho', '-v', language, text], stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
 
 def playfromtagEkhoTTS(fromtag):
 	for item in fromtag:
@@ -67,7 +65,7 @@ def get_language_id(language_code):
 def recordEkhoTTS(text, language):
 	text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
 	filename = media_filename(text, 'ekho', language, 'wav')
-	subprocess.Popen(['ekho', '-v', language, '-t', 'wav', '-o', filename, text], stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
+	Popen(['ekho', '-v', language, '-t', 'wav', '-o', filename, text], stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
 	return filename
 
 def filegenerator_layout(form):
@@ -100,7 +98,7 @@ def filegenerator_preview(form):
 DefaultEkhoVoice = get_language_id('Mandarin')
 
 
-if not subprocess.mswindows:
+if not mswindows:
 	TTS_service = {'ekho' : {
 	'name': 'Ekho',
 	'play' : playEkhoTTS,

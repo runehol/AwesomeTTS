@@ -20,12 +20,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from PyQt4 import QtGui,QtCore
+from PyQt4 import QtGui
 from awesometts import conf
 from awesometts.paths import media_filename
 from awesometts.util import TO_TOKENS
 
-#Supported Languages       
+#Supported Languages
 # code , Language
 slanguages = [['af', 'Afrikaans'],
 ['sq', 'Albanian'],
@@ -77,15 +77,14 @@ slanguages = [['af', 'Afrikaans'],
 TTS_ADDRESS = 'http://translate.google.com/translate_tts'
 
 
-import re, subprocess
+import re
 from anki.utils import stripHTML
-from urllib import quote_plus
 from subprocess import Popen, PIPE, STDOUT
 
 
 def playEspeakTTS(text, language):
 	text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
-	subprocess.Popen(['espeak', '-v', language, text], stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
+	Popen(['espeak', '-v', language, text], stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
 
 def playfromtagEspeakTTS(fromtag):
 	for item in fromtag:
@@ -109,7 +108,7 @@ def get_language_id(language_code):
 def recordEspeakTTS(text, language):
 	text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
 	filename = media_filename(text, 'espeak', language, 'mp3')
-	espeak_exec = subprocess.Popen(['espeak', '-v', language, text, '--stdout'], stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+	espeak_exec = Popen(['espeak', '-v', language, text, '--stdout'], stdin=PIPE, stdout=PIPE, stderr=STDOUT)
 	lame_exec = Popen(
 		['lame'] +
 		TO_TOKENS(conf.lame_flags) +

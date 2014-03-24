@@ -20,10 +20,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from PyQt4 import QtGui,QtCore
-import os, re, subprocess, sys
+from PyQt4 import QtGui
+import os, re, sys
 from anki.utils import stripHTML
-from urllib import quote_plus
 from awesometts import conf
 from awesometts.paths import media_filename
 from awesometts.util import (
@@ -31,17 +30,17 @@ from awesometts.util import (
     TO_HEXSTR,
     TO_TOKENS,
 )
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE, STDOUT, mswindows
 
 
-if subprocess.mswindows:
+if mswindows:
 	vbs_launcher = os.path.join(os.environ['SYSTEMROOT'], "syswow64", "cscript.exe")
 	if not os.path.exists(vbs_launcher) :
 		vbs_launcher = os.path.join(os.environ['SYSTEMROOT'], "system32", "cscript.exe")
 	sapi5_path = os.path.join(os.path.dirname(__file__),"sapi5.vbs")
 	
 
-	exec_command = subprocess.Popen([vbs_launcher, sapi5_path, '-vl'], startupinfo=STARTUP_INFO, stdout=subprocess.PIPE)
+	exec_command = Popen([vbs_launcher, sapi5_path, '-vl'], startupinfo=STARTUP_INFO, stdout=PIPE)
 	voicelist = exec_command.stdout.read().split('\n')
 	exec_command.wait()
 
@@ -57,9 +56,9 @@ if subprocess.mswindows:
 		text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")))
 		param = [vbs_launcher, sapi5_path,'-hex', '-voice', TO_HEXSTR(voice), TO_HEXSTR(text)]
 		if conf.subprocessing:
-			subprocess.Popen(param, startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+			Popen(param, startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
 		else:
-			subprocess.Popen(param, startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
+			Popen(param, startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
 
 	def playfromtagsapi5TTS(fromtag):
 		for item in fromtag:
@@ -76,9 +75,9 @@ if subprocess.mswindows:
 		text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")))
 		filename_wav = media_filename(text, 'sapi5', voice, 'wav')
 		filename_mp3 = media_filename(text, 'sapi5', voice, 'mp3')
-		subprocess.Popen([vbs_launcher, sapi5_path, '-hex', '-o',
+		Popen([vbs_launcher, sapi5_path, '-hex', '-o',
 		filename_wav, '-voice', TO_HEXSTR(voice), TO_HEXSTR(text)], startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
-		subprocess.Popen(
+		Popen(
 			['lame.exe'] +
 			TO_TOKENS(conf.lame_flags) +
 			[filename_wav, filename_mp3],

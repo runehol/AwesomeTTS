@@ -83,70 +83,70 @@ from subprocess import Popen, PIPE, STDOUT
 
 
 def playEspeakTTS(text, language):
-	text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
-	Popen(['espeak', '-v', language, text], stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
+    text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
+    Popen(['espeak', '-v', language, text], stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
 
 def playfromtagEspeakTTS(fromtag):
-	for item in fromtag:
-		match = re.match("(.*?):(.*)", item, re.M|re.I)
-		playEspeakTTS(match.group(2), match.group(1))
+    for item in fromtag:
+        match = re.match("(.*?):(.*)", item, re.M|re.I)
+        playEspeakTTS(match.group(2), match.group(1))
 
 def playfromHTMLtagEspeakTTS(fromtag):
-	for item in fromtag:
-		text = ''.join(item.findAll(text=True))
-		voice = item['voice']
-		playEspeakTTS(text, voice)
+    for item in fromtag:
+        text = ''.join(item.findAll(text=True))
+        voice = item['voice']
+        playEspeakTTS(text, voice)
 
 def get_language_id(language_code):
-	x = 0
-	for d in slanguages:
-		if d[0]==language_code:
-			return x
-		x = x + 1
+    x = 0
+    for d in slanguages:
+        if d[0]==language_code:
+            return x
+        x = x + 1
 
 
 def recordEspeakTTS(text, language):
-	text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
-	filename = media_filename(text, 'espeak', language, 'mp3')
-	espeak_exec = Popen(['espeak', '-v', language, text, '--stdout'], stdin=PIPE, stdout=PIPE, stderr=STDOUT)
-	lame_exec = Popen(
-		['lame'] +
-		TO_TOKENS(conf.lame_flags) +
-		['-', filename],
-		stdin=espeak_exec.stdout,
-		stdout=PIPE,
-	)
-	espeak_exec.stdout.close()
-	result = lame_exec.communicate()[0]
-	espeak_exec.wait()
+    text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
+    filename = media_filename(text, 'espeak', language, 'mp3')
+    espeak_exec = Popen(['espeak', '-v', language, text, '--stdout'], stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+    lame_exec = Popen(
+        ['lame'] +
+        TO_TOKENS(conf.lame_flags) +
+        ['-', filename],
+        stdin=espeak_exec.stdout,
+        stdout=PIPE,
+    )
+    espeak_exec.stdout.close()
+    result = lame_exec.communicate()[0]
+    espeak_exec.wait()
 
-	return filename.decode('utf-8')
+    return filename.decode('utf-8')
 
 def filegenerator_layout(form):
-	global DefaultEspeakVoice
-	verticalLayout = QtGui.QVBoxLayout()
-	textEditlabel = QtGui.QLabel()
-	textEditlabel.setText("Language:")
-	form.comboBoxEspeak = QtGui.QComboBox()
-	form.comboBoxEspeak.addItems([d[0] +' - '+ d[1] for d in slanguages])
-	form.comboBoxEspeak.setCurrentIndex(DefaultEspeakVoice) # get Default
+    global DefaultEspeakVoice
+    verticalLayout = QtGui.QVBoxLayout()
+    textEditlabel = QtGui.QLabel()
+    textEditlabel.setText("Language:")
+    form.comboBoxEspeak = QtGui.QComboBox()
+    form.comboBoxEspeak.addItems([d[0] +' - '+ d[1] for d in slanguages])
+    form.comboBoxEspeak.setCurrentIndex(DefaultEspeakVoice) # get Default
 
-	verticalLayout.addWidget(textEditlabel)
-	verticalLayout.addWidget(form.comboBoxEspeak)
-	return verticalLayout
+    verticalLayout.addWidget(textEditlabel)
+    verticalLayout.addWidget(form.comboBoxEspeak)
+    return verticalLayout
 
 def recordEspeakTTS_form(form, text):
-	global DefaultEspeakVoice
-	DefaultEspeakVoice = form.comboBoxEspeak.currentIndex() #set new Default
-	return recordEspeakTTS(text, slanguages[form.comboBoxEspeak.currentIndex()][0])
+    global DefaultEspeakVoice
+    DefaultEspeakVoice = form.comboBoxEspeak.currentIndex() #set new Default
+    return recordEspeakTTS(text, slanguages[form.comboBoxEspeak.currentIndex()][0])
 
 def filegenerator_run(form):
-	global DefaultEspeakVoice
-	DefaultEspeakVoice = form.comboBoxEspeak.currentIndex() #set new Default
-	return recordEspeakTTS(unicode(form.texttoTTS.toPlainText()), slanguages[form.comboBoxEspeak.currentIndex()][0])
+    global DefaultEspeakVoice
+    DefaultEspeakVoice = form.comboBoxEspeak.currentIndex() #set new Default
+    return recordEspeakTTS(unicode(form.texttoTTS.toPlainText()), slanguages[form.comboBoxEspeak.currentIndex()][0])
 
 def filegenerator_preview(form):
-	return playEspeakTTS(unicode(form.texttoTTS.toPlainText()), slanguages[form.comboBoxEspeak.currentIndex()][0])
+    return playEspeakTTS(unicode(form.texttoTTS.toPlainText()), slanguages[form.comboBoxEspeak.currentIndex()][0])
 
 
 DefaultEspeakVoice = get_language_id('en')
@@ -160,7 +160,3 @@ TTS_service = {'espeak' : {
 'filegenerator_layout': filegenerator_layout,
 'filegenerator_preview': filegenerator_preview,
 'filegenerator_run': filegenerator_run}}
-
-
-
-

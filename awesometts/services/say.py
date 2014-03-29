@@ -26,6 +26,7 @@ Service implementation for OS X's say command
 
 __all__ = ['TTS_service']
 
+from os import unlink
 import re
 from subprocess import check_output, Popen, PIPE, STDOUT
 from PyQt4 import QtGui
@@ -134,12 +135,7 @@ if VOICES:
             stderr=STDOUT,
         ).wait()
 
-        Popen(
-            ['rm', filename_aiff],
-            stdin=PIPE,
-            stdout=PIPE,
-            stderr=STDOUT,
-        ).wait()
+        unlink(filename_aiff)
 
         return filename_mp3.decode('utf-8')
 

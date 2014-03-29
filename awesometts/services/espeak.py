@@ -26,6 +26,7 @@ Service implementation for eSpeak voice engine
 
 __all__ = ['TTS_service']
 
+from os import unlink
 import re
 from subprocess import check_output, mswindows, Popen, PIPE, STDOUT
 from PyQt4 import QtGui
@@ -150,32 +151,28 @@ if VOICES:
         text = re.sub(
             r'\[sound:.*?\]',
             '',
-            stripHTML(text.replace("\n", "")).encode('utf-8'),
+            stripHTML(text.replace('\n', '')).encode('utf-8'),
         )
         voice = VOICES[form.comboBoxEspeak.currentIndex()][0]
 
-        filename = media_filename(text, SERVICE, voice, 'mp3')
+        filename_wav = media_filename(text, SERVICE, voice, 'wav')
+        filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')
 
-        espeak_exec = Popen(
-            [BINARY, '-v', voice, text, '--stdout'],
-            # FIXME -- do I need this?: startupinfo=STARTUP_INFO,
-            stdin=PIPE,
-            stdout=PIPE,
-            stderr=STDOUT
-        )
+        Popen(
+            [BINARY, '-v', voice, '-w', filename_wav, text],
+            startupinfo=STARTUP_INFO,
+        ).wait()
 
-        lame_exec = Popen(
-            ['lame'] + TO_TOKENS(conf.lame_flags) + ['-', filename],
-            # FIXME -- do I need this?: startupinfo=STARTUP_INFO,
-            stdin=espeak_exec.stdout,
-            stdout=PIPE,
-        )
+        Popen(
+            ['lame'] +
+            TO_TOKENS(conf.lame_flags) +
+            [filename_wav, filename_mp3],
+            startupinfo=STARTUP_INFO,
+        ).wait()
 
-        espeak_exec.stdout.close()
-        lame_exec.communicate()
-        espeak_exec.wait()
+        unlink(filename_wav)
 
-        return filename.decode('utf-8')
+        return filename_mp3.decode('utf-8')
 
     def fg_layout(form):
         form.comboBoxEspeak = QtGui.QComboBox()

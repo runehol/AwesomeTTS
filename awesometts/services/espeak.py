@@ -27,48 +27,78 @@ Service implementation for eSpeak voice engine
 __all__ = ['TTS_service']
 
 import re
-from subprocess import check_output, Popen, PIPE, STDOUT
+from subprocess import check_output, mswindows, Popen, PIPE, STDOUT
 from PyQt4 import QtGui
 from anki.utils import stripHTML
 from awesometts import conf
 from awesometts.paths import media_filename
 from awesometts.util import STARTUP_INFO, TO_TOKENS
 
-
+BINARY = 'espeak'
 VOICES = None
 
 RE_VOICE = re.compile(r'^\s*(\d+\s+)?([-\w]+)(\s+[-\w]\s+([-\w]+))?')
 
+def _get_voices(binary):
+    voices = sorted([
+        (
+            # voice name
+            match.group(2),
+
+            # dropdown description
+            "%s (%s)" % (match.group(4), match.group(2))
+            if match.group(4)
+            else match.group(2),
+        )
+        for match
+        in [
+            RE_VOICE.match(line)
+            for line
+            in check_output(
+                [binary, '--voices'],
+                startupinfo=STARTUP_INFO,
+            ).split('\n')
+        ]
+        if match and match.group(2) != 'Pty'
+    ], key=lambda voice: str.lower(voice[1]))
+
+    if not voices:
+        raise EnvironmentError("No usable output from `espeak --voices`")
+
+    return voices
+
 try:
     try:
-        VOICES = sorted([
-            (
-                # voice name
-                match.group(2),
-
-                # dropdown description
-                "%s (%s)" % (match.group(4), match.group(2))
-                if match.group(4)
-                else match.group(2),
-            )
-            for match
-            in [
-                RE_VOICE.match(line)
-                for line
-                in check_output(
-                    ['espeak', '--voices'],
-                    # FIXME -- do I need this?: startupinfo=STARTUP_INFO,
-                ).split('\n')
-            ]
-            if match and match.group(2) != 'Pty'
-        ], key=lambda voice: str.lower(voice[1]))
-
-        if not VOICES:
-            raise EnvironmentError("No usable output from `espeak --voices`")
+        VOICES = _get_voices(BINARY)
 
     except OSError as os_error:
         from errno import ENOENT
-        if os_error.errno != ENOENT:
+
+        if os_error.errno == ENOENT:
+            if mswindows:
+                import _winreg as winreg  # for Windows, pylint: disable=F0401
+
+                try:
+                    with winreg.ConnectRegistry(
+                        None,  # use registry on local machine
+                        winreg.HKEY_LOCAL_MACHINE
+                    ) as hkey_hklm:
+                        with winreg.OpenKey(
+                            hkey_hklm,
+                            r'Software\Microsoft\Speech\Voices\Tokens\eSpeak',
+                        ) as hkey_espeak:
+                            BINARY = r'%s\command_line\%s.exe' % (
+                                winreg.QueryValueEx(hkey_espeak, 'Path')[0],
+                                BINARY,
+                            )
+
+                            VOICES = _get_voices(BINARY)
+
+                except OSError as os_error:
+                    if os_error.errno != ENOENT:
+                        raise os_error
+
+        else:
             raise os_error
 
 except:  # allow recovery from any exception, pylint:disable=W0702
@@ -96,8 +126,8 @@ if VOICES:
         )
 
         Popen(
-            ['espeak', '-v', voice, text],
-            # FIXME -- do I need this?: startupinfo=STARTUP_INFO,
+            [BINARY, '-v', voice, text],
+            startupinfo=STARTUP_INFO,
             stdin=PIPE,
             stdout=PIPE,
             stderr=STDOUT,
@@ -127,7 +157,7 @@ if VOICES:
         filename = media_filename(text, SERVICE, voice, 'mp3')
 
         espeak_exec = Popen(
-            ['espeak', '-v', voice, text, '--stdout'],
+            [BINARY, '-v', voice, text, '--stdout'],
             # FIXME -- do I need this?: startupinfo=STARTUP_INFO,
             stdin=PIPE,
             stdout=PIPE,

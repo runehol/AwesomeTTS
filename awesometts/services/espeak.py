@@ -60,7 +60,7 @@ try:
                     # FIXME -- do I need this?: startupinfo=STARTUP_INFO,
                 ).split('\n')
             ]
-            if match
+            if match and match.group(2) != 'Pty'
         ], key=lambda voice: str.lower(voice[1]))
 
         if not VOICES:

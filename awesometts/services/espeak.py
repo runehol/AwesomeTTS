@@ -20,143 +20,170 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from PyQt4 import QtGui
-from awesometts import conf
-from awesometts.paths import media_filename
-from awesometts.util import TO_TOKENS
+"""
+Service implementation for eSpeak voice engine
+"""
 
-#Supported Languages
-# code , Language
-slanguages = [['af', 'Afrikaans'],
-['sq', 'Albanian'],
-['hy', 'Armenian'],
-['bs', 'Bosnian'],
-['ca', 'Catalan'],
-['zh-yue', 'Chinese Cantonese'],
-['zh', 'Chinese Mandarin'],
-['hr', 'Croatian'],
-['cs', 'Czech'],
-['da', 'Danish'],
-['nl', 'Dutch'],
-['en', 'English'],
-['eo', 'Esperanto'],
-['fi', 'Finnish'],
-['fr', 'French'],
-['ka', 'Georgian'],
-['de', 'German'],
-['el', 'Greek'],
-['grc', 'Greek (Ancient)'],
-['hi', 'Hindi'],
-['is', 'Icelandic'],
-['id', 'Indonesian'],
-['it', 'Italian'],
-['kn', 'Kannada'],
-['ku', 'Kurdish'],
-['la', 'Latin'],
-['lv', 'Latvian'],
-['jbo', 'Lojban'],
-['mk', 'Macedonian'],
-['no', 'Norwegian'],
-['pl', 'Polish'],
-['pt', 'Portuguese (Brazil)'],
-['pt-pt', 'Portuguese (Europeans)'],
-['ro', 'Romanian'],
-['ru', 'Russian'],
-['sr', 'Serbian'],
-['sk', 'Slovak'],
-['es', 'Spanish'],
-['es-la', 'Spanish - Latin America'],
-['sw', 'Swahihi'],
-['sv', 'Swedish'],
-['ta', 'Tamil'],
-['tr', 'Turkish'],
-['vi', 'Vietnamese'],
-['cy', 'Welsh']]
-
-
-TTS_ADDRESS = 'http://translate.google.com/translate_tts'
-
+__all__ = ['TTS_service']
 
 import re
+from subprocess import check_output, Popen, PIPE, STDOUT
+from PyQt4 import QtGui
 from anki.utils import stripHTML
-from subprocess import Popen, PIPE, STDOUT
+from awesometts import conf
+from awesometts.paths import media_filename
+from awesometts.util import STARTUP_INFO, TO_TOKENS
 
 
-def playEspeakTTS(text, language):
-    text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
-    Popen(['espeak', '-v', language, text], stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
+VOICES = None
 
-def playfromtagEspeakTTS(fromtag):
-    for item in fromtag:
-        match = re.match("(.*?):(.*)", item, re.M|re.I)
-        playEspeakTTS(match.group(2), match.group(1))
+RE_VOICE = re.compile(r'^\s*(\d+\s+)?([-\w]+)(\s+[-\w]\s+([-\w]+))?')
 
-def playfromHTMLtagEspeakTTS(fromtag):
-    for item in fromtag:
-        text = ''.join(item.findAll(text=True))
-        voice = item['voice']
-        playEspeakTTS(text, voice)
+try:
+    try:
+        VOICES = sorted([
+            (
+                # voice name
+                match.group(2),
 
-def get_language_id(language_code):
-    x = 0
-    for d in slanguages:
-        if d[0]==language_code:
-            return x
-        x = x + 1
+                # dropdown description
+                "%s (%s)" % (match.group(4), match.group(2))
+                if match.group(4)
+                else match.group(2),
+            )
+            for match
+            in [
+                RE_VOICE.match(line)
+                for line
+                in check_output(
+                    ['espeak', '--voices'],
+                    # FIXME -- do I need this?: startupinfo=STARTUP_INFO,
+                ).split('\n')
+            ]
+            if match
+        ], key=lambda voice: str.lower(voice[1]))
 
+        if not VOICES:
+            raise EnvironmentError("No usable output from `espeak --voices`")
 
-def recordEspeakTTS(text, language):
-    text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")).encode('utf-8'))
-    filename = media_filename(text, 'espeak', language, 'mp3')
-    espeak_exec = Popen(['espeak', '-v', language, text, '--stdout'], stdin=PIPE, stdout=PIPE, stderr=STDOUT)
-    lame_exec = Popen(
-        ['lame'] +
-        TO_TOKENS(conf.lame_flags) +
-        ['-', filename],
-        stdin=espeak_exec.stdout,
-        stdout=PIPE,
+    except OSError as os_error:
+        from errno import ENOENT
+        if os_error.errno != ENOENT:
+            raise os_error
+
+except:  # allow recovery from any exception, pylint:disable=W0702
+    from sys import stderr
+    from traceback import format_exc
+
+    stderr.write(
+        "Although you appear to have eSpeak, the voice list from the CLI "
+        "utility could not be retrieved. Any cards using `espeak` will not "
+        "be speakable during this session. If this persists, please open "
+        "an issue at <https://github.com/AwesomeTTS/AwesomeTTS/issues>.\n"
+        "\n" +
+        format_exc()
     )
-    espeak_exec.stdout.close()
-    result = lame_exec.communicate()[0]
-    espeak_exec.wait()
-
-    return filename.decode('utf-8')
-
-def filegenerator_layout(form):
-    global DefaultEspeakVoice
-    verticalLayout = QtGui.QVBoxLayout()
-    textEditlabel = QtGui.QLabel()
-    textEditlabel.setText("Language:")
-    form.comboBoxEspeak = QtGui.QComboBox()
-    form.comboBoxEspeak.addItems([d[0] +' - '+ d[1] for d in slanguages])
-    form.comboBoxEspeak.setCurrentIndex(DefaultEspeakVoice) # get Default
-
-    verticalLayout.addWidget(textEditlabel)
-    verticalLayout.addWidget(form.comboBoxEspeak)
-    return verticalLayout
-
-def recordEspeakTTS_form(form, text):
-    global DefaultEspeakVoice
-    DefaultEspeakVoice = form.comboBoxEspeak.currentIndex() #set new Default
-    return recordEspeakTTS(text, slanguages[form.comboBoxEspeak.currentIndex()][0])
-
-def filegenerator_run(form):
-    global DefaultEspeakVoice
-    DefaultEspeakVoice = form.comboBoxEspeak.currentIndex() #set new Default
-    return recordEspeakTTS(unicode(form.texttoTTS.toPlainText()), slanguages[form.comboBoxEspeak.currentIndex()][0])
-
-def filegenerator_preview(form):
-    return playEspeakTTS(unicode(form.texttoTTS.toPlainText()), slanguages[form.comboBoxEspeak.currentIndex()][0])
 
 
-DefaultEspeakVoice = get_language_id('en')
+if VOICES:
+    SERVICE = 'espeak'
 
-TTS_service = {'espeak' : {
-'name': 'Espeak',
-'play' : playEspeakTTS,
-'playfromtag' : playfromtagEspeakTTS,
-'playfromHTMLtag' : playfromHTMLtagEspeakTTS,
-'record' : recordEspeakTTS_form,
-'filegenerator_layout': filegenerator_layout,
-'filegenerator_preview': filegenerator_preview,
-'filegenerator_run': filegenerator_run}}
+    def play(text, voice):
+        text = re.sub(
+            r'\[sound:.*?\]',
+            '',
+            stripHTML(text.replace("\n", "")).encode('utf-8'),
+        )
+
+        Popen(
+            ['espeak', '-v', voice, text],
+            # FIXME -- do I need this?: startupinfo=STARTUP_INFO,
+            stdin=PIPE,
+            stdout=PIPE,
+            stderr=STDOUT,
+        ).communicate()
+
+    def play_html(fromtag):
+        for item in fromtag:
+            text = ''.join(item.findAll(text=True))
+            voice = item['voice']
+            play(text, voice)
+
+    def play_tag(fromtag):
+        for item in fromtag:
+            match = re.match(r'(.*?):(.*)', item, re.M|re.I)
+            play(match.group(2), match.group(1))
+
+    def record(form, text):
+        fg_layout.default_voice = form.comboBoxEspeak.currentIndex()
+
+        text = re.sub(
+            r'\[sound:.*?\]',
+            '',
+            stripHTML(text.replace("\n", "")).encode('utf-8'),
+        )
+        voice = VOICES[form.comboBoxEspeak.currentIndex()][0]
+
+        filename = media_filename(text, SERVICE, voice, 'mp3')
+
+        espeak_exec = Popen(
+            ['espeak', '-v', voice, text, '--stdout'],
+            # FIXME -- do I need this?: startupinfo=STARTUP_INFO,
+            stdin=PIPE,
+            stdout=PIPE,
+            stderr=STDOUT
+        )
+
+        lame_exec = Popen(
+            ['lame'] + TO_TOKENS(conf.lame_flags) + ['-', filename],
+            # FIXME -- do I need this?: startupinfo=STARTUP_INFO,
+            stdin=espeak_exec.stdout,
+            stdout=PIPE,
+        )
+
+        espeak_exec.stdout.close()
+        lame_exec.communicate()
+        espeak_exec.wait()
+
+        return filename.decode('utf-8')
+
+    def fg_layout(form):
+        form.comboBoxEspeak = QtGui.QComboBox()
+        form.comboBoxEspeak.addItems([voice[1] for voice in VOICES])
+        form.comboBoxEspeak.setCurrentIndex(fg_layout.default_voice)
+
+        text_label = QtGui.QLabel()
+        text_label.setText("Voice:")
+
+        vertical_layout = QtGui.QVBoxLayout()
+        vertical_layout.addWidget(text_label)
+        vertical_layout.addWidget(form.comboBoxEspeak)
+
+        return vertical_layout
+
+    def fg_preview(form):
+        return play(
+            unicode(form.texttoTTS.toPlainText()),
+            VOICES[form.comboBoxEspeak.currentIndex()][0]
+        )
+
+    def fg_run(form):
+        return record(form, unicode(form.texttoTTS.toPlainText()))
+
+    try:
+        fg_layout.default_voice = VOICES.index(
+            next(iter([voice for voice in VOICES if voice[0] == 'en']))
+        )
+    except StopIteration:
+        fg_layout.default_voice = 0
+
+    TTS_service = {SERVICE: {
+        'name': "eSpeak",
+        'play': play,
+        'playfromHTMLtag': play_html,
+        'playfromtag': play_tag,
+        'record': record,
+        'filegenerator_layout': fg_layout,
+        'filegenerator_preview': fg_preview,
+        'filegenerator_run': fg_run,
+    }}

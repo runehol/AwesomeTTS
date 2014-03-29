@@ -199,7 +199,7 @@ if VOICES:
 
     try:
         fg_layout.default_voice = VOICES.index(
-            next(iter([voice for voice in VOICES if voice[0] == 'en']))
+            next(v for v in VOICES if v[0] == 'en')
         )
     except StopIteration:
         fg_layout.default_voice = 0

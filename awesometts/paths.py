@@ -67,7 +67,7 @@ _ENCODING = getfilesystemencoding()
 
 _ANKI_DIR = dirname(abspath(argv[0]))
 
-if mswindows or True:
+if mswindows:
     # Enable mplayer.exe binary to be called from the environment PATH.
     from os import environ
     environ['PATH'] += ';' + _ANKI_DIR

@@ -38,9 +38,11 @@ __all__ = [
 ]
 
 from hashlib import md5
+from os import mkdir
 from os.path import (
     abspath,
     dirname,
+    isdir,
     join,
     normpath,
 )
@@ -102,6 +104,9 @@ def relative(start_dir, to_path, *addl_paths):
 ADDON_LOG = relative(_CODE_DIR, 'addon.log')
 
 CACHE_DIR = relative(_CODE_DIR, 'cache')
+
+if not isdir(CACHE_DIR):
+    mkdir(CACHE_DIR)
 
 CONF_DB = relative(_CODE_DIR, 'conf.db')
 

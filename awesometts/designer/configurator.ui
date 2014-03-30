@@ -282,7 +282,7 @@ If you are having problems, stick with the MP3 Generator.</string>
             </rect>
            </property>
            <property name="title">
-            <string>LAME Transcoder (used by eSpeak, SAPI, and Mac OS X Say)</string>
+            <string>LAME Transcoder (used by most engines)</string>
            </property>
            <widget class="QLabel">
             <property name="geometry">

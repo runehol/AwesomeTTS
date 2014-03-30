@@ -19,7 +19,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 """
 Service implementation for OS X's say command
 """
@@ -28,7 +27,7 @@ __all__ = ['TTS_service']
 
 from os import unlink
 import re
-from subprocess import check_output, Popen, PIPE, STDOUT
+from subprocess import check_output, Popen
 from PyQt4 import QtGui
 from anki.utils import isMac, stripHTML
 from awesometts import conf
@@ -36,6 +35,7 @@ from awesometts.paths import media_filename
 from awesometts.util import TO_TOKENS
 
 
+BINARY = 'say'
 VOICES = None
 
 if isMac:
@@ -57,7 +57,7 @@ if isMac:
             in [
                 RE_VOICE.match(line)
                 for line
-                in check_output(['say', '-v', '?']).split('\n')
+                in check_output([BINARY, '-v', '?']).split('\n')
             ]
             if match
         ], key=lambda voice: str.lower(voice[0]))
@@ -78,6 +78,7 @@ if isMac:
             format_exc()
         )
 
+
 if VOICES:
     SERVICE = 'say'
 
@@ -88,12 +89,7 @@ if VOICES:
             stripHTML(text.replace('\n', '')).encode('utf-8'),
         )
 
-        Popen(
-            ['say', '-v', voice, text],
-            stdin=PIPE,
-            stdout=PIPE,
-            stderr=STDOUT,
-        ).communicate()
+        Popen([BINARY, '-v', voice, text]).wait()
 
     def play_html(fromtag):
         for item in fromtag:
@@ -119,20 +115,12 @@ if VOICES:
         filename_aiff = media_filename(text, SERVICE, voice, 'aiff')
         filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')
 
-        Popen(
-            ['say', '-v', voice, '-o', filename_aiff, text],
-            stdin=PIPE,
-            stdout=PIPE,
-            stderr=STDOUT,
-        ).wait()
+        Popen([BINARY, '-v', voice, '-o', filename_aiff, text]).wait()
 
         Popen(
             ['lame'] +
             TO_TOKENS(conf.lame_flags) +
             [filename_aiff, filename_mp3],
-            stdin=PIPE,
-            stdout=PIPE,
-            stderr=STDOUT,
         ).wait()
 
         unlink(filename_aiff)
@@ -161,6 +149,7 @@ if VOICES:
 
     def fg_run(form):
         return record(form, unicode(form.texttoTTS.toPlainText()))
+
 
     fg_layout.default_voice = 0
 

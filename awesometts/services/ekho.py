@@ -27,7 +27,7 @@ __all__ = ['TTS_service']
 
 from os import unlink
 import re
-from subprocess import check_output, mswindows, Popen
+from subprocess import check_output, Popen
 from PyQt4 import QtGui
 from anki.utils import stripHTML
 from awesometts import conf
@@ -65,11 +65,7 @@ try:
     except OSError as os_error:
         from errno import ENOENT
 
-        if os_error.errno == ENOENT:
-            if mswindows:
-                pass  # TODO look up ekho in registry and try again
-
-        else:
+        if os_error.errno != ENOENT:
             raise os_error
 
 except:  # allow recovery from any exception, pylint:disable=W0702
@@ -78,7 +74,7 @@ except:  # allow recovery from any exception, pylint:disable=W0702
 
     stderr.write(
         "Although you appear to have Ekho, the voice list from the CLI "
-        "utility could not be retrieved. Any cards using `ekho` will not "
+        "utility could not be retrieved. Any cards using `ekho` might not "
         "be speakable during this session. If this persists, please open "
         "an issue at <https://github.com/AwesomeTTS/AwesomeTTS/issues>.\n"
         "\n" +

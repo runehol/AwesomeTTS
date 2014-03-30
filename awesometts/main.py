@@ -25,30 +25,21 @@
 
 version = '1.0 Beta 11 (develop)'
 
-from PyQt4.QtCore import *
+import os, re, imp, types, time
+from PyQt4.QtCore import SIGNAL, Qt, QObject
+from PyQt4.QtGui import QAction, QDialog, QIcon, QPushButton, QWidget
 
-
-from awesometts import conf
-
-import os, subprocess, re, sys, urllib, imp, types, time
-from aqt import mw, utils
 from anki import sound
-from anki.sound import playFromText
-from anki.utils import stripHTML
-from subprocess import Popen, PIPE, STDOUT
-from urllib import quote_plus
-from anki.hooks import wrap,addHook
-from PyQt4 import QtGui,QtCore
-from PyQt4.QtGui import *
+from anki.hooks import addHook, wrap
+from aqt import mw, utils
 from aqt.reviewer import Reviewer
 
+from awesometts import conf
 import awesometts.forms as forms
 from .paths import CACHE_DIR, relative
 
 
 TTS_service = {}
-
-import awesometts.services
 
 modules = {}
 modulespath = os.path.dirname(__file__)+"/services/"
@@ -152,9 +143,9 @@ def ATTS_Factedit_button(self):
 	# begins shipping with at least one bundled service that sometimes
 	# returns without successfully playing back some text.
 	
-	QtCore.QObject.connect(form.previewbutton, QtCore.SIGNAL("clicked()"), lambda form=form: TTS_service[getService_byName(serv_list[form.comboBoxService.currentIndex()])]['filegenerator_preview'](form))
+	QObject.connect(form.previewbutton, SIGNAL("clicked()"), lambda form=form: TTS_service[getService_byName(serv_list[form.comboBoxService.currentIndex()])]['filegenerator_preview'](form))
 	
-	QtCore.QObject.connect(form.comboBoxService, QtCore.SIGNAL("currentIndexChanged(QString)"), lambda selected,form=form,serv_list=serv_list: filegenerator_onCBoxChange(selected, form, serv_list))
+	QObject.connect(form.comboBoxService, SIGNAL("currentIndexChanged(QString)"), lambda selected,form=form,serv_list=serv_list: filegenerator_onCBoxChange(selected, form, serv_list))
 
 	if d.exec_() and form.texttoTTS.toPlainText() != '' and not form.texttoTTS.toPlainText().isspace():
 		serviceField = form.comboBoxService.currentIndex() # set default
@@ -172,8 +163,8 @@ def ATTS_Fact_edit_setupFields(self):
 	AwesomeTTS.setCheckable(True)
 	AwesomeTTS.connect(AwesomeTTS, SIGNAL("clicked()"), lambda self=self: ATTS_Factedit_button(self))
 	AwesomeTTS.setIcon(QIcon(":/icons/speaker.png"))
-	AwesomeTTS.setToolTip(_("AwesomeTTS :: MP3 File Generator"))
-	AwesomeTTS.setShortcut(_("Ctrl+g"))
+	AwesomeTTS.setToolTip("AwesomeTTS :: MP3 File Generator")
+	AwesomeTTS.setShortcut("Ctrl+g")
 	AwesomeTTS.setFocusPolicy(Qt.NoFocus)
 	self.iconsBox.addWidget(AwesomeTTS)
 	AwesomeTTS.setStyle(self.plastiqueStyle)
@@ -289,7 +280,7 @@ def onGenerate(self):
 	frm.destinationFieldComboBox.addItems(fieldlist)
 	frm.destinationFieldComboBox.setCurrentIndex(dstField)
 	
-	QtCore.QObject.connect(frm.comboBoxService, QtCore.SIGNAL("currentIndexChanged(QString)"), lambda selected,frm=frm,serv_list=serv_list: filegenerator_onCBoxChange(selected, frm, serv_list))
+	QObject.connect(frm.comboBoxService, SIGNAL("currentIndexChanged(QString)"), lambda selected,frm=frm,serv_list=serv_list: filegenerator_onCBoxChange(selected, frm, serv_list))
 	#service list end
 
 	def dest_handling_changed():
@@ -318,7 +309,7 @@ def onGenerate(self):
 	
 	service = getService_byName(serv_list[frm.comboBoxService.currentIndex()])
 
-	self.mw.checkpoint(_("AwesomeTTS MP3 Mass Generator"))
+	self.mw.checkpoint("AwesomeTTS MP3 Mass Generator")
 	self.mw.progress.start(immediate=True, label="Generating MP3 files...")
 	
 	self.model.beginReset()
@@ -429,8 +420,8 @@ def editConf():
 
 	form.lame_flags_edit.setText(conf.lame_flags)
 	
-	QtCore.QObject.connect(form.pushKeyQ, QtCore.SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyQ))
-	QtCore.QObject.connect(form.pushKeyA, QtCore.SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyA))
+	QObject.connect(form.pushKeyQ, SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyQ))
+	QObject.connect(form.pushKeyA, SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyA))
 
 	cacheListing = (
 		[
@@ -549,4 +540,3 @@ def ATTS_OnAnswer(self):
 Reviewer._keyHandler = wrap(Reviewer._keyHandler, newKeyHandler, "before")
 Reviewer._showQuestion = wrap(Reviewer._showQuestion, ATTS_OnQuestion, "after")
 Reviewer._showAnswer  = wrap(Reviewer._showAnswer, ATTS_OnAnswer, "after")
-

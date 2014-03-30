@@ -19,7 +19,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 """
 Service implementation for eSpeak voice engine
 """
@@ -28,19 +27,20 @@ __all__ = ['TTS_service']
 
 from os import unlink
 import re
-from subprocess import check_output, mswindows, Popen, PIPE, STDOUT
+from subprocess import check_output, mswindows, Popen
 from PyQt4 import QtGui
 from anki.utils import stripHTML
 from awesometts import conf
 from awesometts.paths import media_filename
 from awesometts.util import STARTUP_INFO, TO_TOKENS
 
+
 BINARY = 'espeak'
 VOICES = None
 
 RE_VOICE = re.compile(r'^\s*(\d+\s+)?([-\w]+)(\s+[-\w]\s+([-\w]+))?')
 
-def _get_voices(binary):
+def _get_voices():
     voices = sorted([
         (
             # voice name
@@ -56,7 +56,7 @@ def _get_voices(binary):
             RE_VOICE.match(line)
             for line
             in check_output(
-                [binary, '--voices'],
+                [BINARY, '--voices'],
                 startupinfo=STARTUP_INFO,
             ).split('\n')
         ]
@@ -70,7 +70,7 @@ def _get_voices(binary):
 
 try:
     try:
-        VOICES = _get_voices(BINARY)
+        VOICES = _get_voices()
 
     except OSError as os_error:
         from errno import ENOENT
@@ -93,7 +93,7 @@ try:
                                 BINARY,
                             )
 
-                            VOICES = _get_voices(BINARY)
+                            VOICES = _get_voices()
 
                 except OSError as os_error:
                     if os_error.errno != ENOENT:
@@ -123,16 +123,13 @@ if VOICES:
         text = re.sub(
             r'\[sound:.*?\]',
             '',
-            stripHTML(text.replace("\n", "")).encode('utf-8'),
+            stripHTML(text.replace('\n', '')).encode('utf-8'),
         )
 
         Popen(
             [BINARY, '-v', voice, text],
             startupinfo=STARTUP_INFO,
-            stdin=PIPE,
-            stdout=PIPE,
-            stderr=STDOUT,
-        ).communicate()
+        ).wait()
 
     def play_html(fromtag):
         for item in fromtag:
@@ -191,11 +188,12 @@ if VOICES:
     def fg_preview(form):
         return play(
             unicode(form.texttoTTS.toPlainText()),
-            VOICES[form.comboBoxEspeak.currentIndex()][0]
+            VOICES[form.comboBoxEspeak.currentIndex()][0],
         )
 
     def fg_run(form):
         return record(form, unicode(form.texttoTTS.toPlainText()))
+
 
     try:
         fg_layout.default_voice = VOICES.index(

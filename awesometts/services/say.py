@@ -125,7 +125,7 @@ if VOICES:
 
         unlink(filename_aiff)
 
-        return filename_mp3.decode('utf-8')
+        return filename_mp3
 
     def fg_layout(form):
         form.comboBoxSay = QtGui.QComboBox()

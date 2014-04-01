@@ -297,9 +297,6 @@ def fg_preview(form):
         VOICES[form.comboBoxGoogle.currentIndex()][0],
     )
 
-def fg_run(form):
-    return record(form, unicode(form.texttoTTS.toPlainText()))
-
 
 fg_layout.default_voice = VOICES.index(
     next(v for v in VOICES if v[0] == 'en')
@@ -313,5 +310,4 @@ TTS_service = {SERVICE: {
     'record': record,
     'filegenerator_layout': fg_layout,
     'filegenerator_preview': fg_preview,
-    'filegenerator_run': fg_run,
 }}

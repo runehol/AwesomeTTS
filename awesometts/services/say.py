@@ -147,9 +147,6 @@ if VOICES:
             VOICES[form.comboBoxSay.currentIndex()][0]
         )
 
-    def fg_run(form):
-        return record(form, unicode(form.texttoTTS.toPlainText()))
-
 
     fg_layout.default_voice = 0
 
@@ -161,5 +158,4 @@ if VOICES:
         'record': record,
         'filegenerator_layout': fg_layout,
         'filegenerator_preview': fg_preview,
-        'filegenerator_run': fg_run,
     }}

@@ -191,9 +191,6 @@ if VOICES:
             VOICES[form.comboBoxEspeak.currentIndex()][0],
         )
 
-    def fg_run(form):
-        return record(form, unicode(form.texttoTTS.toPlainText()))
-
 
     try:
         fg_layout.default_voice = VOICES.index(
@@ -210,5 +207,4 @@ if VOICES:
         'record': record,
         'filegenerator_layout': fg_layout,
         'filegenerator_preview': fg_preview,
-        'filegenerator_run': fg_run,
     }}

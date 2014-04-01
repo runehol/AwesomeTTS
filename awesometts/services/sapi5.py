@@ -168,9 +168,6 @@ if VOICES:
             VOICES[form.comboBoxsapi5.currentIndex()],
         )
 
-    def fg_run(form):
-        return record(form, unicode(form.texttoTTS.toPlainText()))
-
 
     fg_layout.default_value = 0
 
@@ -182,5 +179,4 @@ if VOICES:
         'record': record,
         'filegenerator_layout': fg_layout,
         'filegenerator_preview': fg_preview,
-        'filegenerator_run': fg_run,
     }}

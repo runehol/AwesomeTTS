@@ -60,8 +60,12 @@ for i in range(len(modulesfiles)):
 def playTTSFromText(text):
     tospeakHTML = getTTSFromHTML(text)
     tospeak = getTTSFromText(text)
-    for service in tospeakHTML:
-        TTS_service[service]['playfromHTMLtag'](tospeakHTML[service])
+    for service, html_tags in tospeakHTML.items():
+        for html_tag in html_tags:
+            TTS_service[service]['play'](
+                ''.join(html_tag.findAll(text=True)),
+                html_tag['voice'],
+            )
     for service in tospeak:
         TTS_service[service]['playfromtag'](tospeak[service])
 

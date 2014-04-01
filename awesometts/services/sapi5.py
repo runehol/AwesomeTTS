@@ -103,12 +103,6 @@ if VOICES:
         else:
             Popen(param, startupinfo=STARTUP_INFO).wait()
 
-    def play_html(fromtag):
-        for item in fromtag:
-            text = ''.join(item.findAll(text=True))
-            voice = item['voice']
-            play(text, voice)
-
     def play_tag(fromtag):
         for item in fromtag:
             match = re.match(r'(.*?):(.*)', item, re.M|re.I)
@@ -175,7 +169,6 @@ if VOICES:
         'name': 'SAPI 5',
         'play': play,
         'playfromtag': play_tag,
-        'playfromHTMLtag': play_html,
         'record': record,
         'filegenerator_layout': fg_layout,
         'filegenerator_preview': fg_preview,

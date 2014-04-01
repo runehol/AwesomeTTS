@@ -231,12 +231,6 @@ def play(text, voice):
     else:
         _mplayer_playback(address)
 
-def play_html(fromtag):
-    for item in fromtag:
-        text = ''.join(item.findAll(text=True))
-        voice = item['voice']
-        play(text, voice)
-
 def play_tag(fromtag):
     for item in fromtag:
         match = re.match(r'(.*?):(.*)', item, re.M|re.I)
@@ -305,7 +299,6 @@ fg_layout.default_voice = VOICES.index(
 TTS_service = {SERVICE: {
     'name': "Google",
     'play': play,
-    'playfromHTMLtag': play_html,
     'playfromtag': play_tag,
     'record': record,
     'filegenerator_layout': fg_layout,

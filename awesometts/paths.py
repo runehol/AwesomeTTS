@@ -110,6 +110,8 @@ if not isdir(CACHE_DIR):
 
 CONF_DB = relative(_CODE_DIR, 'conf.db')
 
+SERVICES_DIR = relative(_CODE_DIR, 'services')
+
 
 def media_filename(text, service, voice=None, extension='mp3'):
     """

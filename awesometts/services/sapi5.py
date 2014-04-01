@@ -19,110 +19,168 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Service implementation for SAPI 5 on the Windows platform
+"""
 
+__all__ = ['TTS_service']
+
+from os import environ, unlink
+from os.path import exists
+import re
+from subprocess import mswindows, check_output, Popen
 from PyQt4 import QtGui
-import os, re, sys
 from anki.utils import stripHTML
 from awesometts import conf
-from awesometts.paths import media_filename
-from awesometts.util import (
-    STARTUP_INFO,
-    TO_HEXSTR,
-    TO_TOKENS,
-)
-from subprocess import Popen, PIPE, STDOUT, mswindows
+from awesometts.paths import SERVICES_DIR, media_filename, relative
+from awesometts.util import STARTUP_INFO, TO_HEXSTR, TO_TOKENS
 
+
+VOICES = None
 
 if mswindows:
-    vbs_launcher = os.path.join(os.environ['SYSTEMROOT'], "syswow64", "cscript.exe")
-    if not os.path.exists(vbs_launcher) :
-        vbs_launcher = os.path.join(os.environ['SYSTEMROOT'], "system32", "cscript.exe")
-    sapi5_path = os.path.join(os.path.dirname(__file__),"sapi5.vbs")
+    ROOT = environ.get('SYSTEMROOT', r'C:\Windows')
+
+    BINARY = next(
+        (
+            fullpath
+            for subdirectory in ['syswow64', 'system32']
+            for filename in ['cscript.exe']
+            for fullpath in [relative(ROOT, subdirectory, filename)]
+            if exists(fullpath)
+        ),
+        None,
+    )
+
+    SCRIPT = relative(SERVICES_DIR, 'sapi5.vbs')
+
+    if BINARY:
+        try:
+            VOICES = check_output(
+                [BINARY, SCRIPT, '-vl'],
+                startupinfo=STARTUP_INFO,
+            ).split('\n')
+
+            VOICES = [
+                voice.strip()
+                for voice in VOICES[VOICES.index('--Voice List--') + 1:]
+                if voice.strip()
+            ]
+
+        except:  # allow recovery from any exception, pylint:disable=W0702
+            from sys import stderr
+            from traceback import format_exc
+
+            stderr.write(
+                "Although you appear to have SAPI 5 support, the voice list "
+                "from the VBS script not be retrieved. Any cards using SAPI "
+                "may not be speakable during this session. If this persists, "
+                "please open an issue at "
+                "<https://github.com/AwesomeTTS/AwesomeTTS/issues>.\n"
+                "\n" +
+                format_exc()
+            )
 
 
-    exec_command = Popen([vbs_launcher, sapi5_path, '-vl'], startupinfo=STARTUP_INFO, stdout=PIPE)
-    voicelist = exec_command.stdout.read().split('\n')
-    exec_command.wait()
+if VOICES:
+    SERVICE = 'sapi5'
 
-    lasttoremove = 0
-    for key, value in enumerate(voicelist):
-        if '--Voice List--' in value:
-            lasttoremove = key
-            break
-    for key in range(lasttoremove+1):
-        voicelist.pop(0)
+    def play(text, voice):
+        text = re.sub(
+            r'\[sound:.*?\]',
+            '',
+            stripHTML(text.replace('\n', ''))  # FIXME cannot be UTF-8?
+        )
 
-    def playsapi5TTS(text, voice):
-        text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")))
-        param = [vbs_launcher, sapi5_path,'-hex', '-voice', TO_HEXSTR(voice), TO_HEXSTR(text)]
+        param = [
+            BINARY, SCRIPT, '-hex',
+            '-voice', TO_HEXSTR(voice),
+            TO_HEXSTR(text),
+        ]
+
         if conf.subprocessing:
-            Popen(param, startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+            Popen(param, startupinfo=STARTUP_INFO)
         else:
-            Popen(param, startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT).communicate()
+            Popen(param, startupinfo=STARTUP_INFO).wait()
 
-    def playfromtagsapi5TTS(fromtag):
+    def play_html(fromtag):
         for item in fromtag:
-            match = re.match("(.*?):(.*)", item, re.M|re.I)
-            playsapi5TTS(match.group(2), match.group(1))
-
-    def playfromHTMLtagsapi5TTS(fromtag):
-        for item in fromtag:
-            text = text = ''.join(item.findAll(text=True))
+            text = ''.join(item.findAll(text=True))
             voice = item['voice']
-            playsapi5TTS(text, voice)
+            play(text, voice)
 
-    def recordsapi5TTS(text, voice):
-        text = re.sub("\[sound:.*?\]", "", stripHTML(text.replace("\n", "")))
-        filename_wav = media_filename(text, 'sapi5', voice, 'wav')
-        filename_mp3 = media_filename(text, 'sapi5', voice, 'mp3')
-        Popen([vbs_launcher, sapi5_path, '-hex', '-o',
-        filename_wav, '-voice', TO_HEXSTR(voice), TO_HEXSTR(text)], startupinfo=STARTUP_INFO, stdin=PIPE, stdout=PIPE, stderr=STDOUT).wait()
+    def play_tag(fromtag):
+        for item in fromtag:
+            match = re.match(r'(.*?):(.*)', item, re.M|re.I)
+            play(match.group(2), match.group(1))
+
+    def record(form, text):
+        fg_layout.default_voice = form.comboBoxsapi5.currentIndex()
+
+        text = re.sub(
+            r'\[sound:.*?\]',
+            '',
+            stripHTML(text.replace('\n', ''))  # FIXME cannot be UTF-8?
+        )
+        voice = VOICES[form.comboBoxsapi5.currentIndex()]
+
+        filename_wav = media_filename(text, SERVICE, voice, 'wav')
+        filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')
+
+        Popen(
+            [
+                BINARY, SCRIPT, '-hex',
+                '-o', filename_wav,
+                '-voice', TO_HEXSTR(voice),
+                TO_HEXSTR(text),
+            ],
+            startupinfo=STARTUP_INFO,
+        ).wait()
+
         Popen(
             ['lame.exe'] +
             TO_TOKENS(conf.lame_flags) +
             [filename_wav, filename_mp3],
             startupinfo=STARTUP_INFO,
-            stdin=PIPE,
-            stdout=PIPE,
-            stderr=STDOUT,
         ).wait()
-        os.unlink(filename_wav)
-        return filename_mp3.decode(sys.getfilesystemencoding())
 
-    def filegenerator_layout(form):
-        global DefaultSAPI5Voice
-        verticalLayout = QtGui.QVBoxLayout()
-        textEditlabel = QtGui.QLabel()
-        textEditlabel.setText("Voice:")
+        unlink(filename_wav)
+
+        return filename_mp3
+
+    def fg_layout(form):
+        text_label = QtGui.QLabel()
+        text_label.setText("Voice:")
+
         form.comboBoxsapi5 = QtGui.QComboBox()
-        form.comboBoxsapi5.addItems([d for d in voicelist])
-        form.comboBoxsapi5.setCurrentIndex(DefaultSAPI5Voice) # get Default
+        form.comboBoxsapi5.addItems(VOICES)
+        form.comboBoxsapi5.setCurrentIndex(fg_layout.default_value)
 
-        verticalLayout.addWidget(textEditlabel)
-        verticalLayout.addWidget(form.comboBoxsapi5)
-        return verticalLayout
+        vertical_layout = QtGui.QVBoxLayout()
+        vertical_layout.addWidget(text_label)
+        vertical_layout.addWidget(form.comboBoxsapi5)
 
-    def recordsapi5TTS_form(form, text):
-        global DefaultSAPI5Voice
-        DefaultSAPI5Voice = form.comboBoxsapi5.currentIndex() #set new Default
-        return recordsapi5TTS(text, voicelist[form.comboBoxsapi5.currentIndex()])
+        return vertical_layout
 
-    def filegenerator_run(form):
-        global DefaultSAPI5Voice
-        DefaultSAPI5Voice = form.comboBoxsapi5.currentIndex() #set new Default
-        return recordsapi5TTS(unicode(form.texttoTTS.toPlainText()), voicelist[form.comboBoxsapi5.currentIndex()])
+    def fg_preview(form):
+        return play(
+            unicode(form.texttoTTS.toPlainText()),
+            VOICES[form.comboBoxsapi5.currentIndex()],
+        )
 
-    def filegenerator_preview(form):
-        return playsapi5TTS(unicode(form.texttoTTS.toPlainText()), voicelist[form.comboBoxsapi5.currentIndex()])
+    def fg_run(form):
+        return record(form, unicode(form.texttoTTS.toPlainText()))
 
-    DefaultSAPI5Voice = 0
 
-    TTS_service = {'sapi5' : {
-    'name': 'SAPI 5',
-    'play' : playsapi5TTS,
-    'playfromtag' : playfromtagsapi5TTS,
-    'playfromHTMLtag' : playfromHTMLtagsapi5TTS,
-    'record' : recordsapi5TTS_form,
-    'filegenerator_layout': filegenerator_layout,
-    'filegenerator_preview': filegenerator_preview,
-    'filegenerator_run': filegenerator_run}}
+    fg_layout.default_value = 0
+
+    TTS_service = {SERVICE: {
+        'name': 'SAPI 5',
+        'play': play,
+        'playfromtag': play_tag,
+        'playfromHTMLtag': play_html,
+        'record': record,
+        'filegenerator_layout': fg_layout,
+        'filegenerator_preview': fg_preview,
+        'filegenerator_run': fg_run,
+    }}

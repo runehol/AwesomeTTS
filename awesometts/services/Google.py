@@ -231,11 +231,6 @@ def play(text, voice):
     else:
         _mplayer_playback(address)
 
-def play_tag(fromtag):
-    for item in fromtag:
-        match = re.match(r'(.*?):(.*)', item, re.M|re.I)
-        play(match.group(2), match.group(1))
-
 def record(form, text):
     fg_layout.default_voice = form.comboBoxGoogle.currentIndex()
 
@@ -299,7 +294,6 @@ fg_layout.default_voice = VOICES.index(
 TTS_service = {SERVICE: {
     'name': "Google",
     'play': play,
-    'playfromtag': play_tag,
     'record': record,
     'filegenerator_layout': fg_layout,
     'filegenerator_preview': fg_preview,

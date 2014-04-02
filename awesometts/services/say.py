@@ -91,11 +91,6 @@ if VOICES:
 
         Popen([BINARY, '-v', voice, text]).wait()
 
-    def play_tag(fromtag):
-        for item in fromtag:
-            match = re.match(r'(.*?):(.*)', item, re.M|re.I)
-            play(match.group(2), match.group(1))
-
     def record(form, text):
         fg_layout.default_voice = form.comboBoxSay.currentIndex()
 
@@ -147,7 +142,6 @@ if VOICES:
     TTS_service = {SERVICE: {
         'name': "OS X Say",
         'play': play,
-        'playfromtag': play_tag,
         'record': record,
         'filegenerator_layout': fg_layout,
         'filegenerator_preview': fg_preview,

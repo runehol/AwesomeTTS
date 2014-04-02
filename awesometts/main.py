@@ -66,8 +66,10 @@ def playTTSFromText(text):
                 ''.join(html_tag.findAll(text=True)),
                 html_tag['voice'],
             )
-    for service in tospeak:
-        TTS_service[service]['playfromtag'](tospeak[service])
+    for service, bracket_tags in tospeak.items():
+        for bracket_tag in bracket_tags:
+            match = re.match(r'(.*?):(.*)', bracket_tag, re.M|re.I)
+            TTS_service[service]['play'](match.group(2), match.group(1))
 
 def getTTSFromText(text):
     tospeak = {}

@@ -103,11 +103,6 @@ if VOICES:
         else:
             Popen(param, startupinfo=STARTUP_INFO).wait()
 
-    def play_tag(fromtag):
-        for item in fromtag:
-            match = re.match(r'(.*?):(.*)', item, re.M|re.I)
-            play(match.group(2), match.group(1))
-
     def record(form, text):
         fg_layout.default_voice = form.comboBoxsapi5.currentIndex()
 
@@ -168,7 +163,6 @@ if VOICES:
     TTS_service = {SERVICE: {
         'name': 'SAPI 5',
         'play': play,
-        'playfromtag': play_tag,
         'record': record,
         'filegenerator_layout': fg_layout,
         'filegenerator_preview': fg_preview,

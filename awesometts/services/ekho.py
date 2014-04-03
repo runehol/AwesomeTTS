@@ -43,7 +43,7 @@ RE_VOICE = re.compile(r"'(\w+)'")
 
 def _get_voices():
     voices = sorted({
-        capture
+        (capture, capture)
 
         for line
         in check_output([BINARY, '--help']).split('\n')
@@ -105,7 +105,7 @@ if VOICES:
             '',
             stripHTML(text.replace('\n', '')).encode('utf-8')
         )
-        voice = VOICES[form.comboBoxEkho.currentIndex()]
+        voice = VOICES[form.comboBoxEkho.currentIndex()][0]
 
         filename_wav = media_filename(text, SERVICE, voice, 'wav')
         filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')
@@ -128,7 +128,7 @@ if VOICES:
 
     def fg_layout(form):
         form.comboBoxEkho = QtGui.QComboBox()
-        form.comboBoxEkho.addItems(VOICES)
+        form.comboBoxEkho.addItems([voice[1] for voice in VOICES])
         form.comboBoxEkho.setCurrentIndex(fg_layout.default_voice)
 
         text_label = QtGui.QLabel()
@@ -143,12 +143,12 @@ if VOICES:
     def fg_preview(form):
         return play(
             unicode(form.texttoTTS.toPlainText()),
-            VOICES[form.comboBoxEkho.currentIndex()],
+            VOICES[form.comboBoxEkho.currentIndex()][0],
         )
 
 
     try:
-        fg_layout.default_voice = VOICES.index('Mandarin')
+        fg_layout.default_voice = VOICES.index(('Mandarin', 'Mandarin'))
     except ValueError:
         fg_layout.default_voice = 0
 

@@ -62,7 +62,7 @@ if mswindows:
             ).split('\n')
 
             VOICES = [
-                voice.strip()
+                (voice.strip(), voice.strip())
                 for voice in VOICES[VOICES.index('--Voice List--') + 1:]
                 if voice.strip()
             ]
@@ -111,7 +111,7 @@ if VOICES:
             '',
             stripHTML(text.replace('\n', ''))  # FIXME cannot be UTF-8?
         )
-        voice = VOICES[form.comboBoxsapi5.currentIndex()]
+        voice = VOICES[form.comboBoxsapi5.currentIndex()][0]
 
         filename_wav = media_filename(text, SERVICE, voice, 'wav')
         filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')
@@ -142,7 +142,7 @@ if VOICES:
         text_label.setText("Voice:")
 
         form.comboBoxsapi5 = QtGui.QComboBox()
-        form.comboBoxsapi5.addItems(VOICES)
+        form.comboBoxsapi5.addItems([voice[1] for voice in VOICES])
         form.comboBoxsapi5.setCurrentIndex(fg_layout.default_value)
 
         vertical_layout = QtGui.QVBoxLayout()
@@ -154,7 +154,7 @@ if VOICES:
     def fg_preview(form):
         return play(
             unicode(form.texttoTTS.toPlainText()),
-            VOICES[form.comboBoxsapi5.currentIndex()],
+            VOICES[form.comboBoxsapi5.currentIndex()][0],
         )
 
 

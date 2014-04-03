@@ -61,11 +61,11 @@ if mswindows:
                 startupinfo=STARTUP_INFO,
             ).split('\n')
 
-            VOICES = [
+            VOICES = sorted({
                 (voice.strip(), voice.strip())
                 for voice in VOICES[VOICES.index('--Voice List--') + 1:]
                 if voice.strip()
-            ]
+            }, key=lambda voice: voice[1].lower())
 
         except:  # allow recovery from any exception, pylint:disable=W0702
             from sys import stderr

@@ -100,14 +100,6 @@ def getTTSFromHTML(html):
     return tospeakhtml
 
 
-
-###################  TTS_record to generate MP3 files
-
-def TTS_record(text, service, param=None):
-    TTS_service[service]['record'](text, param)
-
-
-
 ############################ MP3 File Generator
 
 serviceField = 0

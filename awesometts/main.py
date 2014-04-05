@@ -399,7 +399,6 @@ def getKey(button):
     button.getkey = True
 
 def editConf():
-    global dstField, srcField, serviceField, Conf_keyPressEvent
     d = QDialog()
 
     form = forms.configurator.Ui_Dialog()

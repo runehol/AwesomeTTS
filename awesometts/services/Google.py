@@ -295,6 +295,7 @@ TTS_service = {SERVICE: {
     'name': "Google",
     'play': play,
     'record': record,
+    'voices': VOICES,
     'filegenerator_layout': fg_layout,
     'filegenerator_preview': fg_preview,
 }}

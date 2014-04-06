@@ -20,4 +20,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ["espeak", "Google", "sapi", "say"]
+"""
+Package for all TTS service implementations
+"""
+
+__all__ = [
+    'ekho',
+    'espeak',
+    'Google',
+    'sapi5',
+    'say',
+]
+
+from . import (
+    ekho,
+    espeak,
+    Google,
+    sapi5,
+    say,
+)

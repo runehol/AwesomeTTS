@@ -25,7 +25,7 @@
 
 version = '1.0 Beta 11 (develop)'
 
-import os, re, imp, types, time
+import os, re, types, time
 from PyQt4.QtCore import SIGNAL, Qt, QObject
 from PyQt4.QtGui import QAction, QDialog, QIcon, QPushButton, QWidget
 
@@ -36,24 +36,23 @@ from aqt.reviewer import Reviewer
 
 from awesometts import conf
 import awesometts.forms as forms
+import awesometts.services as services
 from .paths import CACHE_DIR, relative
 
 
-TTS_service = {}
+TTS_service = {  # TODO consider moving into services package's __init__
+    service_key: service_def
 
-modules = {}
-modulespath = os.path.dirname(__file__)+"/services/"
-modulesfiles = os.listdir(modulespath)
-for i in range(len(modulesfiles)):
-    name = modulesfiles[i].split('.')
-    if len(name) > 1:
-        if name[1] == 'py' and name[0] != '__init__':
-            modules[name[0]] = imp.load_source(name[0], modulespath+name[0]+'.py')
-            if hasattr(modules[name[0]], 'TTS_service'):
-                TTS_service.update(modules[name[0]].TTS_service)
-            else:
-                del modules[name[0]]
+    for service_module in [
+        getattr(services, package_name)
+        for package_name
+        in dir(services)
+        if not package_name.startswith('_') and not package_name.endswith('_')
+    ]
+    if hasattr(service_module, 'TTS_service')
 
+    for (service_key, service_def) in service_module.TTS_service.items()
+}
 
 
 ######## utils

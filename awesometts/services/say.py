@@ -116,7 +116,6 @@ if VOICES:
     def fg_layout(form):
         form.comboBoxSay = QtGui.QComboBox()
         form.comboBoxSay.addItems([voice[1] for voice in VOICES])
-        form.comboBoxSay.setCurrentIndex(fg_layout.default_voice)
 
         text_label = QtGui.QLabel()
         text_label.setText("Voice:")
@@ -127,14 +126,6 @@ if VOICES:
 
         return vertical_layout
 
-    def fg_preview(form):
-        return play(
-            unicode(form.texttoTTS.toPlainText()),
-            VOICES[form.comboBoxSay.currentIndex()][0]
-        )
-
-
-    fg_layout.default_voice = 0
 
     TTS_service = {SERVICE: {
         'name': "OS X Say",
@@ -142,5 +133,4 @@ if VOICES:
         'record': record,
         'voices': VOICES,
         'filegenerator_layout': fg_layout,
-        'filegenerator_preview': fg_preview,
     }}

@@ -140,7 +140,6 @@ if VOICES:
 
         form.comboBoxsapi5 = QtGui.QComboBox()
         form.comboBoxsapi5.addItems([voice[1] for voice in VOICES])
-        form.comboBoxsapi5.setCurrentIndex(fg_layout.default_voice)
 
         vertical_layout = QtGui.QVBoxLayout()
         vertical_layout.addWidget(text_label)
@@ -148,14 +147,6 @@ if VOICES:
 
         return vertical_layout
 
-    def fg_preview(form):
-        return play(
-            unicode(form.texttoTTS.toPlainText()),
-            VOICES[form.comboBoxsapi5.currentIndex()][0],
-        )
-
-
-    fg_layout.default_voice = 0
 
     TTS_service = {SERVICE: {
         'name': 'SAPI 5',
@@ -163,5 +154,4 @@ if VOICES:
         'record': record,
         'voices': VOICES,
         'filegenerator_layout': fg_layout,
-        'filegenerator_preview': fg_preview,
     }}

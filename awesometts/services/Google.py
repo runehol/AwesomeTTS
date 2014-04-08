@@ -266,7 +266,6 @@ def record(text, voice):
 def fg_layout(form):
     form.comboBoxGoogle = QtGui.QComboBox()
     form.comboBoxGoogle.addItems([voice[1] for voice in VOICES])
-    form.comboBoxGoogle.setCurrentIndex(fg_layout.default_voice)
 
     text_label = QtGui.QLabel()
     text_label.setText("Language:")
@@ -277,16 +276,6 @@ def fg_layout(form):
 
     return vertical_layout
 
-def fg_preview(form):
-    return play(
-        unicode(form.texttoTTS.toPlainText()),
-        VOICES[form.comboBoxGoogle.currentIndex()][0],
-    )
-
-
-fg_layout.default_voice = VOICES.index(
-    next(v for v in VOICES if v[0] == 'en')
-)
 
 TTS_service = {SERVICE: {
     'name': "Google",
@@ -294,5 +283,4 @@ TTS_service = {SERVICE: {
     'record': record,
     'voices': VOICES,
     'filegenerator_layout': fg_layout,
-    'filegenerator_preview': fg_preview,
 }}

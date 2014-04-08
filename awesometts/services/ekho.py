@@ -126,7 +126,6 @@ if VOICES:
     def fg_layout(form):
         form.comboBoxEkho = QtGui.QComboBox()
         form.comboBoxEkho.addItems([voice[1] for voice in VOICES])
-        form.comboBoxEkho.setCurrentIndex(fg_layout.default_voice)
 
         text_label = QtGui.QLabel()
         text_label.setText("Language:")
@@ -137,17 +136,6 @@ if VOICES:
 
         return vertical_layout
 
-    def fg_preview(form):
-        return play(
-            unicode(form.texttoTTS.toPlainText()),
-            VOICES[form.comboBoxEkho.currentIndex()][0],
-        )
-
-
-    try:
-        fg_layout.default_voice = VOICES.index(('Mandarin', 'Mandarin'))
-    except ValueError:
-        fg_layout.default_voice = 0
 
     TTS_service = {SERVICE: {
         'name': "Ekho",
@@ -155,5 +143,4 @@ if VOICES:
         'record': record,
         'voices': VOICES,
         'filegenerator_layout': fg_layout,
-        'filegenerator_preview': fg_preview,
     }}

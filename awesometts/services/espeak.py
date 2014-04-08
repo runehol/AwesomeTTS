@@ -160,7 +160,6 @@ if VOICES:
     def fg_layout(form):
         form.comboBoxEspeak = QtGui.QComboBox()
         form.comboBoxEspeak.addItems([voice[1] for voice in VOICES])
-        form.comboBoxEspeak.setCurrentIndex(fg_layout.default_voice)
 
         text_label = QtGui.QLabel()
         text_label.setText("Voice:")
@@ -171,19 +170,6 @@ if VOICES:
 
         return vertical_layout
 
-    def fg_preview(form):
-        return play(
-            unicode(form.texttoTTS.toPlainText()),
-            VOICES[form.comboBoxEspeak.currentIndex()][0],
-        )
-
-
-    try:
-        fg_layout.default_voice = VOICES.index(
-            next(v for v in VOICES if v[0] == 'en')
-        )
-    except StopIteration:
-        fg_layout.default_voice = 0
 
     TTS_service = {SERVICE: {
         'name': "eSpeak",
@@ -191,5 +177,4 @@ if VOICES:
         'record': record,
         'voices': VOICES,
         'filegenerator_layout': fg_layout,
-        'filegenerator_preview': fg_preview,
     }}

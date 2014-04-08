@@ -103,15 +103,12 @@ if VOICES:
         else:
             Popen(param, startupinfo=STARTUP_INFO).wait()
 
-    def record(form, text):
-        fg_layout.default_voice = form.comboBoxsapi5.currentIndex()
-
+    def record(text, voice):
         text = re.sub(
             r'\[sound:.*?\]',
             '',
             stripHTML(text.replace('\n', ''))  # FIXME cannot be UTF-8?
         )
-        voice = VOICES[form.comboBoxsapi5.currentIndex()][0]
 
         filename_wav = media_filename(text, SERVICE, voice, 'wav')
         filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')

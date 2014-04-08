@@ -131,15 +131,12 @@ if VOICES:
             startupinfo=STARTUP_INFO,
         ).wait()
 
-    def record(form, text):
-        fg_layout.default_voice = form.comboBoxEspeak.currentIndex()
-
+    def record(text, voice):
         text = re.sub(
             r'\[sound:.*?\]',
             '',
             stripHTML(text.replace('\n', '')).encode('utf-8'),
         )
-        voice = VOICES[form.comboBoxEspeak.currentIndex()][0]
 
         filename_wav = media_filename(text, SERVICE, voice, 'wav')
         filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')

@@ -231,15 +231,12 @@ def play(text, voice):
     else:
         _mplayer_playback(address)
 
-def record(form, text):
-    fg_layout.default_voice = form.comboBoxGoogle.currentIndex()
-
+def record(text, voice):
     text = re.sub(
         r'\[sound:.*?\]',
         '',
         stripHTML(text.replace('\n', '')).encode('utf-8')
     )
-    voice = VOICES[form.comboBoxGoogle.currentIndex()][0]
 
     address = _get_address(voice, text)
     filename = media_filename(text, SERVICE, voice, 'mp3')

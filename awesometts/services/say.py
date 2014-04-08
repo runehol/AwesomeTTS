@@ -91,15 +91,12 @@ if VOICES:
 
         Popen([BINARY, '-v', voice, text]).wait()
 
-    def record(form, text):
-        fg_layout.default_voice = form.comboBoxSay.currentIndex()
-
+    def record(text, voice):
         text = re.sub(
             r'\[sound:.*?\]',
             '',
             stripHTML(text.replace('\n', '')).encode('utf-8'),
         )
-        voice = VOICES[form.comboBoxSay.currentIndex()][0]
 
         filename_aiff = media_filename(text, SERVICE, voice, 'aiff')
         filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')

@@ -27,7 +27,16 @@ version = '1.0 Beta 11 (develop)'
 
 import os, re, types, time
 from PyQt4.QtCore import SIGNAL, Qt, QObject
-from PyQt4.QtGui import QAction, QDialog, QIcon, QPushButton, QWidget
+from PyQt4.QtGui import (
+    QAction,
+    QComboBox,
+    QDialog,
+    QIcon,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from anki import sound
 from anki.hooks import addHook, wrap
@@ -112,49 +121,76 @@ def getService_byName(name):
             return service
 
 
+# TODO: It would be nice if a service that sometimes cannot fulfill given
+# text (e.g. one using a finite set of prerecorded dictionary words) be made
+# to explicitly return False or an exception (instead of None) from its play
+# and record callables so that there would be some sort of notification to the
+# user that the entered text is not playable.
+#
+# A convention for this can be established as soon as AwesomeTTS begins
+# shipping with at least one bundled service that sometimes returns without
+# successfully playing back some text.
+
 def ATTS_Factedit_button(self):
-    global serviceField
-    d = QDialog()
+    global serviceField  # TODO replace with serialization to conf
+
+    lookup = sorted([
+        (service_def, QComboBox())
+        for service_def
+        in TTS_service.values()
+    ], key=lambda service: service[0]['name'].lower())
+
+    dialog = QDialog()
+
     form = forms.filegenerator.Ui_Dialog()
-    form.setupUi(d)
-    serv_list = [TTS_service[service]['name'] for service in TTS_service]
-    form.comboBoxService.addItems(serv_list)
+    form.setupUi(dialog)
+    form.comboBoxService.addItems([service[0]['name'] for service in lookup])
 
-    for service in TTS_service:
-        tostack = QWidget(form.stackedWidget)
-        tostack.setLayout(TTS_service[service]['filegenerator_layout'](form))
-        form.stackedWidget.addWidget(tostack)
+    for service_def, combo_box in lookup:
+        combo_box.addItems([voice[1] for voice in service_def['voices']])
+        # TODO recall last-used voice, then combo_box.setCurrentIndex(xxx)
 
-    form.comboBoxService.setCurrentIndex(serviceField) #get defaults
-    form.stackedWidget.setCurrentIndex(serviceField)
+        vertical_layout = QVBoxLayout()
+        vertical_layout.addWidget(QLabel("Voice:"))
+        vertical_layout.addWidget(combo_box)
 
-    # TODO: It would be nice if a service that sometimes cannot fulfill
-    # given text (e.g. one using a finite set of prerecorded dictionary
-    # words) be made to explicitly return False (instead of None) from its
-    # filegenerator_preview callable so that there would be some sort of
-    # notification to the user that the entered text is not playable.
-    # Alternatively, an exception could be used, but then other bits of
-    # code might need updating for consistency (e.g. record functionality,
-    # mass generation, on-the-fly playback).
-    # A convention for this can be established as soon as AwesomeTTS
-    # begins shipping with at least one bundled service that sometimes
-    # returns without successfully playing back some text.
+        stack_widget = QWidget(form.stackedWidget)
+        stack_widget.setLayout(vertical_layout)
+        form.stackedWidget.addWidget(stack_widget)
 
-    QObject.connect(form.previewbutton, SIGNAL("clicked()"), lambda form=form: TTS_service[getService_byName(serv_list[form.comboBoxService.currentIndex()])]['filegenerator_preview'](form))
+    QObject.connect(
+        form.comboBoxService,
+        SIGNAL('currentIndexChanged(int)'),
+        form.stackedWidget.setCurrentIndex,
+    )
+    form.comboBoxService.setCurrentIndex(serviceField)  # TODO get from conf
 
-    QObject.connect(form.comboBoxService, SIGNAL("currentIndexChanged(QString)"), lambda selected, form=form, serv_list=serv_list: filegenerator_onCBoxChange(selected, form, serv_list))
+    def on_preview():
+        text = form.texttoTTS.toPlainText().strip()
+        if text:
+            selected = form.comboBoxService.currentIndex()
+            service_def, combo_box = lookup[selected]
+            voice = service_def['voices'][combo_box.currentIndex()][0]
+            service_def['play'](unicode(text), voice)
 
-    if d.exec_() and form.texttoTTS.toPlainText() != '' and not form.texttoTTS.toPlainText().isspace():
-        serviceField = form.comboBoxService.currentIndex() # set default
-        srv = getService_byName(serv_list[serviceField])
-        filename = TTS_service[srv]['record'](
-            form,
-            unicode(form.texttoTTS.toPlainText()),
-        )
-        if filename:
-            self.addMedia(filename)
-        else:
-            utils.showWarning("No audio available for text.")
+    QObject.connect(form.previewbutton, SIGNAL('clicked()'), on_preview)
+
+    if dialog.exec_():
+        serviceField = form.comboBoxService.currentIndex()  # TODO set to conf
+        # TODO set last-used voice
+
+        text = form.texttoTTS.toPlainText().strip()
+        if text:
+            selected = form.comboBoxService.currentIndex()
+            service_def, combo_box = lookup[selected]
+            voice = service_def['voices'][combo_box.currentIndex()][0]
+
+            filename = service_def['record'](text, voice)  # FIXME unicode()?
+            if filename:
+                self.addMedia(filename)
+            else:
+                utils.showWarning("No audio available for text.")
+
 
 def ATTS_Fact_edit_setupFields(self):
     AwesomeTTS = QPushButton(self.widget)
@@ -223,7 +259,9 @@ def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
             skip_counts['empty'][0] += 1
             continue
 
+        # FIXME FIXME FIXME FIXME This call is now broken
         filename = TTS_service[service]['record'](frm, note[srcField_name])
+        # FIXME FIXME FIXME FIXME
 
         if filename:
             if frm.radioOverwrite.isChecked():

@@ -110,8 +110,6 @@ def getTTSFromHTML(html):
 
 ############################ MP3 File Generator
 
-serviceField = 0
-
 def filegenerator_onCBoxChange(selected, form, serv_list):
     form.stackedWidget.setCurrentIndex(serv_list.index(selected))
 
@@ -132,21 +130,25 @@ def getService_byName(name):
 # successfully playing back some text.
 
 def ATTS_Factedit_button(self):
-    global serviceField  # TODO replace with serialization to conf
-
     lookup = sorted([
-        (service_def, QComboBox())
-        for service_def
-        in TTS_service.values()
-    ], key=lambda service: service[0]['name'].lower())
+        (service_key, service_def, QComboBox())
+        for service_key, service_def
+        in TTS_service.items()
+    ], key=lambda service: service[1]['name'].lower())
 
     dialog = QDialog()
 
     form = forms.filegenerator.Ui_Dialog()
     form.setupUi(dialog)
-    form.comboBoxService.addItems([service[0]['name'] for service in lookup])
+    form.comboBoxService.addItems([service[1]['name'] for service in lookup])
 
-    for service_def, combo_box in lookup:
+    QObject.connect(
+        form.comboBoxService,
+        SIGNAL('currentIndexChanged(int)'),
+        form.stackedWidget.setCurrentIndex,
+    )
+
+    for service_key, service_def, combo_box in lookup:
         combo_box.addItems([voice[1] for voice in service_def['voices']])
         # TODO recall last-used voice, then combo_box.setCurrentIndex(xxx)
 
@@ -158,32 +160,30 @@ def ATTS_Factedit_button(self):
         stack_widget.setLayout(vertical_layout)
         form.stackedWidget.addWidget(stack_widget)
 
-    QObject.connect(
-        form.comboBoxService,
-        SIGNAL('currentIndexChanged(int)'),
-        form.stackedWidget.setCurrentIndex,
-    )
-    form.comboBoxService.setCurrentIndex(serviceField)  # TODO get from conf
+        if service_key == conf.last_service:
+            form.comboBoxService.setCurrentIndex(
+                form.stackedWidget.count() - 1
+            )
 
     def on_preview():
         text = form.texttoTTS.toPlainText().strip()
         if text:
             selected = form.comboBoxService.currentIndex()
-            service_def, combo_box = lookup[selected]
+            service_key, service_def, combo_box = lookup[selected]
             voice = service_def['voices'][combo_box.currentIndex()][0]
             service_def['play'](unicode(text), voice)
 
     QObject.connect(form.previewbutton, SIGNAL('clicked()'), on_preview)
 
     if dialog.exec_():
-        serviceField = form.comboBoxService.currentIndex()  # TODO set to conf
-        # TODO set last-used voice
-
         text = form.texttoTTS.toPlainText().strip()
         if text:
             selected = form.comboBoxService.currentIndex()
-            service_def, combo_box = lookup[selected]
+            service_key, service_def, combo_box = lookup[selected]
             voice = service_def['voices'][combo_box.currentIndex()][0]
+
+            conf.last_service = service_key
+            # TODO set last-used voice
 
             filename = service_def['record'](text, voice)  # FIXME unicode()?
             if filename:
@@ -287,7 +287,7 @@ def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
 
 
 def onGenerate(self):
-    global dstField, srcField, serviceField
+    global dstField, srcField # , serviceField
     sf = self.selectedNotes()
     if not sf:
         utils.showInfo("Select the notes and then use the MP3 Mass Generator")
@@ -310,8 +310,8 @@ def onGenerate(self):
         tostack.setLayout(TTS_service[service]['filegenerator_layout'](frm))
         frm.stackedWidget.addWidget(tostack)
 
-    frm.comboBoxService.setCurrentIndex(serviceField) #get defaults
-    frm.stackedWidget.setCurrentIndex(serviceField)
+    # frm.comboBoxService.setCurrentIndex(serviceField) #get defaults
+    # frm.stackedWidget.setCurrentIndex(serviceField)
 
     frm.sourceFieldComboBox.addItems(fieldlist)
     frm.sourceFieldComboBox.setCurrentIndex(srcField)
@@ -339,7 +339,7 @@ def onGenerate(self):
     if not d.exec_():
         return
 
-    serviceField = frm.comboBoxService.currentIndex() # set defaults
+    # serviceField = frm.comboBoxService.currentIndex() # set defaults
     srcField = frm.sourceFieldComboBox.currentIndex()
     dstField = frm.destinationFieldComboBox.currentIndex()
 

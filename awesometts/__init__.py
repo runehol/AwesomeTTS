@@ -62,6 +62,7 @@ conf = classes.Conf(
         ('debug_stdout', 'integer', False, util.TO_BOOL, int),
         ('caching', 'integer', True, util.TO_BOOL, int),
         ('lame_flags', 'text', '--quiet -q 2', str, str),
+        ('last_service', 'text', 'g', str, str),
         ('subprocessing', 'integer', True, util.TO_BOOL, int),
         ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
         ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),

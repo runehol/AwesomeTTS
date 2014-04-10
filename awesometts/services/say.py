@@ -113,24 +113,10 @@ if VOICES:
 
         return filename_mp3
 
-    def fg_layout(form):
-        form.comboBoxSay = QtGui.QComboBox()
-        form.comboBoxSay.addItems([voice[1] for voice in VOICES])
-
-        text_label = QtGui.QLabel()
-        text_label.setText("Voice:")
-
-        vertical_layout = QtGui.QVBoxLayout()
-        vertical_layout.addWidget(text_label)
-        vertical_layout.addWidget(form.comboBoxSay)
-
-        return vertical_layout
-
 
     TTS_service = {SERVICE: {
         'name': "OS X Say",
         'play': play,
         'record': record,
         'voices': VOICES,
-        'filegenerator_layout': fg_layout,
     }}

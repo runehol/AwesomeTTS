@@ -157,24 +157,10 @@ if VOICES:
 
         return filename_mp3
 
-    def fg_layout(form):
-        form.comboBoxEspeak = QtGui.QComboBox()
-        form.comboBoxEspeak.addItems([voice[1] for voice in VOICES])
-
-        text_label = QtGui.QLabel()
-        text_label.setText("Voice:")
-
-        vertical_layout = QtGui.QVBoxLayout()
-        vertical_layout.addWidget(text_label)
-        vertical_layout.addWidget(form.comboBoxEspeak)
-
-        return vertical_layout
-
 
     TTS_service = {SERVICE: {
         'name': "eSpeak",
         'play': play,
         'record': record,
         'voices': VOICES,
-        'filegenerator_layout': fg_layout,
     }}

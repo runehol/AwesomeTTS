@@ -134,24 +134,10 @@ if VOICES:
 
         return filename_mp3
 
-    def fg_layout(form):
-        text_label = QtGui.QLabel()
-        text_label.setText("Voice:")
-
-        form.comboBoxsapi5 = QtGui.QComboBox()
-        form.comboBoxsapi5.addItems([voice[1] for voice in VOICES])
-
-        vertical_layout = QtGui.QVBoxLayout()
-        vertical_layout.addWidget(text_label)
-        vertical_layout.addWidget(form.comboBoxsapi5)
-
-        return vertical_layout
-
 
     TTS_service = {SERVICE: {
         'name': 'SAPI 5',
         'play': play,
         'record': record,
         'voices': VOICES,
-        'filegenerator_layout': fg_layout,
     }}

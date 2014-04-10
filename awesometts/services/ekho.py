@@ -123,24 +123,10 @@ if VOICES:
 
         return filename_mp3
 
-    def fg_layout(form):
-        form.comboBoxEkho = QtGui.QComboBox()
-        form.comboBoxEkho.addItems([voice[1] for voice in VOICES])
-
-        text_label = QtGui.QLabel()
-        text_label.setText("Language:")
-
-        vertical_layout = QtGui.QVBoxLayout()
-        vertical_layout.addWidget(text_label)
-        vertical_layout.addWidget(form.comboBoxEkho)
-
-        return vertical_layout
-
 
     TTS_service = {SERVICE: {
         'name': "Ekho",
         'play': play,
         'record': record,
         'voices': VOICES,
-        'filegenerator_layout': fg_layout,
     }}

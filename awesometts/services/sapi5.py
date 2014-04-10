@@ -161,7 +161,7 @@ if VOICES:
     fg_layout.default_voice = 0
 
     TTS_service = {SERVICE: {
-        'name': 'SAPI 5',
+        'name': "SAPI 5",
         'play': play,
         'record': record,
         'filegenerator_layout': fg_layout,

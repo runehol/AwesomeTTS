@@ -148,7 +148,7 @@ if VOICES:
 
 
     try:
-        fg_layout.default_voice = VOICES.index(('Mandarin', 'Mandarin'))
+        fg_layout.default_voice = VOICES.index(('Mandarin', "Mandarin"))
     except ValueError:
         fg_layout.default_voice = 0
 

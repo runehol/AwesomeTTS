@@ -163,7 +163,7 @@ def ATTS_Factedit_button(self):
                 form.stackedWidget.count() - 1
             )
 
-    def on_preview():
+    def execute(preview):
         text = form.texttoTTS.toPlainText().strip()
         if not text:
             return
@@ -171,29 +171,22 @@ def ATTS_Factedit_button(self):
         selected = form.comboBoxService.currentIndex()
         service_key, service_def, combo_box = lookup[selected]
         voice = service_def['voices'][combo_box.currentIndex()][0]
-        service_def['play'](unicode(text), voice)
 
-    form.previewbutton.clicked.connect(on_preview)
+        if preview:
+            service_def['play'](unicode(text), voice)
+        else:
+            conf.last_service = service_key
+            # TODO set last-used voice
 
-    if not dialog.exec_():
-        return
+            filename = service_def['record'](text, voice)  # FIXME unicode()?
+            if filename:
+                self.addMedia(filename)
+            else:
+                utils.showWarning("No audio available for text.")
 
-    text = form.texttoTTS.toPlainText().strip()
-    if not text:
-        return
-
-    selected = form.comboBoxService.currentIndex()
-    service_key, service_def, combo_box = lookup[selected]
-    voice = service_def['voices'][combo_box.currentIndex()][0]
-
-    conf.last_service = service_key
-    # TODO set last-used voice
-
-    filename = service_def['record'](text, voice)  # FIXME unicode()?
-    if filename:
-        self.addMedia(filename)
-    else:
-        utils.showWarning("No audio available for text.")
+    form.previewbutton.clicked.connect(lambda: execute(preview=True))
+    if dialog.exec_():
+        execute(preview=False)
 
 
 def ATTS_Fact_edit_setupFields(self):

@@ -110,15 +110,6 @@ def getTTSFromHTML(html):
 
 ############################ MP3 File Generator
 
-def filegenerator_onCBoxChange(selected, form, serv_list):
-    form.stackedWidget.setCurrentIndex(serv_list.index(selected))
-
-def getService_byName(name):
-    for service in TTS_service:
-        if TTS_service[service]['name'] == name:
-            return service
-
-
 # TODO: It would be nice if a service that sometimes cannot fulfill given
 # text (e.g. one using a finite set of prerecorded dictionary words) be made
 # to explicitly return False or an exception (instead of None) from its play

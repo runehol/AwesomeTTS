@@ -227,7 +227,7 @@ def take_a_break(ndone, ntotal):
         if t == 0:
             break
 
-def generate_audio_files(factIds, frm, service, voice, srcField_name, dstField_name):
+def generate_audio_files(notes, form, service_key, service_def, voice, source_field, dest_field):
     update_count = 0
     skip_counts = {
         key: [0, message]
@@ -239,45 +239,45 @@ def generate_audio_files(factIds, frm, service, voice, srcField_name, dstField_n
         ]
     }
 
-    nelements = len(factIds)
+    nelements = len(notes)
     batch = 900
 
-    if not frm.radioOverwrite.isChecked() and frm.checkBoxSndTag.isChecked():
+    if not form.radioOverwrite.isChecked() and form.checkBoxSndTag.isChecked():
         RE_SOUND = re.compile(r'\[sound:[^\]]+\]', re.IGNORECASE)
 
-    for c, id in enumerate(factIds):
-        if service == 'g' and (c+1)%batch == 0: # GoogleTTS has to take a break once in a while
+    for c, id in enumerate(notes):
+        if service_key == 'g' and (c+1)%batch == 0: # GoogleTTS has to take a break once in a while
             take_a_break(c, nelements)
         note = mw.col.getNote(id)
 
-        if not (srcField_name in note.keys() and dstField_name in note.keys()):
+        if not (source_field in note.keys() and dest_field in note.keys()):
             skip_counts['fields'][0] += 1
             continue
 
-        mw.progress.update(label="Generating MP3 files...\n%s of %s\n%s" % (c+1, nelements, note[srcField_name]))
+        mw.progress.update(label="Generating MP3 files...\n%s of %s\n%s" % (c+1, nelements, note[source_field]))
 
-        if note[srcField_name] == '' or note[srcField_name].isspace(): #check if the field is blank
+        if note[source_field] == '' or note[source_field].isspace(): #check if the field is blank
             skip_counts['empty'][0] += 1
             continue
 
-        filename = TTS_service[service]['record'](
-            note[srcField_name],  # FIXME unicode()?
+        filename = service_def['record'](
+            note[source_field],  # FIXME unicode()?
             voice,
         )
 
         if filename:
-            if frm.radioOverwrite.isChecked():
-                if frm.checkBoxSndTag.isChecked():
-                    note[dstField_name] = '[sound:'+ filename +']'
+            if form.radioOverwrite.isChecked():
+                if form.checkBoxSndTag.isChecked():
+                    note[dest_field] = '[sound:'+ filename +']'
                 else:
-                    note[dstField_name] = filename
+                    note[dest_field] = filename
             else:
-                if frm.checkBoxSndTag.isChecked():
-                    note[dstField_name] = RE_SOUND.sub(
+                if form.checkBoxSndTag.isChecked():
+                    note[dest_field] = RE_SOUND.sub(
                         '',
-                        note[dstField_name],
+                        note[dest_field],
                     ).strip()
-                note[dstField_name] += ' [sound:'+ filename +']'
+                note[dest_field] += ' [sound:'+ filename +']'
 
             update_count += 1
             note.flush()
@@ -327,7 +327,7 @@ def onGenerate(browser):
     service_key, service_def, voice = service_form_values(form, lookup)
 
     source_field = fields[form.sourceFieldComboBox.currentIndex()]
-    destination_field = fields[form.destinationFieldComboBox.currentIndex()]
+    dest_field = fields[form.destinationFieldComboBox.currentIndex()]
     # TODO set last-used fields
 
     conf.last_service = service_key
@@ -342,9 +342,10 @@ def onGenerate(browser):
         notes,
         form,
         service_key,
+        service_def,
         voice,
         source_field,
-        destination_field,
+        dest_field,
     )
 
     browser.model.endReset()

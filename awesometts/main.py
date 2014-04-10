@@ -213,10 +213,6 @@ addHook("setupEditorButtons", ATTS_Fact_edit_setupFields)
 
 ############################ MP3 Mass Generator
 
-srcField = -1
-dstField = -1
-
-
 
 #take a break, so we don't fall in Google's blacklist. Code contributed by Dusan Arsenijevic
 def take_a_break(ndone, ntotal):
@@ -300,10 +296,20 @@ def onGenerate(browser):
     lookup, dialog, form = service_form(forms.massgenerator, browser)
 
     form.sourceFieldComboBox.addItems(fields)
-    # TODO recall last-used source, then form.sourceFieldComboBox.setCurrentIndex(xxx)
+    try:
+        form.sourceFieldComboBox.setCurrentIndex(
+            fields.index(conf.last_mass_source)
+        )
+    except ValueError:
+        pass
 
     form.destinationFieldComboBox.addItems(fields)
-    # TODO recall last-used dest, then form.destinationFieldComboBox.setCurrentIndex(xxx)
+    try:
+        form.destinationFieldComboBox.setCurrentIndex(
+            fields.index(conf.last_mass_dest)
+        )
+    except ValueError:
+        pass
 
     form.label_version.setText("Version %s" % version)
 
@@ -324,13 +330,15 @@ def onGenerate(browser):
         return
 
     service_key, service_def, voice = service_form_values(form, lookup)
-
     source_field = fields[form.sourceFieldComboBox.currentIndex()]
     dest_field = fields[form.destinationFieldComboBox.currentIndex()]
-    # TODO set last-used fields
 
-    conf.last_service = service_key
-    # TODO set last-used voice
+    conf.update(
+        last_mass_source=source_field,
+        last_mass_dest=dest_field,
+        last_service=service_key,
+        # TODO set last-used voice
+    )
 
     browser.mw.checkpoint("AwesomeTTS MP3 Mass Generator")
     browser.mw.progress.start(immediate=True, label="Generating MP3 files...")

@@ -227,7 +227,7 @@ def take_a_break(ndone, ntotal):
         if t == 0:
             break
 
-def generate_audio_files(notes, form, service_key, service_def, voice, source_field, dest_field):
+def generate_audio_files(notes, form, service_def, voice, source_field, dest_field):
     update_count = 0
     skip_counts = {
         key: [0, message]
@@ -241,12 +241,13 @@ def generate_audio_files(notes, form, service_key, service_def, voice, source_fi
 
     nelements = len(notes)
     batch = 900
+    throttle = 'throttle' in service_def and service_def['throttle']
 
     if not form.radioOverwrite.isChecked() and form.checkBoxSndTag.isChecked():
         RE_SOUND = re.compile(r'\[sound:[^\]]+\]', re.IGNORECASE)
 
     for c, id in enumerate(notes):
-        if service_key == 'g' and (c+1)%batch == 0: # GoogleTTS has to take a break once in a while
+        if throttle and (c+1)%batch == 0: # GoogleTTS has to take a break once in a while
             take_a_break(c, nelements)
         note = mw.col.getNote(id)
 
@@ -341,7 +342,6 @@ def onGenerate(browser):
     process_count, update_count, skip_counts = generate_audio_files(
         notes,
         form,
-        service_key,
         service_def,
         voice,
         source_field,

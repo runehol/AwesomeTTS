@@ -269,4 +269,5 @@ TTS_service = {SERVICE: {
     'play': play,
     'record': record,
     'voices': VOICES,
+    'throttle': True,
 }}

@@ -108,30 +108,18 @@ def getTTSFromHTML(html):
     return tospeakhtml
 
 
-############################ MP3 File Generator
+############################ Service Forms
 
-# TODO: It would be nice if a service that sometimes cannot fulfill given
-# text (e.g. one using a finite set of prerecorded dictionary words) be made
-# to explicitly return False or an exception (instead of None) from its play
-# and record callables so that there would be some sort of notification to the
-# user that the entered text is not playable.
-#
-# A convention for this can be established as soon as AwesomeTTS begins
-# shipping with at least one bundled service that sometimes returns without
-# successfully playing back some text.
-
-def ATTS_Factedit_button(editor):
-    # TODO factor out code that is in-common with onGenerate()
-
+def service_form(module, parent):
     lookup = sorted([
         (service_key, service_def, QComboBox())
         for service_key, service_def
         in TTS_service.items()
     ], key=lambda service: service[1]['name'].lower())
 
-    dialog = QDialog(editor.widget)
+    dialog = QDialog(parent)
 
-    form = forms.filegenerator.Ui_Dialog()
+    form = module.Ui_Dialog()
     form.setupUi(dialog)
 
     form.comboBoxService.addItems([service[1]['name'] for service in lookup])
@@ -156,18 +144,37 @@ def ATTS_Factedit_button(editor):
                 form.stackedWidget.count() - 1
             )
 
-    # END TODO for factoring out code in-common
+    return lookup, dialog, form
+
+def service_form_values(form, lookup):
+    selected = form.comboBoxService.currentIndex()
+    service_key, service_def, combo_box = lookup[selected]
+    voice = service_def['voices'][combo_box.currentIndex()][0]
+
+    return service_key, service_def, voice
+
+
+############################ MP3 File Generator
+
+# TODO: It would be nice if a service that sometimes cannot fulfill given
+# text (e.g. one using a finite set of prerecorded dictionary words) be made
+# to explicitly return False or an exception (instead of None) from its play
+# and record callables so that there would be some sort of notification to the
+# user that the entered text is not playable.
+#
+# A convention for this can be established as soon as AwesomeTTS begins
+# shipping with at least one bundled service that sometimes returns without
+# successfully playing back some text.
+
+def ATTS_Factedit_button(editor):
+    lookup, dialog, form = service_form(forms.filegenerator, editor.widget)
 
     def execute(preview):
         text = form.texttoTTS.toPlainText().strip()
         if not text:
             return
 
-        # TODO factor out code that is in-common with onGenerate()
-        selected = form.comboBoxService.currentIndex()
-        service_key, service_def, combo_box = lookup[selected]
-        voice = service_def['voices'][combo_box.currentIndex()][0]
-        # END TODO for factoring out code in-common
+        service_key, service_def, voice = service_form_values(form, lookup)
 
         if preview:
             service_def['play'](unicode(text), voice)
@@ -291,42 +298,7 @@ def onGenerate(browser):
     import anki.find
     fields = sorted(anki.find.fieldNames(mw.col, downcase=False))
 
-    # TODO factor out code that is in-common with ATTS_Factedit_button()
-
-    lookup = sorted([
-        (service_key, service_def, QComboBox())
-        for service_key, service_def
-        in TTS_service.items()
-    ], key=lambda service: service[1]['name'].lower())
-
-    dialog = QDialog(browser)
-
-    form = forms.massgenerator.Ui_Dialog()
-    form.setupUi(dialog)
-
-    form.comboBoxService.addItems([service[1]['name'] for service in lookup])
-    form.comboBoxService.currentIndexChanged.connect(
-        form.stackedWidget.setCurrentIndex
-    )
-
-    for service_key, service_def, combo_box in lookup:
-        combo_box.addItems([voice[1] for voice in service_def['voices']])
-        # TODO recall last-used voice, then combo_box.setCurrentIndex(xxx)
-
-        vertical_layout = QVBoxLayout()
-        vertical_layout.addWidget(QLabel("Voice:"))
-        vertical_layout.addWidget(combo_box)
-
-        stack_widget = QWidget(form.stackedWidget)
-        stack_widget.setLayout(vertical_layout)
-        form.stackedWidget.addWidget(stack_widget)
-
-        if service_key == conf.last_service:
-            form.comboBoxService.setCurrentIndex(
-                form.stackedWidget.count() - 1
-            )
-
-    # END TODO for factoring out code in-common
+    lookup, dialog, form = service_form(forms.massgenerator, browser)
 
     form.sourceFieldComboBox.addItems(fields)
     # TODO recall last-used source, then form.sourceFieldComboBox.setCurrentIndex(xxx)
@@ -352,11 +324,7 @@ def onGenerate(browser):
     if not dialog.exec_():
         return
 
-    # TODO factor out code that is in-common with ATTS_Factedit_button()
-    selected = form.comboBoxService.currentIndex()
-    service_key, service_def, combo_box = lookup[selected]
-    voice = service_def['voices'][combo_box.currentIndex()][0]
-    # END TODO for factoring out code in-common
+    service_key, service_def, voice = service_form_values(form, lookup)
 
     source_field = fields[form.sourceFieldComboBox.currentIndex()]
     destination_field = fields[form.destinationFieldComboBox.currentIndex()]

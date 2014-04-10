@@ -140,12 +140,10 @@ def ATTS_Factedit_button(self):
 
     form = forms.filegenerator.Ui_Dialog()
     form.setupUi(dialog)
-    form.comboBoxService.addItems([service[1]['name'] for service in lookup])
 
-    QObject.connect(
-        form.comboBoxService,
-        SIGNAL('currentIndexChanged(int)'),
-        form.stackedWidget.setCurrentIndex,
+    form.comboBoxService.addItems([service[1]['name'] for service in lookup])
+    form.comboBoxService.currentIndexChanged.connect(
+        form.stackedWidget.setCurrentIndex
     )
 
     for service_key, service_def, combo_box in lookup:
@@ -167,29 +165,35 @@ def ATTS_Factedit_button(self):
 
     def on_preview():
         text = form.texttoTTS.toPlainText().strip()
-        if text:
-            selected = form.comboBoxService.currentIndex()
-            service_key, service_def, combo_box = lookup[selected]
-            voice = service_def['voices'][combo_box.currentIndex()][0]
-            service_def['play'](unicode(text), voice)
+        if not text:
+            return
 
-    QObject.connect(form.previewbutton, SIGNAL('clicked()'), on_preview)
+        selected = form.comboBoxService.currentIndex()
+        service_key, service_def, combo_box = lookup[selected]
+        voice = service_def['voices'][combo_box.currentIndex()][0]
+        service_def['play'](unicode(text), voice)
 
-    if dialog.exec_():
-        text = form.texttoTTS.toPlainText().strip()
-        if text:
-            selected = form.comboBoxService.currentIndex()
-            service_key, service_def, combo_box = lookup[selected]
-            voice = service_def['voices'][combo_box.currentIndex()][0]
+    form.previewbutton.clicked.connect(on_preview)
 
-            conf.last_service = service_key
-            # TODO set last-used voice
+    if not dialog.exec_():
+        return
 
-            filename = service_def['record'](text, voice)  # FIXME unicode()?
-            if filename:
-                self.addMedia(filename)
-            else:
-                utils.showWarning("No audio available for text.")
+    text = form.texttoTTS.toPlainText().strip()
+    if not text:
+        return
+
+    selected = form.comboBoxService.currentIndex()
+    service_key, service_def, combo_box = lookup[selected]
+    voice = service_def['voices'][combo_box.currentIndex()][0]
+
+    conf.last_service = service_key
+    # TODO set last-used voice
+
+    filename = service_def['record'](text, voice)  # FIXME unicode()?
+    if filename:
+        self.addMedia(filename)
+    else:
+        utils.showWarning("No audio available for text.")
 
 
 def ATTS_Fact_edit_setupFields(self):

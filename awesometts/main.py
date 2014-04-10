@@ -120,7 +120,7 @@ def getTTSFromHTML(html):
 # shipping with at least one bundled service that sometimes returns without
 # successfully playing back some text.
 
-def ATTS_Factedit_button(self):
+def ATTS_Factedit_button(editor):
     # TODO factor out code that is in-common with onGenerate()
 
     lookup = sorted([
@@ -129,7 +129,7 @@ def ATTS_Factedit_button(self):
         in TTS_service.items()
     ], key=lambda service: service[1]['name'].lower())
 
-    dialog = QDialog()
+    dialog = QDialog(editor.widget)
 
     form = forms.filegenerator.Ui_Dialog()
     form.setupUi(dialog)
@@ -177,7 +177,7 @@ def ATTS_Factedit_button(self):
 
             filename = service_def['record'](text, voice)  # FIXME unicode()?
             if filename:
-                self.addMedia(filename)
+                editor.addMedia(filename)
             else:
                 utils.showWarning("No audio available for text.")
 
@@ -281,8 +281,8 @@ def generate_audio_files(factIds, frm, service, voice, srcField_name, dstField_n
     return nelements, update_count, skip_counts.values()
 
 
-def onGenerate(self):
-    notes = self.selectedNotes()
+def onGenerate(browser):
+    notes = browser.selectedNotes()
     if not notes:
         utils.showInfo("Select notes before using the MP3 Mass Generator.")
         return
@@ -299,8 +299,7 @@ def onGenerate(self):
         in TTS_service.items()
     ], key=lambda service: service[1]['name'].lower())
 
-    dialog = QDialog()  # FIXME pass self?
-    dialog.setWindowModality(Qt.WindowModal)
+    dialog = QDialog(browser)
 
     form = forms.massgenerator.Ui_Dialog()
     form.setupUi(dialog)
@@ -366,10 +365,10 @@ def onGenerate(self):
     conf.last_service = service_key
     # TODO set last-used voice
 
-    self.mw.checkpoint("AwesomeTTS MP3 Mass Generator")
-    self.mw.progress.start(immediate=True, label="Generating MP3 files...")
+    browser.mw.checkpoint("AwesomeTTS MP3 Mass Generator")
+    browser.mw.progress.start(immediate=True, label="Generating MP3 files...")
 
-    self.model.beginReset()
+    browser.model.beginReset()
 
     process_count, update_count, skip_counts = generate_audio_files(
         notes,
@@ -380,8 +379,8 @@ def onGenerate(self):
         destination_field,
     )
 
-    self.model.endReset()
-    self.mw.progress.finish()
+    browser.model.endReset()
+    browser.mw.progress.finish()
 
     if process_count == update_count:
         utils.showInfo(
@@ -411,10 +410,10 @@ def onGenerate(self):
         ]))
 
 
-def setupMenu(editor):
-    a = QAction("AwesomeTTS MP3 Mass Generator", editor)
-    editor.form.menuEdit.addAction(a)
-    editor.connect(a, SIGNAL("triggered()"), lambda e=editor: onGenerate(e))
+def setupMenu(browser):
+    a = QAction("AwesomeTTS MP3 Mass Generator", browser)
+    browser.form.menuEdit.addAction(a)
+    browser.connect(a, SIGNAL("triggered()"), lambda b=browser: onGenerate(b))
 
 addHook("browser.setupMenus", setupMenu)
 

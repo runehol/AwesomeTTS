@@ -130,6 +130,8 @@ def getService_byName(name):
 # successfully playing back some text.
 
 def ATTS_Factedit_button(self):
+    # TODO factor out code that is in-common with onGenerate()
+
     lookup = sorted([
         (service_key, service_def, QComboBox())
         for service_key, service_def
@@ -163,14 +165,18 @@ def ATTS_Factedit_button(self):
                 form.stackedWidget.count() - 1
             )
 
+    # END TODO for factoring out code in-common
+
     def execute(preview):
         text = form.texttoTTS.toPlainText().strip()
         if not text:
             return
 
+        # TODO factor out code that is in-common with onGenerate()
         selected = form.comboBoxService.currentIndex()
         service_key, service_def, combo_box = lookup[selected]
         voice = service_def['voices'][combo_box.currentIndex()][0]
+        # END TODO for factoring out code in-common
 
         if preview:
             service_def['play'](unicode(text), voice)
@@ -223,7 +229,7 @@ def take_a_break(ndone, ntotal):
         if t == 0:
             break
 
-def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
+def generate_audio_files(factIds, frm, service, voice, srcField_name, dstField_name):
     update_count = 0
     skip_counts = {
         key: [0, message]
@@ -256,9 +262,10 @@ def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
             skip_counts['empty'][0] += 1
             continue
 
-        # FIXME FIXME FIXME FIXME This call is now broken
-        filename = TTS_service[service]['record'](frm, note[srcField_name])
-        # FIXME FIXME FIXME FIXME
+        filename = TTS_service[service]['record'](
+            note[srcField_name],  # FIXME unicode()?
+            voice,
+        )
 
         if filename:
             if frm.radioOverwrite.isChecked():
@@ -284,66 +291,89 @@ def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
 
 
 def onGenerate(self):
-    global dstField, srcField # , serviceField
-    sf = self.selectedNotes()
-    if not sf:
-        utils.showInfo("Select the notes and then use the MP3 Mass Generator")
+    notes = self.selectedNotes()
+    if not notes:
+        utils.showInfo("Select notes before using the MP3 Mass Generator.")
         return
+
+    # TODO it would be nice if this only included fields from selected notes
     import anki.find
-    fieldlist = sorted(anki.find.fieldNames(mw.col, downcase=False))
-    d = QDialog(self)
-    frm = forms.massgenerator.Ui_Dialog()
-    frm.setupUi(d)
-    d.setWindowModality(Qt.WindowModal)
+    fields = sorted(anki.find.fieldNames(mw.col, downcase=False))
 
-    frm.label_version.setText("Version "+ version)
+    # TODO factor out code that is in-common with ATTS_Factedit_button()
 
-    #service list start
-    serv_list = [TTS_service[service]['name'] for service in TTS_service]
-    frm.comboBoxService.addItems(serv_list)
+    lookup = sorted([
+        (service_key, service_def, QComboBox())
+        for service_key, service_def
+        in TTS_service.items()
+    ], key=lambda service: service[1]['name'].lower())
 
-    for service in TTS_service:
-        tostack = QWidget(frm.stackedWidget)
-        tostack.setLayout(TTS_service[service]['filegenerator_layout'](frm))
-        frm.stackedWidget.addWidget(tostack)
+    dialog = QDialog()  # FIXME pass self?
+    dialog.setWindowModality(Qt.WindowModal)
 
-    # frm.comboBoxService.setCurrentIndex(serviceField) #get defaults
-    # frm.stackedWidget.setCurrentIndex(serviceField)
+    form = forms.massgenerator.Ui_Dialog()
+    form.setupUi(dialog)
 
-    frm.sourceFieldComboBox.addItems(fieldlist)
-    frm.sourceFieldComboBox.setCurrentIndex(srcField)
+    form.comboBoxService.addItems([service[1]['name'] for service in lookup])
+    form.comboBoxService.currentIndexChanged.connect(
+        form.stackedWidget.setCurrentIndex
+    )
 
-    frm.destinationFieldComboBox.addItems(fieldlist)
-    frm.destinationFieldComboBox.setCurrentIndex(dstField)
+    for service_key, service_def, combo_box in lookup:
+        combo_box.addItems([voice[1] for voice in service_def['voices']])
+        # TODO recall last-used voice, then combo_box.setCurrentIndex(xxx)
 
-    QObject.connect(frm.comboBoxService, SIGNAL("currentIndexChanged(QString)"), lambda selected, frm=frm, serv_list=serv_list: filegenerator_onCBoxChange(selected, frm, serv_list))
-    #service list end
+        vertical_layout = QVBoxLayout()
+        vertical_layout.addWidget(QLabel("Voice:"))
+        vertical_layout.addWidget(combo_box)
+
+        stack_widget = QWidget(form.stackedWidget)
+        stack_widget.setLayout(vertical_layout)
+        form.stackedWidget.addWidget(stack_widget)
+
+        if service_key == conf.last_service:
+            form.comboBoxService.setCurrentIndex(
+                form.stackedWidget.count() - 1
+            )
+
+    # END TODO for factoring out code in-common
+
+    form.sourceFieldComboBox.addItems(fields)
+    # TODO recall last-used source, then form.sourceFieldComboBox.setCurrentIndex(xxx)
+
+    form.destinationFieldComboBox.addItems(fields)
+    # TODO recall last-used dest, then form.destinationFieldComboBox.setCurrentIndex(xxx)
+
+    form.label_version.setText("Version %s" % version)
 
     def dest_handling_changed():
         """Update checkbox label given the new handling behavior."""
-        frm.checkBoxSndTag.setText(
+        form.checkBoxSndTag.setText(
             dest_handling_changed.OVERWRITE_TEXT
-            if frm.radioOverwrite.isChecked()
+            if form.radioOverwrite.isChecked()
             else dest_handling_changed.ENDOF_TEXT
         )
-    dest_handling_changed.ENDOF_TEXT = frm.checkBoxSndTag.text()
+    dest_handling_changed.ENDOF_TEXT = form.checkBoxSndTag.text()
     dest_handling_changed.OVERWRITE_TEXT = "Wrap Path in [sound:xxx] Tag"
 
-    frm.radioEndof.toggled.connect(dest_handling_changed)
-    frm.radioOverwrite.toggled.connect(dest_handling_changed)
+    form.radioEndof.toggled.connect(dest_handling_changed)
+    form.radioOverwrite.toggled.connect(dest_handling_changed)
 
-
-    if not d.exec_():
+    if not dialog.exec_():
         return
 
-    # serviceField = frm.comboBoxService.currentIndex() # set defaults
-    srcField = frm.sourceFieldComboBox.currentIndex()
-    dstField = frm.destinationFieldComboBox.currentIndex()
+    # TODO factor out code that is in-common with ATTS_Factedit_button()
+    selected = form.comboBoxService.currentIndex()
+    service_key, service_def, combo_box = lookup[selected]
+    voice = service_def['voices'][combo_box.currentIndex()][0]
+    # END TODO for factoring out code in-common
 
-    if srcField == -1 or dstField == -1:
-        return
+    source_field = fields[form.sourceFieldComboBox.currentIndex()]
+    destination_field = fields[form.destinationFieldComboBox.currentIndex()]
+    # TODO set last-used fields
 
-    service = getService_byName(serv_list[frm.comboBoxService.currentIndex()])
+    conf.last_service = service_key
+    # TODO set last-used voice
 
     self.mw.checkpoint("AwesomeTTS MP3 Mass Generator")
     self.mw.progress.start(immediate=True, label="Generating MP3 files...")
@@ -351,11 +381,12 @@ def onGenerate(self):
     self.model.beginReset()
 
     process_count, update_count, skip_counts = generate_audio_files(
-        sf,
-        frm,
-        service,
-        fieldlist[srcField],
-        fieldlist[dstField],
+        notes,
+        form,
+        service_key,
+        voice,
+        source_field,
+        destination_field,
     )
 
     self.model.endReset()

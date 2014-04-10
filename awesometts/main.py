@@ -45,6 +45,7 @@ from aqt.reviewer import Reviewer
 
 from awesometts import conf
 import awesometts.forms as forms
+import awesometts.regex as regex
 import awesometts.services as services
 from .paths import CACHE_DIR, relative
 
@@ -243,9 +244,6 @@ def generate_audio_files(notes, form, service_def, voice, source_field, dest_fie
     batch = 900
     throttle = 'throttle' in service_def and service_def['throttle']
 
-    if not form.radioOverwrite.isChecked() and form.checkBoxSndTag.isChecked():
-        RE_SOUND = re.compile(r'\[sound:[^\]]+\]', re.IGNORECASE)
-
     for c, id in enumerate(notes):
         if throttle and (c+1)%batch == 0: # GoogleTTS has to take a break once in a while
             take_a_break(c, nelements)
@@ -274,7 +272,7 @@ def generate_audio_files(notes, form, service_def, voice, source_field, dest_fie
                     note[dest_field] = filename
             else:
                 if form.checkBoxSndTag.isChecked():
-                    note[dest_field] = RE_SOUND.sub(
+                    note[dest_field] = regex.SOUND_BRACKET_TAG.sub(
                         '',
                         note[dest_field],
                     ).strip()

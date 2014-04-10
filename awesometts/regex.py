@@ -26,20 +26,24 @@ __all__ = [
     'NOT_ALPHANUMERIC',
     'NOT_ALPHANUMERIC_DASH',
     'NOT_ALPHANUMERIC_DOT',
+    'SOUND_BRACKET_TAG',
     'WHITESPACE',
 ]
 
-from re import compile as re
+import re
 
 
 # Filter pattern to remove non-alphanumeric characters
-NOT_ALPHANUMERIC = re(r'[^a-z0-9]')
+NOT_ALPHANUMERIC = re.compile(r'[^a-z0-9]')
 
 # Filter pattern to remove non-alphanumeric and non-dash characters
-NOT_ALPHANUMERIC_DASH = re(r'[^-a-z0-9]')
+NOT_ALPHANUMERIC_DASH = re.compile(r'[^-a-z0-9]')
 
 # Filter pattern to remove non-alphanumeric and non-period characters
-NOT_ALPHANUMERIC_DOT = re(r'[^\.a-z0-9]')
+NOT_ALPHANUMERIC_DOT = re.compile(r'[^\.a-z0-9]')
+
+# Matches [sound:xxx]-style Tags
+SOUND_BRACKET_TAG = re.compile(r'\[sound:[^\]]+\]', re.IGNORECASE)
 
 # Filter pattern to collapse whitespace
-WHITESPACE = re(r'\s+')
+WHITESPACE = re.compile(r'\s+')

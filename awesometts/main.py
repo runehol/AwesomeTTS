@@ -214,16 +214,6 @@ addHook("setupEditorButtons", ATTS_Fact_edit_setupFields)
 ############################ MP3 Mass Generator
 
 
-#take a break, so we don't fall in Google's blacklist. Code contributed by Dusan Arsenijevic
-def take_a_break(ndone, ntotal):
-    t = 500
-    while True:
-        mw.progress.update(label="Generated %s of %s, \n sleeping for %s seconds...." % (ndone+1, ntotal, t))
-        time.sleep(1)
-        t = t-1
-        if t == 0:
-            break
-
 def generate_audio_files(notes, form, service_def, voice, source_field, dest_field):
     update_count = 0
     skip_counts = {
@@ -236,13 +226,17 @@ def generate_audio_files(notes, form, service_def, voice, source_field, dest_fie
         ]
     }
 
+    # TODO throttle "batch" threshold and sleep time should be configurable
+
     nelements = len(notes)
     batch = 900
     throttle = 'throttle' in service_def and service_def['throttle']
 
     for c, id in enumerate(notes):
         if throttle and (c+1)%batch == 0: # GoogleTTS has to take a break once in a while
-            take_a_break(c, nelements)
+            for t in reversed(range(500)):
+                mw.progress.update(label="Generated %s of %s, \n sleeping for %s seconds...." % (c+1, nelements, t))
+                time.sleep(1)
         note = mw.col.getNote(id)
 
         if not (source_field in note.keys() and dest_field in note.keys()):

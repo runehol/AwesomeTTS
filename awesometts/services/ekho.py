@@ -28,8 +28,6 @@ __all__ = ['TTS_service']
 from os import unlink
 import re
 from subprocess import check_output, Popen
-from PyQt4 import QtGui
-from anki.utils import stripHTML
 from awesometts import conf
 from awesometts.paths import media_filename
 from awesometts.util import STARTUP_INFO, TO_TOKENS
@@ -86,27 +84,12 @@ if VOICES:
     SERVICE = 'ekho'
 
     def play(text, voice):
-        text = re.sub(
-            r'\[sound:.*?\]',
-            '',
-            stripHTML(text.replace('\n', '')).encode('utf-8'),
-        )
-
         Popen(
             [BINARY, '-v', voice, text],
             startupinfo=STARTUP_INFO,
         ).wait()
 
-    def record(form, text):
-        fg_layout.default_voice = form.comboBoxEkho.currentIndex()
-
-        text = re.sub(
-            r'\[sound:.*?\]',
-            '',
-            stripHTML(text.replace('\n', '')).encode('utf-8')
-        )
-        voice = VOICES[form.comboBoxEkho.currentIndex()][0]
-
+    def record(text, voice):
         filename_wav = media_filename(text, SERVICE, voice, 'wav')
         filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')
 
@@ -126,36 +109,10 @@ if VOICES:
 
         return filename_mp3
 
-    def fg_layout(form):
-        form.comboBoxEkho = QtGui.QComboBox()
-        form.comboBoxEkho.addItems([voice[1] for voice in VOICES])
-        form.comboBoxEkho.setCurrentIndex(fg_layout.default_voice)
-
-        text_label = QtGui.QLabel()
-        text_label.setText("Language:")
-
-        vertical_layout = QtGui.QVBoxLayout()
-        vertical_layout.addWidget(text_label)
-        vertical_layout.addWidget(form.comboBoxEkho)
-
-        return vertical_layout
-
-    def fg_preview(form):
-        return play(
-            unicode(form.texttoTTS.toPlainText()),
-            VOICES[form.comboBoxEkho.currentIndex()][0],
-        )
-
-
-    try:
-        fg_layout.default_voice = VOICES.index(('Mandarin', "Mandarin"))
-    except ValueError:
-        fg_layout.default_voice = 0
 
     TTS_service = {SERVICE: {
         'name': "Ekho",
         'play': play,
         'record': record,
-        'filegenerator_layout': fg_layout,
-        'filegenerator_preview': fg_preview,
+        'voices': VOICES,
     }}

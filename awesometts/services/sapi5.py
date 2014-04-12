@@ -27,10 +27,7 @@ __all__ = ['TTS_service']
 
 from os import environ, unlink
 from os.path import exists
-import re
 from subprocess import mswindows, check_output, Popen
-from PyQt4 import QtGui
-from anki.utils import stripHTML
 from awesometts import conf
 from awesometts.paths import SERVICES_DIR, media_filename, relative
 from awesometts.util import STARTUP_INFO, TO_HEXSTR, TO_TOKENS
@@ -86,12 +83,6 @@ if VOICES:
     SERVICE = 'sapi5'
 
     def play(text, voice):
-        text = re.sub(
-            r'\[sound:.*?\]',
-            '',
-            stripHTML(text.replace('\n', ''))  # FIXME cannot be UTF-8?
-        )
-
         param = [
             BINARY, SCRIPT, '-hex',
             '-voice', TO_HEXSTR(voice),
@@ -103,16 +94,7 @@ if VOICES:
         else:
             Popen(param, startupinfo=STARTUP_INFO).wait()
 
-    def record(form, text):
-        fg_layout.default_voice = form.comboBoxsapi5.currentIndex()
-
-        text = re.sub(
-            r'\[sound:.*?\]',
-            '',
-            stripHTML(text.replace('\n', ''))  # FIXME cannot be UTF-8?
-        )
-        voice = VOICES[form.comboBoxsapi5.currentIndex()][0]
-
+    def record(text, voice):
         filename_wav = media_filename(text, SERVICE, voice, 'wav')
         filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')
 
@@ -137,33 +119,10 @@ if VOICES:
 
         return filename_mp3
 
-    def fg_layout(form):
-        text_label = QtGui.QLabel()
-        text_label.setText("Voice:")
-
-        form.comboBoxsapi5 = QtGui.QComboBox()
-        form.comboBoxsapi5.addItems([voice[1] for voice in VOICES])
-        form.comboBoxsapi5.setCurrentIndex(fg_layout.default_voice)
-
-        vertical_layout = QtGui.QVBoxLayout()
-        vertical_layout.addWidget(text_label)
-        vertical_layout.addWidget(form.comboBoxsapi5)
-
-        return vertical_layout
-
-    def fg_preview(form):
-        return play(
-            unicode(form.texttoTTS.toPlainText()),
-            VOICES[form.comboBoxsapi5.currentIndex()][0],
-        )
-
-
-    fg_layout.default_voice = 0
 
     TTS_service = {SERVICE: {
         'name': "SAPI 5",
         'play': play,
         'record': record,
-        'filegenerator_layout': fg_layout,
-        'filegenerator_preview': fg_preview,
+        'voices': VOICES,
     }}

@@ -28,8 +28,6 @@ __all__ = ['TTS_service']
 from os import unlink
 import re
 from subprocess import check_output, mswindows, Popen
-from PyQt4 import QtGui
-from anki.utils import stripHTML
 from awesometts import conf
 from awesometts.paths import media_filename
 from awesometts.util import STARTUP_INFO, TO_TOKENS
@@ -120,27 +118,12 @@ if VOICES:
     SERVICE = 'espeak'
 
     def play(text, voice):
-        text = re.sub(
-            r'\[sound:.*?\]',
-            '',
-            stripHTML(text.replace('\n', '')).encode('utf-8'),
-        )
-
         Popen(
             [BINARY, '-v', voice, text],
             startupinfo=STARTUP_INFO,
         ).wait()
 
-    def record(form, text):
-        fg_layout.default_voice = form.comboBoxEspeak.currentIndex()
-
-        text = re.sub(
-            r'\[sound:.*?\]',
-            '',
-            stripHTML(text.replace('\n', '')).encode('utf-8'),
-        )
-        voice = VOICES[form.comboBoxEspeak.currentIndex()][0]
-
+    def record(text, voice):
         filename_wav = media_filename(text, SERVICE, voice, 'wav')
         filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')
 
@@ -160,38 +143,10 @@ if VOICES:
 
         return filename_mp3
 
-    def fg_layout(form):
-        form.comboBoxEspeak = QtGui.QComboBox()
-        form.comboBoxEspeak.addItems([voice[1] for voice in VOICES])
-        form.comboBoxEspeak.setCurrentIndex(fg_layout.default_voice)
-
-        text_label = QtGui.QLabel()
-        text_label.setText("Voice:")
-
-        vertical_layout = QtGui.QVBoxLayout()
-        vertical_layout.addWidget(text_label)
-        vertical_layout.addWidget(form.comboBoxEspeak)
-
-        return vertical_layout
-
-    def fg_preview(form):
-        return play(
-            unicode(form.texttoTTS.toPlainText()),
-            VOICES[form.comboBoxEspeak.currentIndex()][0],
-        )
-
-
-    try:
-        fg_layout.default_voice = VOICES.index(
-            next(v for v in VOICES if v[0] == 'en')
-        )
-    except StopIteration:
-        fg_layout.default_voice = 0
 
     TTS_service = {SERVICE: {
         'name': "eSpeak",
         'play': play,
         'record': record,
-        'filegenerator_layout': fg_layout,
-        'filegenerator_preview': fg_preview,
+        'voices': VOICES,
     }}

@@ -27,11 +27,9 @@ Service implementation for Google's TTS API
 __all__ = ['TTS_service']
 
 from os.path import isfile
-import re
 from subprocess import mswindows, Popen
 import urllib, urllib2
-from PyQt4 import QtCore, QtGui
-from anki.utils import stripHTML
+from PyQt4 import QtCore
 from awesometts import conf
 from awesometts.paths import CACHE_DIR, media_filename, relative
 from awesometts.util import STARTUP_INFO
@@ -210,12 +208,6 @@ class Worker(QtCore.QThread):
 
 
 def play(text, voice):
-    text = re.sub(
-        r'\[sound:.*?\]',
-        '',
-        stripHTML(text.replace('\n', '')).encode('utf-8'),
-    )
-
     address = _get_address(voice, text)
 
     if conf.caching:
@@ -231,16 +223,7 @@ def play(text, voice):
     else:
         _mplayer_playback(address)
 
-def record(form, text):
-    fg_layout.default_voice = form.comboBoxGoogle.currentIndex()
-
-    text = re.sub(
-        r'\[sound:.*?\]',
-        '',
-        stripHTML(text.replace('\n', '')).encode('utf-8')
-    )
-    voice = VOICES[form.comboBoxGoogle.currentIndex()][0]
-
+def record(text, voice):
     address = _get_address(voice, text)
     filename = media_filename(text, SERVICE, voice, 'mp3')
 
@@ -266,35 +249,11 @@ def record(form, text):
 
     return filename
 
-def fg_layout(form):
-    form.comboBoxGoogle = QtGui.QComboBox()
-    form.comboBoxGoogle.addItems([voice[1] for voice in VOICES])
-    form.comboBoxGoogle.setCurrentIndex(fg_layout.default_voice)
-
-    text_label = QtGui.QLabel()
-    text_label.setText("Language:")
-
-    vertical_layout = QtGui.QVBoxLayout()
-    vertical_layout.addWidget(text_label)
-    vertical_layout.addWidget(form.comboBoxGoogle)
-
-    return vertical_layout
-
-def fg_preview(form):
-    return play(
-        unicode(form.texttoTTS.toPlainText()),
-        VOICES[form.comboBoxGoogle.currentIndex()][0],
-    )
-
-
-fg_layout.default_voice = VOICES.index(
-    next(v for v in VOICES if v[0] == 'en')
-)
 
 TTS_service = {SERVICE: {
     'name': "Google",
     'play': play,
     'record': record,
-    'filegenerator_layout': fg_layout,
-    'filegenerator_preview': fg_preview,
+    'voices': VOICES,
+    'throttle': True,
 }}

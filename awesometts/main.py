@@ -27,15 +27,26 @@ version = '1.0 Beta 11 (develop)'
 
 import os, re, types, time
 from PyQt4.QtCore import SIGNAL, Qt, QObject
-from PyQt4.QtGui import QAction, QDialog, QIcon, QPushButton, QWidget
+from PyQt4.QtGui import (
+    QAction,
+    QComboBox,
+    QDialog,
+    QIcon,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from anki import sound
 from anki.hooks import addHook, wrap
+from anki.utils import stripHTML
 from aqt import mw, utils
 from aqt.reviewer import Reviewer
 
 from awesometts import conf
 import awesometts.forms as forms
+import awesometts.regex as regex
 import awesometts.services as services
 from .paths import CACHE_DIR, relative
 
@@ -62,13 +73,16 @@ def playTTSFromText(text):
     for service, html_tags in tospeakHTML.items():
         for html_tag in html_tags:
             TTS_service[service]['play'](
-                ''.join(html_tag.findAll(text=True)),
+                service_text(''.join(html_tag.findAll(text=True))),
                 html_tag['voice'],
             )
     for service, bracket_tags in tospeak.items():
         for bracket_tag in bracket_tags:
             match = re.match(r'(.*?):(.*)', bracket_tag, re.M|re.I)
-            TTS_service[service]['play'](match.group(2), match.group(1))
+            TTS_service[service]['play'](
+                service_text(match.group(2)),
+                match.group(1),
+            )
 
 def getTTSFromText(text):
     tospeak = {}
@@ -99,62 +113,110 @@ def getTTSFromHTML(html):
     return tospeakhtml
 
 
+############################ Service Forms
+
+def service_form(module, parent):
+    lookup = sorted([
+        (service_key, service_def, QComboBox())
+        for service_key, service_def
+        in TTS_service.items()
+    ], key=lambda service: service[1]['name'].lower())
+
+    dialog = QDialog(parent)
+
+    form = module.Ui_Dialog()
+    form.setupUi(dialog)
+
+    form.comboBoxService.addItems([service[1]['name'] for service in lookup])
+    form.comboBoxService.currentIndexChanged.connect(
+        form.stackedWidget.setCurrentIndex
+    )
+
+    for service_key, service_def, combo_box in lookup:
+        combo_box.addItems([voice[1] for voice in service_def['voices']])
+        if service_key in conf.last_voice:
+            try:
+                combo_box.setCurrentIndex(service_def['voices'].index(next(
+                    voice for voice in service_def['voices']
+                    if voice[0] == conf.last_voice[service_key]
+                )))
+            except StopIteration:
+                pass
+
+        vertical_layout = QVBoxLayout()
+        vertical_layout.addWidget(QLabel("Voice:"))
+        vertical_layout.addWidget(combo_box)
+
+        stack_widget = QWidget(form.stackedWidget)
+        stack_widget.setLayout(vertical_layout)
+        form.stackedWidget.addWidget(stack_widget)
+
+        if service_key == conf.last_service:
+            form.comboBoxService.setCurrentIndex(
+                form.stackedWidget.count() - 1
+            )
+
+    return lookup, dialog, form
+
+def service_form_values(form, lookup):
+    selected = form.comboBoxService.currentIndex()
+    service_key, service_def, combo_box = lookup[selected]
+    voice = service_def['voices'][combo_box.currentIndex()][0]
+
+    return service_key, service_def, voice
+
+def service_text(text):
+
+    text = text.encode('utf-8')
+    text = regex.SOUND_BRACKET_TAG.sub('', stripHTML(text))
+    text = regex.WHITESPACE.sub(' ', text).strip()
+
+    return text
+
+
 ############################ MP3 File Generator
 
-serviceField = 0
+# TODO: It would be nice if a service that sometimes cannot fulfill given
+# text (e.g. one using a finite set of prerecorded dictionary words) be made
+# to explicitly return False or an exception (instead of None) from its play
+# and record callables so that there would be some sort of notification to the
+# user that the entered text is not playable.
+#
+# A convention for this can be established as soon as AwesomeTTS begins
+# shipping with at least one bundled service that sometimes returns without
+# successfully playing back some text.
 
-def filegenerator_onCBoxChange(selected, form, serv_list):
-    form.stackedWidget.setCurrentIndex(serv_list.index(selected))
+def ATTS_Factedit_button(editor):
+    lookup, dialog, form = service_form(forms.filegenerator, editor.widget)
 
-def getService_byName(name):
-    for service in TTS_service:
-        if TTS_service[service]['name'] == name:
-            return service
+    def execute(preview):
+        text = form.texttoTTS.toPlainText().strip()
+        if not text:
+            return
 
+        service_key, service_def, voice = service_form_values(form, lookup)
 
-def ATTS_Factedit_button(self):
-    global serviceField
-    d = QDialog()
-    form = forms.filegenerator.Ui_Dialog()
-    form.setupUi(d)
-    serv_list = [TTS_service[service]['name'] for service in TTS_service]
-    form.comboBoxService.addItems(serv_list)
-
-    for service in TTS_service:
-        tostack = QWidget(form.stackedWidget)
-        tostack.setLayout(TTS_service[service]['filegenerator_layout'](form))
-        form.stackedWidget.addWidget(tostack)
-
-    form.comboBoxService.setCurrentIndex(serviceField) #get defaults
-    form.stackedWidget.setCurrentIndex(serviceField)
-
-    # TODO: It would be nice if a service that sometimes cannot fulfill
-    # given text (e.g. one using a finite set of prerecorded dictionary
-    # words) be made to explicitly return False (instead of None) from its
-    # filegenerator_preview callable so that there would be some sort of
-    # notification to the user that the entered text is not playable.
-    # Alternatively, an exception could be used, but then other bits of
-    # code might need updating for consistency (e.g. record functionality,
-    # mass generation, on-the-fly playback).
-    # A convention for this can be established as soon as AwesomeTTS
-    # begins shipping with at least one bundled service that sometimes
-    # returns without successfully playing back some text.
-
-    QObject.connect(form.previewbutton, SIGNAL("clicked()"), lambda form=form: TTS_service[getService_byName(serv_list[form.comboBoxService.currentIndex()])]['filegenerator_preview'](form))
-
-    QObject.connect(form.comboBoxService, SIGNAL("currentIndexChanged(QString)"), lambda selected, form=form, serv_list=serv_list: filegenerator_onCBoxChange(selected, form, serv_list))
-
-    if d.exec_() and form.texttoTTS.toPlainText() != '' and not form.texttoTTS.toPlainText().isspace():
-        serviceField = form.comboBoxService.currentIndex() # set default
-        srv = getService_byName(serv_list[serviceField])
-        filename = TTS_service[srv]['record'](
-            form,
-            unicode(form.texttoTTS.toPlainText()),
-        )
-        if filename:
-            self.addMedia(filename)
+        if preview:
+            service_def['play'](service_text(text), voice)
         else:
-            utils.showWarning("No audio available for text.")
+            conf.update(
+                last_service=service_key,
+                last_voice=dict(
+                    conf.last_voice.items() +
+                    [(service_key, voice)]
+                )
+            )
+
+            filename = service_def['record'](service_text(text), voice)
+            if filename:
+                editor.addMedia(filename)
+            else:
+                utils.showWarning("No audio available for text.")
+
+    form.previewbutton.clicked.connect(lambda: execute(preview=True))
+    if dialog.exec_():
+        execute(preview=False)
+
 
 def ATTS_Fact_edit_setupFields(self):
     AwesomeTTS = QPushButton(self.widget)
@@ -175,22 +237,8 @@ addHook("setupEditorButtons", ATTS_Fact_edit_setupFields)
 
 ############################ MP3 Mass Generator
 
-srcField = -1
-dstField = -1
 
-
-
-#take a break, so we don't fall in Google's blacklist. Code contributed by Dusan Arsenijevic
-def take_a_break(ndone, ntotal):
-    t = 500
-    while True:
-        mw.progress.update(label="Generated %s of %s, \n sleeping for %s seconds...." % (ndone+1, ntotal, t))
-        time.sleep(1)
-        t = t-1
-        if t == 0:
-            break
-
-def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
+def generate_audio_files(notes, form, service_def, voice, source_field, dest_field):
     update_count = 0
     skip_counts = {
         key: [0, message]
@@ -202,42 +250,47 @@ def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
         ]
     }
 
-    nelements = len(factIds)
+    # TODO throttle "batch" threshold and sleep time should be configurable
+
+    nelements = len(notes)
     batch = 900
+    throttle = 'throttle' in service_def and service_def['throttle']
 
-    if not frm.radioOverwrite.isChecked() and frm.checkBoxSndTag.isChecked():
-        RE_SOUND = re.compile(r'\[sound:[^\]]+\]', re.IGNORECASE)
-
-    for c, id in enumerate(factIds):
-        if service == 'g' and (c+1)%batch == 0: # GoogleTTS has to take a break once in a while
-            take_a_break(c, nelements)
+    for c, id in enumerate(notes):
+        if throttle and (c+1)%batch == 0: # GoogleTTS has to take a break once in a while
+            for t in reversed(range(500)):
+                mw.progress.update(label="Generated %s of %s, \n sleeping for %s seconds...." % (c+1, nelements, t))
+                time.sleep(1)
         note = mw.col.getNote(id)
 
-        if not (srcField_name in note.keys() and dstField_name in note.keys()):
+        if not (source_field in note.keys() and dest_field in note.keys()):
             skip_counts['fields'][0] += 1
             continue
 
-        mw.progress.update(label="Generating MP3 files...\n%s of %s\n%s" % (c+1, nelements, note[srcField_name]))
+        mw.progress.update(label="Generating MP3 files...\n%s of %s\n%s" % (c+1, nelements, note[source_field]))
 
-        if note[srcField_name] == '' or note[srcField_name].isspace(): #check if the field is blank
+        if note[source_field] == '' or note[source_field].isspace(): #check if the field is blank
             skip_counts['empty'][0] += 1
             continue
 
-        filename = TTS_service[service]['record'](frm, note[srcField_name])
+        filename = service_def['record'](
+            service_text(note[source_field]),
+            voice,
+        )
 
         if filename:
-            if frm.radioOverwrite.isChecked():
-                if frm.checkBoxSndTag.isChecked():
-                    note[dstField_name] = '[sound:'+ filename +']'
+            if form.radioOverwrite.isChecked():
+                if form.checkBoxSndTag.isChecked():
+                    note[dest_field] = '[sound:'+ filename +']'
                 else:
-                    note[dstField_name] = filename
+                    note[dest_field] = filename
             else:
-                if frm.checkBoxSndTag.isChecked():
-                    note[dstField_name] = RE_SOUND.sub(
+                if form.checkBoxSndTag.isChecked():
+                    note[dest_field] = regex.SOUND_BRACKET_TAG.sub(
                         '',
-                        note[dstField_name],
+                        note[dest_field],
                     ).strip()
-                note[dstField_name] += ' [sound:'+ filename +']'
+                note[dest_field] += ' [sound:'+ filename +']'
 
             update_count += 1
             note.flush()
@@ -248,83 +301,82 @@ def generate_audio_files(factIds, frm, service, srcField_name, dstField_name):
     return nelements, update_count, skip_counts.values()
 
 
-def onGenerate(self):
-    global dstField, srcField, serviceField
-    sf = self.selectedNotes()
-    if not sf:
-        utils.showInfo("Select the notes and then use the MP3 Mass Generator")
+def onGenerate(browser):
+    notes = browser.selectedNotes()
+    if not notes:
+        utils.showInfo("Select notes before using the MP3 Mass Generator.")
         return
+
+    # TODO it would be nice if this only included fields from selected notes
     import anki.find
-    fieldlist = sorted(anki.find.fieldNames(mw.col, downcase=False))
-    d = QDialog(self)
-    frm = forms.massgenerator.Ui_Dialog()
-    frm.setupUi(d)
-    d.setWindowModality(Qt.WindowModal)
+    fields = sorted(anki.find.fieldNames(mw.col, downcase=False))
 
-    frm.label_version.setText("Version "+ version)
+    lookup, dialog, form = service_form(forms.massgenerator, browser)
 
-    #service list start
-    serv_list = [TTS_service[service]['name'] for service in TTS_service]
-    frm.comboBoxService.addItems(serv_list)
+    form.sourceFieldComboBox.addItems(fields)
+    try:
+        form.sourceFieldComboBox.setCurrentIndex(
+            fields.index(conf.last_mass_source)
+        )
+    except ValueError:
+        pass
 
-    for service in TTS_service:
-        tostack = QWidget(frm.stackedWidget)
-        tostack.setLayout(TTS_service[service]['filegenerator_layout'](frm))
-        frm.stackedWidget.addWidget(tostack)
+    form.destinationFieldComboBox.addItems(fields)
+    try:
+        form.destinationFieldComboBox.setCurrentIndex(
+            fields.index(conf.last_mass_dest)
+        )
+    except ValueError:
+        pass
 
-    frm.comboBoxService.setCurrentIndex(serviceField) #get defaults
-    frm.stackedWidget.setCurrentIndex(serviceField)
-
-    frm.sourceFieldComboBox.addItems(fieldlist)
-    frm.sourceFieldComboBox.setCurrentIndex(srcField)
-
-    frm.destinationFieldComboBox.addItems(fieldlist)
-    frm.destinationFieldComboBox.setCurrentIndex(dstField)
-
-    QObject.connect(frm.comboBoxService, SIGNAL("currentIndexChanged(QString)"), lambda selected, frm=frm, serv_list=serv_list: filegenerator_onCBoxChange(selected, frm, serv_list))
-    #service list end
+    form.label_version.setText("Version %s" % version)
 
     def dest_handling_changed():
         """Update checkbox label given the new handling behavior."""
-        frm.checkBoxSndTag.setText(
+        form.checkBoxSndTag.setText(
             dest_handling_changed.OVERWRITE_TEXT
-            if frm.radioOverwrite.isChecked()
+            if form.radioOverwrite.isChecked()
             else dest_handling_changed.ENDOF_TEXT
         )
-    dest_handling_changed.ENDOF_TEXT = frm.checkBoxSndTag.text()
+    dest_handling_changed.ENDOF_TEXT = form.checkBoxSndTag.text()
     dest_handling_changed.OVERWRITE_TEXT = "Wrap Path in [sound:xxx] Tag"
 
-    frm.radioEndof.toggled.connect(dest_handling_changed)
-    frm.radioOverwrite.toggled.connect(dest_handling_changed)
+    form.radioEndof.toggled.connect(dest_handling_changed)
+    form.radioOverwrite.toggled.connect(dest_handling_changed)
 
-
-    if not d.exec_():
+    if not dialog.exec_():
         return
 
-    serviceField = frm.comboBoxService.currentIndex() # set defaults
-    srcField = frm.sourceFieldComboBox.currentIndex()
-    dstField = frm.destinationFieldComboBox.currentIndex()
+    service_key, service_def, voice = service_form_values(form, lookup)
+    source_field = fields[form.sourceFieldComboBox.currentIndex()]
+    dest_field = fields[form.destinationFieldComboBox.currentIndex()]
 
-    if srcField == -1 or dstField == -1:
-        return
-
-    service = getService_byName(serv_list[frm.comboBoxService.currentIndex()])
-
-    self.mw.checkpoint("AwesomeTTS MP3 Mass Generator")
-    self.mw.progress.start(immediate=True, label="Generating MP3 files...")
-
-    self.model.beginReset()
-
-    process_count, update_count, skip_counts = generate_audio_files(
-        sf,
-        frm,
-        service,
-        fieldlist[srcField],
-        fieldlist[dstField],
+    conf.update(
+        last_mass_source=source_field,
+        last_mass_dest=dest_field,
+        last_service=service_key,
+        last_voice=dict(
+            conf.last_voice.items() +
+            [(service_key, voice)]
+        )
     )
 
-    self.model.endReset()
-    self.mw.progress.finish()
+    browser.mw.checkpoint("AwesomeTTS MP3 Mass Generator")
+    browser.mw.progress.start(immediate=True, label="Generating MP3 files...")
+
+    browser.model.beginReset()
+
+    process_count, update_count, skip_counts = generate_audio_files(
+        notes,
+        form,
+        service_def,
+        voice,
+        source_field,
+        dest_field,
+    )
+
+    browser.model.endReset()
+    browser.mw.progress.finish()
 
     if process_count == update_count:
         utils.showInfo(
@@ -354,10 +406,10 @@ def onGenerate(self):
         ]))
 
 
-def setupMenu(editor):
-    a = QAction("AwesomeTTS MP3 Mass Generator", editor)
-    editor.form.menuEdit.addAction(a)
-    editor.connect(a, SIGNAL("triggered()"), lambda e=editor: onGenerate(e))
+def setupMenu(browser):
+    a = QAction("AwesomeTTS MP3 Mass Generator", browser)
+    browser.form.menuEdit.addAction(a)
+    browser.connect(a, SIGNAL("triggered()"), lambda b=browser: onGenerate(b))
 
 addHook("browser.setupMenus", setupMenu)
 

@@ -28,8 +28,7 @@ __all__ = ['TTS_service']
 from os import unlink
 import re
 from subprocess import check_output, Popen
-from PyQt4 import QtGui
-from anki.utils import isMac, stripHTML
+from anki.utils import isMac
 from awesometts import conf
 from awesometts.paths import media_filename
 from awesometts.util import TO_TOKENS
@@ -83,24 +82,9 @@ if VOICES:
     SERVICE = 'say'
 
     def play(text, voice):
-        text = re.sub(
-            r'\[sound:.*?\]',
-            '',
-            stripHTML(text.replace('\n', '')).encode('utf-8'),
-        )
-
         Popen([BINARY, '-v', voice, text]).wait()
 
-    def record(form, text):
-        fg_layout.default_voice = form.comboBoxSay.currentIndex()
-
-        text = re.sub(
-            r'\[sound:.*?\]',
-            '',
-            stripHTML(text.replace('\n', '')).encode('utf-8'),
-        )
-        voice = VOICES[form.comboBoxSay.currentIndex()][0]
-
+    def record(text, voice):
         filename_aiff = media_filename(text, SERVICE, voice, 'aiff')
         filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')
 
@@ -116,33 +100,10 @@ if VOICES:
 
         return filename_mp3
 
-    def fg_layout(form):
-        form.comboBoxSay = QtGui.QComboBox()
-        form.comboBoxSay.addItems([voice[1] for voice in VOICES])
-        form.comboBoxSay.setCurrentIndex(fg_layout.default_voice)
-
-        text_label = QtGui.QLabel()
-        text_label.setText("Voice:")
-
-        vertical_layout = QtGui.QVBoxLayout()
-        vertical_layout.addWidget(text_label)
-        vertical_layout.addWidget(form.comboBoxSay)
-
-        return vertical_layout
-
-    def fg_preview(form):
-        return play(
-            unicode(form.texttoTTS.toPlainText()),
-            VOICES[form.comboBoxSay.currentIndex()][0]
-        )
-
-
-    fg_layout.default_voice = 0
 
     TTS_service = {SERVICE: {
         'name': "OS X Say",
         'play': play,
         'record': record,
-        'filegenerator_layout': fg_layout,
-        'filegenerator_preview': fg_preview,
+        'voices': VOICES,
     }}

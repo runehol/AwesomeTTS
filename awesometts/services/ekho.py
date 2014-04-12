@@ -28,8 +28,6 @@ __all__ = ['TTS_service']
 from os import unlink
 import re
 from subprocess import check_output, Popen
-from PyQt4 import QtGui
-from anki.utils import stripHTML
 from awesometts import conf
 from awesometts.paths import media_filename
 from awesometts.util import STARTUP_INFO, TO_TOKENS
@@ -86,24 +84,12 @@ if VOICES:
     SERVICE = 'ekho'
 
     def play(text, voice):
-        text = re.sub(
-            r'\[sound:.*?\]',
-            '',
-            stripHTML(text.replace('\n', '')).encode('utf-8'),
-        )
-
         Popen(
             [BINARY, '-v', voice, text],
             startupinfo=STARTUP_INFO,
         ).wait()
 
     def record(text, voice):
-        text = re.sub(
-            r'\[sound:.*?\]',
-            '',
-            stripHTML(text.replace('\n', '')).encode('utf-8')
-        )
-
         filename_wav = media_filename(text, SERVICE, voice, 'wav')
         filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')
 

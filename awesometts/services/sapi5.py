@@ -27,10 +27,7 @@ __all__ = ['TTS_service']
 
 from os import environ, unlink
 from os.path import exists
-import re
 from subprocess import mswindows, check_output, Popen
-from PyQt4 import QtGui
-from anki.utils import stripHTML
 from awesometts import conf
 from awesometts.paths import SERVICES_DIR, media_filename, relative
 from awesometts.util import STARTUP_INFO, TO_HEXSTR, TO_TOKENS
@@ -86,12 +83,6 @@ if VOICES:
     SERVICE = 'sapi5'
 
     def play(text, voice):
-        text = re.sub(
-            r'\[sound:.*?\]',
-            '',
-            stripHTML(text.replace('\n', ''))  # FIXME cannot be UTF-8?
-        )
-
         param = [
             BINARY, SCRIPT, '-hex',
             '-voice', TO_HEXSTR(voice),
@@ -104,12 +95,6 @@ if VOICES:
             Popen(param, startupinfo=STARTUP_INFO).wait()
 
     def record(text, voice):
-        text = re.sub(
-            r'\[sound:.*?\]',
-            '',
-            stripHTML(text.replace('\n', ''))  # FIXME cannot be UTF-8?
-        )
-
         filename_wav = media_filename(text, SERVICE, voice, 'wav')
         filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')
 

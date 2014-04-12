@@ -27,11 +27,9 @@ Service implementation for Google's TTS API
 __all__ = ['TTS_service']
 
 from os.path import isfile
-import re
 from subprocess import mswindows, Popen
 import urllib, urllib2
-from PyQt4 import QtCore, QtGui
-from anki.utils import stripHTML
+from PyQt4 import QtCore
 from awesometts import conf
 from awesometts.paths import CACHE_DIR, media_filename, relative
 from awesometts.util import STARTUP_INFO
@@ -210,12 +208,6 @@ class Worker(QtCore.QThread):
 
 
 def play(text, voice):
-    text = re.sub(
-        r'\[sound:.*?\]',
-        '',
-        stripHTML(text.replace('\n', '')).encode('utf-8'),
-    )
-
     address = _get_address(voice, text)
 
     if conf.caching:
@@ -232,12 +224,6 @@ def play(text, voice):
         _mplayer_playback(address)
 
 def record(text, voice):
-    text = re.sub(
-        r'\[sound:.*?\]',
-        '',
-        stripHTML(text.replace('\n', '')).encode('utf-8')
-    )
-
     address = _get_address(voice, text)
     filename = media_filename(text, SERVICE, voice, 'mp3')
 

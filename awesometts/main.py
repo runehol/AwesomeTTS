@@ -40,6 +40,7 @@ from PyQt4.QtGui import (
 
 from anki import sound
 from anki.hooks import addHook, wrap
+from anki.utils import stripHTML
 from aqt import mw, utils
 from aqt.reviewer import Reviewer
 
@@ -72,13 +73,16 @@ def playTTSFromText(text):
     for service, html_tags in tospeakHTML.items():
         for html_tag in html_tags:
             TTS_service[service]['play'](
-                ''.join(html_tag.findAll(text=True)),
+                service_text(''.join(html_tag.findAll(text=True))),
                 html_tag['voice'],
             )
     for service, bracket_tags in tospeak.items():
         for bracket_tag in bracket_tags:
             match = re.match(r'(.*?):(.*)', bracket_tag, re.M|re.I)
-            TTS_service[service]['play'](match.group(2), match.group(1))
+            TTS_service[service]['play'](
+                service_text(match.group(2)),
+                match.group(1),
+            )
 
 def getTTSFromText(text):
     tospeak = {}
@@ -161,6 +165,14 @@ def service_form_values(form, lookup):
 
     return service_key, service_def, voice
 
+def service_text(text):
+
+    text = text.encode('utf-8')
+    text = regex.SOUND_BRACKET_TAG.sub('', stripHTML(text))
+    text = regex.WHITESPACE.sub(' ', text).strip()
+
+    return text
+
 
 ############################ MP3 File Generator
 
@@ -185,7 +197,7 @@ def ATTS_Factedit_button(editor):
         service_key, service_def, voice = service_form_values(form, lookup)
 
         if preview:
-            service_def['play'](unicode(text), voice)
+            service_def['play'](service_text(text), voice)
         else:
             conf.update(
                 last_service=service_key,
@@ -195,7 +207,7 @@ def ATTS_Factedit_button(editor):
                 )
             )
 
-            filename = service_def['record'](text, voice)  # FIXME unicode()?
+            filename = service_def['record'](service_text(text), voice)
             if filename:
                 editor.addMedia(filename)
             else:
@@ -262,7 +274,7 @@ def generate_audio_files(notes, form, service_def, voice, source_field, dest_fie
             continue
 
         filename = service_def['record'](
-            note[source_field],  # FIXME unicode()?
+            service_text(note[source_field]),
             voice,
         )
 

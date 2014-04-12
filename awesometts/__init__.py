@@ -31,6 +31,7 @@ __all__ = [
     'logger',
 ]
 
+import json
 import logging
 from sys import stdout
 from PyQt4.QtCore import Qt
@@ -65,6 +66,7 @@ conf = classes.Conf(
         ('last_mass_dest', 'text', 'Back', str, str),
         ('last_mass_source', 'text', 'Front', str, str),
         ('last_service', 'text', 'g', str, str),
+        ('last_voice', 'text', {}, json.loads, json.dumps),
         ('subprocessing', 'integer', True, util.TO_BOOL, int),
         ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
         ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),

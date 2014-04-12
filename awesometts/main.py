@@ -130,7 +130,14 @@ def service_form(module, parent):
 
     for service_key, service_def, combo_box in lookup:
         combo_box.addItems([voice[1] for voice in service_def['voices']])
-        # TODO recall last-used voice, then combo_box.setCurrentIndex(xxx)
+        if service_key in conf.last_voice:
+            try:
+                combo_box.setCurrentIndex(service_def['voices'].index(next(
+                    voice for voice in service_def['voices']
+                    if voice[0] == conf.last_voice[service_key]
+                )))
+            except StopIteration:
+                pass
 
         vertical_layout = QVBoxLayout()
         vertical_layout.addWidget(QLabel("Voice:"))
@@ -180,8 +187,13 @@ def ATTS_Factedit_button(editor):
         if preview:
             service_def['play'](unicode(text), voice)
         else:
-            conf.last_service = service_key
-            # TODO set last-used voice
+            conf.update(
+                last_service=service_key,
+                last_voice=dict(
+                    conf.last_voice.items() +
+                    [(service_key, voice)]
+                )
+            )
 
             filename = service_def['record'](text, voice)  # FIXME unicode()?
             if filename:
@@ -331,7 +343,10 @@ def onGenerate(browser):
         last_mass_source=source_field,
         last_mass_dest=dest_field,
         last_service=service_key,
-        # TODO set last-used voice
+        last_voice=dict(
+            conf.last_voice.items() +
+            [(service_key, voice)]
+        )
     )
 
     browser.mw.checkpoint("AwesomeTTS MP3 Mass Generator")

@@ -30,75 +30,61 @@ individual files.
 """
 
 __all__ = [
-    'media_filename',
     'relative',
+    'cache_path',
+    'temp_path',
     'ADDON_LOG',
     'CACHE_DIR',
     'CONF_DB',
+    'TEMP_DIR',
 ]
 
-from hashlib import md5
 from os import mkdir
 from os.path import (
     abspath,
     dirname,
     isdir,
-    join,
-    normpath,
 )
 from subprocess import mswindows
-from sys import (
-    argv,
-    getfilesystemencoding,
-)
-from . import regex as re
-
-
-# Set the encoding type we should use for all path and filename strings.
-
-_ENCODING = getfilesystemencoding()
+from sys import argv
 
 
 # Determine the Anki binary's directory. On Linux and Mac OS X, this is
 # not particularly interesting, but on Windows, this directory will also
-# contain the mplayer.exe binary.
-#
-# Note that the decode() call is deferred until after the PATH setup for
-# Windows. This is done so as to not convert the PATH value from a
-# regular string to a unicode one.
+# contain the lame.exe and mplayer.exe binaries.
 
 _ANKI_DIR = dirname(abspath(argv[0]))
 
 if mswindows:
-    # Enable mplayer.exe binary to be called from the environment PATH.
     from os import environ
-    environ['PATH'] += ';' + _ANKI_DIR
 
-_ANKI_DIR = _ANKI_DIR.decode(_ENCODING)
+    environ['PATH'] += ';' + _ANKI_DIR
 
 
 # When determining the code directory, abspath() is needed since the
 # __file__ constant is not a full path by itself.
 
-_CODE_DIR = dirname(abspath(__file__)).decode(_ENCODING)
+_CODE_DIR = dirname(abspath(__file__))
 
 
 def relative(start_dir, to_path, *addl_paths):
     """
     Returns the full path to a file or directory relative to the given
-    start directory, using the operating system's path separator and
-    file system encoding. Multiple path components may be passed.
+    start directory, using the operating system's path separator.
+    Multiple path components may be passed.
 
     While the path will be normalized, any symlink on the file system is
     returned as-is (e.g. a child directory that is actually a symlink
     will not be resolved to its target path).
     """
 
+    from os.path import join, normpath
+
     components = [start_dir, to_path] + list(addl_paths)
 
     return normpath(
         join(*components)  # join() takes *args, pylint: disable=W0142
-    ).decode(_ENCODING)
+    )
 
 
 ADDON_LOG = relative(_CODE_DIR, 'addon.log')
@@ -112,17 +98,28 @@ CONF_DB = relative(_CODE_DIR, 'conf.db')
 
 SERVICES_DIR = relative(_CODE_DIR, 'services')
 
+TEMP_DIR = relative(_CODE_DIR, 'temp')
 
-def media_filename(text, service, voice=None, extension='mp3'):
+if not isdir(TEMP_DIR):
+    mkdir(TEMP_DIR)
+
+
+def _get_path(directory, text, service, voice=None, extension='mp3'):
     """
-    Return a portable media filename using the operating system's file
-    system encoding given the passed text, service, optional voice, and
-    extension. If voice is omitted, it will also be omitted from the
-    resulting filename. If extension is omitted, it will default to MP3.
+    Return a portable path given the passed directory, text, service,
+    optional voice, and extension. If voice is omitted, it will also be
+    omitted from the resulting path. If extension is omitted, it will
+    default to MP3.
     """
+
+    from hashlib import md5
+    from .util import TO_ENCODED
+    from . import regex as re
 
     text = re.WHITESPACE.sub(' ', text).strip()
-    md5text = md5(text).hexdigest().lower()
+    encoded = TO_ENCODED(text)
+    md5text = md5(encoded).hexdigest().lower()
+
     service = re.NOT_ALPHANUMERIC.sub('', service.lower())
     extension = re.NOT_ALPHANUMERIC_DOT.sub('', extension.lower()).strip('.')
 
@@ -133,4 +130,18 @@ def media_filename(text, service, voice=None, extension='mp3'):
     else:
         filename = "%s-%s.%s" % (service, md5text, extension)
 
-    return filename.decode(_ENCODING)
+    return relative(directory, filename)
+
+def cache_path(*args, **kwargs):
+    """
+    Return a portable cache path.
+    """
+
+    return _get_path(CACHE_DIR, *args, **kwargs)
+
+def temp_path(*args, **kwargs):
+    """
+    Return a portable temporary path.
+    """
+
+    return _get_path(TEMP_DIR, *args, **kwargs)

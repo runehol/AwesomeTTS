@@ -25,7 +25,7 @@
 
 version = '1.0 Beta 11 (develop)'
 
-import os, re, types, time
+import os, re, sys, types, time
 from PyQt4.QtCore import SIGNAL, Qt, QObject
 from PyQt4.QtGui import (
     QAction,
@@ -167,7 +167,6 @@ def service_form_values(form, lookup):
 
 def service_text(text):
 
-    text = text.encode('utf-8')
     text = regex.SOUND_BRACKET_TAG.sub('', stripHTML(text))
     text = regex.WHITESPACE.sub(' ', text).strip()
 
@@ -207,9 +206,12 @@ def ATTS_Factedit_button(editor):
                 )
             )
 
-            filename = service_def['record'](service_text(text), voice)
-            if filename:
-                editor.addMedia(filename)
+            path = service_def['record'](service_text(text), voice)
+            if path:
+                editor.addMedia(unicode(
+                    path, sys.getfilesystemencoding(),
+                ))
+                os.unlink(path)
             else:
                 utils.showWarning("No audio available for text.")
 
@@ -273,10 +275,15 @@ def generate_audio_files(notes, form, service_def, voice, source_field, dest_fie
             skip_counts['empty'][0] += 1
             continue
 
-        filename = service_def['record'](
+        path = service_def['record'](
             service_text(note[source_field]),
             voice,
         )
+
+        filename = mw.col.media.addFile(unicode(
+            path, sys.getfilesystemencoding(),
+        ))
+        os.unlink(path)
 
         if filename:
             if form.radioOverwrite.isChecked():
@@ -480,7 +487,6 @@ def editConf():
             filename
             for filename
             in os.listdir(CACHE_DIR)
-            if filename.endswith('.mp3')
         ]
         if os.path.isdir(CACHE_DIR)
         else []

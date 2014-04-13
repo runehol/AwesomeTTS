@@ -30,7 +30,7 @@ import re
 from subprocess import check_output, Popen
 from anki.utils import isMac
 from awesometts import conf
-from awesometts.paths import media_filename
+from awesometts.paths import temp_path
 from awesometts.util import TO_TOKENS
 
 
@@ -85,20 +85,20 @@ if VOICES:
         Popen([BINARY, '-v', voice, text]).wait()
 
     def record(text, voice):
-        filename_aiff = media_filename(text, SERVICE, voice, 'aiff')
-        filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')
+        path_aiff = temp_path(text, SERVICE, voice, 'aiff')
+        path_mp3 = temp_path(text, SERVICE, voice, 'mp3')
 
-        Popen([BINARY, '-v', voice, '-o', filename_aiff, text]).wait()
+        Popen([BINARY, '-v', voice, '-o', path_aiff, text]).wait()
 
         Popen(
             ['lame'] +
             TO_TOKENS(conf.lame_flags) +
-            [filename_aiff, filename_mp3],
+            [path_aiff, path_mp3],
         ).wait()
 
-        unlink(filename_aiff)
+        unlink(path_aiff)
 
-        return filename_mp3
+        return path_mp3
 
 
     TTS_service = {SERVICE: {

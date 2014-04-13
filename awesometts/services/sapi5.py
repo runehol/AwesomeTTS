@@ -29,7 +29,7 @@ from os import environ, unlink
 from os.path import exists
 from subprocess import mswindows, check_output, Popen
 from awesometts import conf
-from awesometts.paths import SERVICES_DIR, media_filename, relative
+from awesometts.paths import SERVICES_DIR, temp_path, relative
 from awesometts.util import STARTUP_INFO, TO_HEXSTR, TO_TOKENS
 
 
@@ -95,13 +95,13 @@ if VOICES:
             Popen(param, startupinfo=STARTUP_INFO).wait()
 
     def record(text, voice):
-        filename_wav = media_filename(text, SERVICE, voice, 'wav')
-        filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')
+        path_wav = temp_path(text, SERVICE, voice, 'wav')
+        path_mp3 = temp_path(text, SERVICE, voice, 'mp3')
 
         Popen(
             [
                 BINARY, SCRIPT, '-hex',
-                '-o', filename_wav,
+                '-o', path_wav,
                 '-voice', TO_HEXSTR(voice),
                 TO_HEXSTR(text),
             ],
@@ -111,13 +111,13 @@ if VOICES:
         Popen(
             ['lame.exe'] +
             TO_TOKENS(conf.lame_flags) +
-            [filename_wav, filename_mp3],
+            [path_wav, path_mp3],
             startupinfo=STARTUP_INFO,
         ).wait()
 
-        unlink(filename_wav)
+        unlink(path_wav)
 
-        return filename_mp3
+        return path_mp3
 
 
     TTS_service = {SERVICE: {

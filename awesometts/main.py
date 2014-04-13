@@ -25,7 +25,7 @@
 
 version = '1.0 Beta 11 (develop)'
 
-import os, re, sys, types, time
+import os, re, types, time
 from PyQt4.QtCore import SIGNAL, Qt, QObject
 from PyQt4.QtGui import (
     QAction,
@@ -165,6 +165,17 @@ def service_form_values(form, lookup):
 
     return service_key, service_def, voice
 
+def service_store(anki_callable, path):
+
+    from os import unlink
+    from sys import getfilesystemencoding
+
+    return_value = anki_callable(unicode(path, getfilesystemencoding()))
+
+    unlink(path)
+
+    return return_value
+
 def service_text(text):
 
     text = regex.SOUND_BRACKET_TAG.sub('', stripHTML(text))
@@ -208,10 +219,7 @@ def ATTS_Factedit_button(editor):
 
             path = service_def['record'](service_text(text), voice)
             if path:
-                editor.addMedia(unicode(
-                    path, sys.getfilesystemencoding(),
-                ))
-                os.unlink(path)
+                service_store(editor.addMedia, path)
             else:
                 utils.showWarning("No audio available for text.")
 
@@ -280,10 +288,7 @@ def generate_audio_files(notes, form, service_def, voice, source_field, dest_fie
             voice,
         )
 
-        filename = mw.col.media.addFile(unicode(
-            path, sys.getfilesystemencoding(),
-        ))
-        os.unlink(path)
+        filename = service_store(mw.col.media.addFile, path)
 
         if filename:
             if form.radioOverwrite.isChecked():

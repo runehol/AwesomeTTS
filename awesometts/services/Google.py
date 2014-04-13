@@ -95,7 +95,13 @@ SERVICE = 'g'
 
 
 def _get_address(voice, text):
-    return ''.join([URL, '?tl=', voice, '&q=', urllib.quote_plus(text)])
+    return ''.join([
+        URL, '?tl=', voice, '&q=',
+        urllib.quote_plus(
+            text.encode('utf-8') if isinstance(text, unicode) else text,
+            safe='',
+        )
+    ])
 
 # TODO Move this out to a class module responsible for playback
 def _mplayer_playback(address_or_path):

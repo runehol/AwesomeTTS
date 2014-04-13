@@ -167,7 +167,6 @@ def service_form_values(form, lookup):
 
 def service_text(text):
 
-    text = text.encode('utf-8')
     text = regex.SOUND_BRACKET_TAG.sub('', stripHTML(text))
     text = regex.WHITESPACE.sub(' ', text).strip()
 

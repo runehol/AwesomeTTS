@@ -56,11 +56,7 @@ TO_BOOL = lambda value: bool(int(value))
 
 # Returns a hexadecimal string representation of what is passed.
 
-TO_HEXSTR = lambda value: ''.join([
-    '%04X' % ord(x)
-    for x
-    in value.decode('utf-8')
-])
+TO_HEXSTR = lambda value: ''.join(['%04X' % ord(char) for char in value])
 
 
 # Returns a list of string tokens from a passed string.

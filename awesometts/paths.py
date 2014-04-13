@@ -122,7 +122,9 @@ def media_filename(text, service, voice=None, extension='mp3'):
     """
 
     text = re.WHITESPACE.sub(' ', text).strip()
-    md5text = md5(text).hexdigest().lower()
+    encoded = text.encode('utf-8') if isinstance(text, unicode) else text
+    md5text = md5(encoded).hexdigest().lower()
+
     service = re.NOT_ALPHANUMERIC.sub('', service.lower())
     extension = re.NOT_ALPHANUMERIC_DOT.sub('', extension.lower()).strip('.')
 

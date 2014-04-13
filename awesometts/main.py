@@ -25,7 +25,7 @@
 
 version = '1.0 Beta 11 (develop)'
 
-import os, re, types, time
+import os, re, sys, types, time
 from PyQt4.QtCore import SIGNAL, Qt, QObject
 from PyQt4.QtGui import (
     QAction,
@@ -208,7 +208,9 @@ def ATTS_Factedit_button(editor):
 
             path = service_def['record'](service_text(text), voice)
             if path:
-                editor.addMedia(unicode(path))
+                editor.addMedia(unicode(
+                    path, sys.getfilesystemencoding(),
+                ))
                 os.unlink(path)
             else:
                 utils.showWarning("No audio available for text.")
@@ -278,7 +280,9 @@ def generate_audio_files(notes, form, service_def, voice, source_field, dest_fie
             voice,
         )
 
-        filename = mw.col.media.addFile(unicode(path))
+        filename = mw.col.media.addFile(unicode(
+            path, sys.getfilesystemencoding(),
+        ))
         os.unlink(path)
 
         if filename:

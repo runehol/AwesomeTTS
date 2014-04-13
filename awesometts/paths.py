@@ -35,6 +35,7 @@ __all__ = [
     'ADDON_LOG',
     'CACHE_DIR',
     'CONF_DB',
+    'TEMP_DIR',
 ]
 
 from os import mkdir
@@ -44,25 +45,12 @@ from os.path import (
     isdir,
 )
 from subprocess import mswindows
-from sys import (
-    argv,
-    getfilesystemencoding,
-)
-from . import regex as re
-
-
-# Set the encoding type we should use for all path and filename strings.
-
-_ENCODING = getfilesystemencoding()
+from sys import argv
 
 
 # Determine the Anki binary's directory. On Linux and Mac OS X, this is
 # not particularly interesting, but on Windows, this directory will also
-# contain the mplayer.exe binary.
-#
-# Note that the decode() call is deferred until after the PATH setup for
-# Windows. This is done so as to not convert the PATH value from a
-# regular string to a unicode one.
+# contain the lame.exe and mplayer.exe binaries.
 
 _ANKI_DIR = dirname(abspath(argv[0]))
 
@@ -71,20 +59,18 @@ if mswindows:
 
     environ['PATH'] += ';' + _ANKI_DIR
 
-_ANKI_DIR = _ANKI_DIR.decode(_ENCODING)
-
 
 # When determining the code directory, abspath() is needed since the
 # __file__ constant is not a full path by itself.
 
-_CODE_DIR = dirname(abspath(__file__)).decode(_ENCODING)
+_CODE_DIR = dirname(abspath(__file__))
 
 
 def relative(start_dir, to_path, *addl_paths):
     """
     Returns the full path to a file or directory relative to the given
-    start directory, using the operating system's path separator and
-    file system encoding. Multiple path components may be passed.
+    start directory, using the operating system's path separator.
+    Multiple path components may be passed.
 
     While the path will be normalized, any symlink on the file system is
     returned as-is (e.g. a child directory that is actually a symlink
@@ -97,7 +83,7 @@ def relative(start_dir, to_path, *addl_paths):
 
     return normpath(
         join(*components)  # join() takes *args, pylint: disable=W0142
-    ).decode(_ENCODING)
+    )
 
 
 ADDON_LOG = relative(_CODE_DIR, 'addon.log')
@@ -119,14 +105,15 @@ if not isdir(TEMP_DIR):
 
 def media_filename(text, service, voice=None, extension='mp3'):
     """
-    Return a portable media filename using the operating system's file
-    system encoding given the passed text, service, optional voice, and
-    extension. If voice is omitted, it will also be omitted from the
-    resulting filename. If extension is omitted, it will default to MP3.
+    Return a portable media filename given the passed text, service,
+    optional voice, and extension. If voice is omitted, it will also be
+    omitted from the resulting filename. If extension is omitted, it
+    will default to MP3.
     """
 
     from hashlib import md5
     from .util import TO_ENCODED
+    from . import regex as re
 
     text = re.WHITESPACE.sub(' ', text).strip()
     encoded = TO_ENCODED(text)
@@ -142,4 +129,4 @@ def media_filename(text, service, voice=None, extension='mp3'):
     else:
         filename = "%s-%s.%s" % (service, md5text, extension)
 
-    return filename.decode(_ENCODING)
+    return filename

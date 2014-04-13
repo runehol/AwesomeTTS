@@ -30,8 +30,9 @@ individual files.
 """
 
 __all__ = [
-    'media_filename',
     'relative',
+    'cache_path',
+    'temp_path',
     'ADDON_LOG',
     'CACHE_DIR',
     'CONF_DB',
@@ -103,12 +104,12 @@ if not isdir(TEMP_DIR):
     mkdir(TEMP_DIR)
 
 
-def media_filename(text, service, voice=None, extension='mp3'):
+def _get_path(directory, text, service, voice=None, extension='mp3'):
     """
-    Return a portable media filename given the passed text, service,
+    Return a portable path given the passed directory, text, service,
     optional voice, and extension. If voice is omitted, it will also be
-    omitted from the resulting filename. If extension is omitted, it
-    will default to MP3.
+    omitted from the resulting path. If extension is omitted, it will
+    default to MP3.
     """
 
     from hashlib import md5
@@ -129,4 +130,18 @@ def media_filename(text, service, voice=None, extension='mp3'):
     else:
         filename = "%s-%s.%s" % (service, md5text, extension)
 
-    return filename
+    return relative(directory, filename)
+
+def cache_path(*args, **kwargs):
+    """
+    Return a portable cache path.
+    """
+
+    return _get_path(CACHE_DIR, *args, **kwargs)
+
+def temp_path(*args, **kwargs):
+    """
+    Return a portable temporary path.
+    """
+
+    return _get_path(TEMP_DIR, *args, **kwargs)

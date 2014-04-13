@@ -29,7 +29,7 @@ from os import unlink
 import re
 from subprocess import check_output, mswindows, Popen
 from awesometts import conf
-from awesometts.paths import media_filename
+from awesometts.paths import temp_path
 from awesometts.util import STARTUP_INFO, TO_TOKENS
 
 
@@ -131,12 +131,8 @@ if VOICES:
                 text.encode('ascii')
             except UnicodeError:
                 from codecs import open as copen
-                from ..paths import relative, TEMP_DIR
 
-                path_txt = relative(
-                    TEMP_DIR,
-                    media_filename(text, SERVICE, voice, 'txt'),
-                )
+                path_txt = temp_path(text, SERVICE, voice, 'txt')
 
                 with copen(path_txt, mode='w', encoding='utf-8') as out:
                     out.write(text)
@@ -163,13 +159,13 @@ if VOICES:
             ).wait()
 
     def record(text, voice):
-        filename_wav = media_filename(text, SERVICE, voice, 'wav')
-        filename_mp3 = media_filename(text, SERVICE, voice, 'mp3')
+        path_wav = temp_path(text, SERVICE, voice, 'wav')
+        path_mp3 = temp_path(text, SERVICE, voice, 'mp3')
         path_txt = _file_workaround(text, voice)
 
         if path_txt:
             Popen(
-                [BINARY, '-v', voice, '-w', filename_wav, '-f', path_txt],
+                [BINARY, '-v', voice, '-w', path_wav, '-f', path_txt],
                 startupinfo=STARTUP_INFO,
             ).wait()
 
@@ -177,20 +173,20 @@ if VOICES:
 
         else:
             Popen(
-                [BINARY, '-v', voice, '-w', filename_wav, text],
+                [BINARY, '-v', voice, '-w', path_wav, text],
                 startupinfo=STARTUP_INFO,
             ).wait()
 
         Popen(
             ['lame'] +
             TO_TOKENS(conf.lame_flags) +
-            [filename_wav, filename_mp3],
+            [path_wav, path_mp3],
             startupinfo=STARTUP_INFO,
         ).wait()
 
-        unlink(filename_wav)
+        unlink(path_wav)
 
-        return filename_mp3
+        return path_mp3
 
 
     TTS_service = {SERVICE: {

@@ -31,7 +31,7 @@ from subprocess import mswindows, Popen
 import urllib, urllib2
 from PyQt4 import QtCore
 from awesometts import conf
-from awesometts.paths import CACHE_DIR, media_filename, relative
+from awesometts.paths import cache_path, temp_path
 from awesometts.util import STARTUP_INFO
 
 
@@ -136,22 +136,22 @@ class Downloader(object):
     threads = {}
 
     @staticmethod
-    def fetch(address, identifier, cache_pathname):
+    def fetch(address, path_mp3):
         for key in Downloader.threads.keys():
             if Downloader.threads[key].isFinished():
                 del Downloader.threads[key]
 
-        if not identifier in Downloader.threads:
-            Downloader.threads[identifier] = Worker(address, cache_pathname)
-            Downloader.threads[identifier].start()
+        if not path_mp3 in Downloader.threads:
+            Downloader.threads[path_mp3] = Worker(address, path_mp3)
+            Downloader.threads[path_mp3].start()
 
 
 # TODO Move this out to a class module responsible for downloads
 class Worker(QtCore.QThread):
-    def __init__(self, address, cache_pathname):
+    def __init__(self, address, path_mp3):
         QtCore.QThread.__init__(self)
         self.address = address
-        self.cache_pathname = cache_pathname
+        self.path_mp3 = path_mp3
 
     def run(self):
         try:
@@ -167,11 +167,11 @@ class Worker(QtCore.QThread):
                 response.getcode() == 200 and
                 response.info().gettype() == 'audio/mpeg'
             ):
-                with open(self.cache_pathname, 'wb') as cache_output:
+                with open(self.path_mp3, 'wb') as cache_output:
                     cache_output.write(response.read())
                 response.close()
 
-                _mplayer_playback(self.cache_pathname)
+                _mplayer_playback(self.path_mp3)
 
             else:
                 if not Downloader.had_response_error:
@@ -216,21 +216,20 @@ def play(text, voice):
     address = _get_address(voice, text)
 
     if conf.caching:
-        cache_filename = media_filename(text, SERVICE, voice, 'mp3')
-        cache_pathname = relative(CACHE_DIR, cache_filename)
+        path_mp3 = cache_path(text, SERVICE, voice, 'mp3')
 
-        if isfile(cache_pathname):
-            _mplayer_playback(cache_pathname)
+        if isfile(path_mp3):
+            _mplayer_playback(path_mp3)
 
         else:
-            Downloader.fetch(address, cache_filename, cache_pathname)
+            Downloader.fetch(address, path_mp3)
 
     else:
         _mplayer_playback(address)
 
 def record(text, voice):
     address = _get_address(voice, text)
-    filename = media_filename(text, SERVICE, voice, 'mp3')
+    path_mp3 = temp_path(text, SERVICE, voice, 'mp3')
 
     if mswindows:
         Popen(
@@ -239,7 +238,7 @@ def record(text, voice):
                 '-ao', 'win32',
                 '-user-agent', 'Mozilla/5.0',
                 address,
-                '-dumpstream', '-dumpfile', filename,
+                '-dumpstream', '-dumpfile', path_mp3,
             ],
             startupinfo=STARTUP_INFO,
         ).wait()
@@ -249,10 +248,10 @@ def record(text, voice):
             'mplayer', '-slave',
             '-user-agent', 'Mozilla/5.0',
             address,
-            '-dumpstream', '-dumpfile', filename,
+            '-dumpstream', '-dumpfile', path_mp3,
         ]).wait()
 
-    return filename
+    return path_mp3
 
 
 TTS_service = {SERVICE: {

@@ -208,7 +208,7 @@ def ATTS_Factedit_button(editor):
 
             filename = service_def['record'](service_text(text), voice)
             if filename:
-                editor.addMedia(filename)
+                editor.addMedia(unicode(filename))
             else:
                 utils.showWarning("No audio available for text.")
 

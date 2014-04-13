@@ -1,3 +1,5 @@
 *.db
 *.log
 *.py[co]
+awesometts/cache/
+awesometts/forms/

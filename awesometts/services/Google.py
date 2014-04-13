@@ -95,12 +95,11 @@ SERVICE = 'g'
 
 
 def _get_address(voice, text):
+    from ..util import TO_ENCODED
+
     return ''.join([
         URL, '?tl=', voice, '&q=',
-        urllib.quote_plus(
-            text.encode('utf-8') if isinstance(text, unicode) else text,
-            safe='',
-        )
+        urllib.quote_plus(TO_ENCODED(text), safe=''),
     ])
 
 # TODO Move this out to a class module responsible for playback

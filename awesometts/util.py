@@ -54,6 +54,11 @@ if subprocess.mswindows:
 TO_BOOL = lambda value: bool(int(value))
 
 
+# Returns the 8-bit string version of a unicode string
+
+TO_ENCODED = lambda s: s.encode('utf-8') if isinstance(s, unicode) else s
+
+
 # Returns a hexadecimal string representation of what is passed.
 
 TO_HEXSTR = lambda value: ''.join(['%04X' % ord(char) for char in value])

@@ -37,14 +37,11 @@ __all__ = [
     'CONF_DB',
 ]
 
-from hashlib import md5
 from os import mkdir
 from os.path import (
     abspath,
     dirname,
     isdir,
-    join,
-    normpath,
 )
 from subprocess import mswindows
 from sys import (
@@ -70,8 +67,8 @@ _ENCODING = getfilesystemencoding()
 _ANKI_DIR = dirname(abspath(argv[0]))
 
 if mswindows:
-    # Enable mplayer.exe binary to be called from the environment PATH.
     from os import environ
+
     environ['PATH'] += ';' + _ANKI_DIR
 
 _ANKI_DIR = _ANKI_DIR.decode(_ENCODING)
@@ -93,6 +90,8 @@ def relative(start_dir, to_path, *addl_paths):
     returned as-is (e.g. a child directory that is actually a symlink
     will not be resolved to its target path).
     """
+
+    from os.path import join, normpath
 
     components = [start_dir, to_path] + list(addl_paths)
 
@@ -121,8 +120,11 @@ def media_filename(text, service, voice=None, extension='mp3'):
     resulting filename. If extension is omitted, it will default to MP3.
     """
 
+    from hashlib import md5
+    from .util import TO_ENCODED
+
     text = re.WHITESPACE.sub(' ', text).strip()
-    encoded = text.encode('utf-8') if isinstance(text, unicode) else text
+    encoded = TO_ENCODED(text)
     md5text = md5(encoded).hexdigest().lower()
 
     service = re.NOT_ALPHANUMERIC.sub('', service.lower())

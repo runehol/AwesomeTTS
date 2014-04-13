@@ -111,6 +111,11 @@ CONF_DB = relative(_CODE_DIR, 'conf.db')
 
 SERVICES_DIR = relative(_CODE_DIR, 'services')
 
+TEMP_DIR = relative(_CODE_DIR, 'temp')
+
+if not isdir(TEMP_DIR):
+    mkdir(TEMP_DIR)
+
 
 def media_filename(text, service, voice=None, extension='mp3'):
     """

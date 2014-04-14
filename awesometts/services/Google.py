@@ -228,6 +228,11 @@ def play(text, voice):
         _mplayer_playback(address)
 
 def record(text, voice):
+    if conf.caching:
+        path_mp3 = cache_path(text, SERVICE, voice, 'mp3')
+        if isfile(path_mp3):
+            return path_mp3  # we already have the MP3 cached locally
+
     address = _get_address(voice, text)
     path_mp3 = temp_path(text, SERVICE, voice, 'mp3')
 

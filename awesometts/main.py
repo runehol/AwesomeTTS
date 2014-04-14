@@ -172,7 +172,8 @@ def service_store(anki_callable, path):
 
     return_value = anki_callable(unicode(path, getfilesystemencoding()))
 
-    unlink(path)
+    if not path.startswith(CACHE_DIR):
+        unlink(path)
 
     return return_value
 
@@ -266,8 +267,9 @@ def generate_audio_files(notes, form, service_def, voice, source_field, dest_fie
     batch = 900
     throttle = 'throttle' in service_def and service_def['throttle']
 
+    cache_misses = 0
     for c, id in enumerate(notes):
-        if throttle and (c+1)%batch == 0: # GoogleTTS has to take a break once in a while
+        if throttle and (cache_misses + 1) % batch == 0:
             for t in reversed(range(500)):
                 mw.progress.update(label="Generated %s of %s, \n sleeping for %s seconds...." % (c+1, nelements, t))
                 time.sleep(1)
@@ -287,6 +289,9 @@ def generate_audio_files(notes, form, service_def, voice, source_field, dest_fie
             service_text(note[source_field]),
             voice,
         )
+
+        if not path.startswith(CACHE_DIR):
+            cache_misses += 1
 
         filename = service_store(mw.col.media.addFile, path)
 

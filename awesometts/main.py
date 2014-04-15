@@ -229,21 +229,22 @@ def ATTS_Factedit_button(editor):
         execute(preview=False)
 
 
-def ATTS_Fact_edit_setupFields(self):
-    AwesomeTTS = QPushButton(self.widget)
-    AwesomeTTS.setFixedHeight(20)
-    AwesomeTTS.setFixedWidth(20)
-    AwesomeTTS.setCheckable(True)
-    AwesomeTTS.connect(AwesomeTTS, SIGNAL("clicked()"), lambda self=self: ATTS_Factedit_button(self))
-    AwesomeTTS.setIcon(QIcon(":/icons/speaker.png"))
-    AwesomeTTS.setToolTip("AwesomeTTS :: MP3 File Generator")
-    AwesomeTTS.setShortcut("Ctrl+g")
-    AwesomeTTS.setFocusPolicy(Qt.NoFocus)
-    self.iconsBox.addWidget(AwesomeTTS)
-    AwesomeTTS.setStyle(self.plastiqueStyle)
+def ATTS_Fact_edit_setupFields(editor):
+    button = QPushButton(editor.widget)
 
+    # FIXME How does one localize Ctrl+G to Cmd+G for the Mac OS X platform?
+    button.setFixedHeight(20)
+    button.setFixedWidth(20)
+    button.setFocusPolicy(Qt.NoFocus)
+    button.setIcon(QIcon(':/icons/speaker.png'))
+    button.setShortcut('Ctrl+g')
+    button.setStyle(editor.plastiqueStyle)
+    button.setToolTip("Insert an audio clip with AwesomeTTS (Ctrl+G)")
 
-addHook("setupEditorButtons", ATTS_Fact_edit_setupFields)
+    button.clicked.connect(lambda: ATTS_Factedit_button(editor))
+    editor.iconsBox.addWidget(button)
+
+addHook('setupEditorButtons', ATTS_Fact_edit_setupFields)
 
 
 ############################ MP3 Mass Generator

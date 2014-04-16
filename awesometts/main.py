@@ -68,15 +68,14 @@ TTS_service = {  # TODO consider moving into services package's __init__
 
 ######## utils
 def playTTSFromText(text):
-    tospeakHTML = getTTSFromHTML(text)
-    tospeak = getTTSFromText(text)
-    for service, html_tags in tospeakHTML.items():
+    for service, html_tags in getTTSFromHTML(text).items():
         for html_tag in html_tags:
             TTS_service[service]['play'](
                 service_text(''.join(html_tag.findAll(text=True))),
                 html_tag['voice'],
             )
-    for service, bracket_tags in tospeak.items():
+
+    for service, bracket_tags in getTTSFromText(text).items():
         for bracket_tag in bracket_tags:
             match = re.match(r'(.*?):(.*)', bracket_tag, re.M|re.I)
             TTS_service[service]['play'](

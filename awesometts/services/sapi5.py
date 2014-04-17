@@ -25,25 +25,23 @@ Service implementation for SAPI 5 on the Windows platform
 
 __all__ = ['TTS_service']
 
-from os import environ, unlink
+from os import unlink
 from os.path import exists
-from subprocess import mswindows, check_output, Popen
+from subprocess import check_output, Popen
 from awesometts import conf
-from awesometts.paths import SERVICES_DIR, temp_path, relative
+from awesometts.paths import SERVICES_DIR, WINDOWS_DIR, temp_path, relative
 from awesometts.util import STARTUP_INFO, TO_HEXSTR, TO_TOKENS
 
 
 VOICES = None
 
-if mswindows:
-    ROOT = environ.get('SYSTEMROOT', r'C:\Windows')
-
+if WINDOWS_DIR:
     BINARY = next(
         (
             fullpath
             for subdirectory in ['syswow64', 'system32']
             for filename in ['cscript.exe']
-            for fullpath in [relative(ROOT, subdirectory, filename)]
+            for fullpath in [relative(WINDOWS_DIR, subdirectory, filename)]
             if exists(fullpath)
         ),
         None,

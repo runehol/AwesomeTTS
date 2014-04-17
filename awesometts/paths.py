@@ -39,12 +39,8 @@ __all__ = [
     'TEMP_DIR',
 ]
 
-from os import mkdir
-from os.path import (
-    abspath,
-    dirname,
-    isdir,
-)
+from os import environ, mkdir
+from os.path import abspath, dirname, exists, isdir
 from subprocess import mswindows
 from sys import argv
 
@@ -56,8 +52,6 @@ from sys import argv
 _ANKI_DIR = dirname(abspath(argv[0]))
 
 if mswindows:
-    from os import environ
-
     environ['PATH'] += ';' + _ANKI_DIR
 
 
@@ -102,6 +96,19 @@ TEMP_DIR = relative(_CODE_DIR, 'temp')
 
 if not isdir(TEMP_DIR):
     mkdir(TEMP_DIR)
+
+WINDOWS_DIR = next(
+    (
+        directory
+        for directory in [
+            environ.get('SYSTEMROOT', None),
+            r'C:\Windows',
+            r'C:\WinNT',
+        ]
+        if directory and exists(directory)
+    ),
+    None
+) if mswindows else None
 
 
 def _get_path(directory, text, service, voice=None, extension='mp3'):

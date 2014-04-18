@@ -26,7 +26,7 @@
 version = '1.0 Beta 11 (develop)'
 
 import os, re, types, time
-from PyQt4.QtCore import SIGNAL, Qt, QObject
+from PyQt4.QtCore import Qt
 from PyQt4.QtGui import (
     QAction,
     QComboBox,
@@ -424,9 +424,10 @@ def onGenerate(browser):
 
 
 def setupMenu(browser):
-    a = QAction("AwesomeTTS MP3 Mass Generator", browser)
-    browser.form.menuEdit.addAction(a)
-    browser.connect(a, SIGNAL("triggered()"), lambda b=browser: onGenerate(b))
+    action = QAction("AwesomeTTS MP3 Mass Generator", browser)
+    action.triggered.connect(lambda: onGenerate(browser))
+
+    browser.form.menuEdit.addAction(action)
 
 addHook("browser.setupMenus", setupMenu)
 
@@ -479,8 +480,11 @@ def editConf():
     )
     form.pushKeyQ.keyval = conf.tts_key_q
     form.pushKeyQ.setText(KeyToString(form.pushKeyQ.keyval))
+    form.pushKeyQ.clicked.connect(lambda: getKey(form.pushKeyQ))
+
     form.pushKeyA.keyval = conf.tts_key_a
     form.pushKeyA.setText(KeyToString(form.pushKeyA.keyval))
+    form.pushKeyA.clicked.connect(lambda: getKey(form.pushKeyA))
 
     form.cAutoQ.setChecked(conf.automatic_questions)
     form.cAutoA.setChecked(conf.automatic_answers)
@@ -492,8 +496,6 @@ def editConf():
     form.debug_stdout_checkbox.setChecked(conf.debug_stdout)
     form.debug_file_checkbox.setChecked(conf.debug_file)
 
-    QObject.connect(form.pushKeyQ, SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyQ))
-    QObject.connect(form.pushKeyA, SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyA))
 
     cacheListing = (
         [
@@ -573,14 +575,10 @@ def editConf():
     )
 
 
-# create a new menu item, "test"
-menuconf = QAction("AwesomeTTS", mw)
-# set it to call testFunction when it's clicked
-mw.connect(menuconf, SIGNAL("triggered()"), editConf)
-# and add it to the tools menu
-mw.form.menuTools.addAction(menuconf)
+conf_action = QAction("AwesomeTTS", mw)
+conf_action.triggered.connect(editConf)
 
-
+mw.form.menuTools.addAction(conf_action)
 
 
 ######################################### Keys and AutoRead

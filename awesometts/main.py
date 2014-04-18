@@ -489,6 +489,9 @@ def editConf():
 
     form.lame_flags_edit.setText(conf.lame_flags)
 
+    form.debug_stdout_checkbox.setChecked(conf.debug_stdout)
+    form.debug_file_checkbox.setChecked(conf.debug_file)
+
     QObject.connect(form.pushKeyQ, SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyQ))
     QObject.connect(form.pushKeyA, SIGNAL("clicked()"), lambda form=form: getKey(form.pushKeyA))
 
@@ -565,6 +568,8 @@ def editConf():
         subprocessing=form.cSubprocessing.isChecked(),
         caching=form.cCaching.isChecked(),
         lame_flags=form.lame_flags_edit.text(),
+        debug_stdout=form.debug_stdout_checkbox.isChecked(),
+        debug_file=form.debug_file_checkbox.isChecked(),
     )
 
 

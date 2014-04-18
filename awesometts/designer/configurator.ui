@@ -312,6 +312,53 @@ If you are having problems, stick with the MP3 Generator.</string>
            </widget>
           </widget>
          </widget>
+         <widget class="QWidget">
+          <attribute name="title">
+           <string>Debugging</string>
+          </attribute>
+          <widget class="QLabel">
+           <property name="geometry">
+            <rect>
+             <x>9</x>
+             <y>9</y>
+             <width>626</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Useful configuration options and information for debugging AwesomeTTS.</string>
+           </property>
+          </widget>
+          <widget class="QGroupBox">
+           <property name="geometry">
+            <rect>
+             <x>9</x>
+             <y>31</y>
+             <width>626</width>
+             <height>82</height>
+            </rect>
+           </property>
+           <property name="title">
+            <string>Write Debugging Output</string>
+           </property>
+           <layout class="QVBoxLayout">
+            <item>
+             <widget class="QCheckBox" name="debug_stdout_checkbox">
+              <property name="text">
+               <string>standard output (stdout)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="debug_file_checkbox">
+              <property name="text">
+               <string>addon.log file in the add-on directory</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
         </widget>
        </item>
       </layout>

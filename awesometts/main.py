@@ -25,7 +25,7 @@
 
 version = '1.0 Beta 11 (develop)'
 
-import os, re, types, time
+import os, re, time
 from PyQt4.QtCore import Qt
 from PyQt4.QtGui import (
     QAction,
@@ -442,14 +442,11 @@ def KeyToString(val):
     else:
         return 'Unassigned'
 
-def Conf_keyPressEvent(dialog_buttons_tuple, e):
-    dialog, buttons = dialog_buttons_tuple
+def Conf_keyPressEvent(dialog, buttons, e):
     buttons = [button for button in buttons if button.getkey]
 
     if not buttons:
-        if e.key() == Qt.Key_Escape:
-            dialog.reject()
-        return
+        return QDialog.keyPressEvent(dialog, e)
 
     for button in buttons:
         button.keyval = (
@@ -474,10 +471,6 @@ def editConf():
     form.setupUi(d)
 
     form.pushKeyQ.getkey = form.pushKeyA.getkey = False
-    d.keyPressEvent = types.MethodType(
-        Conf_keyPressEvent,
-        (d, [form.pushKeyQ, form.pushKeyA]),
-    )
     form.pushKeyQ.keyval = conf.tts_key_q
     form.pushKeyQ.setText(KeyToString(form.pushKeyQ.keyval))
     form.pushKeyQ.clicked.connect(lambda: getKey(form.pushKeyQ))
@@ -485,6 +478,12 @@ def editConf():
     form.pushKeyA.keyval = conf.tts_key_a
     form.pushKeyA.setText(KeyToString(form.pushKeyA.keyval))
     form.pushKeyA.clicked.connect(lambda: getKey(form.pushKeyA))
+
+    d.keyPressEvent = lambda event: Conf_keyPressEvent(
+        d,
+        [form.pushKeyQ, form.pushKeyA],
+        event,
+    )
 
     form.cAutoQ.setChecked(conf.automatic_questions)
     form.cAutoA.setChecked(conf.automatic_answers)

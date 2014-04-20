@@ -25,6 +25,8 @@ Utility module
 Stuff that does not fit anywhere else.
 """
 
+# TODO The following are to be removed: STARTUP_INFO
+
 __all__ = [
     'STARTUP_INFO',  # Windows only
     'TO_BOOL',

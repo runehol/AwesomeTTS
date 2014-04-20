@@ -31,44 +31,68 @@ class Router(object):
     """
 
     __slots__ = [
+        '_cache_dir',
+        '_conf',
+        '_logger',
         '_lookup',
     ]
 
-    def __init__(self, services, conf, logger):
+    def __init__(self, services, paths, conf, logger):
+        """
+        The services should be a list of tuples, where each tuple
+        contains a unique service code and a class implementing the
+        Service interface.
 
+        The paths object should be a dict with the following keys:
+
+            - cache (str): semi-persistent for services to store files
+            - temp (str): temporary storage for scratch and transcoding
+
+        The conf object should have a readable and settable dict-like
+        interface with the following keys available:
+
+            - lame_flags (str): parameters to pass to LAME transcoder
+            - last_service (str): key to the last service used
+            - last_options (dict): mapping of last options per service
+
+        The logger object should have an interface like the one used by
+        the standard library logging module, with debug(), info(), and
+        so on, available.
+        """
+
+        self._cache_dir = paths['cache']
+        self._conf = conf
+        self._logger = logger
         self._lookup = {}
 
-        for service_code, service_class in services:
+        for code, impl in services:
             desc = None
 
             try:
-                desc = service_class.desc()
+                desc = impl.desc()
 
-                instance = service_class(
-                    service_code,
-                    conf,
-                    logger,
+                self._logger.info("Initializing %s service...", desc or code)
+
+                instance = impl(
+                    code=code,
+                    temp_dir=paths['temp'],
+                    lame_flags=conf['lame_flags'],
+                    logger=logger,
                 )
 
                 options = instance.options()
 
-                self._lookup[service_code] = instance, desc, options
-
-            except service_class.UnavailableError:
-                pass
+                self._lookup[code] = instance, desc, options
+                self._logger.info("%s service initialized", desc or code)
 
             except:  # allow recovery from any exception, pylint:disable=W0702
-                from sys import stderr
                 from traceback import format_exc
 
-                stderr.write(
-                    "The AwesomeTTS %s service could not be initialized. If "
-                    "this persists, note the error below and open an issue "
-                    "at <https://github.com/AwesomeTTS/AwesomeTTS/issues>.\n"
-                    "\n"
-                    "%s\n"
-                    "\n" % (
-                        desc if desc else service_code,
-                        format_exc(),
-                    )
+                self._logger.warn(
+                    "Cannot initialize %s service; omitting\n%s",
+                    desc or code,
+                    '\n'.join([
+                        "!!! " + line
+                        for line in format_exc().split('\n')
+                    ]),
                 )

@@ -79,3 +79,12 @@ conf = classes.Conf(
         ),
     ],
 )
+
+router = classes.Router(
+    services=[
+        ('espeak', classes.services.ESpeak),
+    ],
+    paths={'cache': paths.CACHE_DIR, 'temp': paths.TEMP_DIR},
+    conf=conf,
+    logger=logger,
+)

@@ -51,27 +51,24 @@ class ESpeak(Service):
 
         super(ESpeak, self).__init__(*args, **kwargs)
 
+        self._binary = 'espeak'
+
         try:
-            self._binary = 'espeak'
             output = self.cli_output(self._binary, '--voices')
 
-        except self.NotFoundError:
+        except OSError:
             if self.WINDOWS:
-                try:
-                    self._binary = r'%s\command_line\%s.exe' % (
-                        self.reg_hklm(
-                            r'Software\Microsoft\Speech\Voices\Tokens\eSpeak',
-                            'Path',
-                        ),
-                        self._binary,
-                    )
-                    output = self.cli_output(self._binary, '--voices')
-
-                except self.NotFoundError:
-                    raise self.UnavailableError
+                self._binary = r'%s\command_line\%s.exe' % (
+                    self.reg_hklm(
+                        r'Software\Microsoft\Speech\Voices\Tokens\eSpeak',
+                        'Path',
+                    ),
+                    self._binary,
+                )
+                output = self.cli_output(self._binary, '--voices')
 
             else:
-                raise self.UnavailableError
+                raise
 
         import re
         re_voice = re.compile(r'^\s*(\d+\s+)?([-\w]+)(\s+[-\w]\s+([-\w]+))?')
@@ -132,16 +129,9 @@ class ESpeak(Service):
             ),
         ]
 
-    def play(self, text, options):
+    def run(self, text, options, path):
         """
         TODO
         """
 
-        pass
 
-    def record(self, text, options):
-        """
-        TODO
-        """
-
-        pass

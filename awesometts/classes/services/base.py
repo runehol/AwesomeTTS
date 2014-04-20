@@ -25,36 +25,23 @@ Base classes for service implementations
 __all__ = ['Service']
 
 import abc
-from errno import ENOENT
 import subprocess
 
 
 class Service(object):
     """
     Interface for interacting with a service. All services must be able
-    to be initialized, return their available options, play text, and
-    record text.
+    to be initialized, return a description, return their available
+    options, and output text to a file.
     """
-
-    class NotFoundError(OSError):
-        """
-        Raised instead of an OSError when its errno == ENOENT.
-        """
-
-    class UnavailableError(RuntimeError):
-        """
-        Raised from a service's initialization call if that service
-        cannot be used in the runtime environment, but the cause of this
-        is not something for which the user should be alerted (e.g. the
-        software for a TTS package is not installed).
-        """
 
     __metaclass__ = abc.ABCMeta
 
     __slots__ = [
-        '_code',    # unique identifier for this service
-        '_conf',    # dict-like object; keys for caching, lame_flags
-        '_logger',  # logging interface with debug(), info(), etc.
+        '_code',        # unique identifier for this service
+        '_lame_flags',  # for passing to LAME transcoder
+        '_logger',      # logging interface with debug(), info(), etc.
+        '_temp_dir',    # for temporary scratch space
     ]
 
     # startup information for Windows to keep command window hidden
@@ -72,19 +59,20 @@ class Service(object):
 
         return ""
 
-    def __init__(self, code, conf, logger):
+    def __init__(self, code, temp_dir, lame_flags, logger):
         """
-        Initialize the service, raising Service.UnavailableError if the
+        Attempt to initialize the service, raising any exception if the
         service cannot be used.
 
         The code identifies the service uniquely across all the other
         services, and may be used in filenames and other places.
 
-        The conf object should have a dict-like interface with the
-        following keys available to control behavior of the services:
+        The temp_dir will be used as the base for paths that are needed
+        only temporarily (e.g. temporary input files to feed services,
+        temporary audio files that need to be transcoded to MP3).
 
-            - caching (bool): whether to cache files from the Internet
-            - lame_flags (str): arguments to pass to LAME transcoder
+        The lame_flags will be passed to LAME transcoder if the service
+        needs to transcode between different audio file types.
 
         The logger object should have an interface like the one used by
         the standard library logging module, with debug(), info(), and
@@ -92,8 +80,9 @@ class Service(object):
         """
 
         self._code = code
-        self._conf = conf
+        self._lame_flags = lame_flags
         self._logger = logger
+        self._temp_dir = temp_dir
 
     @abc.abstractmethod
     def options(self):
@@ -129,37 +118,32 @@ class Service(object):
         return {}
 
     @abc.abstractmethod
-    def play(self, text, options):
+    def run(self, text, options, path):
         """
-        Play the text, given the selected options. The passed options
-        will correspond with those returned by the options() method.
+        Run the service and generate a file at the given path using the
+        text and selected options. The passed options will correspond
+        with those returned by the options() method.
 
         A sample call might look like this:
 
             service.play(
                 text="Hello world.",
                 options={'voice': 'en-us', 'speed': 200},
+                path='/home/user/Anki/addons/awesometts/cache/file.mp3',
             )
+
+        All processing done within this function is allowed to block, as
+        the caller is to have already taken care of threading if it is
+        necessary to prevent locking of the UI.
+
+        Additionally, it is expected that the caller has already checked
+        to see if a temporary file already exists at the given path. If
+        it does, the caller will use that file directly rather than
+        calling into the run() method.
+
+        If output cannot be written to the path, an exception should be
+        raised so the caller knows why.
         """
-
-        return
-
-    @abc.abstractmethod
-    def record(self, text, options):
-        """
-        Record the text, given the selected options, and return the path
-        to the file. The passed options will correspond with those
-        returned by the options() method.
-
-        A sample call might look like this:
-
-            media_path = service.record(
-                text="Hola mundo.",
-                options={'voice': 'en-es', 'speed': 150},
-            )
-        """
-
-        return ''
 
     def cli_call(self, binary, *args):
         """
@@ -217,16 +201,7 @@ class Service(object):
             purpose,
         )
 
-        try:
-            return callee([binary] + list(args), startupinfo=self.CLI_SI)
-
-        except OSError as os_error:
-            if os_error.errno == ENOENT:
-                self._logger.debug("%s does not seem to be installed", binary)
-                raise self.NotFoundError(os_error.errno, os_error.strerror)
-
-            else:
-                raise os_error
+        return callee([binary] + list(args), startupinfo=self.CLI_SI)
 
     def reg_hklm(self, key, name):
         """
@@ -236,21 +211,15 @@ class Service(object):
 
         import _winreg as wr  # for Windows only, pylint: disable=F0401
 
+        self._logger.debug(
+            "Reading %s at %s from the Windows registry",
+            name,
+            key,
+        )
+
         with wr.ConnectRegistry(None, wr.HKEY_LOCAL_MACHINE) as hklm:
-            try:
-                with wr.OpenKey(hklm, key) as subkey:
-                    return wr.QueryValueEx(subkey, name)[0]
-
-            except OSError as os_error:
-                if os_error.errno == ENOENT:
-                    self._logger.debug("Cannot retrieve %s at %s", name, key)
-                    raise self.NotFoundError(
-                        os_error.errno,
-                        os_error.strerror,
-                    )
-
-                else:
-                    raise os_error
+            with wr.OpenKey(hklm, key) as subkey:
+                return wr.QueryValueEx(subkey, name)[0]
 
 
 if subprocess.mswindows:

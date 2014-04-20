@@ -25,7 +25,11 @@ Classes for AwesomeTTS
 __all__ = [
     'Conf',
     'Logger',
+    'Router',
+    'services',
 ]
 
 from .conf import Conf
 from .logger import Logger
+from .router import Router
+from . import services

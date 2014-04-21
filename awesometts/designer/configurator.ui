@@ -27,7 +27,7 @@
     <x>0</x>
     <y>0</y>
     <width>670</width>
-    <height>591</height>
+    <height>384</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -199,57 +199,6 @@
              </layout>
             </widget>
            </item>
-           <item>
-            <widget class="QGroupBox" name="groupBox_3">
-             <property name="title">
-              <string>Subprocessing</string>
-             </property>
-             <layout class="QVBoxLayout" name="verticalLayout">
-              <item>
-               <widget class="QCheckBox" name="cSubprocessing">
-                <property name="text">
-                 <string>Enable Subprocessing</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_3">
-                <property name="text">
-                 <string>There is a bug of cutting the ending of a speech when enabled on Windows XP or Mac OS X.
-If it's disabled, Anki will be frozen while AwesomeTTS recites the speech.
-If you are having problems, stick with the MP3 Generator.</string>
-                </property>
-                <property name="wordWrap">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item>
-            <widget class="QGroupBox" name="groupBox_4">
-             <property name="title">
-              <string>Caching</string>
-             </property>
-             <layout class="QVBoxLayout">
-              <item>
-               <widget class="QCheckBox" name="cCaching">
-                <property name="text">
-                 <string>Cache Downloads from Google TTS for Faster Repeat Playback</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushClearCache">
-                <property name="text">
-                 <string>Clear Cache</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
           </layout>
          </widget>
          <widget class="QWidget" name="tabmp3">
@@ -314,7 +263,7 @@ If you are having problems, stick with the MP3 Generator.</string>
          </widget>
          <widget class="QWidget">
           <attribute name="title">
-           <string>Debugging</string>
+           <string>Advanced</string>
           </attribute>
           <widget class="QLabel">
            <property name="geometry">
@@ -353,6 +302,28 @@ If you are having problems, stick with the MP3 Generator.</string>
              <widget class="QCheckBox" name="debug_file_checkbox">
               <property name="text">
                <string>addon.log file in the add-on directory</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QGroupBox">
+           <property name="geometry">
+            <rect>
+             <x>9</x>
+             <y>110</y>
+             <width>626</width>
+             <height>99</height>
+            </rect>
+           </property>
+           <property name="title">
+            <string>Clear Cache</string>
+           </property>
+           <layout class="QVBoxLayout">
+            <item>
+             <widget class="QPushButton" name="pushClearCache">
+              <property name="text">
+               <string>Clear Cache</string>
               </property>
              </widget>
             </item>

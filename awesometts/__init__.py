@@ -61,13 +61,13 @@ conf = classes.Conf(
         ('automaticQuestions', 'integer', False, util.TO_BOOL, int),
         ('debug_file', 'integer', False, util.TO_BOOL, int),
         ('debug_stdout', 'integer', False, util.TO_BOOL, int),
-        ('caching', 'integer', True, util.TO_BOOL, int),
+        ('caching', 'integer', True, util.TO_BOOL, int),  # FIXME remove
         ('lame_flags', 'text', '--quiet -q 2', str, str),
         ('last_mass_dest', 'text', 'Back', str, str),
         ('last_mass_source', 'text', 'Front', str, str),
         ('last_service', 'text', 'g', str, str),
         ('last_voice', 'text', {}, json.loads, json.dumps),
-        ('subprocessing', 'integer', True, util.TO_BOOL, int),
+        ('subprocessing', 'integer', True, util.TO_BOOL, int),  # FIXME remove
         ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
         ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),
     ],

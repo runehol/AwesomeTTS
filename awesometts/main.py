@@ -487,8 +487,6 @@ def editConf():
 
     form.cAutoQ.setChecked(conf.automatic_questions)
     form.cAutoA.setChecked(conf.automatic_answers)
-    form.cSubprocessing.setChecked(conf.subprocessing)
-    form.cCaching.setChecked(conf.caching)
 
     form.lame_flags_edit.setText(conf.lame_flags)
 
@@ -566,8 +564,6 @@ def editConf():
         tts_key_a=form.pushKeyA.keyval,
         automatic_questions=form.cAutoQ.isChecked(),
         automatic_answers=form.cAutoA.isChecked(),
-        subprocessing=form.cSubprocessing.isChecked(),
-        caching=form.cCaching.isChecked(),
         lame_flags=form.lame_flags_edit.text(),
         debug_stdout=form.debug_stdout_checkbox.isChecked(),
         debug_file=form.debug_file_checkbox.isChecked(),

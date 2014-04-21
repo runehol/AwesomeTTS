@@ -30,7 +30,7 @@ from .base import Service
 
 class ESpeak(Service):
     """
-    Provides discovery, playback, and recording for eSpeak.
+    Provides discovery and recording for eSpeak.
     """
 
     __slots__ = [
@@ -40,13 +40,14 @@ class ESpeak(Service):
 
     @classmethod
     def desc(cls):
-
         return "eSpeak Speech Synthesizer"
 
     def __init__(self, *args, **kwargs):
         """
         Attempt to locate the eSpeak binary and read the list of voices
-        from the `espeak --voices` output.
+        from the `espeak --voices` output. If running on Windows, the
+        registry will be searched to attempt to locate the eSpeak binary
+        if it is not in the path.
         """
 
         super(ESpeak, self).__init__(*args, **kwargs)
@@ -131,7 +132,28 @@ class ESpeak(Service):
 
     def run(self, text, options, path):
         """
-        TODO
+        Check for unicode workaround on Windows, write a temporary wave
+        file, and then transcode to MP3.
         """
 
+        input_file = self.path_workaround(text)
+        output_wav = self.path_temp('wav')
 
+        self.cli_call(
+            [
+                self._binary,
+                '-v', options['voice'],
+                '-s', options['speed'],
+                '-g', options['gap'],
+                '-p', options['pitch'],
+                '-a', options['amp'],
+                '-w', output_wav,
+            ] + (
+                ['-f', input_file] if input_file
+                else ['--', text]
+            )
+        )
+
+        self.cli_transcode(output_wav, path)
+
+        self.unlink(input_file, output_wav)

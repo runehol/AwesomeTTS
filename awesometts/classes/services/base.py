@@ -47,6 +47,9 @@ class Service(object):
     # startup information for Windows to keep command window hidden
     CLI_SI = None
 
+    # where we can find the lame transcoder
+    LAME_BINARY = 'lame'
+
     # will be set to True if user is running Windows
     WINDOWS = False
 
@@ -145,19 +148,18 @@ class Service(object):
         raised so the caller knows why.
         """
 
-    def cli_call(self, binary, *args):
+    def cli_call(self, *args):
         """
         Execute a command line call for its side effects.
         """
 
         self._cli_exec(
             subprocess.check_call,
-            binary,
             args,
             "for processing",
         )
 
-    def cli_output(self, binary, *args):
+    def cli_output(self, *args):
         """
         Execute a command line call to examine its output, returned as
         a list of lines.
@@ -165,7 +167,6 @@ class Service(object):
 
         returned = self._cli_exec(
             subprocess.check_output,
-            binary,
             args,
             "to inspect output",
         )
@@ -189,19 +190,81 @@ class Service(object):
 
         return returned
 
-    def _cli_exec(self, callee, binary, args, purpose):
+    def cli_transcode(self, input_path, output_path):
+        """
+        Run the LAME transcoder to create a new MP3 file.
+        """
+
+        self.cli_call(
+            self.LAME_BINARY,
+            self._lame_flags.split(),
+            input_path,
+            output_path,
+        )
+
+    def _cli_exec(self, callee, args, purpose):
         """
         Handle the underlying system call, logging, and exceptions.
         """
 
+        args = [
+            arg if isinstance(arg, basestring) else str(arg)
+            for arg in self._flatten(args)
+        ]
+
         self._logger.debug(
             "Calling %s binary with %s %s",
-            binary,
-            args if args else "no arguments",
+            args[0],
+            args[1:] if len(args) > 1 else "no arguments",
             purpose,
         )
 
-        return callee([binary] + list(args), startupinfo=self.CLI_SI)
+        return callee(args, startupinfo=self.CLI_SI)
+
+    def path_temp(self, extension):
+        """
+        Return a path using the given extension that may be used for
+        writing out a temporary file.
+        """
+
+        from string import ascii_lowercase, digits
+        alphanumerics = ascii_lowercase + digits
+
+        from os.path import join
+        from random import choice
+        from time import time
+        return join(
+            self._temp_dir,
+            '%x-%s.%s' % (
+                int(time()),
+                ''.join(choice(alphanumerics) for i in range(30)),
+                extension,
+            ),
+        )
+
+    def path_workaround(self, text):
+        """
+        If running on Windows and the given text cannot be represented
+        purely with ASCII characters, returns a path to a temporary
+        text file that may be used to feed a service binary.
+
+        Returns False otherwise.
+        """
+
+        if self.WINDOWS:
+            try:
+                text.encode('ascii')
+
+            except UnicodeError:
+                temporary_txt = self.path_temp('txt')
+
+                from codecs import open as copen
+                with copen(temporary_txt, mode='w', encoding='utf-8') as out:
+                    out.write(text)
+
+                return temporary_txt
+
+        return False
 
     def reg_hklm(self, key, name):
         """
@@ -209,24 +272,62 @@ class Service(object):
         at the given key and value name.
         """
 
-        import _winreg as wr  # for Windows only, pylint: disable=F0401
-
         self._logger.debug(
             "Reading %s at %s from the Windows registry",
             name,
             key,
         )
 
+        import _winreg as wr  # for Windows only, pylint: disable=F0401
         with wr.ConnectRegistry(None, wr.HKEY_LOCAL_MACHINE) as hklm:
             with wr.OpenKey(hklm, key) as subkey:
                 return wr.QueryValueEx(subkey, name)[0]
 
+    def unlink(self, *args):
+        """
+        Attempt to remove the given file(s), ignoring any failures. May
+        be passed as a list or as multiple arguments.
+        """
+
+        from os import unlink
+        for path in self._flatten(args):
+            if path:
+                try:
+                    unlink(path)
+                    self._logger.debug("Deleted %s from file system", path)
+
+                except OSError:
+                    self._logger.warn("Unable to delete %s", path)
+
+    @classmethod
+    def _flatten(cls, iterable):
+        """
+        Given a potentially nested iterable, return a flat iterable.
+        """
+
+        for item in iterable:
+            if isinstance(item, list) or isinstance(item, tuple):
+                for subitem in cls._flatten(item):
+                    yield subitem
+
+            else:
+                yield item
+
 
 if subprocess.mswindows:
     Service.CLI_SI = subprocess.STARTUPINFO()
+    Service.LAME_BINARY = 'lame.exe'
     Service.WINDOWS = True
 
     try:
         Service.CLI_SI.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-    except AttributeError:  # workaround for some Python implementations
-        Service.CLI_SI.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
+
+    except AttributeError:
+        try:
+            Service.CLI_SI.dwFlags |= (
+                subprocess._subprocess.  # workaround, pylint:disable=W0212
+                STARTF_USESHOWWINDOW
+            )
+
+        except AttributeError:
+            pass

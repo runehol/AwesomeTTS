@@ -40,4 +40,43 @@ if __name__ == "__main__":
     exit(1)
 
 
+# Begin temporary migration code from Beta 10 and older
+
+import os
+import os.path
+
+_PKG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'awesometts')
+
+for _path in [
+    'config.py', 'config.pyc', 'config.pyo',
+]:
+    try:
+        os.unlink(os.path.join(_PKG, _path))
+    except OSError:
+        pass
+
+for _path in [
+    ('services', [
+        'ekho.py', 'ekho.pyc', 'ekho.pyo',
+        'espeak.py', 'espeak.pyc', 'espeak.pyo',
+        'Google.py', 'Google.pyc', 'Google.pyo',
+        'sapi5.py', 'sapi5.pyc', 'sapi5.pyo', 'sapi5.vbs',
+        'say.py', 'say.pyc', 'say.pyo',
+        '__init__.py', '__init__.pyc', '__init__.pyo',
+    ]),
+]:
+    for _subpath in _path[1]:
+        try:
+            os.unlink(os.path.join(_PKG, _path[0], _subpath))
+        except OSError:
+            pass
+
+    try:
+        os.rmdir(os.path.join(_PKG, _path[0]))
+    except OSError:
+        pass
+
+# End temporary migration code
+
+
 import awesometts.main  # imported for side effects, pylint: disable=W0611

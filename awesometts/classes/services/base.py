@@ -26,6 +26,7 @@ __all__ = ['Service']
 
 import abc
 import subprocess
+import anki.utils
 
 
 class Service(object):
@@ -48,6 +49,9 @@ class Service(object):
 
     # where we can find the lame transcoder
     LAME_BINARY = 'lame'
+
+    # will be set to True if user is running Mac OS X
+    MACOSX = False
 
     # will be set to True if user is running Windows
     WINDOWS = False
@@ -410,6 +414,9 @@ if subprocess.mswindows:
 
         except AttributeError:
             pass
+
+elif anki.utils.isMac:
+    Service.MACOSX = True
 
 
 class Trait(object):  # enum class, pylint:disable=R0903

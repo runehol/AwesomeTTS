@@ -27,9 +27,11 @@ __all__ = [
     'ESpeak',
     'Google',
     'SAPI5',
+    'Say',
 ]
 
 from .ekho import Ekho
 from .espeak import ESpeak
 from .google import Google
 from .sapi5 import SAPI5
+from .say import Say

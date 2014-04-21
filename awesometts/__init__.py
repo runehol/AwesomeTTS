@@ -86,6 +86,7 @@ router = classes.Router(
         ('espeak', classes.services.ESpeak),
         ('google', classes.services.Google),
         ('sapi5', classes.services.SAPI5),
+        ('say', classes.services.Say),
     ],
     paths={'cache': paths.CACHE_DIR, 'temp': paths.TEMP_DIR},
     conf=conf,

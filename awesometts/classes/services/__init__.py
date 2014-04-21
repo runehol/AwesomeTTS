@@ -23,7 +23,9 @@ Service classes for AwesomeTTS
 """
 
 __all__ = [
+    'Ekho',
     'ESpeak',
 ]
 
+from .ekho import Ekho
 from .espeak import ESpeak

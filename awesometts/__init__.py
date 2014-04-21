@@ -82,6 +82,7 @@ conf = classes.Conf(
 
 router = classes.Router(
     services=[
+        ('ekho', classes.services.Ekho),
         ('espeak', classes.services.ESpeak),
     ],
     paths={'cache': paths.CACHE_DIR, 'temp': paths.TEMP_DIR},

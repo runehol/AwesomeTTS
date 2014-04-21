@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Service implementation for eSpeak voice engine
+Service implementation for eSpeak text-to-speech engine
 """
 
 __all__ = ['ESpeak']
@@ -30,7 +30,7 @@ from .base import Service
 
 class ESpeak(Service):
     """
-    Provides discovery and recording for eSpeak.
+    Provides a Service-compliant implementation for eSpeak.
     """
 
     __slots__ = [

@@ -38,7 +38,6 @@ class Service(object):
     __metaclass__ = abc.ABCMeta
 
     __slots__ = [
-        '_code',        # unique identifier for this service
         '_lame_flags',  # for passing to LAME transcoder
         '_logger',      # logging interface with debug(), info(), etc.
         '_temp_dir',    # for temporary scratch space
@@ -62,13 +61,10 @@ class Service(object):
 
         return ""
 
-    def __init__(self, code, temp_dir, lame_flags, logger):
+    def __init__(self, temp_dir, lame_flags, logger):
         """
         Attempt to initialize the service, raising any exception if the
         service cannot be used.
-
-        The code identifies the service uniquely across all the other
-        services, and may be used in filenames and other places.
 
         The temp_dir will be used as the base for paths that are needed
         only temporarily (e.g. temporary input files to feed services,
@@ -82,7 +78,6 @@ class Service(object):
         so on, available.
         """
 
-        self._code = code
         self._lame_flags = lame_flags
         self._logger = logger
         self._temp_dir = temp_dir

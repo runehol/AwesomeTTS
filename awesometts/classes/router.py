@@ -74,7 +74,6 @@ class Router(object):
                 self._logger.info("Initializing %s service...", desc or code)
 
                 instance = impl(
-                    code=code,
                     temp_dir=paths['temp'],
                     lame_flags=conf['lame_flags'],
                     logger=logger,

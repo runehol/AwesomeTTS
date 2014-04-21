@@ -25,7 +25,7 @@ Service implementation for eSpeak text-to-speech engine
 
 __all__ = ['ESpeak']
 
-from .base import Service
+from .base import Service, Trait
 
 
 class ESpeak(Service):
@@ -44,7 +44,7 @@ class ESpeak(Service):
 
     @classmethod
     def traits(cls):
-        return [Service.Trait.TRANSCODING]
+        return [Trait.TRANSCODING]
 
     def __init__(self, *args, **kwargs):
         """
@@ -160,4 +160,4 @@ class ESpeak(Service):
 
         self.cli_transcode(output_wav, path)
 
-        self.unlink(input_file, output_wav)
+        self.path_unlink(input_file, output_wav)

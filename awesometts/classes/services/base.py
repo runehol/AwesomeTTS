@@ -35,16 +35,6 @@ class Service(object):
     options, and output text to a file.
     """
 
-    class Trait(object):  # enum class, pylint:disable=R0903
-        """
-        An enum-like object providing codes that describe how a service
-        works. This is used in conjunction with the traits() class
-        method for the Service interface.
-        """
-
-        INTERNET = 1     # files are retrieved from the Internet
-        TRANSCODING = 2  # LAME transcoder is used
-
     __metaclass__ = abc.ABCMeta
 
     __slots__ = [
@@ -236,6 +226,80 @@ class Service(object):
 
         return callee(args, startupinfo=self.CLI_SI)
 
+    def net_download(self, path, addr, query=None, require=None):
+
+        # TODO Test this code against a system proxy. Previously, this
+        # needed to be prepended by hand for mplayer's sake, but we are
+        # no longer passing URLs directly to mplayer. The documentation
+        # for urllib2 leads me to believe that it might be handled
+        # automatically. The old code worked as follows...
+        #
+        # PROXIES = urllib.getproxies()
+        # if PROXIES and 'http' in PROXIES:
+        #     URL = '/'.join([
+        #         PROXIES['http'].replace('http:', 'http_proxy:').rstrip('/'),
+        #         URL,
+        #     ])
+
+        # TODO Ensure that the caller of run(), which will call this, is
+        # capable of catching and gracefully handling exceptions thrown
+        # here so as to not annoy the user.
+
+        from urllib2 import urlopen, Request, quote
+
+        url = addr if not query else '?'.join([
+            addr,
+            '&'.join([
+                '='.join([
+                    key,
+                    quote(
+                        value.encode('utf-8') if isinstance(value, unicode)
+                        else value,
+                        safe='',
+                    ),
+                ])
+                for key, value in query.items()
+            ])
+        ])
+
+        self._logger.debug("Fetching %s from the web", url)
+
+        response = urlopen(
+            Request(url=url, headers={'User-Agent': 'Mozilla/5.0'}),
+            timeout=15,
+        )
+
+        if not response:
+            raise IOError("No response from web request")
+
+        if require:
+            if (
+                'status' in require and
+                require['status'] != response.getcode()
+            ):
+                raise ValueError(
+                    "Web request returned %d status code; wanted %d" % (
+                        response.getcode(),
+                        require['status'],
+                    )
+                )
+
+            if (
+                'mime' in require and
+                require['mime'] != response.info().gettype()
+            ):
+                raise ValueError(
+                    "Web request returned %s Content-Type; wanted %s" % (
+                        response.info().gettype(),
+                        require['mime'],
+                    )
+                )
+
+        with open(path, 'wb') as response_output:
+            response_output.write(response.read())
+
+        response.close()
+
     def path_temp(self, extension):
         """
         Return a path using the given extension that may be used for
@@ -256,6 +320,22 @@ class Service(object):
                 extension,
             ),
         )
+
+    def path_unlink(self, *args):
+        """
+        Attempt to remove the given file(s), ignoring any failures. May
+        be passed as a list or as multiple arguments.
+        """
+
+        from os import unlink
+        for path in self._flatten(args):
+            if path:
+                try:
+                    unlink(path)
+                    self._logger.debug("Deleted %s from file system", path)
+
+                except OSError:
+                    self._logger.warn("Unable to delete %s", path)
 
     def path_workaround(self, text):
         """
@@ -298,22 +378,6 @@ class Service(object):
             with wr.OpenKey(hklm, key) as subkey:
                 return wr.QueryValueEx(subkey, name)[0]
 
-    def unlink(self, *args):
-        """
-        Attempt to remove the given file(s), ignoring any failures. May
-        be passed as a list or as multiple arguments.
-        """
-
-        from os import unlink
-        for path in self._flatten(args):
-            if path:
-                try:
-                    unlink(path)
-                    self._logger.debug("Deleted %s from file system", path)
-
-                except OSError:
-                    self._logger.warn("Unable to delete %s", path)
-
     @classmethod
     def _flatten(cls, iterable):
         """
@@ -346,3 +410,14 @@ if subprocess.mswindows:
 
         except AttributeError:
             pass
+
+
+class Trait(object):  # enum class, pylint:disable=R0903
+    """
+    An enum-like object providing codes that describe how a service
+    works. This is used in conjunction with the traits() class method
+    for the Service interface.
+    """
+
+    INTERNET = 1     # files retrieved from Internet; use throttling
+    TRANSCODING = 2  # LAME transcoder is used

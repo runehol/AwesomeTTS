@@ -25,7 +25,7 @@ Service implementation for Ekho text-to-speech engine
 
 __all__ = ['Ekho']
 
-from .base import Service
+from .base import Service, Trait
 
 
 class Ekho(Service):
@@ -43,7 +43,7 @@ class Ekho(Service):
 
     @classmethod
     def traits(cls):
-        return [Service.Trait.TRANSCODING]
+        return [Trait.TRANSCODING]
 
     def __init__(self, *args, **kwargs):
         """
@@ -138,4 +138,4 @@ class Ekho(Service):
 
         self.cli_transcode(output_wav, path)
 
-        self.unlink(input_file, output_wav)
+        self.path_unlink(input_file, output_wav)

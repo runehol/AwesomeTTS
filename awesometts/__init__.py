@@ -84,6 +84,7 @@ router = classes.Router(
     services=[
         ('ekho', classes.services.Ekho),
         ('espeak', classes.services.ESpeak),
+        ('google', classes.services.Google),
     ],
     paths={'cache': paths.CACHE_DIR, 'temp': paths.TEMP_DIR},
     conf=conf,

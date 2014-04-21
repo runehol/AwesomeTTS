@@ -42,6 +42,10 @@ class ESpeak(Service):
     def desc(cls):
         return "eSpeak Speech Synthesizer"
 
+    @classmethod
+    def traits(cls):
+        return [Service.Trait.TRANSCODING]
+
     def __init__(self, *args, **kwargs):
         """
         Attempt to locate the eSpeak binary and read the list of voices

@@ -41,6 +41,10 @@ class Ekho(Service):
     def desc(cls):
         return u"Ekho (余音) Chinese/Korean TTS Engine"
 
+    @classmethod
+    def traits(cls):
+        return [Service.Trait.TRANSCODING]
+
     def __init__(self, *args, **kwargs):
         """
         Attempt to read the list of voices from the `ekho --help`

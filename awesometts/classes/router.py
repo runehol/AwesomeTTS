@@ -71,6 +71,8 @@ class Router(object):
             try:
                 desc = impl.desc()
 
+                traits = impl.traits()
+
                 self._logger.info("Initializing %s service...", desc or code)
 
                 instance = impl(
@@ -81,7 +83,7 @@ class Router(object):
 
                 options = instance.options()
 
-                self._lookup[code] = instance, desc, options
+                self._lookup[code] = instance, desc, traits, options
                 self._logger.info("%s service initialized", desc or code)
 
             except:  # allow recovery from any exception, pylint:disable=W0702

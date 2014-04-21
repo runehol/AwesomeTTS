@@ -35,6 +35,16 @@ class Service(object):
     options, and output text to a file.
     """
 
+    class Trait(object):  # enum class, pylint:disable=R0903
+        """
+        An enum-like object providing codes that describe how a service
+        works. This is used in conjunction with the traits() class
+        method for the Service interface.
+        """
+
+        INTERNET = 1     # files are retrieved from the Internet
+        TRANSCODING = 2  # LAME transcoder is used
+
     __metaclass__ = abc.ABCMeta
 
     __slots__ = [
@@ -60,6 +70,16 @@ class Service(object):
         """
 
         return ""
+
+    @classmethod
+    @abc.abstractmethod
+    def traits(cls):
+        """
+        Return a list of "traits" from the Trait enum that this service
+        implementation uses.
+        """
+
+        return []
 
     def __init__(self, temp_dir, lame_flags, logger):
         """

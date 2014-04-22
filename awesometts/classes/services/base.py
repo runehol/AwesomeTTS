@@ -20,9 +20,13 @@
 
 """
 Base classes for service implementations
+
+Provides an abstract Service class that can be extended for implementing
+a TTS service for use with AwesomeTTS, and a enum-like Trait class for
+specifying the characteristics of a service.
 """
 
-__all__ = ['Service']
+__all__ = ['Service', 'Trait']
 
 import abc
 import subprocess
@@ -31,9 +35,23 @@ import anki.utils
 
 class Service(object):
     """
-    Interface for interacting with a service. All services must be able
-    to be initialized, return a description, return their available
-    options, and output text to a file.
+    Represents a TTS service, providing an interface for the framework
+    to interact with the service (initialization, description, options,
+    and running) in addition to helpers that concrete implementations
+    can call into to fulfill the interface (e.g. CLI calls, downloading
+    files from the Internet).
+
+    Although not enforced by Python's abc module, concrete classes
+    should also specify NAME and TRAITS constants, which the framework
+    can use before initializing a service.
+
+    Methods that concrete classes must implement will only be called
+    when they are needed (i.e. they are lazily loaded). In addition,
+    with the exception of the run() method, these methods will only be
+    called once during a particular session (i.e. their results will be
+    cached). The run() method will usually only be called one time for a
+    particular set of arguments (because the media files it produces are
+    retained on the file system).
     """
 
     __metaclass__ = abc.ABCMeta
@@ -56,13 +74,24 @@ class Service(object):
     # will be set to True if user is running Windows
     IS_WINDOWS = False
 
-    # to be overridden by the concrete classes
-    NAME = "Unknown Service"
+    # abstract; to be overridden by the concrete classes
+    # e.g. NAME = "ABC Service API"
+    NAME = None
+
+    # abstract; to be overridden by the concrete classes
+    # e.g. TRAITS = [Trait.INTERNET, Trait.TRANSCODING]
+    TRAITS = None
 
     def __init__(self, temp_dir, lame_flags, logger):
         """
-        Attempt to initialize the service, raising any exception if the
-        service cannot be used.
+        Attempt to initialize the service, raising a exception if the
+        service cannot be used. If the service needs to make any calls
+        to determine its viability (e.g. check to see if voices are
+        installed on the system), they should be made here.
+
+        This method will be called the first time the user displays the
+        list of services or the first time the framework encounters an
+        on-the-fly TTS tag for the service.
 
         The temp_dir will be used as the base for paths that are needed
         only temporarily (e.g. temporary input files to feed services,
@@ -76,6 +105,9 @@ class Service(object):
         so on, available.
         """
 
+        assert self.NAME, "Please specify a NAME for the service"
+        assert self.TRAITS, "Please specify a TRAITS list for the service"
+
         self._lame_flags = lame_flags
         self._logger = logger
         self._temp_dir = temp_dir
@@ -84,6 +116,9 @@ class Service(object):
     def desc(self):
         """
         Return a human-readable description of this service.
+
+        This method will be called the first time the user displays the
+        service (e.g. as part of a panel).
         """
 
         return ""
@@ -93,6 +128,11 @@ class Service(object):
         """
         Return a list of settable options for this service, in the order
         that they should be presented to the user.
+
+        This method will be called the first time the user displays the
+        service (e.g. as part of a panel), or the first time a set of
+        options must be built to call the service (e.g. encountering an
+        on-the-fly TTS tag for the service).
 
         The list should follow a structure like this:
 
@@ -117,6 +157,11 @@ class Service(object):
                     default=175,
                 ),
             ]
+
+        Each dict must include 'key', 'label', and 'items'. A dict may
+        include 'default', if there is one. An option without a given
+        'default' will be considered to be required (e.g. when parsing
+        on-the-fly TTS tags for the service).
         """
 
         return {}
@@ -149,18 +194,10 @@ class Service(object):
         raised so the caller knows why.
         """
 
-    @abc.abstractmethod
-    def traits(self):
-        """
-        Return a list of "traits" from the Trait enum that this service
-        implementation uses.
-        """
-
-        return []
-
     def cli_call(self, *args):
         """
-        Execute a command line call for its side effects.
+        Executes a command line call for its side effects. May be passed
+        as a single list or as multiple arguments.
         """
 
         self._cli_exec(
@@ -171,8 +208,9 @@ class Service(object):
 
     def cli_output(self, *args):
         """
-        Execute a command line call to examine its output, returned as
-        a list of lines.
+        Executes a command line call to examine its output, returned as
+        a list of lines. May be passed as a single list or as multiple
+        arguments.
         """
 
         returned = self._cli_exec(
@@ -202,7 +240,7 @@ class Service(object):
 
     def cli_transcode(self, input_path, output_path):
         """
-        Run the LAME transcoder to create a new MP3 file.
+        Runs the LAME transcoder to create a new MP3 file.
         """
 
         self.cli_call(
@@ -214,7 +252,8 @@ class Service(object):
 
     def _cli_exec(self, callee, args, purpose):
         """
-        Handle the underlying system call, logging, and exceptions.
+        Handles the underlying system call, logging, and exceptions when
+        a call to cli_call() or cli_output() is made.
         """
 
         args = [
@@ -233,7 +272,7 @@ class Service(object):
 
     def net_download(self, path, addr, query=None, require=None):
         """
-        Download a file to the given from the specified address and
+        Downloads a file to the given from the specified address and
         optional query string. Additionally, a require dict may be
         passed to enforce a status code (key 'status') and/or
         Content-Type (key 'mime').
@@ -313,7 +352,7 @@ class Service(object):
 
     def path_temp(self, extension):
         """
-        Return a path using the given extension that may be used for
+        Returns a path using the given extension that may be used for
         writing out a temporary file.
         """
 
@@ -334,8 +373,8 @@ class Service(object):
 
     def path_unlink(self, *args):
         """
-        Attempt to remove the given file(s), ignoring any failures. May
-        be passed as a list or as multiple arguments.
+        Attempts to remove the given file(s), ignoring any failures. May
+        be passed as a single list or as multiple arguments.
         """
 
         from os import unlink
@@ -374,8 +413,8 @@ class Service(object):
 
     def reg_hklm(self, key, name):
         """
-        Attempt to retrieve a value within the local machine tree stored
-        at the given key and value name.
+        Attempts to retrieve a value within the local machine tree
+        stored at the given key and value name.
         """
 
         self._logger.debug(
@@ -392,7 +431,7 @@ class Service(object):
     @classmethod
     def _flatten(cls, iterable):
         """
-        Given a potentially nested iterable, return a flat iterable.
+        Given a potentially nested iterable, returns a flat iterable.
         """
 
         for item in iterable:
@@ -403,6 +442,9 @@ class Service(object):
             else:
                 yield item
 
+
+# Reinitialize the CLI_LAME, CLI_SI, IS_WINDOWS, and IS_MACOSX constants
+# on the base class, if necessary given the running operating system.
 
 if subprocess.mswindows:
     Service.CLI_LAME = 'lame.exe'
@@ -428,9 +470,13 @@ elif anki.utils.isMac:
 
 class Trait(object):  # enum class, pylint:disable=R0903
     """
-    An enum-like object providing codes that describe how a service
-    works. This is used in conjunction with the traits() class method
-    for the Service interface.
+    Provides an enum-like namespace with codes that describe how a
+    service works, used by concrete Service classes' TRAITS lists.
+
+    The framework can query the registered Service classes to alter
+    on-screen descriptions (e.g. inform the user which services make use
+    of the LAME transcoder) or alter behavior (e.g. throttling when
+    recording many media files from an online service).
     """
 
     INTERNET = 1     # files retrieved from Internet; use throttling

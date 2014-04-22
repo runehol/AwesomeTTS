@@ -24,8 +24,6 @@ Helpful regular expression patterns
 
 __all__ = [
     'NOT_ALPHANUMERIC',
-    'NOT_ALPHANUMERIC_DASH',
-    'NOT_ALPHANUMERIC_DOT',
     'SOUND_BRACKET_TAG',
     'WHITESPACE',
 ]
@@ -34,13 +32,7 @@ import re
 
 
 # Filter pattern to remove non-alphanumeric characters
-NOT_ALPHANUMERIC = re.compile(r'[^a-z0-9]')
-
-# Filter pattern to remove non-alphanumeric and non-dash characters
-NOT_ALPHANUMERIC_DASH = re.compile(r'[^-a-z0-9]')
-
-# Filter pattern to remove non-alphanumeric and non-period characters
-NOT_ALPHANUMERIC_DOT = re.compile(r'[^\.a-z0-9]')
+NOT_ALPHANUMERIC = re.compile(r'[^a-zA-Z0-9]')
 
 # Matches [sound:xxx]-style Tags
 SOUND_BRACKET_TAG = re.compile(r'\[sound:[^\]]+\]', re.IGNORECASE)

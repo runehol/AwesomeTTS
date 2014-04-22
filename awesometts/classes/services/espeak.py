@@ -35,18 +35,19 @@ class ESpeak(Service):
 
     __slots__ = [
         '_binary',   # path to the eSpeak binary
-        '_version',  # our version string
         '_voices',   # list of installed voices as a list of tuples
     ]
 
     NAME = "eSpeak"
 
+    TRAITS = [Trait.TRANSCODING]
+
     def __init__(self, *args, **kwargs):
         """
-        Attempt to locate the eSpeak binary and read the list of voices
+        Attempts to locate the eSpeak binary and read the list of voices
         from the `espeak --voices` output. If running on Windows, the
         registry will be searched to attempt to locate the eSpeak binary
-        if it is not in the path.
+        if it is not already in the path.
         """
 
         super(ESpeak, self).__init__(*args, **kwargs)
@@ -87,17 +88,13 @@ class ESpeak(Service):
         if not self._voices:
             raise EnvironmentError("No usable output from `espeak --voices`")
 
-        self._version = None  # set lazily
-
     def desc(self):
         """
-        Return version string.
+        Returns a version string, terse description, and the TTS data
+        location from `espeak --version`.
         """
 
-        if not self._version:
-            self._version = self.cli_output(self._binary, '--version').pop(0)
-
-        return self._version
+        return self.cli_output(self._binary, '--version').pop(0)
 
     def options(self):
         """
@@ -143,8 +140,8 @@ class ESpeak(Service):
 
     def run(self, text, options, path):
         """
-        Check for unicode workaround on Windows, write a temporary wave
-        file, and then transcode to MP3.
+        Checks for unicode workaround on Windows, writes a temporary
+        wave file, and then transcodes to MP3.
         """
 
         input_file = self.path_workaround(text)
@@ -168,10 +165,3 @@ class ESpeak(Service):
         self.cli_transcode(output_wav, path)
 
         self.path_unlink(input_file, output_wav)
-
-    def traits(self):
-        """
-        MP3s are transcoded from raw wave files.
-        """
-
-        return [Trait.TRANSCODING]

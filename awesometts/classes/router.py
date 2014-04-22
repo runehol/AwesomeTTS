@@ -27,21 +27,39 @@ __all__ = ['Router']
 
 class Router(object):
     """
-    Allows the registration, lookup, and routing of services.
+    Allows the registration, lookup, and routing of concrete Service
+    implementations.
+
+    By having a routing-like object sit in-between the UI and the actual
+    service code, Service implementations can be lazily loaded and their
+    results can be cached, transparently to both sides.
+
+    The router does NOT, however, handle threading issues, which remain
+    in the domain of the UI. It should be expected that calls into the
+    router may block, particularly those that require the initialization
+    or running of Service code.
     """
 
     __slots__ = [
-        '_cache_dir',
-        '_conf',
-        '_logger',
-        '_lookup',
+        '_aliases',    # dict mapping alternate service IDs
+        '_conf',       # dict with lame_flags, last_service, last_options
+        '_logger',     # logger-like interface with debug(), info(), etc.
+        '_lookup',     # dict mapping service IDs to lookup information
+        '_memoized',   # dict with various memoized items
+        '_normalize',  # callable for sanitizing service IDs
+        '_paths',      # dict with cache, temp
     ]
 
     def __init__(self, services, paths, conf, logger):
         """
-        The services should be a list of tuples, where each tuple
-        contains a unique service ID and a class implementing the
-        Service interface.
+        The services should be a dict with the following keys:
+
+            - mappings (list of tuples): each with service ID, class
+            - normalize (callable): for sanitizing service IDs
+
+        The services may contain the following key:
+
+            - aliases (list of tuples): alternate-to-official service IDs
 
         The paths object should be a dict with the following keys:
 
@@ -60,63 +78,58 @@ class Router(object):
         so on, available.
         """
 
-        self._cache_dir = paths['cache']
         self._conf = conf
         self._logger = logger
-        self._lookup = {}
+        self._memoized = {}
+        self._normalize = services['normalize']
+        self._paths = paths
 
-        for svcid, impl in services:
-            name = None
+        self._aliases = {
+            self._normalize(from_svc_id): self._normalize(to_svc_id)
+            for from_svc_id, to_svc_id in services.get('aliases', [])
+        }
 
-            try:
-                name = impl.NAME
-
-                self._logger.info("Initializing %s service...", name)
-
-                instance = impl(
-                    temp_dir=paths['temp'],
-                    lame_flags=conf['lame_flags'],
-                    logger=logger,
-                )
-
-                self._lookup[svcid] = {
-                    'name': name,
-                    'instance': instance,
-                }
-                self._logger.info("%s service initialized", name)
-
-            except:  # allow recovery from any exception, pylint:disable=W0702
-                from traceback import format_exc
-
-                self._logger.warn(
-                    "Cannot initialize %s service; omitting\n%s",
-                    name or svcid,
-                    '\n'.join([
-                        "!!! " + line
-                        for line in format_exc().split('\n')
-                    ]),
-                )
+        self._lookup = {
+            self._normalize(svc_id): {
+                'class': svc_class,
+                'name': svc_class.NAME or svc_id,
+                'traits': svc_class.TRAITS or [],
+            }
+            for svc_id, svc_class in services['mappings']
+        }
 
     def get_services(self):
         """
-        Return the list of services and the index of the last used
-        service (last_service from the conf object) in that list.
+        Returns the list of available services and the index of the last
+        used service (last_service from the conf object) in that list.
         """
 
-        services = {
-            'items': sorted([
-                (svcid, service['name'])
-                for svcid, service in self._lookup.items()
-            ], key=lambda (svcid, text): text.lower()),
+        for service in self._lookup.values():
+            self._load_service(service)
 
-            'index': 0
-        }
+        if not 'services_items' in self._memoized:
+            self._logger.debug("Building the services list")
+            self._memoized['services_items'] = {
+                'items': sorted([
+                    (svc_id, service['name'])
+                    for svc_id, service in self._lookup.items()
+                    if service['instance']
+                ], key=lambda (svc_id, text): text.lower()),
+
+                'index': 0,
+            }
+
+        services = self._memoized['services_items']
 
         try:
+            last_service = self._normalize(self._conf['last_service'])
+            if last_service in self._aliases:
+                last_service = self._aliases[last_service]
+
             services['index'] = services['items'].index(next(
                 item
                 for item in services['items']
-                if item[0] == self._conf['last_service']
+                if item[0] == last_service
             ))
 
         except StopIteration:
@@ -124,59 +137,142 @@ class Router(object):
 
         return services
 
-    def get_desc(self, svcid):
+    def get_desc(self, svc_id):
         """
-        Return the description associated with the service.
+        Returns the description associated with the service.
         """
 
-        return self._lookup[svcid]['instance'].desc()
+        svc_id, service = self._fetch_service(svc_id)
 
-    def get_options(self, svcid):
+        if 'desc' not in service:
+            self._logger.debug(
+                "Retrieving the description for %s",
+                service['name'],
+            )
+            service['desc'] = service['instance'].desc()
+
+        return service['desc']
+
+    def get_options(self, svc_id):
         """
-        Return a list of options that should be displayed for the
+        Returns a list of options that should be displayed for the
         service, with defaults highlighted and the indices of the last
         used option items (from last_options in the conf object) or the
         default option items.
         """
 
-        options = [
-            dict(
-                option.items() +
-                [
-                    (
-                        'items',
+        svc_id, service = self._fetch_service(svc_id)
 
-                        option['items'] if 'default' not in option
-                        else [
-                            item if item[0] != option['default']
-                            else (item[0], item[1] + " [default]")
-
-                            for item in option['items']
-                        ]
-                    ),
-
-                    ('index', 0),
-                ]
+        if 'options' not in service:
+            self._logger.debug(
+                "Building the options list for %s",
+                service['name'],
             )
-            for option in self._lookup[svcid]['instance'].options()
-        ]
+            service['options'] = [
+                dict(
+                    option.items() +
+                    [
+                        (
+                            'items',
+                            option['items'] if 'default' not in option
+                            else [
+                                item if item[0] != option['default']
+                                else (item[0], item[1] + " [default]")
+                                for item in option['items']
+                            ]
+                        ),
+                        ('index', '0'),
+                        ('key', self._normalize(option['key'])),
+                    ]
+                )
+                for option in service['instance'].options()
+            ]
 
-        last_options = self._conf['last_options'].get(svcid, {})
+        options = service['options']
+
+        last_options = self._conf['last_options'].get(svc_id, {})
 
         for option in options:
             try:
+                last_option = last_options[option['key']]
                 option['index'] = option['items'].index(next(
                     item
                     for item in option['items']
-                    if item[0] == last_options[option['key']]
+                    if item[0] == last_option
                 ))
 
             except (KeyError, StopIteration):
                 if 'default' in option:
+                    default_option = option['default']
                     option['index'] = option['items'].index(next(
                         item
                         for item in option['items']
-                        if item[0] == option['default']
+                        if item[0] == default_option
                     ))
 
         return options
+
+    def _fetch_service(self, svc_id):
+        """
+        Finds the service using the svc_id, normalizing it and using the
+        aliases list, initializes it this is its first use, and returns
+        the normalized svc_id and service lookup dict.
+
+        Raises KeyError if a bad svc_id is passed.
+
+        Raises EnvironmentError if a good svc_id is passed, but the
+        given service is not available for this session.
+        """
+
+        svc_id = self._normalize(svc_id)
+        if svc_id in self._aliases:
+            svc_id = self._aliases[svc_id]
+
+        try:
+            service = self._lookup[svc_id]
+        except KeyError:
+            raise KeyError("There is no '%s' service" % svc_id)
+
+        self._load_service(service)
+
+        if not service['instance']:
+            raise EnvironmentError(
+                "The %s service is not currently available" %
+                service['name']
+            )
+
+        return svc_id, service
+
+    def _load_service(self, service):
+        """
+        Given a service lookup dict, tries to initialize the service if
+        it is not already initialized. Exceptions are trapped and logged
+        with the 'instance' then set to None. Successful initializations
+        set the 'instance' to the resulting object.
+        """
+
+        if 'instance' in service:
+            return
+
+        self._logger.info("Initializing %s service...", service['name'])
+
+        try:
+            service['instance'] = service['class'](
+                temp_dir=self._paths['temp'],
+                lame_flags=self._conf['lame_flags'],
+                logger=self._logger,
+            )
+
+            self._logger.info("%s service initialized", service['name'])
+
+        except:  # allow recovery from any exception, pylint:disable=W0702
+            service['instance'] = None  # flag this service as unavailable
+
+            from traceback import format_exc
+            trace_lines = format_exc().split('\n')
+
+            self._logger.warn(
+                "Initialization failed for %s service\n%s",
+                service['name'],
+                '\n'.join(["!!! " + line for line in trace_lines]),
+            )

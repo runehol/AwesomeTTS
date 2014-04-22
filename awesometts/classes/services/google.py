@@ -39,9 +39,11 @@ class Google(Service):
 
     NAME = "Google Translate"
 
+    TRAITS = [Trait.INTERNET]
+
     def desc(self):
         """
-        Return a short description, with no version information.
+        Returns a short, static description.
         """
 
         return "Google Translate text-to-speech web API"
@@ -105,7 +107,10 @@ class Google(Service):
 
     def run(self, text, options, path):
         """
-        Download from Google directly to an MP3.
+        Downloads from Google directly to an MP3.
+
+        Because the MP3 get from Google is already so very tiny, LAME is
+        not used for transcoding.
         """
 
         self.net_download(
@@ -120,10 +125,3 @@ class Google(Service):
                 mime='audio/mpeg',
             ),
         )
-
-    def traits(self):
-        """
-        MP3s are downloaded from Internet with no transcoding.
-        """
-
-        return [Trait.INTERNET]

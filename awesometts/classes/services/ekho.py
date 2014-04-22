@@ -34,15 +34,16 @@ class Ekho(Service):
     """
 
     __slots__ = [
-        '_version',  # our version string
         '_voices',   # list of installed voices as a list of tuples
     ]
 
     NAME = "Ekho"
 
+    TRAITS = [Trait.TRANSCODING]
+
     def __init__(self, *args, **kwargs):
         """
-        Attempt to read the list of voices from the `ekho --help`
+        Attempts to read the list of voices from the `ekho --help`
         output.
         """
 
@@ -63,17 +64,12 @@ class Ekho(Service):
         if not self._voices:
             raise EnvironmentError("No usable output from `ekho --help`")
 
-        self._version = None  # set lazily
-
     def desc(self):
         """
-        Return version and available languages.
+        Returns a simple version using `ekho --version`.
         """
 
-        if not self._version:
-            self._version = self.cli_output('ekho', '--version').pop(0)
-
-        return "ekho %s, Chinese and Korean TTS Engine" % self._version
+        return "ekho %s" % self.cli_output('ekho', '--version').pop(0)
 
     def options(self):
         """
@@ -118,8 +114,8 @@ class Ekho(Service):
 
     def run(self, text, options, path):
         """
-        Check for unicode workaround on Windows, write a temporary wave
-        file, and then transcode to MP3.
+        Checks for unicode workaround on Windows, writes a temporary
+        wave file, and then transcodes to MP3.
 
         Technically speaking, Ekho supports writing directly to MP3, but
         by going through LAME, we can apply the user's custom flags.
@@ -146,10 +142,3 @@ class Ekho(Service):
         self.cli_transcode(output_wav, path)
 
         self.path_unlink(input_file, output_wav)
-
-    def traits(self):
-        """
-        MP3s are transcoded from raw wave files.
-        """
-
-        return [Trait.TRANSCODING]

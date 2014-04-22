@@ -72,20 +72,12 @@ class Conf(object):
     __slots__ = [
         '_path',         # path to SQLite3 database
         '_table',        # SQLite3 table where preferences are stored
-        '_sanitize',     # regex object for sanitizing names
+        '_normalize',    # callable for sanitizing names
         '_definitions',  # map of official lookup names to column definitions
         '_cache',        # in-memory lookup of preferences
         '_logger',       # where to send logging messages
         '_events',       # map of lookup names to the callable(s) they trigger
     ]
-
-    def _normalize(self, name):
-        """
-        Returns a lowercase version of the name with only characters
-        permitted by the sanitization regex object.
-        """
-
-        return self._sanitize.sub('', name.lower())
 
     def __init__(self, db, definitions, logger, events=None):
         """
@@ -115,7 +107,7 @@ class Conf(object):
         - 1th: callable to callback to when this value is loaded or updated
         """
 
-        self._path, self._table, self._sanitize = db
+        self._path, self._table, self._normalize = db
         self._definitions = {
             self._normalize(definition[0]): definition
             for definition

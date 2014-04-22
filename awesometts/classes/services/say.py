@@ -38,9 +38,13 @@ class Say(Service):
         '_voices',  # list of installed voices as a list of tuples
     ]
 
+    NAME = "Mac OS X Say"
+
+    TRAITS = [Trait.TRANSCODING]
+
     def __init__(self, *args, **kwargs):
         """
-        Attempt to read the list of voices from `say -v ?`.
+        Attempts to read the list of voices from `say -v ?`.
 
         However, if not running on Mac OS X, no environment inspection
         is attempted and an exception is immediately raised.
@@ -75,7 +79,7 @@ class Say(Service):
 
     def desc(self):
         """
-        Return a short description, with no version information.
+        Returns a short, static description.
         """
 
         return "Mac OS X Say Command"
@@ -95,7 +99,7 @@ class Say(Service):
 
     def run(self, text, options, path):
         """
-        Write a temporary AIFF file and then transcode to MP3.
+        Writes a temporary AIFF file and then transcodes to MP3.
         """
 
         output_aiff = self.path_temp('aiff')
@@ -105,10 +109,3 @@ class Say(Service):
         self.cli_transcode(output_aiff, path)
 
         self.path_unlink(output_aiff)
-
-    def traits(self):
-        """
-        MP3s are transcoded from raw AIFF files.
-        """
-
-        return [Trait.TRANSCODING]

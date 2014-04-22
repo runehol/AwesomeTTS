@@ -43,6 +43,10 @@ class SAPI5(Service):
         '_voices',  # list of installed voices as a list of tuples
     ]
 
+    NAME = "SAPI 5"
+
+    TRAITS = [Trait.TRANSCODING]
+
     _SCRIPT = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         'sapi5.vbs',
@@ -50,8 +54,8 @@ class SAPI5(Service):
 
     def __init__(self, *args, **kwargs):
         """
-        Attempt to locate the cscript binary and read the list of voices
-        from the `cscript.exe sapi5.vbs -vl` output.
+        Attempts to locate the cscript binary and read the list of
+        voices from the `cscript.exe sapi5.vbs -vl` output.
 
         However, if not running on Windows, no environment inspection is
         attempted and an exception is immediately raised.
@@ -89,7 +93,7 @@ class SAPI5(Service):
 
     def desc(self):
         """
-        Return a short description, with no version information.
+        Returns a short, static description.
         """
 
         return "Microsoft Speech API (SAPI) 5 via Visual Basic"
@@ -109,8 +113,8 @@ class SAPI5(Service):
 
     def run(self, text, options, path):
         """
-        Convert input into hex strings, write a temporary wave file, and
-        then transcode to MP3.
+        Converts input voice and text into hex strings, writes a
+        temporary wave file, and then transcodes to MP3.
         """
 
         hexstr = lambda value: ''.join(['%04X' % ord(char) for char in value])
@@ -127,10 +131,3 @@ class SAPI5(Service):
         self.cli_transcode(output_wav, path)
 
         self.path_unlink(output_wav)
-
-    def traits(self):
-        """
-        MP3s are transcoded from raw wave files.
-        """
-
-        return [Trait.TRANSCODING]

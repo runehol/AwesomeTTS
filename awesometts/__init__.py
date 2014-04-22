@@ -39,6 +39,11 @@ from PyQt4.QtCore import Qt
 from . import classes, paths, regex
 
 
+_TO_BOOL = lambda value: bool(int(value))  # workaround for bool('0') == True
+
+_TO_NORMALIZED = lambda value: regex.NOT_ALPHANUMERIC.sub('', value).lower()
+
+
 logger = classes.Logger(
     name='AwesomeTTS',
 
@@ -58,10 +63,8 @@ logger = classes.Logger(
 )
 
 
-_TO_BOOL = lambda value: bool(int(value))  # workaround for bool('0') == True
-
 conf = classes.Conf(
-    db=(paths.CONF_DB, 'general', regex.NOT_ALPHANUMERIC),
+    db=(paths.CONF_DB, 'general', _TO_NORMALIZED),
 
     definitions=[
         ('automaticAnswers', 'integer', False, _TO_BOOL, int),
@@ -88,15 +91,26 @@ conf = classes.Conf(
 )
 
 router = classes.Router(
-    services=[
-        ('ekho', classes.services.Ekho),
-        ('espeak', classes.services.ESpeak),
-        ('google', classes.services.Google),
-        ('sapi5', classes.services.SAPI5),
-        ('say', classes.services.Say),
-    ],
+    services=dict(
+        mappings=[
+            ('ekho', classes.services.Ekho),
+            ('espeak', classes.services.ESpeak),
+            ('google', classes.services.Google),
+            ('sapi5', classes.services.SAPI5),
+            ('say', classes.services.Say),
+        ],
 
-    paths={'cache': paths.CACHE_DIR, 'temp': paths.TEMP_DIR},
+        aliases=[
+            ('g', 'google'),
+        ],
+
+        normalize=_TO_NORMALIZED,
+    ),
+
+    paths=dict(
+        cache=paths.CACHE_DIR,
+        temp=paths.TEMP_DIR,
+    ),
 
     conf=conf,
 

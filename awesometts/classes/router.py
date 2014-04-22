@@ -34,10 +34,11 @@ class Router(object):
     service code, Service implementations can be lazily loaded and their
     results can be cached, transparently to both sides.
 
-    The router does NOT, however, handle threading issues, which remain
-    in the domain of the UI. It should be expected that calls into the
-    router may block, particularly those that require the initialization
-    or running of Service code.
+    Additionally, some methods on the router offer callbacks. In this
+    case, if the method is going to call a service that might block,
+    then the method can arrange for that call to occur on a different
+    thread and then call the callback when done. Otherwise, the callback
+    can be called immediately with neither blocking nor threading.
     """
 
     __slots__ = [
@@ -125,6 +126,7 @@ class Router(object):
             last_service = self._normalize(self._conf['last_service'])
             if last_service in self._aliases:
                 last_service = self._aliases[last_service]
+            self._logger.debug("Setting last used service: %s", last_service)
 
             services['index'] = services['items'].index(next(
                 item
@@ -161,6 +163,180 @@ class Router(object):
         default option items.
         """
 
+        svc_id, service, options = self._fetch_options(svc_id)
+        last_options = self._conf['last_options'].get(svc_id, {})
+
+        for option in options:
+            try:
+                last_option = last_options[option['key']]
+                self._logger.debug(
+                    "Setting %s service's %s (%s) index to the last used: %s",
+                    service['name'],
+                    option['key'],
+                    option['label'],
+                    last_option,
+                )
+
+                option['index'] = option['items'].index(next(
+                    item
+                    for item in option['items']
+                    if item[0] == last_option
+                ))
+
+            except (KeyError, StopIteration):
+                if 'default' in option:
+                    default_option = option['default']
+                    self._logger.debug(
+                        "Setting %s service's %s (%s) index to default: %s",
+                        service['name'],
+                        option['key'],
+                        option['label'],
+                        default_option,
+                    )
+
+                    option['index'] = option['items'].index(next(
+                        item
+                        for item in option['items']
+                        if item[0] == default_option
+                    ))
+
+        return options
+
+    def play(self, svc_id, text, options, callback=None):
+        """
+        Playback the text with the given options on the service
+        identified by svc_id. All input is normalized before processing
+        it, resulting in a consistent hashed filename. Options are
+        validated against what the service reports being available.
+
+        Cache hits are played back via Anki's API and a callback made to
+        the callback, if specified, immediately. Otherwise, the service
+        run() method is called before playback and the callback occur.
+        """
+
+        self._logger.debug(
+            "Received play request to %s with %s\n%s",
+            svc_id,
+            options,
+            "\n".join(["<<< " + line for line in text.split("\n")])
+        )
+
+        svc_id, service, svc_options = self._fetch_options(svc_id)
+        # TODO run a whitespace/tag sanitization routine on text
+        options = {
+            self._normalize(key): value
+            for key, value in options.items()
+        }
+
+        incorrect_svc_options = []
+        missing_svc_options = []
+
+        for svc_option in svc_options:
+            key = svc_option['key']
+            if key in options:
+                if False and 'normalize' in svc_option:
+                    pass  # TODO run value through normalize callback w/ try
+
+                if False and 'validate' in svc_option:
+                    pass  # TODO do custom validation, e.g. min/max range OK
+
+                else:
+                    try:
+                        next(
+                            True
+                            for item in svc_option['items']
+                            if item[0] == options[key]
+                        )
+
+                    except StopIteration:
+                        incorrect_svc_options.append(svc_option)
+
+            elif 'default' in svc_option:
+                options[key] = svc_option['default']
+
+            else:
+                missing_svc_options.append(svc_option)
+
+        if incorrect_svc_options or missing_svc_options:
+            problems = []
+
+            if incorrect_svc_options:
+                problems.append(
+                    "incorrect parameters be fixed (%s)" % ", ".join([
+                        "'%s' for the %s cannot be set to '%s'" % (
+                            svc_option['key'],
+                            svc_option['label'],
+                            options[svc_option['key']],
+                        )
+                        for svc_option in incorrect_svc_options
+                    ])
+                )
+
+            if missing_svc_options:
+                problems.append(
+                    "required parameters be supplied (%s)" % ", ".join([
+                        "'%s' for the %s" % (
+                            svc_option['key'],
+                            svc_option['label'],
+                        )
+                        for svc_option in missing_svc_options
+                    ])
+                )
+
+            raise ValueError(
+                "Playback with the '%s' (%s) service requires that %s" %
+                (svc_id, service['name'], " and ".join(problems))
+            )
+
+        path = self._path_cache(svc_id, text, options)
+
+        from os.path import exists
+        cache_hit = exists(path)
+
+        self._logger.debug(
+            'Interpreted as request to %s w/ %s and "%s" using %s (%s)',
+            svc_id,
+            options,
+            text,
+            path,
+            "cache hit" if cache_hit else "need to record asset"
+        )
+
+        if cache_hit:
+            from anki.sound import play
+            play(path)
+
+            if callback:
+                callback()
+
+            return
+
+        # FIXME the following needs to be re-written to support threads
+
+        try:
+            service['instance'].run(text, options, path)
+
+            from anki.sound import play
+            play(path)
+
+        except Exception as exception:  # capture all, pylint:disable=W0703
+            if callback:
+                callback(exception)
+            else:
+                raise
+
+            return
+
+        if callback:
+            callback()
+
+    def _fetch_options(self, svc_id):
+        """
+        Identifies the service by its ID, checks to see if the options
+        list need construction, and then return back the normalized ID,
+        service lookup dict, and options list.
+        """
+
         svc_id, service = self._fetch_service(svc_id)
 
         if 'options' not in service:
@@ -188,29 +364,7 @@ class Router(object):
                 for option in service['instance'].options()
             ]
 
-        options = service['options']
-
-        last_options = self._conf['last_options'].get(svc_id, {})
-
-        for option in options:
-            try:
-                last_option = last_options[option['key']]
-                option['index'] = option['items'].index(next(
-                    item
-                    for item in option['items']
-                    if item[0] == last_option
-                ))
-
-            except (KeyError, StopIteration):
-                if 'default' in option:
-                    default_option = option['default']
-                    option['index'] = option['items'].index(next(
-                        item
-                        for item in option['items']
-                        if item[0] == default_option
-                    ))
-
-        return options
+        return svc_id, service, service['options']
 
     def _fetch_service(self, svc_id):
         """
@@ -276,3 +430,38 @@ class Router(object):
                 service['name'],
                 '\n'.join(["!!! " + line for line in trace_lines]),
             )
+
+    def _path_cache(self, svc_id, text, options):
+        """
+        Returns a consistent cache path given the svc_id, text, and
+        options. This can be used to repeat the same request yet reuse
+        the same path.
+        """
+
+        hash_input = '/'.join([
+            text,
+            svc_id,
+            ';'.join(
+                '='.join([key, str(value)])
+                for key, value
+                in sorted(options.items())
+            )
+        ])
+
+        from hashlib import sha1
+        from os.path import join
+
+        return join(
+            self._paths['cache'],
+            '.'.join([
+                '-'.join([
+                    svc_id,
+                    sha1(
+                        hash_input.encode('utf-8')
+                        if isinstance(hash_input, unicode)
+                        else hash_input
+                    ).hexdigest(),
+                ]),
+                'mp3',
+            ]),
+        )

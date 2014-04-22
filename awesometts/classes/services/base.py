@@ -144,6 +144,11 @@ class Service(object):
                         ('en-us', "American English"),
                         ('en-es', "American Spanish"),
                     ],
+                    normalize=lambda value: ''.join(
+                        char
+                        for char in value.strip().lower()
+                        if char.isalpha() or char == '-'
+                    ),
                 ),
 
                 dict(
@@ -154,6 +159,8 @@ class Service(object):
                         (175, '175 wpm'),
                         (200, '200 wpm'),
                     ],
+                    normalize=int,
+                    validate=lambda value: -150 <= value <= 200,
                     default=175,
                 ),
             ]
@@ -162,6 +169,13 @@ class Service(object):
         include 'default', if there is one. An option without a given
         'default' will be considered to be required (e.g. when parsing
         on-the-fly TTS tags for the service).
+
+        If specified, 'normalize' will be used to clean up user input
+        before processing it.
+
+        Finally, 'validate' may be specified to check user input by hand
+        instead of just checking that it exists in the items list. This
+        is handy for non-discrete items that support a range of values.
         """
 
         return {}

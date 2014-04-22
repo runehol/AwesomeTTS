@@ -23,16 +23,12 @@ Helpful regular expression patterns
 """
 
 __all__ = [
-    'NOT_ALPHANUMERIC',
     'SOUND_BRACKET_TAG',
     'WHITESPACE',
 ]
 
 import re
 
-
-# Filter pattern to remove non-alphanumeric characters
-NOT_ALPHANUMERIC = re.compile(r'[^a-zA-Z0-9]')
 
 # Matches [sound:xxx]-style Tags
 SOUND_BRACKET_TAG = re.compile(r'\[sound:[^\]]+\]', re.IGNORECASE)

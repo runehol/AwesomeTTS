@@ -106,12 +106,19 @@ class ESpeak(Service):
                 key='voice',
                 label="Voice",
                 items=self._voices,
+                normalize=lambda value: ''.join(
+                    char.lower()
+                    for char in value
+                    if char.isalpha() or char == '-'
+                ),
             ),
 
             dict(
                 key='speed',
                 label="Speed",
                 items=[(i, "%d wpm" % i) for i in range(100, 451, 25)],
+                normalize=int,
+                validate=lambda value: 80 <= value <= 450,
                 default=175,
             ),
 
@@ -120,6 +127,8 @@ class ESpeak(Service):
                 label="Additional Word Gap",
                 items=[(i, "%d ms" % (i * 10)) for i in range(0, 76, 25)] +
                     [(i, "%d sec" % (i / 100)) for i in range(100, 501, 100)],
+                normalize=int,
+                validate=lambda value: 0 <= value <= 500,
                 default=0,
             ),
 
@@ -127,6 +136,8 @@ class ESpeak(Service):
                 key='pitch',
                 label="Pitch",
                 items=[(i, "%d%%" % i) for i in range(5, 96, 5)],
+                normalize=int,
+                validate=lambda value: 0 <= value <= 99,
                 default=50,
             ),
 
@@ -134,6 +145,8 @@ class ESpeak(Service):
                 key='amp',
                 label="Amplitude",
                 items=[(i, "%d" % i) for i in range(0, 201, 25)],
+                normalize=int,
+                validate=lambda value: 0 <= value <= 200,
                 default=100,
             ),
         ]

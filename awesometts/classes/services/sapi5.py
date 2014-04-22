@@ -108,6 +108,7 @@ class SAPI5(Service):
                 key='voice',
                 label="Voice",
                 items=self._voices,
+                normalize=str.strip,
             ),
         ]
 

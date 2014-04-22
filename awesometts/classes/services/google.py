@@ -102,6 +102,11 @@ class Google(Service):
                     ('vi', "Vietnamese (vi)"),
                     ('cy', "Welsh (cy)"),
                 ],
+                normalize=lambda value: ''.join(
+                    char.lower()
+                    for char in value.split('-').pop(0)
+                    if char.isalpha()
+                ),
             ),
         ]
 

@@ -234,22 +234,27 @@ class Router(object):
         for svc_option in svc_options:
             key = svc_option['key']
             if key in options:
-                if False and 'normalize' in svc_option:
-                    pass  # TODO run value through normalize callback w/ try
+                try:
+                    normalized_value = (
+                        options[key] if 'normalize' not in svc_option
+                        else svc_option['normalize'](options[key])
+                    )
 
-                if False and 'validate' in svc_option:
-                    pass  # TODO do custom validation, e.g. min/max range OK
+                    if 'validate' in svc_option:
+                        if not svc_option['validate'](normalized_value):
+                            raise ValueError
 
-                else:
-                    try:
+                    else:
                         next(
                             True
                             for item in svc_option['items']
-                            if item[0] == options[key]
+                            if item[0] == normalized_value
                         )
 
-                    except StopIteration:
-                        incorrect_svc_options.append(svc_option)
+                    options[key] = normalized_value
+
+                except (StopIteration, ValueError):
+                    incorrect_svc_options.append(svc_option)
 
             elif 'default' in svc_option:
                 options[key] = svc_option['default']

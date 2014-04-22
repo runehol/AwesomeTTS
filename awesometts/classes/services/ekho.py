@@ -76,17 +76,45 @@ class Ekho(Service):
         Provides access to voice, speed, pitch, rate, and volume.
         """
 
+        def normalize_voice(value):
+            """
+            Do some basic conversions to attempt to guess the language
+            the user wanted when dealing with values that are not
+            strictly correct for Ekho to process.
+            """
+
+            value = ''.join(char.lower() for char in value if char.isalpha())
+
+            return (
+                'Mandarin' if value in [
+                    'cmn', 'cosc', 'goyu', 'huyu', 'mand', 'zh', 'zhcn',
+                ]
+                else 'Cantonese' if value in [
+                    'cant', 'guzh', 'yue', 'yyef', 'zhhk', 'zhyue',
+                ]
+                else 'Hakka' if value in ['hak', 'hakk', 'kejia']
+                else 'Tibetan' if value in ['cent', 'west']
+                # else 'Ngangien' if value in []
+                else 'Hangul' if value in ['ko', 'kor', 'kore', 'korean']
+                else value[0].upper() + value[1:].lower() if len(value) > 1
+                else value
+            )
+
         return [
             dict(
                 key='voice',
                 label="Voice",
                 items=self._voices,
+                normalize=normalize_voice,
+                default='Mandarin',
             ),
 
             dict(
                 key='speed',
                 label="Speed Delta",
                 items=[(i, "%d%%" % i) for i in range(-50, 301, 25)],
+                normalize=int,
+                validate=lambda value: -50 <= value <= 300,
                 default=0,
             ),
 
@@ -94,6 +122,8 @@ class Ekho(Service):
                 key='pitch',
                 label="Pitch Delta",
                 items=[(i, "%d%%" % i) for i in range(-100, 101, 25)],
+                normalize=int,
+                validate=lambda value: -100 <= value <= 100,
                 default=0,
             ),
 
@@ -101,6 +131,8 @@ class Ekho(Service):
                 key='rate',
                 label="Rate Delta",
                 items=[(i, "%d%%" % i) for i in range(-50, 101, 25)],
+                normalize=int,
+                validate=lambda value: -50 <= value <= 100,
                 default=0,
             ),
 
@@ -108,6 +140,8 @@ class Ekho(Service):
                 key='volume',
                 label="Volume Delta",
                 items=[(i, "%d%%" % i) for i in range(-100, 101, 25)],
+                normalize=int,
+                validate=lambda value: -100 <= value <= 100,
                 default=0,
             ),
         ]

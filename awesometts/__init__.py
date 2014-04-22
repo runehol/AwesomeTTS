@@ -41,7 +41,11 @@ from . import classes, paths, regex
 
 _TO_BOOL = lambda value: bool(int(value))  # workaround for bool('0') == True
 
-_TO_NORMALIZED = lambda value: regex.NOT_ALPHANUMERIC.sub('', value).lower()
+_TO_NORMALIZED = lambda value: ''.join(
+    char.lower()
+    for char in value
+    if char.isalpha() or char.isdigit()
+)
 
 
 logger = classes.Logger(

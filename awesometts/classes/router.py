@@ -40,7 +40,7 @@ class Router(object):
     def __init__(self, services, paths, conf, logger):
         """
         The services should be a list of tuples, where each tuple
-        contains a unique service code and a class implementing the
+        contains a unique service ID and a class implementing the
         Service interface.
 
         The paths object should be a dict with the following keys:
@@ -65,7 +65,7 @@ class Router(object):
         self._logger = logger
         self._lookup = {}
 
-        for code, impl in services:
+        for svcid, impl in services:
             name = None
 
             try:
@@ -79,7 +79,10 @@ class Router(object):
                     logger=logger,
                 )
 
-                self._lookup[code] = name, instance
+                self._lookup[svcid] = {
+                    'name': name,
+                    'instance': instance,
+                }
                 self._logger.info("%s service initialized", name)
 
             except:  # allow recovery from any exception, pylint:disable=W0702
@@ -87,9 +90,93 @@ class Router(object):
 
                 self._logger.warn(
                     "Cannot initialize %s service; omitting\n%s",
-                    name or code,
+                    name or svcid,
                     '\n'.join([
                         "!!! " + line
                         for line in format_exc().split('\n')
                     ]),
                 )
+
+    def get_services(self):
+        """
+        Return the list of services and the index of the last used
+        service (last_service from the conf object) in that list.
+        """
+
+        services = {
+            'items': sorted([
+                (svcid, service['name'])
+                for svcid, service in self._lookup.items()
+            ], key=lambda (svcid, text): text.lower()),
+
+            'index': 0
+        }
+
+        try:
+            services['index'] = services['items'].index(next(
+                item
+                for item in services['items']
+                if item[0] == self._conf['last_service']
+            ))
+
+        except StopIteration:
+            pass
+
+        return services
+
+    def get_desc(self, svcid):
+        """
+        Return the description associated with the service.
+        """
+
+        return self._lookup[svcid]['instance'].desc()
+
+    def get_options(self, svcid):
+        """
+        Return a list of options that should be displayed for the
+        service, with defaults highlighted and the indices of the last
+        used option items (from last_options in the conf object) or the
+        default option items.
+        """
+
+        options = [
+            dict(
+                option.items() +
+                [
+                    (
+                        'items',
+
+                        option['items'] if 'default' not in option
+                        else [
+                            item if item[0] != option['default']
+                            else (item[0], item[1] + " [default]")
+
+                            for item in option['items']
+                        ]
+                    ),
+
+                    ('index', 0),
+                ]
+            )
+            for option in self._lookup[svcid]['instance'].options()
+        ]
+
+        last_options = self._conf['last_options'].get(svcid, {})
+
+        for option in options:
+            try:
+                option['index'] = option['items'].index(next(
+                    item
+                    for item in option['items']
+                    if item[0] == last_options[option['key']]
+                ))
+
+            except (KeyError, StopIteration):
+                if 'default' in option:
+                    option['index'] = option['items'].index(next(
+                        item
+                        for item in option['items']
+                        if item[0] == option['default']
+                    ))
+
+        return options

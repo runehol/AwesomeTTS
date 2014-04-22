@@ -29,6 +29,7 @@ Add-on package initialization
 __all__ = [
     'conf',
     'logger',
+    'router',
 ]
 
 import json
@@ -70,8 +71,8 @@ conf = classes.Conf(
         ('lame_flags', 'text', '--quiet -q 2', str, str),
         ('last_mass_dest', 'text', 'Back', str, str),
         ('last_mass_source', 'text', 'Front', str, str),
-        ('last_service', 'text', 'g', str, str),
-        ('last_voice', 'text', {}, json.loads, json.dumps),
+        ('last_service', 'text', 'google', str, str),
+        ('last_options', 'text', {}, json.loads, json.dumps),
         ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
         ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),
     ],

@@ -87,12 +87,15 @@ class ESpeak(Service):
         if not self._voices:
             raise EnvironmentError("No usable output from `espeak --voices`")
 
-        self._version = self.cli_output(self._binary, '--version').pop(0)
+        self._version = None  # set lazily
 
     def desc(self):
         """
         Return version string.
         """
+
+        if not self._version:
+            self._version = self.cli_output(self._binary, '--version').pop(0)
 
         return self._version
 
@@ -105,20 +108,20 @@ class ESpeak(Service):
             dict(
                 key='voice',
                 label="Voice",
-                options=self._voices,
+                items=self._voices,
             ),
 
             dict(
                 key='speed',
                 label="Speed",
-                options=[(i, "%d wpm" % i) for i in range(100, 451, 25)],
+                items=[(i, "%d wpm" % i) for i in range(100, 451, 25)],
                 default=175,
             ),
 
             dict(
                 key='gap',
                 label="Additional Word Gap",
-                options=[(i, "%d ms" % (i * 10)) for i in range(0, 76, 25)] +
+                items=[(i, "%d ms" % (i * 10)) for i in range(0, 76, 25)] +
                     [(i, "%d sec" % (i / 100)) for i in range(100, 501, 100)],
                 default=0,
             ),
@@ -126,14 +129,14 @@ class ESpeak(Service):
             dict(
                 key='pitch',
                 label="Pitch",
-                options=[(i, "%d%%" % i) for i in range(5, 96, 5)],
+                items=[(i, "%d%%" % i) for i in range(5, 96, 5)],
                 default=50,
             ),
 
             dict(
                 key='amp',
                 label="Amplitude",
-                options=[(i, "%d" % i) for i in range(0, 201, 25)],
+                items=[(i, "%d" % i) for i in range(0, 201, 25)],
                 default=100,
             ),
         ]

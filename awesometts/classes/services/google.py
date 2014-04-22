@@ -55,7 +55,7 @@ class Google(Service):
             dict(
                 key='voice',
                 label="Voice",
-                options=[
+                items=[
                     ('af', "Afrikaans (af)"),
                     ('sq', "Albanian (sq)"),
                     ('ar', "Arabic (ar)"),

@@ -100,7 +100,7 @@ class Service(object):
                 dict(
                     key='voice',
                     label="Voice",
-                    options=[
+                    items=[
                         ('en-us', "American English"),
                         ('en-es', "American Spanish"),
                     ],
@@ -109,7 +109,7 @@ class Service(object):
                 dict(
                     key='speed',
                     label="Speed",
-                    options=[
+                    items=[
                         (150, '150 wpm'),
                         (175, '175 wpm'),
                         (200, '200 wpm'),

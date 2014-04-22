@@ -89,7 +89,7 @@ class Say(Service):
             dict(
                 key='voice',
                 label="Voice",
-                options=self._voices,
+                items=self._voices,
             ),
         ]
 

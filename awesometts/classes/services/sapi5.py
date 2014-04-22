@@ -103,7 +103,7 @@ class SAPI5(Service):
             dict(
                 key='voice',
                 label="Voice",
-                options=self._voices,
+                items=self._voices,
             ),
         ]
 

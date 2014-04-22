@@ -63,12 +63,15 @@ class Ekho(Service):
         if not self._voices:
             raise EnvironmentError("No usable output from `ekho --help`")
 
-        self._version = self.cli_output('ekho', '--version').pop(0)
+        self._version = None  # set lazily
 
     def desc(self):
         """
         Return version and available languages.
         """
+
+        if not self._version:
+            self._version = self.cli_output('ekho', '--version').pop(0)
 
         return "ekho %s, Chinese and Korean TTS Engine" % self._version
 
@@ -81,34 +84,34 @@ class Ekho(Service):
             dict(
                 key='voice',
                 label="Voice",
-                options=self._voices,
+                items=self._voices,
             ),
 
             dict(
                 key='speed',
                 label="Speed Delta",
-                options=[(i, "%d%%" % i) for i in range(-50, 301, 25)],
+                items=[(i, "%d%%" % i) for i in range(-50, 301, 25)],
                 default=0,
             ),
 
             dict(
                 key='pitch',
                 label="Pitch Delta",
-                options=[(i, "%d%%" % i) for i in range(-100, 101, 25)],
+                items=[(i, "%d%%" % i) for i in range(-100, 101, 25)],
                 default=0,
             ),
 
             dict(
                 key='rate',
                 label="Rate Delta",
-                options=[(i, "%d%%" % i) for i in range(-50, 101, 25)],
+                items=[(i, "%d%%" % i) for i in range(-50, 101, 25)],
                 default=0,
             ),
 
             dict(
                 key='volume',
                 label="Volume Delta",
-                options=[(i, "%d%%" % i) for i in range(-100, 101, 25)],
+                items=[(i, "%d%%" % i) for i in range(-100, 101, 25)],
                 default=0,
             ),
         ]

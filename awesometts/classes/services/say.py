@@ -38,14 +38,6 @@ class Say(Service):
         '_voices',  # list of installed voices as a list of tuples
     ]
 
-    @classmethod
-    def desc(cls):
-        return "Mac OS X Say Command"
-
-    @classmethod
-    def traits(cls):
-        return [Trait.TRANSCODING]
-
     def __init__(self, *args, **kwargs):
         """
         Attempt to read the list of voices from `say -v ?`.
@@ -54,7 +46,7 @@ class Say(Service):
         is attempted and an exception is immediately raised.
         """
 
-        if not self.MACOSX:
+        if not self.IS_MACOSX:
             raise EnvironmentError("Say is only available on Mac OS X")
 
         super(Say, self).__init__(*args, **kwargs)
@@ -81,6 +73,13 @@ class Say(Service):
         if not self._voices:
             raise EnvironmentError("No usable output from call to `say -v ?`")
 
+    def desc(self):
+        """
+        Return a short description, with no version information.
+        """
+
+        return "Mac OS X Say Command"
+
     def options(self):
         """
         Provides access to voice only.
@@ -106,3 +105,10 @@ class Say(Service):
         self.cli_transcode(output_aiff, path)
 
         self.path_unlink(output_aiff)
+
+    def traits(self):
+        """
+        MP3s are transcoded from raw AIFF files.
+        """
+
+        return [Trait.TRANSCODING]

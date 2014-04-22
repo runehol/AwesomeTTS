@@ -34,17 +34,12 @@ class ESpeak(Service):
     """
 
     __slots__ = [
-        '_binary',  # path to the eSpeak binary
-        '_voices',  # list of installed voices as a list of tuples
+        '_binary',   # path to the eSpeak binary
+        '_version',  # our version string
+        '_voices',   # list of installed voices as a list of tuples
     ]
 
-    @classmethod
-    def desc(cls):
-        return "eSpeak Speech Synthesizer"
-
-    @classmethod
-    def traits(cls):
-        return [Trait.TRANSCODING]
+    NAME = "eSpeak"
 
     def __init__(self, *args, **kwargs):
         """
@@ -62,7 +57,7 @@ class ESpeak(Service):
             output = self.cli_output(self._binary, '--voices')
 
         except OSError:
-            if self.WINDOWS:
+            if self.IS_WINDOWS:
                 self._binary = r'%s\command_line\%s.exe' % (
                     self.reg_hklm(
                         r'Software\Microsoft\Speech\Voices\Tokens\eSpeak',
@@ -91,6 +86,15 @@ class ESpeak(Service):
 
         if not self._voices:
             raise EnvironmentError("No usable output from `espeak --voices`")
+
+        self._version = self.cli_output(self._binary, '--version').pop(0)
+
+    def desc(self):
+        """
+        Return version string.
+        """
+
+        return self._version
 
     def options(self):
         """
@@ -161,3 +165,10 @@ class ESpeak(Service):
         self.cli_transcode(output_wav, path)
 
         self.path_unlink(input_file, output_wav)
+
+    def traits(self):
+        """
+        MP3s are transcoded from raw wave files.
+        """
+
+        return [Trait.TRANSCODING]

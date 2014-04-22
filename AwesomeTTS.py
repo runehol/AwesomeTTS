@@ -49,6 +49,7 @@ _PKG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'awesometts')
 
 for _path in [
     'config.py', 'config.pyc', 'config.pyo',
+    'util.py', 'util.pyc', 'util.pyo',
 ]:
     try:
         os.unlink(os.path.join(_PKG, _path))

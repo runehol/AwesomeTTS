@@ -44,36 +44,20 @@ class Service(object):
         '_temp_dir',    # for temporary scratch space
     ]
 
+    # where we can find the lame transcoder
+    CLI_LAME = 'lame'
+
     # startup information for Windows to keep command window hidden
     CLI_SI = None
 
-    # where we can find the lame transcoder
-    LAME_BINARY = 'lame'
-
     # will be set to True if user is running Mac OS X
-    MACOSX = False
+    IS_MACOSX = False
 
     # will be set to True if user is running Windows
-    WINDOWS = False
+    IS_WINDOWS = False
 
-    @classmethod
-    @abc.abstractmethod
-    def desc(cls):
-        """
-        Return a human-readable description of this service.
-        """
-
-        return ""
-
-    @classmethod
-    @abc.abstractmethod
-    def traits(cls):
-        """
-        Return a list of "traits" from the Trait enum that this service
-        implementation uses.
-        """
-
-        return []
+    # to be overridden by the concrete classes
+    NAME = "Unknown Service"
 
     def __init__(self, temp_dir, lame_flags, logger):
         """
@@ -95,6 +79,14 @@ class Service(object):
         self._lame_flags = lame_flags
         self._logger = logger
         self._temp_dir = temp_dir
+
+    @abc.abstractmethod
+    def desc(self):
+        """
+        Return a human-readable description of this service.
+        """
+
+        return ""
 
     @abc.abstractmethod
     def options(self):
@@ -157,6 +149,15 @@ class Service(object):
         raised so the caller knows why.
         """
 
+    @abc.abstractmethod
+    def traits(self):
+        """
+        Return a list of "traits" from the Trait enum that this service
+        implementation uses.
+        """
+
+        return []
+
     def cli_call(self, *args):
         """
         Execute a command line call for its side effects.
@@ -205,7 +206,7 @@ class Service(object):
         """
 
         self.cli_call(
-            self.LAME_BINARY,
+            self.CLI_LAME,
             self._lame_flags.split(),
             input_path,
             output_path,
@@ -231,6 +232,12 @@ class Service(object):
         return callee(args, startupinfo=self.CLI_SI)
 
     def net_download(self, path, addr, query=None, require=None):
+        """
+        Download a file to the given from the specified address and
+        optional query string. Additionally, a require dict may be
+        passed to enforce a status code (key 'status') and/or
+        Content-Type (key 'mime').
+        """
 
         # TODO Test this code against a system proxy. Previously, this
         # needed to be prepended by hand for mplayer's sake, but we are
@@ -350,7 +357,7 @@ class Service(object):
         Returns False otherwise.
         """
 
-        if self.WINDOWS:
+        if self.IS_WINDOWS:
             try:
                 text.encode('ascii')
 
@@ -398,9 +405,9 @@ class Service(object):
 
 
 if subprocess.mswindows:
+    Service.CLI_LAME = 'lame.exe'
     Service.CLI_SI = subprocess.STARTUPINFO()
-    Service.LAME_BINARY = 'lame.exe'
-    Service.WINDOWS = True
+    Service.IS_WINDOWS = True
 
     try:
         Service.CLI_SI.dwFlags |= subprocess.STARTF_USESHOWWINDOW
@@ -416,7 +423,7 @@ if subprocess.mswindows:
             pass
 
 elif anki.utils.isMac:
-    Service.MACOSX = True
+    Service.IS_MACOSX = True
 
 
 class Trait(object):  # enum class, pylint:disable=R0903

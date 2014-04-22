@@ -66,14 +66,12 @@ class Router(object):
         self._lookup = {}
 
         for code, impl in services:
-            desc = None
+            name = None
 
             try:
-                desc = impl.desc()
+                name = impl.NAME
 
-                traits = impl.traits()
-
-                self._logger.info("Initializing %s service...", desc or code)
+                self._logger.info("Initializing %s service...", name)
 
                 instance = impl(
                     temp_dir=paths['temp'],
@@ -81,17 +79,15 @@ class Router(object):
                     logger=logger,
                 )
 
-                options = instance.options()
-
-                self._lookup[code] = instance, desc, traits, options
-                self._logger.info("%s service initialized", desc or code)
+                self._lookup[code] = name, instance
+                self._logger.info("%s service initialized", name)
 
             except:  # allow recovery from any exception, pylint:disable=W0702
                 from traceback import format_exc
 
                 self._logger.warn(
                     "Cannot initialize %s service; omitting\n%s",
-                    desc or code,
+                    name or code,
                     '\n'.join([
                         "!!! " + line
                         for line in format_exc().split('\n')

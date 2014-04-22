@@ -48,14 +48,6 @@ class SAPI5(Service):
         'sapi5.vbs',
     )
 
-    @classmethod
-    def desc(cls):
-        return "Microsoft Speech API (SAPI) 5"
-
-    @classmethod
-    def traits(cls):
-        return [Trait.TRANSCODING]
-
     def __init__(self, *args, **kwargs):
         """
         Attempt to locate the cscript binary and read the list of voices
@@ -65,7 +57,7 @@ class SAPI5(Service):
         attempted and an exception is immediately raised.
         """
 
-        if not self.WINDOWS:
+        if not self.IS_WINDOWS:
             raise EnvironmentError("SAPI 5 is only available on Windows")
 
         super(SAPI5, self).__init__(*args, **kwargs)
@@ -94,6 +86,13 @@ class SAPI5(Service):
 
         if not self._voices:
             raise EnvironmentError("No usable output from `sapi5.vbs -vl`")
+
+    def desc(self):
+        """
+        Return a short description, with no version information.
+        """
+
+        return "Microsoft Speech API (SAPI) 5 via Visual Basic"
 
     def options(self):
         """
@@ -128,3 +127,10 @@ class SAPI5(Service):
         self.cli_transcode(output_wav, path)
 
         self.path_unlink(output_wav)
+
+    def traits(self):
+        """
+        MP3s are transcoded from raw wave files.
+        """
+
+        return [Trait.TRANSCODING]

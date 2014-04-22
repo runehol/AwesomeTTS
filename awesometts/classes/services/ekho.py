@@ -34,16 +34,11 @@ class Ekho(Service):
     """
 
     __slots__ = [
-        '_voices',  # list of installed voices as a list of tuples
+        '_version',  # our version string
+        '_voices',   # list of installed voices as a list of tuples
     ]
 
-    @classmethod
-    def desc(cls):
-        return u"Ekho (余音) Chinese/Korean TTS Engine"
-
-    @classmethod
-    def traits(cls):
-        return [Trait.TRANSCODING]
+    NAME = "Ekho"
 
     def __init__(self, *args, **kwargs):
         """
@@ -67,6 +62,15 @@ class Ekho(Service):
 
         if not self._voices:
             raise EnvironmentError("No usable output from `ekho --help`")
+
+        self._version = self.cli_output('ekho', '--version').pop(0)
+
+    def desc(self):
+        """
+        Return version and available languages.
+        """
+
+        return "ekho %s, Chinese and Korean TTS Engine" % self._version
 
     def options(self):
         """
@@ -139,3 +143,10 @@ class Ekho(Service):
         self.cli_transcode(output_wav, path)
 
         self.path_unlink(input_file, output_wav)
+
+    def traits(self):
+        """
+        MP3s are transcoded from raw wave files.
+        """
+
+        return [Trait.TRANSCODING]

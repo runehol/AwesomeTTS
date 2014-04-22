@@ -37,13 +37,14 @@ class Google(Service):
     __slots__ = [
     ]
 
-    @classmethod
-    def desc(cls):
-        return "Google Translate TTS API"
+    NAME = "Google Translate"
 
-    @classmethod
-    def traits(cls):
-        return [Trait.INTERNET]
+    def desc(self):
+        """
+        Return a short description, with no version information.
+        """
+
+        return "Google Translate text-to-speech web API"
 
     def options(self):
         """
@@ -119,3 +120,10 @@ class Google(Service):
                 mime='audio/mpeg',
             ),
         )
+
+    def traits(self):
+        """
+        MP3s are downloaded from Internet with no transcoding.
+        """
+
+        return [Trait.INTERNET]

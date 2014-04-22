@@ -47,23 +47,7 @@ from aqt.reviewer import Reviewer
 from awesometts import conf
 import awesometts.forms as forms
 import awesometts.regex as regex
-import awesometts.services as services
-from .paths import CACHE_DIR, relative
-
-
-TTS_service = {  # TODO consider moving into services package's __init__
-    service_key: service_def
-
-    for service_module in [
-        getattr(services, package_name)
-        for package_name
-        in dir(services)
-        if not package_name.startswith('_') and not package_name.endswith('_')
-    ]
-    if hasattr(service_module, 'TTS_service')
-
-    for (service_key, service_def) in service_module.TTS_service.items()
-}
+from .paths import CACHE_DIR
 
 
 ######## utils
@@ -525,7 +509,7 @@ def editConf():
             countError = 0
             for cacheFilepath in cacheListing:
                 try:
-                    os.remove(relative(
+                    os.remove(os.path.join(
                         CACHE_DIR,
                         cacheFilepath,
                     ))

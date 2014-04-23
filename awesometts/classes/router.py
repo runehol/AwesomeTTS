@@ -42,12 +42,11 @@ class Router(object):
     """
 
     __slots__ = [
-        '_aliases',    # dict mapping alternate service IDs
         '_conf',       # dict with lame_flags, last_service, last_options
         '_logger',     # logger-like interface with debug(), info(), etc.
-        '_lookup',     # dict mapping service IDs to lookup information
         '_normalize',  # callable for sanitizing service IDs
         '_paths',      # dict with cache, temp
+        '_services',   # dict with keys for 'aliases', 'lookup', and 'list'
         '_textize',    # callable for sanitizing input text
     ]
 
@@ -85,19 +84,20 @@ class Router(object):
         self._normalize = services['normalize']
         self._paths = paths
         self._textize = services['textize']
+        self._services = {
+            'aliases': {
+                self._normalize(from_svc_id): self._normalize(to_svc_id)
+                for from_svc_id, to_svc_id in services.get('aliases', [])
+            },
 
-        self._aliases = {
-            self._normalize(from_svc_id): self._normalize(to_svc_id)
-            for from_svc_id, to_svc_id in services.get('aliases', [])
-        }
-
-        self._lookup = {
-            self._normalize(svc_id): {
-                'class': svc_class,
-                'name': svc_class.NAME or svc_id,
-                'traits': svc_class.TRAITS or [],
+            'lookup': {
+                self._normalize(svc_id): {
+                    'class': svc_class,
+                    'name': svc_class.NAME or svc_id,
+                    'traits': svc_class.TRAITS or [],
+                }
+                for svc_id, svc_class in services['mappings']
             }
-            for svc_id, svc_class in services['mappings']
         }
 
     def get_services(self):
@@ -106,33 +106,44 @@ class Router(object):
         used service (last_service from the conf object) in that list.
         """
 
-        for service in self._lookup.values():
-            self._load_service(service)
+        if 'list' not in self._services:
+            self._logger.debug("Building the list of services...")
 
-        services = {
-            'items': sorted([
-                (svc_id, service['name'])
-                for svc_id, service in self._lookup.items()
-                if service['instance']
-            ], key=lambda (svc_id, text): text.lower()),
+            for service in self._services['lookup'].values():
+                self._load_service(service)
 
-            'index': 0,
-        }
+            self._services['list'] = {
+                'items': sorted([
+                    (svc_id, service['name'])
+                    for svc_id, service in self._services['lookup'].items()
+                    if service['instance']
+                ], key=lambda (svc_id, text): text.lower()),
+            }
 
-        try:
-            last_service = self._normalize(self._conf['last_service'])
-            if last_service in self._aliases:
-                last_service = self._aliases[last_service]
-            self._logger.debug("Setting last used service: %s", last_service)
+            self._services['list'].update({
+                'index': 0,
+                'value': self._services['list']['items'][0][0],
+            })
 
-            services['index'] = services['items'].index(next(
-                item
-                for item in services['items']
-                if item[0] == last_service
-            ))
+        services = self._services['list']
 
-        except StopIteration:
-            pass
+        last_service = self._normalize(self._conf['last_service'])
+        if last_service in self._services['aliases']:
+            last_service = self._services['aliases'][last_service]
+
+        if last_service != services['value']:
+            try:
+                self._logger.debug("Setting last service: %s", last_service)
+
+                services['index'] = services['items'].index(next(
+                    item
+                    for item in services['items']
+                    if item[0] == last_service
+                ))
+                services['value'] = last_service
+
+            except StopIteration:
+                pass
 
         return services
 
@@ -166,36 +177,42 @@ class Router(object):
         for option in options:
             try:
                 last_option = last_options[option['key']]
-                self._logger.debug(
-                    "Setting %s service's %s (%s) index to the last used: %s",
-                    service['name'],
-                    option['key'],
-                    option['label'],
-                    last_option,
-                )
 
-                option['index'] = option['items'].index(next(
-                    item
-                    for item in option['items']
-                    if item[0] == last_option
-                ))
-
-            except (KeyError, StopIteration):
-                if 'default' in option:
-                    default_option = option['default']
+                if last_option != option['value']:
                     self._logger.debug(
-                        "Setting %s service's %s (%s) index to default: %s",
+                        "Setting %s service's %s (%s) to the last used: %s",
                         service['name'],
                         option['key'],
                         option['label'],
-                        default_option,
+                        last_option,
                     )
 
                     option['index'] = option['items'].index(next(
                         item
                         for item in option['items']
-                        if item[0] == default_option
+                        if item[0] == last_option
                     ))
+                    option['value'] = last_option
+
+            except (KeyError, StopIteration):
+                if 'default' in option:
+                    default_option = option['default']
+
+                    if default_option != option['value']:
+                        self._logger.debug(
+                            "Setting %s service's %s (%s) to the default: %s",
+                            service['name'],
+                            option['key'],
+                            option['label'],
+                            default_option,
+                        )
+
+                        option['index'] = option['items'].index(next(
+                            item
+                            for item in option['items']
+                            if item[0] == default_option
+                        ))
+                        option['value'] = default_option
 
         return options
 
@@ -365,6 +382,7 @@ class Router(object):
                             ]
                         ),
                         ('index', '0'),
+                        ('value', option['items'][0][0]),
                         ('key', self._normalize(option['key'])),
                     ]
                 )
@@ -386,11 +404,11 @@ class Router(object):
         """
 
         svc_id = self._normalize(svc_id)
-        if svc_id in self._aliases:
-            svc_id = self._aliases[svc_id]
+        if svc_id in self._services['aliases']:
+            svc_id = self._services['aliases'][svc_id]
 
         try:
-            service = self._lookup[svc_id]
+            service = self._services['lookup'][svc_id]
         except KeyError:
             raise KeyError("There is no '%s' service" % svc_id)
 

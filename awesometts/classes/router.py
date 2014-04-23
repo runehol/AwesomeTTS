@@ -49,6 +49,7 @@ class Router(object):
         '_memoized',   # dict with various memoized items
         '_normalize',  # callable for sanitizing service IDs
         '_paths',      # dict with cache, temp
+        '_textize',    # callable for sanitizing input text
     ]
 
     def __init__(self, services, paths, conf, logger):
@@ -57,6 +58,7 @@ class Router(object):
 
             - mappings (list of tuples): each with service ID, class
             - normalize (callable): for sanitizing service IDs
+            - textize (callable): for sanitizing human input text
 
         The services may contain the following key:
 
@@ -84,6 +86,7 @@ class Router(object):
         self._memoized = {}
         self._normalize = services['normalize']
         self._paths = paths
+        self._textize = services['textize']
 
         self._aliases = {
             self._normalize(from_svc_id): self._normalize(to_svc_id)
@@ -215,14 +218,14 @@ class Router(object):
         """
 
         self._logger.debug(
-            "Received play request to %s with %s\n%s",
+            "Received play request to '%s' with %s\n%s",
             svc_id,
             options,
             "\n".join(["<<< " + line for line in text.split("\n")])
         )
 
         svc_id, service, svc_options = self._fetch_options(svc_id)
-        # TODO run a whitespace/tag sanitization routine on text
+        text = self._textize(text)
         options = {
             self._normalize(key): value
             for key, value in options.items()
@@ -299,7 +302,7 @@ class Router(object):
         cache_hit = exists(path)
 
         self._logger.debug(
-            'Interpreted as request to %s w/ %s and "%s" using %s (%s)',
+            "Interpreted as request to '%s' w/ %s and \"%s\" using %s (%s)",
             svc_id,
             options,
             text,

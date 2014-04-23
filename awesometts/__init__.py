@@ -35,7 +35,10 @@ __all__ = [
 import json
 import logging
 from sys import stdout
+
 from PyQt4.QtCore import Qt
+import anki.utils
+
 from . import classes, paths, regex
 
 
@@ -109,6 +112,16 @@ router = classes.Router(
         ],
 
         normalize=_TO_NORMALIZED,
+
+        textize=lambda text: (
+            regex.WHITESPACE.sub(
+                ' ',
+                regex.SOUND_BRACKET_TAG.sub(
+                    ' ',
+                    anki.utils.stripHTML(text),
+                ),
+            ).strip()
+        ),
     ),
 
     paths=dict(

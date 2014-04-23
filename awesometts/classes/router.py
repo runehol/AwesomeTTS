@@ -46,7 +46,6 @@ class Router(object):
         '_conf',       # dict with lame_flags, last_service, last_options
         '_logger',     # logger-like interface with debug(), info(), etc.
         '_lookup',     # dict mapping service IDs to lookup information
-        '_memoized',   # dict with various memoized items
         '_normalize',  # callable for sanitizing service IDs
         '_paths',      # dict with cache, temp
         '_textize',    # callable for sanitizing input text
@@ -83,7 +82,6 @@ class Router(object):
 
         self._conf = conf
         self._logger = logger
-        self._memoized = {}
         self._normalize = services['normalize']
         self._paths = paths
         self._textize = services['textize']
@@ -111,19 +109,15 @@ class Router(object):
         for service in self._lookup.values():
             self._load_service(service)
 
-        if not 'services_items' in self._memoized:
-            self._logger.debug("Building the services list")
-            self._memoized['services_items'] = {
-                'items': sorted([
-                    (svc_id, service['name'])
-                    for svc_id, service in self._lookup.items()
-                    if service['instance']
-                ], key=lambda (svc_id, text): text.lower()),
+        services = {
+            'items': sorted([
+                (svc_id, service['name'])
+                for svc_id, service in self._lookup.items()
+                if service['instance']
+            ], key=lambda (svc_id, text): text.lower()),
 
-                'index': 0,
-            }
-
-        services = self._memoized['services_items']
+            'index': 0,
+        }
 
         try:
             last_service = self._normalize(self._conf['last_service'])

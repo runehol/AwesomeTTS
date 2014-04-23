@@ -77,6 +77,14 @@ for _path in [
     except OSError:
         pass
 
+try:
+    os.rename(
+        os.path.join(_PKG, 'conf.db'),
+        os.path.join(_PKG, 'config.db'),
+    )
+except OSError:
+    pass
+
 # End temporary migration code
 
 

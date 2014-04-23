@@ -44,7 +44,7 @@ from anki.utils import stripHTML
 from aqt import mw, utils
 from aqt.reviewer import Reviewer
 
-from awesometts import conf, router
+from awesometts import config, router
 import awesometts.forms as forms
 import awesometts.regex as regex
 from .paths import CACHE_DIR
@@ -119,11 +119,11 @@ def service_form(module, parent):
 
     for service_key, service_def, combo_box in lookup:
         combo_box.addItems([voice[1] for voice in service_def['voices']])
-        if service_key in conf.last_voice:
+        if service_key in config.last_voice:
             try:
                 combo_box.setCurrentIndex(service_def['voices'].index(next(
                     voice for voice in service_def['voices']
-                    if voice[0] == conf.last_voice[service_key]
+                    if voice[0] == config.last_voice[service_key]
                 )))
             except StopIteration:
                 pass
@@ -136,7 +136,7 @@ def service_form(module, parent):
         stack_widget.setLayout(vertical_layout)
         form.stackedWidget.addWidget(stack_widget)
 
-        if service_key == conf.last_service:
+        if service_key == config.last_service:
             form.comboBoxService.setCurrentIndex(
                 form.stackedWidget.count() - 1
             )
@@ -197,10 +197,10 @@ def ATTS_Factedit_button(editor):
         if preview:
             service_def['play'](service_text(text), voice)
         else:
-            conf.update(
+            config.update(
                 last_service=service_key,
                 last_voice=dict(
-                    conf.last_voice.items() +
+                    config.last_voice.items() +
                     [(service_key, voice)]
                 )
             )
@@ -321,7 +321,7 @@ def onGenerate(browser):
     form.sourceFieldComboBox.addItems(fields)
     try:
         form.sourceFieldComboBox.setCurrentIndex(
-            fields.index(conf.last_mass_source)
+            fields.index(config.last_mass_source)
         )
     except ValueError:
         pass
@@ -329,7 +329,7 @@ def onGenerate(browser):
     form.destinationFieldComboBox.addItems(fields)
     try:
         form.destinationFieldComboBox.setCurrentIndex(
-            fields.index(conf.last_mass_dest)
+            fields.index(config.last_mass_dest)
         )
     except ValueError:
         pass
@@ -356,12 +356,12 @@ def onGenerate(browser):
     source_field = fields[form.sourceFieldComboBox.currentIndex()]
     dest_field = fields[form.destinationFieldComboBox.currentIndex()]
 
-    conf.update(
+    config.update(
         last_mass_source=source_field,
         last_mass_dest=dest_field,
         last_service=service_key,
         last_voice=dict(
-            conf.last_voice.items() +
+            config.last_voice.items() +
             [(service_key, voice)]
         )
     )
@@ -426,9 +426,9 @@ addHook("browser.setupMenus", setupMenu)
 def newKeyHandler(self, evt):
     pkey = evt.key()
     if self.state == 'answer' or self.state == 'question':
-        if pkey == conf.tts_key_q:
+        if pkey == config.tts_key_q:
             playTTSFromText(self.card.q())  #read the TTS tags
-        if self.state == 'answer' and pkey == conf.tts_key_a:
+        if self.state == 'answer' and pkey == config.tts_key_a:
             playTTSFromText(self.card.a()) #read the TTS tags
     evt.accept()
 
@@ -440,10 +440,10 @@ def ATTSautoread(toread, automatic):
             playTTSFromText(toread)
 
 def ATTS_OnQuestion(self):
-    ATTSautoread(self.card.q(), conf.automatic_questions)
+    ATTSautoread(self.card.q(), config.automatic_questions)
 
 def ATTS_OnAnswer(self):
-    ATTSautoread(self.card.a(), conf.automatic_answers)
+    ATTSautoread(self.card.a(), config.automatic_answers)
 
 
 

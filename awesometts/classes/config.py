@@ -26,12 +26,12 @@ Storage and management of add-on configuration
 # TODO Would it be possible to get these configuration options to sync with
 #      AnkiWeb, e.g. by moving them into the collections database?
 
-__all__ = ['Conf']
+__all__ = ['Config']
 
 import sqlite3
 
 
-class Conf(object):
+class Config(object):
     """
     Exposes a class whose instances have a dict-like interface for
     handling retrieving, caching, and serializing configuration stored
@@ -278,7 +278,7 @@ class Conf(object):
 
     def __getattr__(self, name):
         """
-        Retrieve a configuration value using the conf.xxx syntax,
+        Retrieve a configuration value using the config.xxx syntax,
         raising an AttributeError if the name does not exist.
         """
 
@@ -289,7 +289,7 @@ class Conf(object):
 
     def __getitem__(self, name):
         """
-        Retrieve a configuration value using the conf['xxx'] syntax,
+        Retrieve a configuration value using the config['xxx'] syntax,
         raising a KeyError if the name does not exist.
         """
 
@@ -364,7 +364,7 @@ class Conf(object):
     def __setattr__(self, name, value):
         """
         Handled the same as for update(), but with a single name using
-        the conf.xxx = yyy syntax.
+        the config.xxx = yyy syntax.
 
         Raises KeyError if any key is not a supported name.
         """
@@ -380,7 +380,7 @@ class Conf(object):
     def __setitem__(self, name, value):
         """
         Handled the same as for update(), but with a single name using
-        the conf['xxx'] = yyy syntax.
+        the config['xxx'] = yyy syntax.
 
         Raises KeyError if any key is not a supported name.
         """

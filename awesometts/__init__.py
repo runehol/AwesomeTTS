@@ -27,7 +27,7 @@ Add-on package initialization
 # We expose instances here used across the add-on, pylint: disable=C0103
 
 __all__ = [
-    'conf',
+    'config',
     'logger',
     'router',
 ]
@@ -70,8 +70,8 @@ logger = classes.Logger(
 )
 
 
-conf = classes.Conf(
-    db=(paths.CONF_DB, 'general', _TO_NORMALIZED),
+config = classes.Config(
+    db=(paths.CONFIG_DB, 'general', _TO_NORMALIZED),
 
     definitions=[
         ('automaticAnswers', 'integer', False, _TO_BOOL, int),
@@ -132,7 +132,7 @@ router = classes.Router(
         temp=paths.TEMP_DIR,
     ),
 
-    conf=conf,
+    config=config,
 
     logger=logger,
 )
@@ -151,7 +151,7 @@ classes.gui.AboutAction(
 
         environ=dict(
             cache_dir=paths.CACHE_DIR,
-            conf=conf,
+            config=config,
             router=router,
         ),
 

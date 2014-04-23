@@ -23,12 +23,16 @@ Service classes for AwesomeTTS
 """
 
 __all__ = [
+    'Trait',
+
     'Ekho',
     'ESpeak',
     'Google',
     'SAPI5',
     'Say',
 ]
+
+from .base import Trait
 
 from .ekho import Ekho
 from .espeak import ESpeak

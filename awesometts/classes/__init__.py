@@ -23,7 +23,7 @@ Classes for AwesomeTTS
 """
 
 __all__ = [
-    'Conf',
+    'Config',
     'Logger',
     'Router',
 
@@ -31,7 +31,7 @@ __all__ = [
     'services',
 ]
 
-from .conf import Conf
+from .config import Config
 from .logger import Logger
 from .router import Router
 

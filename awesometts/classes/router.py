@@ -24,7 +24,7 @@ Dispatch management of available services
 
 __all__ = ['Router']
 
-from .services.base import Trait as BaseTrait
+from .services import Trait as BaseTrait
 
 
 class Router(object):
@@ -46,7 +46,7 @@ class Router(object):
     Trait = BaseTrait
 
     __slots__ = [
-        '_conf',       # dict with lame_flags, last_service, last_options
+        '_config',     # dict with lame_flags, last_service, last_options
         '_logger',     # logger-like interface with debug(), info(), etc.
         '_normalize',  # callable for sanitizing service IDs
         '_paths',      # dict with cache, temp
@@ -54,7 +54,7 @@ class Router(object):
         '_textize',    # callable for sanitizing input text
     ]
 
-    def __init__(self, services, paths, conf, logger):
+    def __init__(self, services, paths, config, logger):
         """
         The services should be a dict with the following keys:
 
@@ -71,7 +71,7 @@ class Router(object):
             - cache (str): semi-persistent for services to store files
             - temp (str): temporary storage for scratch and transcoding
 
-        The conf object should have a readable and settable dict-like
+        The config object should have a readable and settable dict-like
         interface with the following keys available:
 
             - lame_flags (str): parameters to pass to LAME transcoder
@@ -83,7 +83,7 @@ class Router(object):
         so on, available.
         """
 
-        self._conf = conf
+        self._config = config
         self._logger = logger
         self._normalize = services['normalize']
         self._paths = paths
@@ -119,7 +119,7 @@ class Router(object):
     def get_services(self):
         """
         Returns the list of available services and the index of the last
-        used service (last_service from the conf object) in that list.
+        used service (last_service from the config object) in that list.
         """
 
         if 'list' not in self._services:
@@ -143,7 +143,7 @@ class Router(object):
 
         services = self._services['list']
 
-        last_service = self._normalize(self._conf['last_service'])
+        last_service = self._normalize(self._config['last_service'])
         if last_service in self._services['aliases']:
             last_service = self._services['aliases'][last_service]
 
@@ -183,12 +183,12 @@ class Router(object):
         """
         Returns a list of options that should be displayed for the
         service, with defaults highlighted and the indices of the last
-        used option items (from last_options in the conf object) or the
-        default option items.
+        used option items (from last_options in the config object) or
+        the default option items.
         """
 
         svc_id, service, options = self._fetch_options(svc_id)
-        last_options = self._conf['last_options'].get(svc_id, {})
+        last_options = self._config['last_options'].get(svc_id, {})
 
         for option in options:
             try:
@@ -454,7 +454,7 @@ class Router(object):
         try:
             service['instance'] = service['class'](
                 temp_dir=self._paths['temp'],
-                lame_flags=self._conf['lame_flags'],
+                lame_flags=self._config['lame_flags'],
                 logger=self._logger,
             )
 

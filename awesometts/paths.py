@@ -29,7 +29,7 @@ directory", which is the directory containing paths.py (among others).
 __all__ = [
     'ADDON_LOG',
     'CACHE_DIR',
-    'CONF_DB',
+    'CONFIG_DB',
     'TEMP_DIR',
 ]
 
@@ -50,7 +50,7 @@ CACHE_DIR = os.path.join(_CODE_DIR, 'cache')
 if not os.path.isdir(CACHE_DIR):
     os.mkdir(CACHE_DIR)
 
-CONF_DB = os.path.join(_CODE_DIR, 'conf.db')
+CONFIG_DB = os.path.join(_CODE_DIR, 'config.db')
 
 TEMP_DIR = os.path.join(_CODE_DIR, 'temp')
 

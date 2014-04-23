@@ -65,7 +65,7 @@ class Dialog(QtGui.QDialog):
 
     __slots__ = [
         '_cache_dir',  # path to the cache directory
-        '_conf',       # dict-like configuration object
+        '_config',     # dict-like configuration object
         '_qt_keys',    # mapping of QT key integers to human-readable names
         '_router',     # add-on router for resolving traits
         '_setup',      # True if the UI has been built out, False otherwise
@@ -77,7 +77,7 @@ class Dialog(QtGui.QDialog):
         super(Dialog, self).__init__(main_window)
 
         self._cache_dir = environ['cache_dir']
-        self._conf = environ['conf']
+        self._config = environ['config']
         self._qt_keys = None  # built when UI first shown in show() below
         self._router = environ['router']
         self._setup = False
@@ -107,7 +107,7 @@ class Dialog(QtGui.QDialog):
             self._build_ui()
 
         for widget, value in [
-            (widget, self._conf[widget.objectName()])
+            (widget, self._config[widget.objectName()])
             for widget in self.findChildren(self._PROPERTY_WIDGETS)
             if widget.objectName() in self._PROPERTY_KEYS
         ]:
@@ -162,7 +162,7 @@ class Dialog(QtGui.QDialog):
         opposite of the show() method.
         """
 
-        self._conf.update({
+        self._config.update({
             widget.objectName(): (
                 widget.isChecked() if isinstance(widget, QtGui.QCheckBox)
                 else widget.awesometts_value if

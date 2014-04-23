@@ -44,7 +44,7 @@ from anki.utils import stripHTML
 from aqt import mw, utils
 from aqt.reviewer import Reviewer
 
-from awesometts import conf
+from awesometts import conf, router
 import awesometts.forms as forms
 import awesometts.regex as regex
 from .paths import CACHE_DIR
@@ -54,17 +54,19 @@ from .paths import CACHE_DIR
 def playTTSFromText(text):
     for service, html_tags in getTTSFromHTML(text).items():
         for html_tag in html_tags:
-            TTS_service[service]['play'](
-                service_text(''.join(html_tag.findAll(text=True))),
-                html_tag['voice'],
+            router.play(
+                service,
+                ''.join(html_tag.findAll(text=True)),
+                html_tag.attrMap,
             )
 
     for service, bracket_tags in getTTSFromText(text).items():
         for bracket_tag in bracket_tags:
             match = re.match(r'(.*?):(.*)', bracket_tag, re.M|re.I)
-            TTS_service[service]['play'](
-                service_text(match.group(2)),
-                match.group(1),
+            router.play(
+                service,
+                match.group(2),
+                {'voice': match.group(1)},
             )
 
 def getTTSFromText(text):

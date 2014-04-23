@@ -219,10 +219,15 @@ class Router(object):
         )
 
         svc_id, service, svc_options = self._fetch_options(svc_id)
+        svc_options_keys = [svc_option['key'] for svc_option in svc_options]
         text = self._textize(text)
         options = {
-            self._normalize(key): value
-            for key, value in options.items()
+            key: value
+            for key, value in [
+                (self._normalize(key), value)
+                for key, value in options.items()
+            ]
+            if key in svc_options_keys
         }
 
         incorrect_svc_options = []

@@ -24,6 +24,8 @@ Dispatch management of available services
 
 __all__ = ['Router']
 
+from .services.base import Trait as BaseTrait
+
 
 class Router(object):
     """
@@ -40,6 +42,8 @@ class Router(object):
     thread and then call the callback when done. Otherwise, the callback
     can be called immediately with neither blocking nor threading.
     """
+
+    Trait = BaseTrait
 
     __slots__ = [
         '_conf',       # dict with lame_flags, last_service, last_options
@@ -99,6 +103,18 @@ class Router(object):
                 for svc_id, svc_class in services['mappings']
             }
         }
+
+    def by_trait(self, trait):
+        """
+        Returns a list of service names that advertise the given trait.
+        """
+
+        return [
+            service['name']
+            for service
+            in self._services['lookup'].values()
+            if trait in service['traits']
+        ]
 
     def get_services(self):
         """

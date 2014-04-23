@@ -164,6 +164,8 @@ def service_store(anki_callable, path):
 
 def service_text(text):
 
+    # FIXME this has been replaced by the router and should be removed
+
     text = regex.SOUND_BRACKET_TAG.sub('', stripHTML(text))
     text = regex.WHITESPACE.sub(' ', text).strip()
 
@@ -416,150 +418,6 @@ def setupMenu(browser):
     browser.form.menuEdit.addAction(action)
 
 addHook("browser.setupMenus", setupMenu)
-
-######### Configurator
-
-def KeyToString(val):
-    if val:
-        for k, v in vars(Qt).iteritems():
-            if v == val and k[:4] == "Key_":
-                return k[4:]
-        return 'Unknown'
-    else:
-        return 'Unassigned'
-
-def Conf_keyPressEvent(dialog, buttons, e):
-    buttons = [button for button in buttons if button.getkey]
-
-    if not buttons:
-        return QDialog.keyPressEvent(dialog, e)
-
-    for button in buttons:
-        button.keyval = (
-            None if e.key() in [
-                Qt.Key_Escape,
-                Qt.Key_Backspace,
-                Qt.Key_Delete
-            ]
-            else e.key()
-        )
-        button.setText(KeyToString(button.keyval))
-        button.getkey = False
-
-def getKey(button):
-    button.setText("Press a new hotkey")
-    button.getkey = True
-
-def editConf():
-    d = QDialog()
-
-    form = forms.configurator.Ui_Dialog()
-    form.setupUi(d)
-
-    form.pushKeyQ.getkey = form.pushKeyA.getkey = False
-    form.pushKeyQ.keyval = conf.tts_key_q
-    form.pushKeyQ.setText(KeyToString(form.pushKeyQ.keyval))
-    form.pushKeyQ.clicked.connect(lambda: getKey(form.pushKeyQ))
-
-    form.pushKeyA.keyval = conf.tts_key_a
-    form.pushKeyA.setText(KeyToString(form.pushKeyA.keyval))
-    form.pushKeyA.clicked.connect(lambda: getKey(form.pushKeyA))
-
-    d.keyPressEvent = lambda event: Conf_keyPressEvent(
-        d,
-        [form.pushKeyQ, form.pushKeyA],
-        event,
-    )
-
-    form.cAutoQ.setChecked(conf.automatic_questions)
-    form.cAutoA.setChecked(conf.automatic_answers)
-
-    form.lame_flags_edit.setText(conf.lame_flags)
-
-    form.debug_stdout_checkbox.setChecked(conf.debug_stdout)
-    form.debug_file_checkbox.setChecked(conf.debug_file)
-
-
-    cacheListing = (
-        [
-            filename
-            for filename
-            in os.listdir(CACHE_DIR)
-        ]
-        if os.path.isdir(CACHE_DIR)
-        else []
-    )
-    cacheCount = len(cacheListing)
-
-    if cacheCount > 0:
-        import locale
-        locale.setlocale(locale.LC_ALL, '')
-
-        form.pushClearCache.setEnabled(True)
-        form.pushClearCache.setText(
-            'Clear Cache (%s item%s)' %
-            (
-                locale.format('%d', cacheCount, grouping=True),
-                cacheCount != 1 and 's' or ''
-            )
-        )
-
-        def pushClearCacheClicked():
-            form.pushClearCache.setEnabled(False)
-
-            countSuccess = 0
-            countError = 0
-            for cacheFilepath in cacheListing:
-                try:
-                    os.remove(os.path.join(
-                        CACHE_DIR,
-                        cacheFilepath,
-                    ))
-                    countSuccess += 1
-                except OSError:
-                    countError += 1
-
-            if countError > 0:
-                if countSuccess > 0:
-                    form.pushClearCache.setText(
-                        'Partially Emptied Cache (%s item%s remaining)' %
-                        (
-                            locale.format('%d', countError, grouping=True),
-                            countError != 1 and 's' or ''
-                        )
-                    )
-                else:
-                    form.pushClearCache.setText('Unable to Empty Cache')
-            else:
-                form.pushClearCache.setText('Successfully Emptied Cache')
-        form.pushClearCache.clicked.connect(pushClearCacheClicked)
-
-    else:
-        form.pushClearCache.setEnabled(False)
-        form.pushClearCache.setText('Clear Cache (no items)')
-
-    d.setWindowModality(Qt.WindowModal)
-
-    form.label_version.setText("Version "+ version)
-
-    if not d.exec_():
-        return
-
-    conf.update(
-        tts_key_q=form.pushKeyQ.keyval,
-        tts_key_a=form.pushKeyA.keyval,
-        automatic_questions=form.cAutoQ.isChecked(),
-        automatic_answers=form.cAutoA.isChecked(),
-        lame_flags=form.lame_flags_edit.text(),
-        debug_stdout=form.debug_stdout_checkbox.isChecked(),
-        debug_file=form.debug_file_checkbox.isChecked(),
-    )
-
-
-conf_action = QAction("AwesomeTTS", mw)
-conf_action.triggered.connect(editConf)
-
-mw.form.menuTools.addAction(conf_action)
 
 
 ######################################### Keys and AutoRead

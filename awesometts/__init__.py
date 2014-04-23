@@ -83,6 +83,8 @@ conf = classes.Conf(
         ('last_mass_source', 'text', 'Front', str, str),
         ('last_service', 'text', 'google', str, str),
         ('last_options', 'text', {}, json.loads, json.dumps),
+        ('throttle_sleep', 'integer', 600, int, int),
+        ('throttle_threshold', 'integer', 250, int, int),
         ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
         ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),
     ],
@@ -96,6 +98,7 @@ conf = classes.Conf(
         ),
     ],
 )
+
 
 router = classes.Router(
     services=dict(
@@ -132,4 +135,26 @@ router = classes.Router(
     conf=conf,
 
     logger=logger,
+)
+
+
+from aqt import mw
+from . import main
+
+VERSION = main.version
+
+classes.gui.AboutAction(
+    main_window=mw,
+
+    triggered_window=classes.gui.AboutDialog(
+        main_window=mw,
+
+        environ=dict(
+            cache_dir=paths.CACHE_DIR,
+            conf=conf,
+            router=router,
+        ),
+
+        version=VERSION,
+    ),
 )

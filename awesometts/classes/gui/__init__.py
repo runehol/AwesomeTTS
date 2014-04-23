@@ -19,23 +19,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Classes for AwesomeTTS
+Service classes for AwesomeTTS
 """
 
 __all__ = [
-    'Conf',
-    'Logger',
-    'Router',
-
-    'gui',
-    'services',
+    'AboutAction',
+    'AboutDialog',
 ]
 
-from .conf import Conf
-from .logger import Logger
-from .router import Router
-
-from . import (
-    gui,
-    services,
+from .about import (
+    Action as AboutAction,
+    Dialog as AboutDialog,
 )

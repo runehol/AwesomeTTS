@@ -25,7 +25,7 @@
 
 version = '1.0 Beta 11 (develop)'
 
-import os, re, time
+import re, time
 from PyQt4.QtCore import Qt
 from PyQt4.QtGui import (
     QAction,
@@ -38,11 +38,9 @@ from PyQt4.QtGui import (
     QWidget,
 )
 
-from anki import sound
 from anki.hooks import addHook, wrap
 from anki.utils import stripHTML
 from aqt import mw, utils
-from aqt.reviewer import Reviewer
 
 from awesometts import config, router
 import awesometts.forms as forms
@@ -423,30 +421,87 @@ addHook("browser.setupMenus", setupMenu)
 ######################################### Keys and AutoRead
 
 ## Check pressed key
-def newKeyHandler(self, evt):
-    pkey = evt.key()
-    if self.state == 'answer' or self.state == 'question':
-        if pkey == config.tts_key_q:
-            playTTSFromText(self.card.q())  #read the TTS tags
-        if self.state == 'answer' and pkey == config.tts_key_a:
-            playTTSFromText(self.card.a()) #read the TTS tags
-    evt.accept()
 
 
 
-def ATTSautoread(toread, automatic):
-    if not sound.hasSound(toread):
-        if automatic:
-            playTTSFromText(toread)
+# n.b. Previously, before calling playTTSFromText(), these event handlers
+# checked to make sure that 'not sound.hasSound(toread)'. I am guessing that
+# this was done because AwesomeTTS did not know how to properly deal with
+# multiple sounds and they would play simultaneously, but this has been fixed
+# now by calling into the Anki playback API.
+#
+# FIXME. It is possible, I suppose, that people might have the exact same
+# audio file on a card via a [sound:xxx] tag as they do as a <tts> template
+# tag. We can probably detect this by seeing if two of the same hashed
+# filename end up in the queue (and I say "filename" because one would be
+# coming from the media directory and another would be coming from the cache
+# directory). This would probably need to be fixed in the router by having the
+# router examine whether the exact same hashed filename is in the Anki
+# playback queue already or looking at the [sound:xxx] tag on the card more
+# carefully before playing back the on-the-fly sound.
+#
+# A similar problem probably exists in reviewer_key_handler for folks who
+# includes their question card template within their answer card template and
+# whose tts_key_q == tts_key_a.
+#
+# Unfortunately, it looks like inspecting anki.sound.mplayerQueue won't work
+# out on Windows because the path gets blown away by the temporary file
+# creation code.
+#
+# ALTERNATIVELY, if examination of the tag or playback queue turns out to not
+# work out so well, this could become two checkbox options on the "On-the-Fly
+# Mode" tab for both question and answer sides.
 
-def ATTS_OnQuestion(self):
-    ATTSautoread(self.card.q(), config.automatic_questions)
+addHook(
+    'showQuestion',
+    lambda: config.automatic_questions and
+        playTTSFromText(mw.reviewer.card.q()),
+)
 
-def ATTS_OnAnswer(self):
-    ATTSautoread(self.card.a(), config.automatic_answers)
+addHook(
+    'showAnswer',
+    lambda: config.automatic_answers and
+        playTTSFromText(mw.reviewer.card.a()),
+)
 
 
+# no other hook, see http://ankisrs.net/docs/addons.html; pylint:disable=W0212
 
-Reviewer._keyHandler = wrap(Reviewer._keyHandler, newKeyHandler, "before")
-Reviewer._showQuestion = wrap(Reviewer._showQuestion, ATTS_OnQuestion, "after")
-Reviewer._showAnswer = wrap(Reviewer._showAnswer, ATTS_OnAnswer, "after")
+def reviewer_key_handler(evt, _old):
+    """
+    Examines the key event to see if the user has triggered one of their
+    shortcut options.
+
+    If we do not handle the key here, then it is passed through to the
+    normal Anki Reviewer implementation.
+    """
+
+    if mw.reviewer.state not in ['answer', 'question']:
+        return
+
+    code = evt.key()
+    passthru = True
+
+    if code in [Qt.Key_R, Qt.Key_F5]:
+        # if the user sets his/her shortcut the one of the built-in audio
+        # shortcuts, we will play all sounds, starting with the built-in(s)
+
+        _old(evt)
+        passthru = False
+
+    if code == config.tts_key_q:
+        playTTSFromText(mw.reviewer.card.q())
+        passthru = False
+
+    if mw.reviewer.state == 'answer' and code == config.tts_key_a:
+        playTTSFromText(mw.reviewer.card.a())
+        passthru = False
+
+    if passthru:
+        _old(evt)
+
+mw.reviewer._keyHandler = wrap(
+    mw.reviewer._keyHandler,
+    reviewer_key_handler,
+    'around',  # setting 'around' allows me to block call to original function
+)

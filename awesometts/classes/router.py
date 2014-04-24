@@ -24,6 +24,7 @@ Dispatch management of available services
 
 __all__ = ['Router']
 
+from . import Bundle
 from .services import Trait as BaseTrait
 
 
@@ -49,24 +50,21 @@ class Router(object):
         '_config',     # dict with lame_flags, last_service, last_options
         '_logger',     # logger-like interface with debug(), info(), etc.
         '_normalize',  # callable for sanitizing service IDs
-        '_paths',      # dict with cache, temp
-        '_services',   # dict with keys for 'aliases', 'lookup', and 'list'
+        '_paths',      # bundle with cache, temp
+        '_services',   # bundle with aliases, avail, lookup
         '_textize',    # callable for sanitizing input text
     ]
 
     def __init__(self, services, paths, config, logger):
         """
-        The services should be a dict with the following keys:
+        The services should be a bundle with the following:
 
             - mappings (list of tuples): each with service ID, class
+            - aliases (list of tuples): alternate-to-official service IDs
             - normalize (callable): for sanitizing service IDs
             - textize (callable): for sanitizing human input text
 
-        The services may contain the following key:
-
-            - aliases (list of tuples): alternate-to-official service IDs
-
-        The paths object should be a dict with the following keys:
+        The paths object should be a bundle with the following:
 
             - cache (str): semi-persistent for services to store files
             - temp (str): temporary storage for scratch and transcoding
@@ -85,23 +83,26 @@ class Router(object):
 
         self._config = config
         self._logger = logger
-        self._normalize = services['normalize']
+        self._normalize = services.normalize
         self._paths = paths
-        self._textize = services['textize']
-        self._services = {
-            'aliases': {
-                self._normalize(from_svc_id): self._normalize(to_svc_id)
-                for from_svc_id, to_svc_id in services.get('aliases', [])
-            },
+        self._textize = services.textize
 
-            'lookup': {
-                self._normalize(svc_id): {
-                    'class': svc_class,
-                    'name': svc_class.NAME or svc_id,
-                    'traits': svc_class.TRAITS or [],
-                }
-                for svc_id, svc_class in services['mappings']
+        self._services = Bundle()
+
+        self._services.aliases = {
+            self._normalize(from_svc_id): self._normalize(to_svc_id)
+            for from_svc_id, to_svc_id in services.aliases
+        }
+
+        self._services.avail = None
+
+        self._services.lookup = {
+            self._normalize(svc_id): {
+                'class': svc_class,
+                'name': svc_class.NAME or svc_id,
+                'traits': svc_class.TRAITS or [],
             }
+            for svc_id, svc_class in services.mappings
         }
 
     def by_trait(self, trait):
@@ -112,7 +113,7 @@ class Router(object):
         return [
             service['name']
             for service
-            in self._services['lookup'].values()
+            in self._services.lookup.values()
             if trait in service['traits']
         ]
 
@@ -122,30 +123,30 @@ class Router(object):
         used service (last_service from the config object) in that list.
         """
 
-        if 'list' not in self._services:
+        if not self._services.avail:
             self._logger.debug("Building the list of services...")
 
-            for service in self._services['lookup'].values():
+            for service in self._services.lookup.values():
                 self._load_service(service)
 
-            self._services['list'] = {
+            self._services.avail = {
                 'items': sorted([
                     (svc_id, service['name'])
-                    for svc_id, service in self._services['lookup'].items()
+                    for svc_id, service in self._services.lookup.items()
                     if service['instance']
                 ], key=lambda (svc_id, text): text.lower()),
             }
 
-            self._services['list'].update({
+            self._services.avail.update({
                 'index': 0,
-                'value': self._services['list']['items'][0][0],
+                'value': self._services.avail['items'][0][0],
             })
 
-        services = self._services['list']
+        services = self._services.avail
 
         last_service = self._normalize(self._config['last_service'])
-        if last_service in self._services['aliases']:
-            last_service = self._services['aliases'][last_service]
+        if last_service in self._services.aliases:
+            last_service = self._services.aliases[last_service]
 
         if last_service != services['value']:
             try:
@@ -420,11 +421,11 @@ class Router(object):
         """
 
         svc_id = self._normalize(svc_id)
-        if svc_id in self._services['aliases']:
-            svc_id = self._services['aliases'][svc_id]
+        if svc_id in self._services.aliases:
+            svc_id = self._services.aliases[svc_id]
 
         try:
-            service = self._services['lookup'][svc_id]
+            service = self._services.lookup[svc_id]
         except KeyError:
             raise KeyError("There is no '%s' service" % svc_id)
 
@@ -453,7 +454,7 @@ class Router(object):
 
         try:
             service['instance'] = service['class'](
-                temp_dir=self._paths['temp'],
+                temp_dir=self._paths.temp,
                 lame_flags=self._config['lame_flags'],
                 logger=self._logger,
             )
@@ -493,7 +494,7 @@ class Router(object):
         from os.path import join
 
         return join(
-            self._paths['cache'],
+            self._paths.cache,
             '.'.join([
                 '-'.join([
                     svc_id,

@@ -39,7 +39,7 @@ class Action(QtGui.QAction):
 
     ICON = QtGui.QIcon(':/icons/speaker.png')
 
-    def __init__(self, parent, menu, text, dialog):
+    def __init__(self, text, dialog, menu, parent):
         """
         Initializes the menu action, wires its 'triggered' event, and
         adds it to the target menu via Anki's API.

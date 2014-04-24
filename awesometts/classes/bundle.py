@@ -19,25 +19,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Classes for AwesomeTTS
+Bundling
 """
 
-__all__ = [
-    'Bundle',
-    'Config',
-    'Logger',
-    'Router',
+__all__ = ['Bundle']
 
-    'gui',
-    'services',
-]
 
-from .bundle import Bundle
-from .config import Config
-from .logger import Logger
-from .router import Router
+class Bundle(object):  # exposes attributes, not methods, pylint:disable=R0903
+    """
+    Exposes a class that can be used for bundling some objects together.
+    This can be used as an alternative to a dict, and will have a syntax
+    that is cleaner and shorter.
+    """
 
-from . import (
-    gui,
-    services,
-)
+    def __init__(self, **kwargs):
+        """
+        Make each of the named keyword arguments available as an
+        attribute on the instance.
+        """
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)

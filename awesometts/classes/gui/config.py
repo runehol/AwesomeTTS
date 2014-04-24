@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-About dialog and associated GUI elements
+Configuration dialog
 """
 
 __all__ = ['Dialog']
@@ -37,24 +37,18 @@ class Dialog(QtGui.QDialog):
     """
 
     __slots__ = [
-        '_cache_dir',  # path to the cache directory
-        '_config',     # dict-like configuration object
+        '_addon',      # bundle of config, logger, paths, router, version
         '_qt_keys',    # mapping of QT key integers to human-readable names
-        '_router',     # add-on router for resolving traits
         '_setup',      # True if the UI has been built out, False otherwise
-        '_version',    # current version of the add-on
     ]
 
-    def __init__(self, main_window, environ, version):
+    def __init__(self, addon, parent):
 
-        super(Dialog, self).__init__(main_window)
+        super(Dialog, self).__init__(parent)
 
-        self._cache_dir = environ['cache_dir']
-        self._config = environ['config']
+        self._addon = addon
         self._qt_keys = None  # built when UI first shown in show() below
-        self._router = environ['router']
         self._setup = False
-        self._version = version
 
     # Events #################################################################
 
@@ -80,7 +74,7 @@ class Dialog(QtGui.QDialog):
             self._build_ui()
 
         for widget, value in [
-            (widget, self._config[widget.objectName()])
+            (widget, self._addon.config[widget.objectName()])
             for widget in self.findChildren(self._PROPERTY_WIDGETS)
             if widget.objectName() in self._PROPERTY_KEYS
         ]:
@@ -103,8 +97,8 @@ class Dialog(QtGui.QDialog):
         widget = self.findChild(QtGui.QPushButton, 'on_cache')
         if widget:
             widget.awesometts_list = (
-                [filename for filename in os.listdir(self._cache_dir)]
-                if os.path.isdir(self._cache_dir)
+                [filename for filename in os.listdir(self._addon.paths.cache)]
+                if os.path.isdir(self._addon.paths.cache)
                 else []
             )
 
@@ -135,7 +129,7 @@ class Dialog(QtGui.QDialog):
         opposite of the show() method.
         """
 
-        self._config.update({
+        self._addon.config.update({
             widget.objectName(): (
                 widget.isChecked() if isinstance(widget, QtGui.QCheckBox)
                 else widget.awesometts_value if
@@ -197,7 +191,7 @@ class Dialog(QtGui.QDialog):
 
         for filename in button.awesometts_list:
             try:
-                os.unlink(os.path.join(self._cache_dir, filename))
+                os.unlink(os.path.join(self._addon.paths.cache, filename))
                 count_success += 1
             except:  # capture all exceptions, pylint:disable=W0702
                 count_error += 1
@@ -265,7 +259,7 @@ class Dialog(QtGui.QDialog):
         name_font.setBold(True)
         name.setFont(name_font)
 
-        version = QtGui.QLabel(self._version)
+        version = QtGui.QLabel(self._addon.version)
         version_font = QtGui.QFont()
         version_font.setItalic(True)
         version.setFont(version_font)
@@ -397,7 +391,9 @@ class Dialog(QtGui.QDialog):
         notes = QtGui.QLabel(
             "Specify flags to be passed to lame when generating MP3s "
             "(affects %s). Edit with caution." %
-            ', '.join(self._router.by_trait(self._router.Trait.TRANSCODING)),
+            ', '.join(self._addon.router.by_trait(
+                self._addon.router.Trait.TRANSCODING,
+            )),
         )
         notes.setWordWrap(True)
 
@@ -430,7 +426,9 @@ class Dialog(QtGui.QDialog):
         notes = QtGui.QLabel(
             "Tweak how often AwesomeTTS takes a break when downloading files "
             "from online services (affects %s)." %
-            ', '.join(self._router.by_trait(self._router.Trait.INTERNET)),
+            ', '.join(self._addon.router.by_trait(
+                self._addon.router.Trait.INTERNET,
+            )),
         )
         notes.setWordWrap(True)
 

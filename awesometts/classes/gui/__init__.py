@@ -25,9 +25,9 @@ Service classes for AwesomeTTS
 __all__ = [
     'Action',
 
-    'AboutDialog',
+    'ConfigDialog',
 ]
 
 from .common import Action
 
-from .about import Dialog as AboutDialog
+from .config import Dialog as ConfigDialog

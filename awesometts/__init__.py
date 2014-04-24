@@ -24,13 +24,7 @@
 Add-on package initialization
 """
 
-# We expose instances here used across the add-on, pylint: disable=C0103
-
-__all__ = [
-    'config',
-    'logger',
-    'router',
-]
+__all__ = []
 
 import json
 import logging
@@ -38,30 +32,47 @@ from sys import stdout
 
 from PyQt4.QtCore import Qt
 import anki.utils
+import aqt
 
 from . import classes, paths, regex
 
 
-_TO_BOOL = lambda value: bool(int(value))  # workaround for bool('0') == True
+VERSION = "1.0 Beta 11 (develop)"
 
-_TO_NORMALIZED = lambda value: ''.join(
+
+PATH_CACHE = paths.CACHE_DIR
+
+PATH_CONFIG = paths.CONFIG_DB
+
+PATH_LOG = paths.ADDON_LOG
+
+PATH_TEMP = paths.TEMP_DIR
+
+
+TO_BOOL = lambda value: bool(int(value))  # workaround for bool('0') == True
+
+TO_NORMALIZED = lambda value: ''.join(
     char.lower()
     for char in value
     if char.isalpha() or char.isdigit()
 )
 
 
+# Initialization and dependency setup follows, pylint:disable=C0103
+
+
 logger = classes.Logger(
     name='AwesomeTTS',
 
-    handlers={
-        'debug_file': logging.FileHandler(
-            paths.ADDON_LOG,
+    handlers=dict(
+        debug_file=logging.FileHandler(
+            PATH_LOG,
             encoding='utf-8',
             delay=True,
         ),
-        'debug_stdout': logging.StreamHandler(stdout),
-    },
+
+        debug_stdout=logging.StreamHandler(stdout),
+    ),
 
     formatter=logging.Formatter(
         '[%(asctime)s %(module)s@%(lineno)d %(levelname)s] %(message)s',
@@ -71,13 +82,19 @@ logger = classes.Logger(
 
 
 config = classes.Config(
-    db=(paths.CONFIG_DB, 'general', _TO_NORMALIZED),
+    db=classes.Bundle(
+        path=PATH_CONFIG,
 
-    definitions=[
-        ('automaticAnswers', 'integer', False, _TO_BOOL, int),
-        ('automaticQuestions', 'integer', False, _TO_BOOL, int),
-        ('debug_file', 'integer', False, _TO_BOOL, int),
-        ('debug_stdout', 'integer', False, _TO_BOOL, int),
+        table='general',
+
+        normalize=TO_NORMALIZED,
+    ),
+
+    cols=[
+        ('automaticAnswers', 'integer', False, TO_BOOL, int),
+        ('automaticQuestions', 'integer', False, TO_BOOL, int),
+        ('debug_file', 'integer', False, TO_BOOL, int),
+        ('debug_stdout', 'integer', False, TO_BOOL, int),
         ('lame_flags', 'text', '--quiet -q 2', str, str),
         ('last_mass_dest', 'text', 'Back', str, str),
         ('last_mass_source', 'text', 'Front', str, str),
@@ -101,7 +118,7 @@ config = classes.Config(
 
 
 router = classes.Router(
-    services=dict(
+    services=classes.Bundle(
         mappings=[
             ('ekho', classes.services.Ekho),
             ('espeak', classes.services.ESpeak),
@@ -114,7 +131,7 @@ router = classes.Router(
             ('g', 'google'),
         ],
 
-        normalize=_TO_NORMALIZED,
+        normalize=TO_NORMALIZED,
 
         textize=lambda text: (
             regex.WHITESPACE.sub(
@@ -127,9 +144,9 @@ router = classes.Router(
         ),
     ),
 
-    paths=dict(
-        cache=paths.CACHE_DIR,
-        temp=paths.TEMP_DIR,
+    paths=classes.Bundle(
+        cache=PATH_CACHE,
+        temp=PATH_TEMP,
     ),
 
     config=config,
@@ -138,27 +155,31 @@ router = classes.Router(
 )
 
 
-from aqt import mw
-from . import main
+addon = classes.Bundle(
+    config=config,
 
-VERSION = main.version
+    logger=logger,
+
+    paths=classes.Bundle(
+        cache=PATH_CACHE,
+    ),
+
+    router=router,
+
+    version=VERSION,
+)
+
 
 classes.gui.Action(
-    parent=mw,
-
-    menu=mw.form.menuTools,
-
     text="A&wesomeTTS...",
 
-    dialog=classes.gui.AboutDialog(
-        main_window=mw,
+    dialog=classes.gui.ConfigDialog(
+        addon=addon,
 
-        environ=dict(
-            cache_dir=paths.CACHE_DIR,
-            config=config,
-            router=router,
-        ),
-
-        version=VERSION,
+        parent=aqt.mw,
     ),
+
+    menu=aqt.mw.form.menuTools,
+
+    parent=aqt.mw,
 )

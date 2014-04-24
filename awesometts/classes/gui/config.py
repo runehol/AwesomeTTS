@@ -38,23 +38,6 @@ class Config(Dialog):
     Provides a dialog for configuring the add-on.
     """
 
-    __slots__ = [
-        '_addon',      # bundle of config, logger, paths, router, version
-        '_qt_keys',    # mapping of QT key integers to human-readable names
-        '_setup',      # True if the UI has been built out, False otherwise
-    ]
-
-    def __init__(self, addon, parent):
-
-        super(Config, self).__init__(parent)
-
-        self._addon = addon
-        self._qt_keys = None  # built when UI first shown in show() below
-        self._setup = False
-
-    # Events #################################################################
-
-
     _PROPERTY_KEYS = [
         'automatic_answers', 'automatic_questions', 'debug_file',
         'debug_stdout', 'lame_flags', 'throttle_sleep', 'throttle_threshold',
@@ -65,162 +48,24 @@ class Config(Dialog):
         QtGui.QCheckBox, QtGui.QLineEdit, QtGui.QPushButton, QtGui.QSpinBox,
     )
 
-    def show(self, *args, **kwargs):
-        """
-        Checks to see if the UI has been built out and restores state on
-        all form inputs. This should be roughly the opposite of the
-        accept() method.
-        """
+    __slots__ = [
+        '_qt_keys',    # mapping of QT key integers to human-readable names
+    ]
 
-        if not self._setup:
-            self._build_ui()
+    def __init__(self, *args, **kwargs):
+        super(Config, self).__init__(*args, **kwargs)
 
-        for widget, value in [
-            (widget, self._addon.config[widget.objectName()])
-            for widget in self.findChildren(self._PROPERTY_WIDGETS)
-            if widget.objectName() in self._PROPERTY_KEYS
-        ]:
-            if isinstance(widget, QtGui.QCheckBox):
-                widget.setChecked(value)
-
-            elif isinstance(widget, QtGui.QLineEdit):
-                widget.setText(value)
-
-            elif isinstance(widget, QtGui.QPushButton):
-                widget.awesometts_value = value
-                widget.setText(
-                    "Change Shortcut (currently %s)" %
-                    self._get_key(widget.awesometts_value),
-                )
-
-            elif isinstance(widget, QtGui.QSpinBox):
-                widget.setValue(value)
-
-        widget = self.findChild(QtGui.QPushButton, 'on_cache')
-        if widget:
-            widget.awesometts_list = (
-                [filename for filename in os.listdir(self._addon.paths.cache)]
-                if os.path.isdir(self._addon.paths.cache)
-                else []
-            )
-
-            if len(widget.awesometts_list):
-                import locale
-
-                widget.setEnabled(True)
-                widget.setText(
-                    "Clear Cache (%s item%s)" % (
-                        locale.format(
-                            "%d",
-                            len(widget.awesometts_list),
-                            grouping=True,
-                        ),
-                        "" if len(widget.awesometts_list) == 1 else "s",
-                    )
-                )
-
-            else:
-                widget.setEnabled(False)
-                widget.setText("Clear Cache (no items)")
-
-        super(Config, self).show(*args, **kwargs)
-
-    def accept(self, *args, **kwargs):
-        """
-        Saves state on all form inputs. This should be roughly the
-        opposite of the show() method.
-        """
-
-        self._addon.config.update({
-            widget.objectName(): (
-                widget.isChecked() if isinstance(widget, QtGui.QCheckBox)
-                else widget.awesometts_value if
-                    isinstance(widget, QtGui.QPushButton)
-                else widget.value() if isinstance(widget, QtGui.QSpinBox)
-                else widget.text()
-            )
-            for widget in self.findChildren(self._PROPERTY_WIDGETS)
-            if widget.objectName() in self._PROPERTY_KEYS
-        })
-
-        super(Config, self).accept(*args, **kwargs)
-
-    def keyPressEvent(self, key_event):  # from PyQt4, pylint:disable=C0103
-        """
-        If we have a shortcut button awaiting a key event to change its
-        binding, we capture it and process it.
-
-        Otherwise, we forward to the superclass.
-        """
-
-        buttons = [
-            button
-            for button in self.findChildren(QtGui.QPushButton)
-            if button.objectName().startswith('tts_key_') and
-                button.isChecked()
-        ]
-
-        if not buttons:
-            return super(Config, self).keyPressEvent(key_event)
-
-        new_value = (
-            None if key_event.key() in [
-                QtCore.Qt.Key_Escape,
-                QtCore.Qt.Key_Backspace,
-                QtCore.Qt.Key_Delete,
-            ]
-            else key_event.key()
-        )
-
-        for button in buttons:
-            button.awesometts_value = new_value
-            button.setChecked(False)
-            button.setText(
-                "Change Shortcut (now %s)" %
-                self._get_key(button.awesometts_value),
-            )
-
-    def _on_cache_clear(self, button):
-        """
-        Attempts to delete all the files in the cache directory, as they
-        were reported when the modal was opened.
-        """
-
-        button.setEnabled(False)
-
-        count_success = 0
-        count_error = 0
-
-        for filename in button.awesometts_list:
-            try:
-                os.unlink(os.path.join(self._addon.paths.cache, filename))
-                count_success += 1
-            except:  # capture all exceptions, pylint:disable=W0702
-                count_error += 1
-
-        if count_error:
-            if count_success:
-                import locale
-                button.setText(
-                    "partially emptied cache (%s item%s remaining)" % (
-                        locale.format("%d", count_error, grouping=True),
-                        "" if count_error == 1 else "s",
-                    )
-                )
-
-            else:
-                button.setText("unable to empty cache")
-
-        else:
-            button.setText("successfully emptied cache")
+        self._qt_keys = None  # built when UI first shown by _build_ui()
 
     # UI Construction ########################################################
 
     def _build_ui(self):
         """
-        Initializes the key look, titles the window, sets its layout,
-        and marks the object as "_setup".
+        Titles the window and initializes the QT key lookup.
         """
+
+        super(Config, self)._build_ui()
+        self.setWindowTitle("AwesomeTTS")
 
         self._qt_keys = {
             value: key[4:]
@@ -229,47 +74,15 @@ class Config(Dialog):
             if len(key) > 4 and key.startswith('Key_')
         }
 
-        self.setModal(True)
-        self.setWindowTitle("AwesomeTTS")
-        self.setLayout(self._create())
-
-        self._setup = True
-
     def _create(self):
         """
         Returns a vertical layout with a banner, tab area, and row of
         cancel/OK buttons.
         """
 
-        layout = QtGui.QVBoxLayout()
-
-        layout.addLayout(self._create_banner())
+        layout = super(Config, self)._create()
         layout.addWidget(self._create_tabs())
         layout.addWidget(self._create_buttons())
-
-        return layout
-
-    def _create_banner(self):
-        """
-        Returns a horizontal layout with some title text, a strecher,
-        and version text.
-        """
-
-        name = QtGui.QLabel("AwesomeTTS")
-        name_font = QtGui.QFont()
-        name_font.setPointSize(20)
-        name_font.setBold(True)
-        name.setFont(name_font)
-
-        version = QtGui.QLabel(self._addon.version)
-        version_font = QtGui.QFont()
-        version_font.setItalic(True)
-        version.setFont(version_font)
-
-        layout = QtGui.QHBoxLayout()
-        layout.addWidget(name)
-        layout.addStretch()
-        layout.addWidget(version)
 
         return layout
 
@@ -545,6 +358,153 @@ class Config(Dialog):
         )
 
         return buttons
+
+    def _restore(self):
+        """
+        Restores state on all form inputs. This should be roughly the
+        opposite of the accept() method.
+        """
+
+        for widget, value in [
+            (widget, self._addon.config[widget.objectName()])
+            for widget in self.findChildren(self._PROPERTY_WIDGETS)
+            if widget.objectName() in self._PROPERTY_KEYS
+        ]:
+            if isinstance(widget, QtGui.QCheckBox):
+                widget.setChecked(value)
+
+            elif isinstance(widget, QtGui.QLineEdit):
+                widget.setText(value)
+
+            elif isinstance(widget, QtGui.QPushButton):
+                widget.awesometts_value = value
+                widget.setText(
+                    "Change Shortcut (currently %s)" %
+                    self._get_key(widget.awesometts_value),
+                )
+
+            elif isinstance(widget, QtGui.QSpinBox):
+                widget.setValue(value)
+
+        widget = self.findChild(QtGui.QPushButton, 'on_cache')
+        if widget:
+            widget.awesometts_list = (
+                [filename for filename in os.listdir(self._addon.paths.cache)]
+                if os.path.isdir(self._addon.paths.cache)
+                else []
+            )
+
+            if len(widget.awesometts_list):
+                import locale
+
+                widget.setEnabled(True)
+                widget.setText(
+                    "Clear Cache (%s item%s)" % (
+                        locale.format(
+                            "%d",
+                            len(widget.awesometts_list),
+                            grouping=True,
+                        ),
+                        "" if len(widget.awesometts_list) == 1 else "s",
+                    )
+                )
+
+            else:
+                widget.setEnabled(False)
+                widget.setText("Clear Cache (no items)")
+
+    # Events #################################################################
+
+    def accept(self, *args, **kwargs):
+        """
+        Saves state on all form inputs. This should be roughly the
+        opposite of the show() method.
+
+        Once done, we pass the signal onto Qt to close the window.
+        """
+
+        self._addon.config.update({
+            widget.objectName(): (
+                widget.isChecked() if isinstance(widget, QtGui.QCheckBox)
+                else widget.awesometts_value if
+                    isinstance(widget, QtGui.QPushButton)
+                else widget.value() if isinstance(widget, QtGui.QSpinBox)
+                else widget.text()
+            )
+            for widget in self.findChildren(self._PROPERTY_WIDGETS)
+            if widget.objectName() in self._PROPERTY_KEYS
+        })
+
+        super(Config, self).accept(*args, **kwargs)
+
+    def keyPressEvent(self, key_event):  # from PyQt4, pylint:disable=C0103
+        """
+        If we have a shortcut button awaiting a key event to change its
+        binding, we capture it and process it.
+
+        Otherwise, we forward to the superclass.
+        """
+
+        buttons = [
+            button
+            for button in self.findChildren(QtGui.QPushButton)
+            if button.objectName().startswith('tts_key_') and
+                button.isChecked()
+        ]
+
+        if not buttons:
+            return super(Config, self).keyPressEvent(key_event)
+
+        new_value = (
+            None if key_event.key() in [
+                QtCore.Qt.Key_Escape,
+                QtCore.Qt.Key_Backspace,
+                QtCore.Qt.Key_Delete,
+            ]
+            else key_event.key()
+        )
+
+        for button in buttons:
+            button.awesometts_value = new_value
+            button.setChecked(False)
+            button.setText(
+                "Change Shortcut (now %s)" %
+                self._get_key(button.awesometts_value),
+            )
+
+    def _on_cache_clear(self, button):
+        """
+        Attempts to delete all the files in the cache directory, as they
+        were reported when the modal was opened.
+        """
+
+        button.setEnabled(False)
+
+        count_success = 0
+        count_error = 0
+
+        for filename in button.awesometts_list:
+            try:
+                os.unlink(os.path.join(self._addon.paths.cache, filename))
+                count_success += 1
+            except:  # capture all exceptions, pylint:disable=W0702
+                count_error += 1
+
+        if count_error:
+            if count_success:
+                import locale
+                button.setText(
+                    "partially emptied cache (%s item%s remaining)" % (
+                        locale.format("%d", count_error, grouping=True),
+                        "" if count_error == 1 else "s",
+                    )
+                )
+
+            else:
+                button.setText("unable to empty cache")
+
+        else:
+            button.setText("successfully emptied cache")
 
     # Auxiliary ##############################################################
 

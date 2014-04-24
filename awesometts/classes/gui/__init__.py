@@ -23,11 +23,11 @@ Service classes for AwesomeTTS
 """
 
 __all__ = [
-    'AboutAction',
+    'Action',
+
     'AboutDialog',
 ]
 
-from .about import (
-    Action as AboutAction,
-    Dialog as AboutDialog,
-)
+from .common import Action
+
+from .about import Dialog as AboutDialog

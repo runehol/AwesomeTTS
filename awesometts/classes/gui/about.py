@@ -23,39 +23,12 @@
 About dialog and associated GUI elements
 """
 
-__all__ = ['Action', 'Dialog']
+__all__ = ['Dialog']
 
 import os, os.path
 from PyQt4 import QtCore, QtGui
 
 # all methods might need 'self' in the future, pylint:disable=R0201
-
-
-class Action(QtGui.QAction):
-    """
-    Provides an "AwesomeTTS" menu action to trigger another window.
-    """
-
-    __slots__ = []
-
-    def __init__(self, main_window, triggered_window):
-        """
-        Initializes the menu action, wires its 'triggered' event, and
-        adds it to the Tools menu via Anki's API.
-        """
-
-        super(Action, self).__init__(
-            QtGui.QIcon(':/icons/speaker.png'),  # if enabled in DE
-            "A&wesomeTTS",
-            main_window,
-        )
-
-        self.triggered.connect(
-            # passed event must be discarded, pylint:disable=W0108
-            lambda: triggered_window.show()
-        )
-
-        main_window.form.menuTools.addAction(self)
 
 
 class Dialog(QtGui.QDialog):

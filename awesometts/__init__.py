@@ -143,10 +143,14 @@ from . import main
 
 VERSION = main.version
 
-classes.gui.AboutAction(
-    main_window=mw,
+classes.gui.Action(
+    parent=mw,
 
-    triggered_window=classes.gui.AboutDialog(
+    menu=mw.form.menuTools,
+
+    text="A&wesomeTTS...",
+
+    dialog=classes.gui.AboutDialog(
         main_window=mw,
 
         environ=dict(

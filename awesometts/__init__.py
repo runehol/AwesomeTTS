@@ -28,25 +28,43 @@ __all__ = []
 
 import json
 import logging
-from sys import stdout
+import os
+import os.path
+import re
+import sys
 
 from PyQt4.QtCore import Qt
+
 import anki.utils
 import aqt
 
-from . import classes, paths, regex
+from . import classes
 
 
 VERSION = "1.0 Beta 11 (develop)"
 
 
-PATH_CACHE = paths.CACHE_DIR
+# When determining the code directory, abspath() is needed since the
+# __file__ constant is not a full path by itself.
 
-PATH_CONFIG = paths.CONFIG_DB
+PATH_ADDON = os.path.dirname(os.path.abspath(__file__))
 
-PATH_LOG = paths.ADDON_LOG
+PATH_CACHE = os.path.join(PATH_ADDON, 'cache')
+if not os.path.isdir(PATH_CACHE):
+    os.mkdir(PATH_CACHE)
 
-PATH_TEMP = paths.TEMP_DIR
+PATH_CONFIG = os.path.join(PATH_ADDON, 'config.db')
+
+PATH_LOG = os.path.join(PATH_ADDON, 'addon.log')
+
+PATH_TEMP = os.path.join(PATH_ADDON, 'temp')
+if not os.path.isdir(PATH_TEMP):
+    os.mkdir(PATH_TEMP)
+
+
+RE_SOUND_BRACKET_TAG = re.compile(r'\[sound:[^\]]+\]', re.IGNORECASE)
+
+RE_WHITESPACE = re.compile(r'\s+')
 
 
 TO_BOOL = lambda value: bool(int(value))  # workaround for bool('0') == True
@@ -56,6 +74,15 @@ TO_NORMALIZED = lambda value: ''.join(
     for char in value
     if char.isalpha() or char.isdigit()
 )
+
+
+STRIP_HTML = anki.utils.stripHTML
+
+STRIP_SOUNDS = lambda text: RE_SOUND_BRACKET_TAG.sub('', text).strip()
+
+STRIP_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
+
+STRIP_ALL = lambda text: STRIP_WHITESPACE(STRIP_SOUNDS(STRIP_HTML(text)))
 
 
 # Initialization and dependency setup follows, pylint:disable=C0103
@@ -71,7 +98,7 @@ logger = classes.Logger(
             delay=True,
         ),
 
-        debug_stdout=logging.StreamHandler(stdout),
+        debug_stdout=logging.StreamHandler(sys.stdout),
     ),
 
     formatter=logging.Formatter(
@@ -133,15 +160,7 @@ router = classes.Router(
 
         normalize=TO_NORMALIZED,
 
-        textize=lambda text: (
-            regex.WHITESPACE.sub(
-                ' ',
-                regex.SOUND_BRACKET_TAG.sub(
-                    ' ',
-                    anki.utils.stripHTML(text),
-                ),
-            ).strip()
-        ),
+        textize=STRIP_ALL,
     ),
 
     paths=classes.Bundle(
@@ -183,3 +202,6 @@ classes.gui.Action(
 
     parent=aqt.mw,
 )
+
+
+from . import main  # old AwesomeTTS code

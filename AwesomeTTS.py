@@ -88,4 +88,4 @@ except OSError:
 # End temporary migration code
 
 
-import awesometts.main  # imported for side effects, pylint: disable=W0611
+import awesometts  # imported for side effects, pylint: disable=W0611

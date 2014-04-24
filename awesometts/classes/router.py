@@ -49,7 +49,7 @@ class Router(object):
     __slots__ = [
         '_config',     # dict with lame_flags, last_service, last_options
         '_logger',     # logger-like interface with debug(), info(), etc.
-        '_normalize',  # callable for sanitizing service IDs
+        '_normalize',  # callable for sanitizing service IDs and options
         '_paths',      # bundle with cache, temp
         '_services',   # bundle with aliases, avail, lookup
         '_textize',    # callable for sanitizing input text

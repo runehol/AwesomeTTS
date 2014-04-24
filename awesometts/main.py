@@ -23,7 +23,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = '1.0 Beta 11 (develop)'
+from . import (
+    VERSION as version,
+    STRIP_ALL as service_text,
+    STRIP_SOUNDS,
+)
 
 import re, time
 from PyQt4.QtCore import Qt
@@ -39,13 +43,10 @@ from PyQt4.QtGui import (
 )
 
 from anki.hooks import addHook, wrap
-from anki.utils import stripHTML
 from aqt import mw, utils
 
 from awesometts import config, router
 import awesometts.forms as forms
-import awesometts.regex as regex
-from .paths import CACHE_DIR
 
 
 ######## utils
@@ -155,19 +156,7 @@ def service_store(anki_callable, path):
 
     return_value = anki_callable(unicode(path, getfilesystemencoding()))
 
-    if not path.startswith(CACHE_DIR):
-        unlink(path)
-
     return return_value
-
-def service_text(text):
-
-    # FIXME this has been replaced by the router and should be removed
-
-    text = regex.SOUND_BRACKET_TAG.sub('', stripHTML(text))
-    text = regex.WHITESPACE.sub(' ', text).strip()
-
-    return text
 
 
 ############################ MP3 File Generator
@@ -276,8 +265,9 @@ def generate_audio_files(notes, form, service_def, voice, source_field, dest_fie
             voice,
         )
 
-        if not path.startswith(CACHE_DIR):
-            cache_misses += 1
+        # FIXME via router, determine if call required a service call
+        # if not path.startswith(CACHE_DIR):
+        #     cache_misses += 1
 
         filename = service_store(mw.col.media.addFile, path)
 
@@ -289,10 +279,7 @@ def generate_audio_files(notes, form, service_def, voice, source_field, dest_fie
                     note[dest_field] = filename
             else:
                 if form.checkBoxSndTag.isChecked():
-                    note[dest_field] = regex.SOUND_BRACKET_TAG.sub(
-                        '',
-                        note[dest_field],
-                    ).strip()
+                    note[dest_field] = STRIP_SOUNDS(note[dest_field])
                 note[dest_field] += ' [sound:'+ filename +']'
 
             update_count += 1

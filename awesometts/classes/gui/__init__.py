@@ -19,15 +19,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Service classes for AwesomeTTS
+GUI classes for AwesomeTTS
 """
 
 __all__ = [
+    # common
     'Action',
 
-    'ConfigDialog',
+    # dialog windows
+    'Config',
 ]
 
 from .common import Action
 
-from .config import Dialog as ConfigDialog
+from .config import Config

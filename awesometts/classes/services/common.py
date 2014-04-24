@@ -19,25 +19,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Service classes for AwesomeTTS
+Common classes for services
+
+Provides an enum-like Trait class for specifying the characteristics of
+a service.
 """
 
-__all__ = [
-    # common
-    'Trait',
+__all__ = ['Trait']
 
-    # services
-    'Ekho',
-    'ESpeak',
-    'Google',
-    'SAPI5',
-    'Say',
-]
 
-from .common import Trait
+class Trait(object):  # enum class, pylint:disable=R0903
+    """
+    Provides an enum-like namespace with codes that describe how a
+    service works, used by concrete Service classes' TRAITS lists.
 
-from .ekho import Ekho
-from .espeak import ESpeak
-from .google import Google
-from .sapi5 import SAPI5
-from .say import Say
+    The framework can query the registered Service classes to alter
+    on-screen descriptions (e.g. inform the user which services make use
+    of the LAME transcoder) or alter behavior (e.g. throttling when
+    recording many media files from an online service).
+    """
+
+    INTERNET = 1     # files retrieved from Internet; use throttling
+    TRANSCODING = 2  # LAME transcoder is used

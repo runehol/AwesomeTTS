@@ -23,11 +23,13 @@ Classes for AwesomeTTS
 """
 
 __all__ = [
+    # classes
     'Bundle',
     'Config',
     'Logger',
     'Router',
 
+    # modules
     'gui',
     'services',
 ]

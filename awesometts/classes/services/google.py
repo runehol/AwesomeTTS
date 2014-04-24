@@ -26,7 +26,8 @@ Service implementation for Google Translate's text-to-speech API
 
 __all__ = ['Google']
 
-from .base import Service, Trait
+from .base import Service
+from .common import Trait
 
 
 class Google(Service):

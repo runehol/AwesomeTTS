@@ -25,7 +25,8 @@ Service implementation for eSpeak text-to-speech engine
 
 __all__ = ['ESpeak']
 
-from .base import Service, Trait
+from .base import Service
+from .common import Trait
 
 
 class ESpeak(Service):

@@ -19,25 +19,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Service classes for AwesomeTTS
+Base classes for GUI elements
+
+Provides classes that can be extended for constructing GUI elements for
+use with AwesomeTTS.
 """
 
-__all__ = [
-    # common
-    'Trait',
+__all__ = ['Dialog', 'ServiceDialog']
 
-    # services
-    'Ekho',
-    'ESpeak',
-    'Google',
-    'SAPI5',
-    'Say',
-]
+from PyQt4 import QtGui
 
-from .common import Trait
 
-from .ekho import Ekho
-from .espeak import ESpeak
-from .google import Google
-from .sapi5 import SAPI5
-from .say import Say
+class Dialog(QtGui.QDialog):
+    """
+    Base used for all dialog windows.
+    """
+
+
+class ServiceDialog(Dialog):
+    """
+    Base used for all service-related dialog windows (e.g. single file
+    generator, mass file generator, template tag builder).
+    """

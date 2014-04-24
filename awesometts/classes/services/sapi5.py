@@ -30,7 +30,9 @@ __all__ = 'SAPI5'
 
 import os
 import os.path
-from .base import Service, Trait
+
+from .base import Service
+from .common import Trait
 
 
 class SAPI5(Service):

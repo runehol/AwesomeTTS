@@ -21,6 +21,8 @@
 
 """
 Common reusable GUI elements
+
+Provides a menu action class.
 """
 
 __all__ = ['Action']

@@ -23,15 +23,17 @@
 Configuration dialog
 """
 
-__all__ = ['Dialog']
+__all__ = ['Config']
 
 import os, os.path
 from PyQt4 import QtCore, QtGui
 
+from .base import Dialog
+
 # all methods might need 'self' in the future, pylint:disable=R0201
 
 
-class Dialog(QtGui.QDialog):
+class Config(Dialog):
     """
     Provides a dialog for configuring the add-on.
     """
@@ -44,7 +46,7 @@ class Dialog(QtGui.QDialog):
 
     def __init__(self, addon, parent):
 
-        super(Dialog, self).__init__(parent)
+        super(Config, self).__init__(parent)
 
         self._addon = addon
         self._qt_keys = None  # built when UI first shown in show() below
@@ -121,7 +123,7 @@ class Dialog(QtGui.QDialog):
                 widget.setEnabled(False)
                 widget.setText("Clear Cache (no items)")
 
-        super(Dialog, self).show(*args, **kwargs)
+        super(Config, self).show(*args, **kwargs)
 
     def accept(self, *args, **kwargs):
         """
@@ -141,7 +143,7 @@ class Dialog(QtGui.QDialog):
             if widget.objectName() in self._PROPERTY_KEYS
         })
 
-        super(Dialog, self).accept(*args, **kwargs)
+        super(Config, self).accept(*args, **kwargs)
 
     def keyPressEvent(self, key_event):  # from PyQt4, pylint:disable=C0103
         """
@@ -159,7 +161,7 @@ class Dialog(QtGui.QDialog):
         ]
 
         if not buttons:
-            return super(Dialog, self).keyPressEvent(key_event)
+            return super(Config, self).keyPressEvent(key_event)
 
         new_value = (
             None if key_event.key() in [

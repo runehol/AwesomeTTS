@@ -25,7 +25,8 @@ Service implementation for OS X's say command
 
 __all__ = ['Say']
 
-from .base import Service, Trait
+from .base import Service
+from .common import Trait
 
 
 class Say(Service):

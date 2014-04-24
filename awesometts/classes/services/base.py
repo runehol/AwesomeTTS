@@ -19,14 +19,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Base classes for service implementations
+Base class for service implementations
 
 Provides an abstract Service class that can be extended for implementing
-a TTS service for use with AwesomeTTS, and a enum-like Trait class for
-specifying the characteristics of a service.
+TTS services for use with AwesomeTTS.
 """
 
-__all__ = ['Service', 'Trait']
+__all__ = ['Service']
 
 import abc
 import subprocess
@@ -480,18 +479,3 @@ if subprocess.mswindows:
 
 elif anki.utils.isMac:
     Service.IS_MACOSX = True
-
-
-class Trait(object):  # enum class, pylint:disable=R0903
-    """
-    Provides an enum-like namespace with codes that describe how a
-    service works, used by concrete Service classes' TRAITS lists.
-
-    The framework can query the registered Service classes to alter
-    on-screen descriptions (e.g. inform the user which services make use
-    of the LAME transcoder) or alter behavior (e.g. throttling when
-    recording many media files from an online service).
-    """
-
-    INTERNET = 1     # files retrieved from Internet; use throttling
-    TRANSCODING = 2  # LAME transcoder is used

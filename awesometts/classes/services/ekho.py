@@ -25,7 +25,8 @@ Service implementation for Ekho text-to-speech engine
 
 __all__ = ['Ekho']
 
-from .base import Service, Trait
+from .base import Service
+from .common import Trait
 
 
 class Ekho(Service):

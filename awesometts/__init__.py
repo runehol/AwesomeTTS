@@ -173,7 +173,7 @@ addon = classes.Bundle(
 classes.gui.Action(
     text="A&wesomeTTS...",
 
-    dialog=classes.gui.ConfigDialog(
+    dialog=classes.gui.Config(
         addon=addon,
 
         parent=aqt.mw,

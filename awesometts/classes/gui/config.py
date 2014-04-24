@@ -76,8 +76,8 @@ class Config(Dialog):
 
     def _create(self):
         """
-        Returns a vertical layout with a banner, tab area, and row of
-        cancel/OK buttons.
+        Returns a vertical layout with the superclass's banner, our tab
+        area, and a row of the superclass's cancel/OK buttons.
         """
 
         layout = super(Config, self)._create()
@@ -343,21 +343,6 @@ class Config(Dialog):
         group.setLayout(layout)
 
         return group
-
-    def _create_buttons(self):
-        """
-        Returns a horizontal row of cancel/OK buttons.
-        """
-
-        buttons = QtGui.QDialogButtonBox()
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        buttons.setStandardButtons(
-            QtGui.QDialogButtonBox.Cancel |
-            QtGui.QDialogButtonBox.Ok
-        )
-
-        return buttons
 
     def _restore(self):
         """

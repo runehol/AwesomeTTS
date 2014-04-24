@@ -84,7 +84,8 @@ class Dialog(QtGui.QDialog):
         """
         Returns a vertical layout with a banner.
 
-        Subclasses should call this method first when overriding.
+        Subclasses should call this method first when overriding so that
+        all dialogs have the same banner.
         """
 
         layout = QtGui.QVBoxLayout()
@@ -96,6 +97,9 @@ class Dialog(QtGui.QDialog):
         """
         Returns a horizontal layout with some title text, a strecher,
         and version text.
+
+        For subclasses, this method will be called automatically as part
+        of the base class _create() method.
         """
 
         name = QtGui.QLabel("AwesomeTTS")
@@ -115,6 +119,25 @@ class Dialog(QtGui.QDialog):
         layout.addWidget(version)
 
         return layout
+
+    def _create_buttons(self):
+        """
+        Returns a horizontal row of cancel/OK buttons.
+
+        Subclasses must call this method explicitly, at a location of
+        their choice. Once called, the 'accept' and 'reject' signals
+        become available.
+        """
+
+        buttons = QtGui.QDialogButtonBox()
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        buttons.setStandardButtons(
+            QtGui.QDialogButtonBox.Cancel |
+            QtGui.QDialogButtonBox.Ok
+        )
+
+        return buttons
 
     def _restore(self):
         """

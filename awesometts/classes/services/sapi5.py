@@ -109,8 +109,8 @@ class SAPI5(Service):
             dict(
                 key='voice',
                 label="Voice",
-                items=self._voices,
-                normalize=str.strip,
+                values=self._voices,
+                transform=str.strip,
             ),
         ]
 

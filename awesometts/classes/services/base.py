@@ -139,11 +139,11 @@ class Service(object):
                 dict(
                     key='voice',
                     label="Voice",
-                    items=[
+                    values=[
                         ('en-us', "American English"),
                         ('en-es', "American Spanish"),
                     ],
-                    normalize=lambda value: ''.join(
+                    transform=lambda value: ''.join(
                         char
                         for char in value.strip().lower()
                         if char.isalpha() or char == '-'
@@ -153,13 +153,8 @@ class Service(object):
                 dict(
                     key='speed',
                     label="Speed",
-                    items=[
-                        (150, '150 wpm'),
-                        (175, '175 wpm'),
-                        (200, '200 wpm'),
-                    ],
-                    normalize=int,
-                    validate=lambda value: -150 <= value <= 200,
+                    items=(150, 175, "wpm"),
+                    transform=int,
                     default=175,
                 ),
             ]
@@ -171,10 +166,6 @@ class Service(object):
 
         If specified, 'normalize' will be used to clean up user input
         before processing it.
-
-        Finally, 'validate' may be specified to check user input by hand
-        instead of just checking that it exists in the items list. This
-        is handy for non-discrete items that support a range of values.
         """
 
         return {}

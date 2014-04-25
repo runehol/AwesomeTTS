@@ -106,8 +106,8 @@ class ESpeak(Service):
             dict(
                 key='voice',
                 label="Voice",
-                items=self._voices,
-                normalize=lambda value: ''.join(
+                values=self._voices,
+                transform=lambda value: ''.join(
                     char.lower()
                     for char in value
                     if char.isalpha() or char == '-'
@@ -117,37 +117,32 @@ class ESpeak(Service):
             dict(
                 key='speed',
                 label="Speed",
-                items=[(i, "%d wpm" % i) for i in range(100, 451, 25)],
-                normalize=int,
-                validate=lambda value: 80 <= value <= 450,
+                values=(80, 450, "wpm"),
+                transform=int,
                 default=175,
             ),
 
             dict(
                 key='gap',
                 label="Additional Word Gap",
-                items=[(i, "%d ms" % (i * 10)) for i in range(0, 76, 25)] +
-                    [(i, "%d sec" % (i / 100)) for i in range(100, 501, 100)],
-                normalize=int,
-                validate=lambda value: 0 <= value <= 500,
+                values=(0.0, 5.0, "seconds"),
+                transform=float,
                 default=0,
             ),
 
             dict(
                 key='pitch',
                 label="Pitch",
-                items=[(i, "%d%%" % i) for i in range(5, 96, 5)],
-                normalize=int,
-                validate=lambda value: 0 <= value <= 99,
+                values=(0, 99, "%"),
+                transform=int,
                 default=50,
             ),
 
             dict(
                 key='amp',
                 label="Amplitude",
-                items=[(i, "%d" % i) for i in range(0, 201, 25)],
-                normalize=int,
-                validate=lambda value: 0 <= value <= 200,
+                values=(0, 200),
+                transform=int,
                 default=100,
             ),
         ]
@@ -166,7 +161,7 @@ class ESpeak(Service):
                 self._binary,
                 '-v', options['voice'],
                 '-s', options['speed'],
-                '-g', options['gap'],
+                '-g', int(options['gap'] * 100.0),
                 '-p', options['pitch'],
                 '-a', options['amp'],
                 '-w', output_wav,

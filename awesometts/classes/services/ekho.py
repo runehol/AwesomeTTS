@@ -77,7 +77,7 @@ class Ekho(Service):
         Provides access to voice, speed, pitch, rate, and volume.
         """
 
-        def normalize_voice(value):
+        def transform_voice(value):
             """
             Do some basic conversions to attempt to guess the language
             the user wanted when dealing with values that are not
@@ -105,44 +105,40 @@ class Ekho(Service):
             dict(
                 key='voice',
                 label="Voice",
-                items=self._voices,
-                normalize=normalize_voice,
+                values=self._voices,
+                transform=transform_voice,
                 default='Mandarin',
             ),
 
             dict(
                 key='speed',
                 label="Speed Delta",
-                items=[(i, "%d%%" % i) for i in range(-50, 301, 25)],
-                normalize=int,
-                validate=lambda value: -50 <= value <= 300,
+                values=(-50, 300, "%"),
+                transform=int,
                 default=0,
             ),
 
             dict(
                 key='pitch',
                 label="Pitch Delta",
-                items=[(i, "%d%%" % i) for i in range(-100, 101, 25)],
-                normalize=int,
-                validate=lambda value: -100 <= value <= 100,
+                values=(-100, 100, "%"),
+                transform=int,
                 default=0,
             ),
 
             dict(
                 key='rate',
                 label="Rate Delta",
-                items=[(i, "%d%%" % i) for i in range(-50, 101, 25)],
-                normalize=int,
-                validate=lambda value: -50 <= value <= 100,
+                values=(-50, 100, "%"),
+                transform=int,
                 default=0,
             ),
 
             dict(
                 key='volume',
                 label="Volume Delta",
-                items=[(i, "%d%%" % i) for i in range(-100, 101, 25)],
-                normalize=int,
-                validate=lambda value: -100 <= value <= 100,
+                values=(-100, 100, "%"),
+                transform=int,
                 default=0,
             ),
         ]

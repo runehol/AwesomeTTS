@@ -119,8 +119,7 @@ class Router(object):
 
     def get_services(self):
         """
-        Returns the list of available services and the index of the last
-        used service (last_service from the config object) in that list.
+        Returns available services and the "current" service ID.
         """
 
         if not self._services.avail:
@@ -130,39 +129,20 @@ class Router(object):
                 self._load_service(service)
 
             self._services.avail = {
-                'items': sorted([
+                'values': sorted([
                     (svc_id, service['name'])
                     for svc_id, service in self._services.lookup.items()
                     if service['instance']
                 ], key=lambda (svc_id, text): text.lower()),
             }
 
-            self._services.avail.update({
-                'index': 0,
-                'value': self._services.avail['items'][0][0],
-            })
+            last_service = self._normalize(self._config['last_service'])
+            self._services.avail['current'] = (
+                last_service if last_service in self._services.lookup.keys()
+                else self._services.avail['values'][0][0]
+            )
 
-        services = self._services.avail
-
-        last_service = self._normalize(self._config['last_service'])
-        if last_service in self._services.aliases:
-            last_service = self._services.aliases[last_service]
-
-        if last_service != services['value']:
-            try:
-                self._logger.debug("Setting last service: %s", last_service)
-
-                services['index'] = services['items'].index(next(
-                    item
-                    for item in services['items']
-                    if item[0] == last_service
-                ))
-                services['value'] = last_service
-
-            except StopIteration:
-                pass
-
-        return services
+        return self._services.avail
 
     def get_desc(self, svc_id):
         """
@@ -188,50 +168,9 @@ class Router(object):
         the default option items.
         """
 
-        svc_id, service, options = self._fetch_options(svc_id)
-        last_options = self._config['last_options'].get(svc_id, {})
+        svc_id, service = self._fetch_options(svc_id)
 
-        for option in options:
-            try:
-                last_option = last_options[option['key']]
-
-                if last_option != option['value']:
-                    self._logger.debug(
-                        "Setting %s service's %s (%s) to the last used: %s",
-                        service['name'],
-                        option['key'],
-                        option['label'],
-                        last_option,
-                    )
-
-                    option['index'] = option['items'].index(next(
-                        item
-                        for item in option['items']
-                        if item[0] == last_option
-                    ))
-                    option['value'] = last_option
-
-            except (KeyError, StopIteration):
-                if 'default' in option:
-                    default_option = option['default']
-
-                    if default_option != option['value']:
-                        self._logger.debug(
-                            "Setting %s service's %s (%s) to the default: %s",
-                            service['name'],
-                            option['key'],
-                            option['label'],
-                            default_option,
-                        )
-
-                        option['index'] = option['items'].index(next(
-                            item
-                            for item in option['items']
-                            if item[0] == default_option
-                        ))
-                        option['value'] = default_option
-
-        return options
+        return service['options']
 
     def play(self, svc_id, text, options, callback=None):
         """
@@ -252,8 +191,11 @@ class Router(object):
             "\n".join(["<<< " + line for line in text.split("\n")])
         )
 
-        svc_id, service, svc_options = self._fetch_options(svc_id)
-        svc_options_keys = [svc_option['key'] for svc_option in svc_options]
+        svc_id, service = self._fetch_options(svc_id)
+        svc_options_keys = [
+            svc_option['key']
+            for svc_option in service['options']
+        ]
         text = self._textize(text)
         options = {
             key: value
@@ -267,27 +209,27 @@ class Router(object):
         incorrect_svc_options = []
         missing_svc_options = []
 
-        for svc_option in svc_options:
+        for svc_option in service['options']:
             key = svc_option['key']
             if key in options:
                 try:
-                    normalized_value = (
-                        options[key] if 'normalize' not in svc_option
-                        else svc_option['normalize'](options[key])
-                    )
+                    transformed_value = svc_option['transform'](options[key])
 
-                    if 'validate' in svc_option:
-                        if not svc_option['validate'](normalized_value):
-                            raise ValueError
+                    if isinstance(svc_option['values'], tuple):
+                        if (
+                            transformed_value < svc_option['values'][0] or
+                            transformed_value > svc_option['values'][1]
+                        ):
+                            raise ValueError("Input value out of range")
 
-                    else:
+                    else:  # list of tuples
                         next(
                             True
-                            for item in svc_option['items']
-                            if item[0] == normalized_value
+                            for item in svc_option['values']
+                            if item[0] == transformed_value
                         )
 
-                    options[key] = normalized_value
+                    options[key] = transformed_value
 
                 except (StopIteration, ValueError):
                     incorrect_svc_options.append(svc_option)
@@ -374,8 +316,8 @@ class Router(object):
     def _fetch_options(self, svc_id):
         """
         Identifies the service by its ID, checks to see if the options
-        list need construction, and then return back the normalized ID,
-        service lookup dict, and options list.
+        list need construction, and then return back the normalized ID
+        and service lookup dict.
         """
 
         svc_id, service = self._fetch_service(svc_id)
@@ -385,33 +327,68 @@ class Router(object):
                 "Building the options list for %s",
                 service['name'],
             )
-            service['options'] = [
-                dict(
-                    option.items() +
-                    [
-                        (
-                            'items',
-                            option['items'] if 'default' not in option
-                            else [
-                                item if item[0] != option['default']
-                                else (item[0], item[1] + " [default]")
-                                for item in option['items']
-                            ]
-                        ),
-                        ('index', '0'),
-                        ('value', option['items'][0][0]),
-                        ('key', self._normalize(option['key'])),
-                    ]
-                )
-                for option in service['instance'].options()
-            ]
 
-        return svc_id, service, service['options']
+            last_options = self._config['last_options'].get(svc_id, {})
+            service['options'] = []
+
+            for option in service['instance'].options():
+                assert 'key' in option, "missing option key for %s" % svc_id
+                assert option['key'] == self._normalize(option['key']), \
+                    "%s key for %s not normalized" % (option['key'], svc_id)
+                assert 'label' in option, \
+                    "missing %s label for %s" % (option['key'], svc_id)
+                assert 'values' in option, \
+                    "missing %s values for %s" % (option['key'], svc_id)
+                assert isinstance(option['values'], list) or \
+                    isinstance(option['values'], tuple) and \
+                    len(option['values']) in range(2, 4), \
+                    "%s values for %s should be list or 2-3-tuple" % \
+                    (option['key'], svc_id)
+                assert 'transform' in option, \
+                    "missing %s transform for %s" % (option['key'], svc_id)
+
+                if 'default' in option and isinstance(option['values'], list):
+                    option['values'] = [
+                        item if item[0] != option['default']
+                        else (item[0], item[1] + " [default]")
+                        for item in option['values']
+                    ]
+
+                try:
+                    option['current'] = last_options[option['key']]
+
+                    if isinstance(option['values'], tuple):
+                        if (
+                            option['current'] < option['values'][0] or
+                            option['current'] > option['values'][1]
+                        ):
+                            raise ValueError
+
+                    else:  # list of tuples
+                        next(
+                            True
+                            for item in option['values']
+                            if item[0] == option['current']
+                        )
+
+                except (KeyError, ValueError, StopIteration):
+                    if 'default' in option:
+                        option['current'] = option['default']
+
+                    elif isinstance(option['values'], tuple):
+                        option['current'] = option['values'][0]
+
+                    else:  # list of tuples
+                        option['current'] = option['values'][0][0]
+
+                service['options'].append(option)
+
+        return svc_id, service
 
     def _fetch_service(self, svc_id):
         """
         Finds the service using the svc_id, normalizing it and using the
-        aliases list, initializes it this is its first use, and returns
+        aliases list, initializes if this is its first use, and returns
         the normalized svc_id and service lookup dict.
 
         Raises KeyError if a bad svc_id is passed.

@@ -58,7 +58,7 @@ class Google(Service):
             dict(
                 key='voice',
                 label="Voice",
-                items=[
+                values=[
                     ('af', "Afrikaans (af)"),
                     ('sq', "Albanian (sq)"),
                     ('ar', "Arabic (ar)"),
@@ -103,7 +103,7 @@ class Google(Service):
                     ('vi', "Vietnamese (vi)"),
                     ('cy', "Welsh (cy)"),
                 ],
-                normalize=lambda value: ''.join(
+                transform=lambda value: ''.join(
                     char.lower()
                     for char in value.split('-').pop(0)
                     if char.isalpha()

@@ -28,7 +28,7 @@ As everything done from the add-on code has to do with AwesomeTTS, these
 all carry a speaker icon (if supported by the desktop environment).
 """
 
-__all__ = ['Action', 'Button']
+__all__ = ['ICON', 'Action', 'Button']
 
 from PyQt4 import QtCore, QtGui
 

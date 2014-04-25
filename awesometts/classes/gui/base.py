@@ -28,6 +28,7 @@ use with AwesomeTTS.
 __all__ = ['Dialog', 'ServiceDialog']
 
 from PyQt4 import QtGui
+from .common import ICON
 
 
 class Dialog(QtGui.QDialog):
@@ -55,6 +56,7 @@ class Dialog(QtGui.QDialog):
 
         self.setModal(True)
         self.setLayout(self._ui())
+        self.setWindowIcon(ICON)
 
     # UI Construction ########################################################
 

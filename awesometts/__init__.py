@@ -100,8 +100,9 @@ logger = classes.Logger(
         debug_stdout=logging.StreamHandler(sys.stdout),
     ),
     formatter=logging.Formatter(
-        '[%(asctime)s %(module)s@%(lineno)d %(levelname)s] %(message)s',
-        '%H:%M:%S',
+        "[%(threadName)s %(asctime)s] %(pathname)s@%(lineno)d %(levelname)s\n"
+        "%(message)s\n",
+        "%H:%M:%S",
     ),
 )
 

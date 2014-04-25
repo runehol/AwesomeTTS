@@ -51,12 +51,17 @@ import awesometts.forms as forms
 
 ######## utils
 def playTTSFromText(text):
+    def callback(exception):
+        if exception:
+            print exception.message
+
     for service, html_tags in getTTSFromHTML(text).items():
         for html_tag in html_tags:
             router.play(
                 service,
                 ''.join(html_tag.findAll(text=True)),
                 html_tag.attrMap,
+                callback,
             )
 
     for service, bracket_tags in getTTSFromText(text).items():
@@ -66,6 +71,7 @@ def playTTSFromText(text):
                 service,
                 match.group(2),
                 {'voice': match.group(1)},
+                callback,
             )
 
 def getTTSFromText(text):

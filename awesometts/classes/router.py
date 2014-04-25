@@ -25,8 +25,17 @@ Dispatch management of available services
 __all__ = ['Router']
 
 import os.path
+from PyQt4 import QtCore
 
 from .services import Trait as BaseTrait
+
+
+_SIGNAL = QtCore.SIGNAL('awesomeTtsThreadDone')
+
+_PREFIXED = lambda prefix, lines: "\n".join(
+    prefix + line
+    for line in (lines if isinstance(lines, list) else lines.split("\n"))
+)
 
 
 class Router(object):
@@ -56,6 +65,7 @@ class Router(object):
         '_config',     # dict with lame_flags, last_service, last_options
         '_logger',     # logger-like interface with debug(), info(), etc.
         '_paths',      # bundle with cache, temp
+        '_pool',       # instance of the _Pool class for managing threads
         '_services',   # bundle with aliases, avail, lookup
     ]
 
@@ -85,10 +95,6 @@ class Router(object):
         so on, available.
         """
 
-        self._config = config
-        self._logger = logger
-        self._paths = paths
-
         services.aliases = {
             services.normalize(from_svc_id): services.normalize(to_svc_id)
             for from_svc_id, to_svc_id in services.aliases
@@ -105,6 +111,10 @@ class Router(object):
             for svc_id, svc_class in services.mappings
         }
 
+        self._config = config
+        self._logger = logger
+        self._paths = paths
+        self._pool = _Pool()
         self._services = services
 
     def by_trait(self, trait):
@@ -191,63 +201,41 @@ class Router(object):
         """
 
         self._logger.debug(
-            "Received play request to '%s' with %s\n%s",
-            svc_id,
-            options,
-            "\n".join(["<<< " + line for line in text.split("\n")])
+            "Got play() request for '%s' w/ %s\n%s",
+            svc_id, options, _PREFIXED("<<< ", text),
         )
 
         try:
-            svc_id, service, text, options, path = self._validate(
-                svc_id, text, options,
-            )
-
-        except Exception as exception:  # capture all, pylint:disable=W0703
-            if callback:
-                callback(exception)
-            else:
-                raise
-
+            svc_id, service, text, options, path = \
+                self._validate(svc_id, text, options)
+        except ValueError as exception:
+            callback(exception)
             return
 
         cache_hit = os.path.exists(path)
 
         self._logger.debug(
-            "Interpreted as request to '%s' w/ %s and \"%s\" using %s (%s)",
-            svc_id,
-            options,
-            text,
-            path,
-            "cache hit" if cache_hit else "need to record asset"
+            "Parsed play() request to '%s' w/ %s and \"%s\" at %s (cache %s)",
+            svc_id, options, text, path, "hit" if cache_hit else "miss",
         )
 
+        def success():
+            """Playback sound and execute callback."""
+
+            import anki.sound
+            anki.sound.play(path)
+            callback(exception=None)
+
         if cache_hit:
-            from anki.sound import play
-            play(path)
+            success()
 
-            if callback:
-                callback()
-
-            return
-
-        # FIXME the following needs to be re-written to support threads
-
-        try:
-            service['instance'].run(text, options, path)
-
-            from anki.sound import play
-            play(path)
-
-        except Exception as exception:  # capture all, pylint:disable=W0703
-            if callback:
-                callback(exception)
-            else:
-                raise
-
-            return
-
-        if callback:
-            callback()
+        else:
+            self._pool.spawn(
+                task=lambda: service['instance'].run(text, options, path),
+                callback=lambda exception:
+                    callback(exception=exception) if exception
+                    else success()
+            )
 
     def _validate(self, svc_id, text_or_texts, options):
         """
@@ -263,7 +251,6 @@ class Router(object):
 
         svc_id, service = self._fetch_options(svc_id)
         svc_options = service['options']
-        svc_options_keys = [svc_option['key'] for svc_option in svc_options]
 
         if isinstance(text_or_texts, list):
             text_or_texts = [
@@ -271,12 +258,12 @@ class Router(object):
                 for text in text_or_texts
             ]
             if next((True for text in text_or_texts if not text), False):
-                raise ValueError("All input text must be set")
+                raise ValueError("All input text in the set must be set.")
 
         else:
             text_or_texts = self._services.textize(text_or_texts)
             if not text_or_texts:
-                raise ValueError("The input text cannot be empty")
+                raise ValueError("The input text must be set.")
 
         options = {
             key: value
@@ -284,11 +271,36 @@ class Router(object):
                 (self._services.normalize(key), value)
                 for key, value in options.items()
             ]
-            if key in svc_options_keys
+            if key in [svc_option['key'] for svc_option in svc_options]
         }
 
-        incorrect_svc_options = []
-        missing_svc_options = []
+        problems = self._validate_options(options, svc_options)
+        if problems:
+            raise ValueError(
+                "Running the '%s' (%s) service failed: %s." %
+                (svc_id, service['name'], "; ".join(problems))
+            )
+
+        path_or_paths = (
+            [
+                self._path_cache(svc_id, text, options)
+                for text in text_or_texts
+            ]
+            if isinstance(text_or_texts, list)
+            else self._path_cache(svc_id, text_or_texts, options)
+        )
+
+        return svc_id, service, text_or_texts, options, path_or_paths
+
+    def _validate_options(self, options, svc_options):
+        """
+        Attempt to normalize and validate the passed options in-place,
+        given the official svc_options.
+
+        Returns a list of problems, if any.
+        """
+
+        problems = []
 
         for svc_option in svc_options:
             key = svc_option['key']
@@ -303,7 +315,10 @@ class Router(object):
                             transformed_value < svc_option['values'][0] or
                             transformed_value > svc_option['values'][1]
                         ):
-                            raise ValueError("Input value out of range")
+                            raise ValueError("outside of %d..%d" % (
+                                svc_option['values'][0],
+                                svc_option['values'][1],
+                            ))
 
                     else:  # list of tuples
                         next(
@@ -314,56 +329,34 @@ class Router(object):
 
                     options[key] = transformed_value
 
-                except (StopIteration, ValueError):
-                    incorrect_svc_options.append(svc_option)
+                except ValueError as exception:
+                    problems.append(
+                        "invalid value '%s' for '%s' attribute (%s)" %
+                        (options[key], key, exception.message)
+                    )
+
+                except StopIteration:
+                    problems.append(
+                        "'%s' is not an option for '%s' attribute (try %s)" %
+                        (
+                            options[key], key,
+                            ", ".join(v[0] for v in svc_option['values']),
+                        )
+                    )
 
             elif 'default' in svc_option:
                 options[key] = svc_option['default']
 
             else:
-                missing_svc_options.append(svc_option)
+                problems.append("'%s' attribute is required" % key)
 
-        if incorrect_svc_options or missing_svc_options:
-            problems = []
-
-            if incorrect_svc_options:
-                problems.append(
-                    "incorrect parameters be fixed (%s)" % ", ".join([
-                        "'%s' for the %s cannot be set to '%s'" % (
-                            svc_option['key'],
-                            svc_option['label'],
-                            options[svc_option['key']],
-                        )
-                        for svc_option in incorrect_svc_options
-                    ])
-                )
-
-            if missing_svc_options:
-                problems.append(
-                    "required parameters be supplied (%s)" % ", ".join([
-                        "'%s' for the %s" % (
-                            svc_option['key'],
-                            svc_option['label'],
-                        )
-                        for svc_option in missing_svc_options
-                    ])
-                )
-
-            raise ValueError(
-                "Playback with the '%s' (%s) service requires that %s" %
-                (svc_id, service['name'], " and ".join(problems))
-            )
-
-        path_or_paths = (
-            [
-                self._path_cache(svc_id, text, options)
-                for text in text_or_texts
-            ]
-            if isinstance(text_or_texts, list)
-            else self._path_cache(svc_id, text_or_texts, options)
+        self._logger.debug(
+            "Validated and normalized '%s' with failure count of %d",
+            "', '".join(svc_option['key'] for svc_option in svc_options),
+            len(problems),
         )
 
-        return svc_id, service, text_or_texts, options, path_or_paths
+        return problems
 
     def _fetch_options(self, svc_id):
         """
@@ -502,7 +495,7 @@ class Router(object):
             self._logger.warn(
                 "Initialization failed for %s service\n%s",
                 service['name'],
-                '\n'.join(["!!! " + line for line in trace_lines]),
+                _PREFIXED("!!! ", trace_lines),
             )
 
     def _path_cache(self, svc_id, text, options):
@@ -537,3 +530,87 @@ class Router(object):
                 'mp3',
             ]),
         )
+
+
+class _Pool(QtCore.QObject):
+    """
+    Managers a pool of worker threads to keep the UI responsive.
+    """
+
+    __slots__ = [
+        '_next_id',    # the next ID we will use
+        '_callbacks',  # mapping of IDs to the desired callbacks
+        '_workers',    # mapping of IDs to worker instances
+    ]
+
+    def __init__(self):
+        """
+        Initialize my internal state (next ID and lookup pools for the
+        callbacks and workers).
+        """
+
+        super(_Pool, self).__init__()
+
+        self._next_id = 0
+        self._callbacks = {}
+        self._workers = {}
+
+    def spawn(self, task, callback):
+        """
+        Create a worker thread for the given task. When the thread
+        completes, the callback will be called.
+        """
+
+        self._next_id += 1
+        self._callbacks[self._next_id] = callback
+        self._workers[self._next_id] = _Worker(self._next_id, task)
+
+        self.connect(self._workers[self._next_id], _SIGNAL, self._on_signal)
+
+        self._workers[self._next_id].start()
+
+    def _on_signal(self, worker_id, exception):
+        """
+        When the worker thread finishes, execute its callback and clean
+        up references to it.
+        """
+
+        self._callbacks[worker_id](exception)
+
+        del self._callbacks[worker_id]
+        del self._workers[worker_id]
+
+
+class _Worker(QtCore.QThread):
+    """
+    Generic worker for running processes in the background.
+    """
+
+    __slots__ = [
+        '_id',     # my worker ID; used to communicate back to main thread
+        '_task',   # the task I will need to call when run
+    ]
+
+    def __init__(self, worker_id, task):
+        """
+        Save my worker ID and task.
+        """
+
+        super(_Worker, self).__init__()
+
+        self._id = worker_id
+        self._task = task
+
+    def run(self):
+        """
+        Run my assigned task. If an exception is raised, pass it back to
+        the main thread via the callback.
+        """
+
+        try:
+            self._task()
+        except Exception as exception:  # catch all, pylint:disable=W0703
+            self.emit(_SIGNAL, self._id, exception)
+            return
+
+        self.emit(_SIGNAL, self._id, None)

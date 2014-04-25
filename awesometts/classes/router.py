@@ -191,12 +191,72 @@ class Router(object):
             "\n".join(["<<< " + line for line in text.split("\n")])
         )
 
+        svc_id, service, text, options, path = self._validate(
+            svc_id, text, options,
+        )
+
+        from os.path import exists
+        cache_hit = exists(path)
+
+        self._logger.debug(
+            "Interpreted as request to '%s' w/ %s and \"%s\" using %s (%s)",
+            svc_id,
+            options,
+            text,
+            path,
+            "cache hit" if cache_hit else "need to record asset"
+        )
+
+        if cache_hit:
+            from anki.sound import play
+            play(path)
+
+            if callback:
+                callback()
+
+            return
+
+        # FIXME the following needs to be re-written to support threads
+
+        try:
+            service['instance'].run(text, options, path)
+
+            from anki.sound import play
+            play(path)
+
+        except Exception as exception:  # capture all, pylint:disable=W0703
+            if callback:
+                callback(exception)
+            else:
+                raise
+
+            return
+
+        if callback:
+            callback()
+
+    def _validate(self, svc_id, text_or_texts, options):
+        """
+        Finds the given service ID, normalizes the text, and validates
+        the options, returning the following:
+
+            - 0th: normalized service ID
+            - 1st: service lookup dict
+            - 2nd: normalized text (or texts, if multiple passed)
+            - 3rd: options, normalized and defaults filled in
+            - 4th: cache path (or paths, if multiple texts passed)
+        """
+
         svc_id, service = self._fetch_options(svc_id)
-        svc_options_keys = [
-            svc_option['key']
-            for svc_option in service['options']
-        ]
-        text = self._textize(text)
+        svc_options = service['options']
+        svc_options_keys = [svc_option['key'] for svc_option in svc_options]
+
+        text_or_texts = (
+            [self._textize(text) for text in text_or_texts]
+            if isinstance(text_or_texts, list)
+            else self._textize(text_or_texts)
+        )
+
         options = {
             key: value
             for key, value in [
@@ -209,10 +269,12 @@ class Router(object):
         incorrect_svc_options = []
         missing_svc_options = []
 
-        for svc_option in service['options']:
+        for svc_option in svc_options:
             key = svc_option['key']
+
             if key in options:
                 try:
+                    # transform is inside try as it might throw a ValueError
                     transformed_value = svc_option['transform'](options[key])
 
                     if isinstance(svc_option['values'], tuple):
@@ -271,47 +333,16 @@ class Router(object):
                 (svc_id, service['name'], " and ".join(problems))
             )
 
-        path = self._path_cache(svc_id, text, options)
-
-        from os.path import exists
-        cache_hit = exists(path)
-
-        self._logger.debug(
-            "Interpreted as request to '%s' w/ %s and \"%s\" using %s (%s)",
-            svc_id,
-            options,
-            text,
-            path,
-            "cache hit" if cache_hit else "need to record asset"
+        path_or_paths = (
+            [
+                self._path_cache(svc_id, text, options)
+                for text in text_or_texts
+            ]
+            if isinstance(text_or_texts, list)
+            else self._path_cache(svc_id, text_or_texts, options)
         )
 
-        if cache_hit:
-            from anki.sound import play
-            play(path)
-
-            if callback:
-                callback()
-
-            return
-
-        # FIXME the following needs to be re-written to support threads
-
-        try:
-            service['instance'].run(text, options, path)
-
-            from anki.sound import play
-            play(path)
-
-        except Exception as exception:  # capture all, pylint:disable=W0703
-            if callback:
-                callback(exception)
-            else:
-                raise
-
-            return
-
-        if callback:
-            callback()
+        return svc_id, service, text_or_texts, options, path_or_paths
 
     def _fetch_options(self, svc_id):
         """

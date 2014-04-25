@@ -23,7 +23,7 @@
 Configuration dialog
 """
 
-__all__ = ['Config']
+__all__ = ['Configurator']
 
 import os, os.path
 from PyQt4 import QtCore, QtGui
@@ -33,7 +33,7 @@ from .base import Dialog
 # all methods might need 'self' in the future, pylint:disable=R0201
 
 
-class Config(Dialog):
+class Configurator(Dialog):
     """
     Provides a dialog for configuring the add-on.
     """
@@ -54,7 +54,7 @@ class Config(Dialog):
 
     def __init__(self, *args, **kwargs):
         """
-        Pregenerate our mapping of all QT keys and set our title.
+        Pregenerate our mapping of all QT keys.
         """
 
         self._qt_keys = {
@@ -64,9 +64,7 @@ class Config(Dialog):
             if len(key) > 4 and key.startswith('Key_')
         }
 
-        super(Config, self).__init__(*args, **kwargs)
-
-        self.setWindowTitle("AwesomeTTS")
+        super(Configurator, self).__init__(*args, **kwargs)
 
     # UI Construction ########################################################
 
@@ -76,7 +74,7 @@ class Config(Dialog):
         area, and a row of the superclass's cancel/OK buttons.
         """
 
-        layout = super(Config, self)._ui()
+        layout = super(Configurator, self)._ui()
         layout.addWidget(self._ui_tabs())
         layout.addWidget(self._ui_buttons())
 
@@ -396,7 +394,7 @@ class Config(Dialog):
                 widget.setEnabled(False)
                 widget.setText("Clear Cache (no items)")
 
-        super(Config, self).show(*args, **kwargs)
+        super(Configurator, self).show(*args, **kwargs)
 
     def accept(self, *args, **kwargs):
         """
@@ -418,7 +416,7 @@ class Config(Dialog):
             if widget.objectName() in self._PROPERTY_KEYS
         })
 
-        super(Config, self).accept(*args, **kwargs)
+        super(Configurator, self).accept(*args, **kwargs)
 
     def keyPressEvent(self, key_event):  # from PyQt4, pylint:disable=C0103
         """
@@ -436,7 +434,7 @@ class Config(Dialog):
         ]
 
         if not buttons:
-            return super(Config, self).keyPressEvent(key_event)
+            return super(Configurator, self).keyPressEvent(key_event)
 
         new_value = (
             None if key_event.key() in [

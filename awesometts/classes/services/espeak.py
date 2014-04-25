@@ -124,10 +124,10 @@ class ESpeak(Service):
 
             dict(
                 key='gap',
-                label="Additional Word Gap",
+                label="Word Gap",
                 values=(0.0, 5.0, "seconds"),
                 transform=float,
-                default=0,
+                default=0.0,
             ),
 
             dict(

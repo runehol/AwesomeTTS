@@ -27,8 +27,10 @@ use with AwesomeTTS.
 
 __all__ = ['Dialog', 'ServiceDialog']
 
-from PyQt4 import QtGui
+from PyQt4 import QtCore, QtGui
 from .common import ICON
+
+# all methods might need 'self' in the future, pylint:disable=R0201
 
 
 class Dialog(QtGui.QDialog):
@@ -42,8 +44,8 @@ class Dialog(QtGui.QDialog):
 
     def __init__(self, addon, parent):
         """
-        Set the modal status for the dialog and sets its layout to the
-        return value of the _ui() method.
+        Set the modal status for the dialog, sets its layout to the
+        return value of the _ui() method, and sets a default title.
         """
 
         self._addon = addon
@@ -57,6 +59,7 @@ class Dialog(QtGui.QDialog):
         self.setModal(True)
         self.setLayout(self._ui())
         self.setWindowIcon(ICON)
+        self.setWindowTitle("AwesomeTTS")
 
     # UI Construction ########################################################
 
@@ -135,3 +138,214 @@ class ServiceDialog(Dialog):
     Base used for all service-related dialog windows (e.g. single file
     generator, mass file generator, template tag builder).
     """
+
+    __slots__ = [
+        '_panel_ready'  # map of svc_ids to True if that service is ready
+    ]
+
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize the mechanism for keeping track of which panels are
+        loaded.
+        """
+
+        self._panel_ready = {}
+
+        super(ServiceDialog, self).__init__(*args, **kwargs)
+
+    # UI Construction ########################################################
+
+    def _ui(self):
+        """
+        Return a services panel and a control panel.
+        """
+
+        layout = super(ServiceDialog, self)._ui()
+
+        horizontal = QtGui.QHBoxLayout()
+        horizontal.addLayout(self._ui_services())
+        horizontal.addLayout(self._ui_control())
+
+        layout.addLayout(horizontal)
+        return layout
+
+    def _ui_services(self):
+        """
+        Return the service panel, which includes a dropdown for the
+        service and a stacked widget for each service's options.
+        """
+
+        intro = QtGui.QLabel("Generate using")
+
+        dropdown = QtGui.QComboBox()
+        dropdown.setObjectName('service')
+
+        stack = QtGui.QStackedWidget()
+        stack.setObjectName('panels')
+
+        for svc_id, text in self._addon.router.get_services()['values']:
+            dropdown.addItem(text, svc_id)
+
+            label = QtGui.QLabel("Pass the following to %s:" % text)
+
+            panel = QtGui.QGridLayout()
+            panel.addWidget(label, 0, 0, 1, 2)
+
+            widget = QtGui.QWidget()
+            widget.setLayout(panel)
+
+            stack.addWidget(widget)
+
+        dropdown.activated.connect(self._on_service_activated)
+
+        horizontal = QtGui.QHBoxLayout()
+        horizontal.addWidget(intro)
+        horizontal.addWidget(dropdown)
+        horizontal.addStretch()
+
+        layout = QtGui.QVBoxLayout()
+        layout.addLayout(horizontal)
+        layout.addWidget(stack)
+
+        return layout
+
+    def _ui_control(self):
+        """
+        Return the text input and a preview button.
+        """
+
+        layout = QtGui.QVBoxLayout()
+
+        text = QtGui.QPlainTextEdit()
+        text.setObjectName('text')
+
+        button = QtGui.QPushButton("&Preview")
+        button.setObjectName('preview')
+        button.clicked.connect(self._on_preview)
+
+        layout.addWidget(text)
+        layout.addWidget(button)
+
+        return layout
+
+    # Events #################################################################
+
+    def show(self, *args, **kwargs):
+        """
+        Recall the last used (or default) service and call in to
+        activate its panel.
+        """
+
+        svc_id = self._addon.router.get_services()['current']
+        dropdown = self.findChild(QtGui.QComboBox, 'service')
+        idx = dropdown.findData(svc_id)
+
+        dropdown.setCurrentIndex(idx)
+        self._on_service_activated(idx, svc_id)
+
+        super(ServiceDialog, self).show(*args, **kwargs)
+
+    def _on_service_activated(self, idx, svc_id=None):
+        """
+        Switch the stack widget to the given service, constructing the
+        panel if it has not already been constructed.
+        """
+
+        if not svc_id:
+            svc_id = self.findChild(QtGui.QComboBox, 'service').itemData(idx)
+        stack = self.findChild(QtGui.QStackedWidget, 'panels')
+
+        if svc_id not in self._panel_ready:
+            self._panel_ready[svc_id] = True
+            self._addon.logger.debug("Constructing panel for %s", svc_id)
+
+            row = 1
+            panel = stack.widget(idx).layout()
+
+            font = QtGui.QFont()
+            font.setBold(True)
+
+            for option in self._addon.router.get_options(svc_id):
+                label = QtGui.QLabel(option['label'])
+                label.setFont(font)
+
+                if isinstance(option['values'], tuple):
+                    start, end = option['values'][0], option['values'][1]
+
+                    vinput = (
+                        QtGui.QDoubleSpinBox
+                        if isinstance(start, float) or isinstance(end, float)
+                        else QtGui.QSpinBox
+                    )()
+
+                    vinput.setRange(start, end)
+                    if len(option['values']) > 2:
+                        vinput.setSuffix(" " + option['values'][2])
+
+                    vinput.setValue(option['current'])
+
+                else:  # list of tuples
+                    vinput = QtGui.QComboBox()
+                    for value, text in option['values']:
+                        vinput.addItem(text, value)
+
+                    vinput.setCurrentIndex(vinput.findData(option['current']))
+
+                panel.addWidget(label, row, 0)
+                panel.addWidget(vinput, row, 1)
+
+                row += 1
+
+            font = QtGui.QFont()
+            font.setItalic(True)
+
+            label = QtGui.QLabel(self._addon.router.get_desc(svc_id))
+            label.setWordWrap(True)
+            label.setFont(font)
+
+            panel.addWidget(label, row, 0, 1, 2, QtCore.Qt.AlignBottom)
+            panel.setRowStretch(row, 1)
+
+        stack.setCurrentIndex(idx)
+
+    def _on_preview(self):
+        """
+        Handle parsing the inputs and passing onto the router.
+        """
+
+        button = self.findChild(QtGui.QPushButton, 'preview')
+        button.setDisabled(True)
+
+        dropdown = self.findChild(QtGui.QComboBox, 'service')
+        idx = dropdown.currentIndex()
+        vinputs = self.findChild(QtGui.QStackedWidget, 'panels') \
+            .widget(idx) \
+            .findChildren((QtGui.QComboBox, QtGui.QAbstractSpinBox))
+        svc_id = dropdown.itemData(idx)
+        options = self._addon.router.get_options(svc_id)
+
+        assert len(options) == len(vinputs)
+
+        text = self.findChild(QtGui.QPlainTextEdit, 'text').toPlainText()
+        values = {}
+
+        for i in range(len(options)):
+            option, vinput = options[i], vinputs[i]
+            values[option['key']] = (
+                vinput.value()
+                if isinstance(vinput, QtGui.QAbstractSpinBox)
+                else vinput.itemData(vinput.currentIndex())
+            )
+
+        def callback(exception=None):
+            """
+            Display any error and re-enable the Preview button.
+            """
+
+            if exception:
+                import aqt.utils
+                aqt.utils.showWarning(exception.message, self)
+
+            button.setDisabled(False)
+
+        self._addon.router.play(svc_id, text, values, callback)

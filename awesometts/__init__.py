@@ -175,7 +175,7 @@ addon = classes.Bundle(
 
 classes.gui.Action(
     target=classes.Bundle(
-        constructor=classes.gui.Config,
+        constructor=classes.gui.Configurator,
         args=(),
         kwargs=dict(addon=addon, parent=aqt.mw),
     ),
@@ -203,7 +203,7 @@ anki.hooks.addHook(
         # FIXME button should gray when Add Card / Browser editor loses focus
         classes.gui.Button(
             target=classes.Bundle(
-                constructor=ServiceDialog,  # FIXME replace w/ EditorGenerator
+                constructor=classes.gui.EditorGenerator,
                 args=(),
                 kwargs=dict(addon=addon, parent=editor.parentWindow),
             ),

@@ -24,7 +24,8 @@ Dispatch management of available services
 
 __all__ = ['Router']
 
-from . import Bundle
+import os.path
+
 from .services import Trait as BaseTrait
 
 
@@ -42,6 +43,11 @@ class Router(object):
     then the method can arrange for that call to occur on a different
     thread and then call the callback when done. Otherwise, the callback
     can be called immediately with neither blocking nor threading.
+
+    While the router is in charge of keeping track of the "current"
+    values (i.e. last used or default) for services and options, it is
+    NOT in charge of the last used from/to fields for mass generation,
+    which is quite specific to that particular form.
     """
 
     Trait = BaseTrait
@@ -49,10 +55,8 @@ class Router(object):
     __slots__ = [
         '_config',     # dict with lame_flags, last_service, last_options
         '_logger',     # logger-like interface with debug(), info(), etc.
-        '_normalize',  # callable for sanitizing service IDs and options
         '_paths',      # bundle with cache, temp
         '_services',   # bundle with aliases, avail, lookup
-        '_textize',    # callable for sanitizing input text
     ]
 
     def __init__(self, services, paths, config, logger):
@@ -83,27 +87,25 @@ class Router(object):
 
         self._config = config
         self._logger = logger
-        self._normalize = services.normalize
         self._paths = paths
-        self._textize = services.textize
 
-        self._services = Bundle()
-
-        self._services.aliases = {
-            self._normalize(from_svc_id): self._normalize(to_svc_id)
+        services.aliases = {
+            services.normalize(from_svc_id): services.normalize(to_svc_id)
             for from_svc_id, to_svc_id in services.aliases
         }
 
-        self._services.avail = None
+        services.avail = None
 
-        self._services.lookup = {
-            self._normalize(svc_id): {
+        services.lookup = {
+            services.normalize(svc_id): {
                 'class': svc_class,
                 'name': svc_class.NAME or svc_id,
                 'traits': svc_class.TRAITS or [],
             }
             for svc_id, svc_class in services.mappings
         }
+
+        self._services = services
 
     def by_trait(self, trait):
         """
@@ -136,7 +138,11 @@ class Router(object):
                 ], key=lambda (svc_id, text): text.lower()),
             }
 
-            last_service = self._normalize(self._config['last_service'])
+            last_service = \
+                self._services.normalize(self._config['last_service'])
+            if last_service in self._services.aliases:
+                last_service = self._services.aliases[last_service]
+
             self._services.avail['current'] = (
                 last_service if last_service in self._services.lookup.keys()
                 else self._services.avail['values'][0][0]
@@ -191,12 +197,20 @@ class Router(object):
             "\n".join(["<<< " + line for line in text.split("\n")])
         )
 
-        svc_id, service, text, options, path = self._validate(
-            svc_id, text, options,
-        )
+        try:
+            svc_id, service, text, options, path = self._validate(
+                svc_id, text, options,
+            )
 
-        from os.path import exists
-        cache_hit = exists(path)
+        except Exception as exception:  # capture all, pylint:disable=W0703
+            if callback:
+                callback(exception)
+            else:
+                raise
+
+            return
+
+        cache_hit = os.path.exists(path)
 
         self._logger.debug(
             "Interpreted as request to '%s' w/ %s and \"%s\" using %s (%s)",
@@ -251,16 +265,23 @@ class Router(object):
         svc_options = service['options']
         svc_options_keys = [svc_option['key'] for svc_option in svc_options]
 
-        text_or_texts = (
-            [self._textize(text) for text in text_or_texts]
-            if isinstance(text_or_texts, list)
-            else self._textize(text_or_texts)
-        )
+        if isinstance(text_or_texts, list):
+            text_or_texts = [
+                self._services.textize(text)
+                for text in text_or_texts
+            ]
+            if next((True for text in text_or_texts if not text), False):
+                raise ValueError("All input text must be set")
+
+        else:
+            text_or_texts = self._services.textize(text_or_texts)
+            if not text_or_texts:
+                raise ValueError("The input text cannot be empty")
 
         options = {
             key: value
             for key, value in [
-                (self._normalize(key), value)
+                (self._services.normalize(key), value)
                 for key, value in options.items()
             ]
             if key in svc_options_keys
@@ -364,8 +385,8 @@ class Router(object):
 
             for option in service['instance'].options():
                 assert 'key' in option, "missing option key for %s" % svc_id
-                assert option['key'] == self._normalize(option['key']), \
-                    "%s key for %s not normalized" % (option['key'], svc_id)
+                assert self._services.normalize(option['key']) == \
+                    option['key'], "bad %s key %s" % (svc_id, option['key'])
                 assert 'label' in option, \
                     "missing %s label for %s" % (option['key'], svc_id)
                 assert 'values' in option, \
@@ -377,6 +398,9 @@ class Router(object):
                     (option['key'], svc_id)
                 assert 'transform' in option, \
                     "missing %s transform for %s" % (option['key'], svc_id)
+
+                if not option['label'].endswith(":"):
+                    option['label'] += ":"
 
                 if 'default' in option and isinstance(option['values'], list):
                     option['values'] = [
@@ -428,7 +452,7 @@ class Router(object):
         given service is not available for this session.
         """
 
-        svc_id = self._normalize(svc_id)
+        svc_id = self._services.normalize(svc_id)
         if svc_id in self._services.aliases:
             svc_id = self._services.aliases[svc_id]
 
@@ -499,9 +523,7 @@ class Router(object):
         ])
 
         from hashlib import sha1
-        from os.path import join
-
-        return join(
+        return os.path.join(
             self._paths.cache,
             '.'.join([
                 '-'.join([

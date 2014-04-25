@@ -28,7 +28,10 @@ __all__ = [
     'Button',
 
     # dialog windows
-    'Config',
+    'Configurator',
+    # 'BrowserGenerator',
+    'EditorGenerator',
+    # 'Templater',
 ]
 
 from .common import (
@@ -36,4 +39,11 @@ from .common import (
     Button,
 )
 
-from .config import Config
+from .configurator import Configurator
+
+from .generator import (
+    # BrowserGenerator,
+    EditorGenerator,
+)
+
+# from .templater import Templater

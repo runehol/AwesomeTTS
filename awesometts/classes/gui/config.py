@@ -53,19 +53,9 @@ class Config(Dialog):
     ]
 
     def __init__(self, *args, **kwargs):
-        super(Config, self).__init__(*args, **kwargs)
-
-        self._qt_keys = None  # built when UI first shown by _build_ui()
-
-    # UI Construction ########################################################
-
-    def _build_ui(self):
         """
-        Titles the window and initializes the QT key lookup.
+        Pregenerate our mapping of all QT keys and set our title.
         """
-
-        super(Config, self)._build_ui()
-        self.setWindowTitle("AwesomeTTS")
 
         self._qt_keys = {
             value: key[4:]
@@ -74,19 +64,25 @@ class Config(Dialog):
             if len(key) > 4 and key.startswith('Key_')
         }
 
-    def _create(self):
+        super(Config, self).__init__(*args, **kwargs)
+
+        self.setWindowTitle("AwesomeTTS")
+
+    # UI Construction ########################################################
+
+    def _ui(self):
         """
         Returns a vertical layout with the superclass's banner, our tab
         area, and a row of the superclass's cancel/OK buttons.
         """
 
-        layout = super(Config, self)._create()
-        layout.addWidget(self._create_tabs())
-        layout.addWidget(self._create_buttons())
+        layout = super(Config, self)._ui()
+        layout.addWidget(self._ui_tabs())
+        layout.addWidget(self._ui_buttons())
 
         return layout
 
-    def _create_tabs(self):
+    def _ui_tabs(self):
         """
         Returns a tab widget populated with three tabs: On-the-Fly Mode,
         MP3 Generation, and Advanced.
@@ -95,26 +91,26 @@ class Config(Dialog):
         tabs = QtGui.QTabWidget()
 
         tabs.addTab(
-            self._create_tabs_onthefly(),
+            self._ui_tabs_onthefly(),
             QtGui.QIcon(':/icons/text-xml.png'),
             "On-the-Fly Mode",
         )
 
         tabs.addTab(
-            self._create_tabs_mp3gen(),
+            self._ui_tabs_mp3gen(),
             QtGui.QIcon(':/icons/document-new.png'),
             "MP3 Generation",
         )
 
         tabs.addTab(
-            self._create_tabs_advanced(),
+            self._ui_tabs_advanced(),
             QtGui.QIcon(':/icons/configure.png'),
             "Advanced",
         )
 
         return tabs
 
-    def _create_tabs_onthefly(self):
+    def _ui_tabs_onthefly(self):
         """
         Returns the "On-the-Fly Mode" tab.
         """
@@ -124,12 +120,12 @@ class Config(Dialog):
         layout = QtGui.QVBoxLayout()
         layout.addWidget(intro)
         layout.addSpacing(10)
-        layout.addWidget(self._create_tabs_onthefly_group(
+        layout.addWidget(self._ui_tabs_onthefly_group(
             'automatic_questions',
             'tts_key_q',
             "Questions / Fronts of Cards",
         ))
-        layout.addWidget(self._create_tabs_onthefly_group(
+        layout.addWidget(self._ui_tabs_onthefly_group(
             'automatic_answers',
             'tts_key_a',
             "Answers / Backs of Cards",
@@ -141,7 +137,7 @@ class Config(Dialog):
 
         return tab
 
-    def _create_tabs_onthefly_group(self, automatic_key, shortcut_key, label):
+    def _ui_tabs_onthefly_group(self, automatic_key, shortcut_key, label):
         """
         Returns the "Questions / Fronts of Cards" and "Answers / Backs
         of Cards" input groups.
@@ -170,7 +166,7 @@ class Config(Dialog):
 
         return group
 
-    def _create_tabs_mp3gen(self):
+    def _ui_tabs_mp3gen(self):
         """
         Returns the "MP3 Generation" tab.
         """
@@ -189,8 +185,8 @@ class Config(Dialog):
         layout.addWidget(intro)
         layout.addWidget(notes)
         layout.addSpacing(10)
-        layout.addWidget(self._create_tabs_mp3gen_lame())
-        layout.addWidget(self._create_tabs_mp3gen_throttle())
+        layout.addWidget(self._ui_tabs_mp3gen_lame())
+        layout.addWidget(self._ui_tabs_mp3gen_throttle())
         layout.addStretch()
 
         tab = QtGui.QWidget()
@@ -198,7 +194,7 @@ class Config(Dialog):
 
         return tab
 
-    def _create_tabs_mp3gen_lame(self):
+    def _ui_tabs_mp3gen_lame(self):
         """
         Returns the "LAME Transcoder" input group.
         """
@@ -233,7 +229,7 @@ class Config(Dialog):
 
         return group
 
-    def _create_tabs_mp3gen_throttle(self):
+    def _ui_tabs_mp3gen_throttle(self):
         """
         Returns the "Download Throttling" input group.
         """
@@ -279,7 +275,7 @@ class Config(Dialog):
 
         return group
 
-    def _create_tabs_advanced(self):
+    def _ui_tabs_advanced(self):
         """
         Returns the "Advanced" tab.
         """
@@ -289,8 +285,8 @@ class Config(Dialog):
         layout = QtGui.QVBoxLayout()
         layout.addWidget(intro)
         layout.addSpacing(10)
-        layout.addWidget(self._create_tabs_advanced_debug())
-        layout.addWidget(self._create_tabs_advanced_cache())
+        layout.addWidget(self._ui_tabs_advanced_debug())
+        layout.addWidget(self._ui_tabs_advanced_cache())
         layout.addStretch()
 
         tab = QtGui.QWidget()
@@ -298,7 +294,7 @@ class Config(Dialog):
 
         return tab
 
-    def _create_tabs_advanced_debug(self):
+    def _ui_tabs_advanced_debug(self):
         """
         Returns the "Write Debugging Output" input group.
         """
@@ -318,7 +314,7 @@ class Config(Dialog):
 
         return group
 
-    def _create_tabs_advanced_cache(self):
+    def _ui_tabs_advanced_cache(self):
         """
         Returns the "Media Cache" input group.
         """
@@ -344,7 +340,9 @@ class Config(Dialog):
 
         return group
 
-    def _restore(self):
+    # Events #################################################################
+
+    def show(self, *args, **kwargs):
         """
         Restores state on all form inputs. This should be roughly the
         opposite of the accept() method.
@@ -398,7 +396,7 @@ class Config(Dialog):
                 widget.setEnabled(False)
                 widget.setText("Clear Cache (no items)")
 
-    # Events #################################################################
+        super(Config, self).show(*args, **kwargs)
 
     def accept(self, *args, **kwargs):
         """

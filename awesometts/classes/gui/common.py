@@ -22,36 +22,100 @@
 """
 Common reusable GUI elements
 
-Provides a menu action class.
+Provides menu action and button classes.
+
+As everything done from the add-on code has to do with AwesomeTTS, these
+all carry a speaker icon (if supported by the desktop environment).
 """
 
-__all__ = ['Action']
+__all__ = ['Action', 'Button']
 
-from PyQt4 import QtGui
+from PyQt4 import QtCore, QtGui
 
 
-class Action(QtGui.QAction):
+ICON = QtGui.QIcon(':/icons/speaker.png')
+
+
+class _Connector(object):  # used like a mixin, pylint:disable=R0903
     """
-    Provides a menu action to trigger a dialog. As everything done from
-    the add-on code has to do with AwesomeTTS, these actions all carry a
-    speaker icon (if supported by the desktop environment).
+    Handles deferring construction of the target class until it's
+    needed and then keeping a reference to it as long as its triggering
+    GUI element still exists.
     """
 
-    __slots__ = []
-
-    ICON = QtGui.QIcon(':/icons/speaker.png')
-
-    def __init__(self, text, dialog, menu, parent):
+    def __init__(self, signal, target):
         """
-        Initializes the menu action, wires its 'triggered' event, and
-        adds it to the target menu via Anki's API.
+        Store the target for future use and wire up the passed signal.
         """
 
-        super(Action, self).__init__(self.ICON, text, parent)
+        self._target = target
+        self._instance = None
 
-        self.triggered.connect(
-            # passed event must be discarded, pylint:disable=W0108
-            lambda: dialog.show()
-        )
+        signal.connect(self._show)
 
-        menu.addAction(self)
+    def _show(self):
+        """
+        If the target has not yet been constructed, do so now, and then
+        show it.
+        """
+
+        if not self._instance:
+            self._instance = self._target.constructor(
+                *self._target.args,
+                **self._target.kwargs
+            )
+
+        self._instance.show()
+
+
+class Action(QtGui.QAction, _Connector):
+    """
+    Provides a menu action to show a dialog when triggered.
+    """
+
+    def __init__(self, target, text, parent):
+        """
+        Initializes the menu action and wires its 'triggered' event.
+
+        If the specified parent is a QMenu, this new action will
+        automatically be added to it.
+        """
+
+        QtGui.QAction.__init__(self, ICON, text, parent)
+        _Connector.__init__(self, self.triggered, target)
+
+        self.setShortcut('Ctrl+t')
+
+        if isinstance(parent, QtGui.QMenu):
+            parent.addAction(self)
+
+
+class Button(QtGui.QPushButton, _Connector):
+    """
+    Provides a button to show a dialog when clicked.
+    """
+
+    def __init__(self, target, text=None, style=None):
+        """
+        Initializes the button and wires its 'clicked' event.
+
+        Note that buttons that have text get one set of styling
+        different from ones without text.
+        """
+
+        QtGui.QPushButton.__init__(self, ICON, text)
+        _Connector.__init__(self, self.clicked, target)
+
+        if text:
+            self.setIconSize(QtCore.QSize(15, 15))
+
+        else:
+            # FIXME How do I localize the tooltip for Mac OS X? (i.e. Cmd+T)
+            self.setFixedWidth(20)
+            self.setFixedHeight(20)
+            self.setFocusPolicy(QtCore.Qt.NoFocus)
+            self.setShortcut('Ctrl+t')
+            self.setToolTip("Insert an audio clip with AwesomeTTS (Ctrl+T)")
+
+        if style:
+            self.setStyle(style)

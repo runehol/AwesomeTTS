@@ -37,50 +37,28 @@ class Dialog(QtGui.QDialog):
 
     __slots__ = [
         '_addon',  # bundle of config, logger, paths, router, version
-        '_setup',  # True if the UI has been built out, False otherwise
     ]
 
     def __init__(self, addon, parent):
         """
-        Subclasses must call this method when extending.
+        Set the modal status for the dialog and sets its layout to the
+        return value of the _ui() method.
         """
+
+        self._addon = addon
+        self._addon.logger.debug(
+            "Constructing %s dialog",
+            self.__class__.__name__,
+        )
 
         super(Dialog, self).__init__(parent)
 
-        self._addon = addon
-        self._setup = False
-
-    def show(self, *args, **kwargs):
-        """
-        Checks to see if the UI has been built out, runs the restore
-        hook, then lets the Qt framework display the window.
-
-        Subclasses should not need to override or extend this method.
-        """
-
-        if not self._setup:
-            self._build_ui()
-
-        self._restore()
-
-        super(Dialog, self).show(*args, **kwargs)
+        self.setModal(True)
+        self.setLayout(self._ui())
 
     # UI Construction ########################################################
 
-    def _build_ui(self):
-        """
-        Initializes the window as a modal, sets its layout, and marks
-        the object as "_setup".
-
-        Subclasses must call this method when overriding.
-        """
-
-        self._setup = True
-
-        self.setModal(True)
-        self.setLayout(self._create())
-
-    def _create(self):
+    def _ui(self):
         """
         Returns a vertical layout with a banner.
 
@@ -89,17 +67,17 @@ class Dialog(QtGui.QDialog):
         """
 
         layout = QtGui.QVBoxLayout()
-        layout.addLayout(self._create_banner())
+        layout.addLayout(self._ui_banner())
 
         return layout
 
-    def _create_banner(self):
+    def _ui_banner(self):
         """
         Returns a horizontal layout with some title text, a strecher,
         and version text.
 
         For subclasses, this method will be called automatically as part
-        of the base class _create() method.
+        of the base class _ui() method.
         """
 
         name = QtGui.QLabel("AwesomeTTS")
@@ -120,7 +98,7 @@ class Dialog(QtGui.QDialog):
 
         return layout
 
-    def _create_buttons(self):
+    def _ui_buttons(self):
         """
         Returns a horizontal row of cancel/OK buttons.
 
@@ -139,12 +117,15 @@ class Dialog(QtGui.QDialog):
 
         return buttons
 
-    def _restore(self):
+    # Events #################################################################
+
+    def show(self, *args, **kwargs):
         """
-        Hook that can be optionally overridden by subclasses. Called
-        whenever the window is displayed (first time and all successive
-        times).
+        Writes a log message and pass onto superclass.
         """
+
+        self._addon.logger.debug("Showing '%s' dialog", self.windowTitle())
+        super(Dialog, self).show(*args, **kwargs)
 
 
 class ServiceDialog(Dialog):

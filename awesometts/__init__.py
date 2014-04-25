@@ -35,8 +35,10 @@ import sys
 
 from PyQt4.QtCore import Qt
 
+import anki.hooks
 import anki.utils
 import aqt
+import aqt.clayout
 
 from . import classes
 
@@ -85,38 +87,30 @@ STRIP_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
 STRIP_ALL = lambda text: STRIP_WHITESPACE(STRIP_SOUNDS(STRIP_HTML(text)))
 
 
-# Initialization and dependency setup follows, pylint:disable=C0103
-
+# Core class initialization and dependency setup, pylint:disable=C0103
 
 logger = classes.Logger(
     name='AwesomeTTS',
-
     handlers=dict(
         debug_file=logging.FileHandler(
             PATH_LOG,
             encoding='utf-8',
             delay=True,
         ),
-
         debug_stdout=logging.StreamHandler(sys.stdout),
     ),
-
     formatter=logging.Formatter(
         '[%(asctime)s %(module)s@%(lineno)d %(levelname)s] %(message)s',
         '%H:%M:%S',
     ),
 )
 
-
 config = classes.Config(
     db=classes.Bundle(
         path=PATH_CONFIG,
-
         table='general',
-
         normalize=TO_NORMALIZED,
     ),
-
     cols=[
         ('automaticAnswers', 'integer', False, TO_BOOL, int),
         ('automaticQuestions', 'integer', False, TO_BOOL, int),
@@ -132,9 +126,7 @@ config = classes.Config(
         ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
         ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),
     ],
-
     logger=logger,
-
     events=[
         (
             ['debug_file', 'debug_stdout'],
@@ -142,7 +134,6 @@ config = classes.Config(
         ),
     ],
 )
-
 
 router = classes.Router(
     services=classes.Bundle(
@@ -153,55 +144,92 @@ router = classes.Router(
             ('sapi5', classes.services.SAPI5),
             ('say', classes.services.Say),
         ],
-
         aliases=[
             ('g', 'google'),
         ],
-
         normalize=TO_NORMALIZED,
-
         textize=STRIP_ALL,
     ),
-
     paths=classes.Bundle(
         cache=PATH_CACHE,
         temp=PATH_TEMP,
     ),
-
     config=config,
-
     logger=logger,
 )
 
+
+# GUI interaction with Anki, pylint:disable=C0103
+
+from .classes.gui.base import ServiceDialog  # FIXME remove
 
 addon = classes.Bundle(
     config=config,
-
     logger=logger,
-
     paths=classes.Bundle(
         cache=PATH_CACHE,
     ),
-
     router=router,
-
     version=VERSION,
 )
 
-
 classes.gui.Action(
-    text="A&wesomeTTS...",
-
-    dialog=classes.gui.Config(
-        addon=addon,
-
-        parent=aqt.mw,
+    target=classes.Bundle(
+        constructor=classes.gui.Config,
+        args=(),
+        kwargs=dict(addon=addon, parent=aqt.mw),
     ),
+    text="Awesome&TTS...",
+    parent=aqt.mw.form.menuTools,
+)
 
-    menu=aqt.mw.form.menuTools,
+anki.hooks.addHook(
+    # FIXME menu should gray when no cards are selected in Browser
+    'browser.setupMenus',
+    lambda browser: classes.gui.Action(
+        target=classes.Bundle(
+            constructor=ServiceDialog,  # FIXME replace w/ BrowserGenerator
+            args=(),
+            kwargs=dict(addon=addon, parent=browser),
+        ),
+        text="Awesome&TTS Mass Generator...",
+        parent=browser.form.menuEdit,
+    ),
+)
 
-    parent=aqt.mw,
+anki.hooks.addHook(
+    'setupEditorButtons',
+    lambda editor: editor.iconsBox.addWidget(
+        # FIXME button should gray when Add Card / Browser editor loses focus
+        classes.gui.Button(
+            target=classes.Bundle(
+                constructor=ServiceDialog,  # FIXME replace w/ EditorGenerator
+                args=(),
+                kwargs=dict(addon=addon, parent=editor.parentWindow),
+            ),
+            style=editor.plastiqueStyle,
+        ),
+    ),
+)
+
+aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
+    aqt.clayout.CardLayout.setupButtons,
+    lambda card_layout: card_layout.buttons.insertWidget(
+        # today, the card layout form has 7 buttons/stretchers; in the event
+        # that this changes in the future, bump the button to the first slot
+        3 if card_layout.buttons.count() == 7 else 0,
+        classes.gui.Button(
+            text="Add &TTS",
+            target=classes.Bundle(
+                constructor=ServiceDialog,  # FIXME replace w/ TemplateBuilder
+                args=(),
+                kwargs=dict(addon=addon, parent=card_layout),
+            ),
+        ),
+    )
 )
 
 
-from . import main  # old AwesomeTTS code
+# temporary import to make on-the-fly playback and shortcuts work
+
+from . import main

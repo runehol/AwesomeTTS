@@ -25,11 +25,15 @@ GUI classes for AwesomeTTS
 __all__ = [
     # common
     'Action',
+    'Button',
 
     # dialog windows
     'Config',
 ]
 
-from .common import Action
+from .common import (
+    Action,
+    Button,
+)
 
 from .config import Config

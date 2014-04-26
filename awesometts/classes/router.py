@@ -39,14 +39,6 @@ _PREFIXED = lambda prefix, lines: "\n".join(
 
 
 class Router(object):
-    # FIXME. It's currently possible to call play() multiple times and have
-    # the backend service called multiple times, which is the wrong behavior.
-    # The router should keep track of which services are busy, and should
-    # throw an exception if a busy service is play() or record()'d. It will
-    # then be up to the caller to decide to do with that exception (e.g. the
-    # on-the-fly shortcut and automatic reading stuff might choose to just
-    # ignore the exception).
-
     """
     Allows the registration, lookup, and routing of concrete Service
     implementations.
@@ -69,7 +61,11 @@ class Router(object):
 
     Trait = BaseTrait
 
+    class BusyError(RuntimeError):
+        """Raised for requests for files that are already underway."""
+
     __slots__ = [
+        '_busy',       # list of file paths that are in-progress
         '_config',     # dict with lame_flags, last_service, last_options
         '_logger',     # logger-like interface with debug(), info(), etc.
         '_paths',      # bundle with cache, temp
@@ -119,6 +115,7 @@ class Router(object):
             for svc_id, svc_class in services.mappings
         }
 
+        self._busy = []
         self._config = config
         self._logger = logger
         self._paths = paths
@@ -216,7 +213,7 @@ class Router(object):
         try:
             svc_id, service, text, options, path = \
                 self._validate(svc_id, text, options)
-        except ValueError as exception:
+        except StandardError as exception:
             callback(exception)
             return
 
@@ -232,17 +229,19 @@ class Router(object):
 
             import anki.sound
             anki.sound.play(path)
-            callback(exception=None)
+            callback(None)
 
         if cache_hit:
             success()
 
         else:
+            self._busy.append(path)
             self._pool.spawn(
                 task=lambda: service['instance'].run(text, options, path),
-                callback=lambda exception:
-                    callback(exception=exception) if exception
-                    else success()
+                callback=lambda exception: (
+                    self._busy.remove(path),
+                    exception and callback(exception) or success(),
+                )
             )
 
     def _validate(self, svc_id, text_or_texts, options):
@@ -289,14 +288,27 @@ class Router(object):
                 (svc_id, service['name'], "; ".join(problems))
             )
 
-        path_or_paths = (
-            [
+        if isinstance(text_or_texts, list):
+            path_or_paths = [
                 self._path_cache(svc_id, text, options)
                 for text in text_or_texts
             ]
-            if isinstance(text_or_texts, list)
-            else self._path_cache(svc_id, text_or_texts, options)
-        )
+            if next(
+                (True for path in path_or_paths if path in self._busy),
+                False,
+            ):
+                raise self.BusyError(
+                    "The %s service is busy processing some of these." %
+                    service['name']
+                )
+
+        else:
+            path_or_paths = self._path_cache(svc_id, text_or_texts, options)
+            if path_or_paths in self._busy:
+                raise self.BusyError(
+                    "The %s service is already busy processing %s." %
+                    (service['name'], path_or_paths)
+                )
 
         return svc_id, service, text_or_texts, options, path_or_paths
 
@@ -460,7 +472,7 @@ class Router(object):
         try:
             service = self._services.lookup[svc_id]
         except KeyError:
-            raise KeyError("There is no '%s' service" % svc_id)
+            raise ValueError("There is no '%s' service" % svc_id)
 
         self._load_service(service)
 
@@ -494,7 +506,7 @@ class Router(object):
 
             self._logger.info("%s service initialized", service['name'])
 
-        except:  # allow recovery from any exception, pylint:disable=W0702
+        except StandardError:
             service['instance'] = None  # flag this service as unavailable
 
             from traceback import format_exc
@@ -617,7 +629,7 @@ class _Worker(QtCore.QThread):
 
         try:
             self._task()
-        except Exception as exception:  # catch all, pylint:disable=W0703
+        except StandardError as exception:
             self.emit(_SIGNAL, self._id, exception)
             return
 

@@ -41,10 +41,8 @@ fi
 
 oldPwd=$PWD
 
-cd "`dirname "$0"`/.."
-./tools/build_ui.sh
+cd "`dirname "$0"`/../.."
 
-cd ..
 echo "Packing zip file.."
 zip -9R "$target" awesometts/LICENSE.txt \*.py \*.vbs
 

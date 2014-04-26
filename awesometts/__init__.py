@@ -232,7 +232,6 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
     )
 )
 
+# TODO: setup automatic reading
 
-# temporary import to make on-the-fly playback and shortcuts work
-
-from . import main
+# TODO: setup shortcut key bindings

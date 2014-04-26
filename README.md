@@ -25,9 +25,7 @@ using add-on code `301952613`.
 The [develop branch](https://github.com/AwesomeTTS/AwesomeTTS/tree/develop),
 [hotfixes and previews](https://github.com/AwesomeTTS/AwesomeTTS/branches),
 and [specific releases](https://github.com/AwesomeTTS/AwesomeTTS/releases) can
-be pulled in and installed with Git. Beyond basic shell access, one will also
-need the `pyuic4` tool from the [PyQt project](http://pyqt.sourceforge.net/)
-to build the `.ui` user interface files.
+be pulled in and installed with Git.
 
 - **Straight Install:**
   Build and copy the files into your Anki `addons` directory using the
@@ -44,17 +42,12 @@ to build the `.ui` user interface files.
   Build and symlink the files into your Anki `addons` directory using the
   `symlink.sh` helper, removing any other installation of AwesomeTTS. If you
   have an existing configuration file, it will be saved, but your cache will
-  be cleared _unless_ your new symlink happens to have a cache directory. If
-  changes are later made to the `designer/*.ui` files, then just the
-  `build_ui.sh` helper by itself can be used to rebuild those.
+  be cleared _unless_ your new symlink happens to have a cache directory.
 
         $ git clone https://github.com/AwesomeTTS/AwesomeTTS.git
         $ cd AwesomeTTS
         $ git checkout [ref]  (if not using "develop", e.g. pre/v1.0-beta11)
         $ awesometts/tools/symlink.sh [addons directory]  (e.g. ~/Anki/addons)
-            . . .
-        $ cd awesometts
-        $ tools/build_ui.sh
 
 - **Package into a Zip File:**
   Build and package the files into a zip archive for installation somewhere

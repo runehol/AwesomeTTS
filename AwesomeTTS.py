@@ -57,6 +57,12 @@ for _path in [
         pass
 
 for _path in [
+    ('forms', [
+        'configurator.py', 'configurator.pyc', 'configurator.pyo',
+        'filegenerator.py', 'filegenerator.pyc', 'filegenerator.pyo',
+        'massgenerator.py', 'massgenerator.pyc', 'massgenerator.pyo',
+        '__init__.py', '__init__.pyc', '__init__.pyo',
+    ]),
     ('services', [
         'ekho.py', 'ekho.pyc', 'ekho.pyo',
         'espeak.py', 'espeak.pyc', 'espeak.pyo',

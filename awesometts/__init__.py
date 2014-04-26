@@ -118,6 +118,8 @@ config = classes.Config(
         ('debug_file', 'integer', False, TO_BOOL, int),
         ('debug_stdout', 'integer', False, TO_BOOL, int),
         ('lame_flags', 'text', '--quiet -q 2', str, str),
+        ('last_mass_append', 'integer', True, TO_BOOL, int),
+        ('last_mass_behavior', 'integer', True, TO_BOOL, int),
         ('last_mass_dest', 'text', 'Back', str, str),
         ('last_mass_source', 'text', 'Front', str, str),
         ('last_service', 'text', 'google', str, str),
@@ -189,7 +191,7 @@ anki.hooks.addHook(
     'browser.setupMenus',
     lambda browser: classes.gui.Action(
         target=classes.Bundle(
-            constructor=ServiceDialog,  # FIXME replace w/ BrowserGenerator
+            constructor=classes.gui.BrowserGenerator,
             args=(),
             kwargs=dict(addon=addon, parent=browser),
         ),

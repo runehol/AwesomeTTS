@@ -39,6 +39,14 @@ _PREFIXED = lambda prefix, lines: "\n".join(
 
 
 class Router(object):
+    # FIXME. It's currently possible to call play() multiple times and have
+    # the backend service called multiple times, which is the wrong behavior.
+    # The router should keep track of which services are busy, and should
+    # throw an exception if a busy service is play() or record()'d. It will
+    # then be up to the caller to decide to do with that exception (e.g. the
+    # on-the-fly shortcut and automatic reading stuff might choose to just
+    # ignore the exception).
+
     """
     Allows the registration, lookup, and routing of concrete Service
     implementations.

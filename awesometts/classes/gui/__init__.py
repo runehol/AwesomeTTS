@@ -29,7 +29,7 @@ __all__ = [
 
     # dialog windows
     'Configurator',
-    # 'BrowserGenerator',
+    'BrowserGenerator',
     'EditorGenerator',
     # 'Templater',
 ]
@@ -42,7 +42,7 @@ from .common import (
 from .configurator import Configurator
 
 from .generator import (
-    # BrowserGenerator,
+    BrowserGenerator,
     EditorGenerator,
 )
 

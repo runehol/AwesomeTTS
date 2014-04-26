@@ -117,7 +117,7 @@ class Configurator(Dialog):
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(intro)
-        layout.addSpacing(10)
+        layout.addSpacing(self._SPACING)
         layout.addWidget(self._ui_tabs_onthefly_group(
             'automatic_questions',
             'tts_key_q',
@@ -182,7 +182,7 @@ class Configurator(Dialog):
         layout = QtGui.QVBoxLayout()
         layout.addWidget(intro)
         layout.addWidget(notes)
-        layout.addSpacing(10)
+        layout.addSpacing(self._SPACING)
         layout.addWidget(self._ui_tabs_mp3gen_lame())
         layout.addWidget(self._ui_tabs_mp3gen_throttle())
         layout.addStretch()
@@ -282,7 +282,7 @@ class Configurator(Dialog):
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(intro)
-        layout.addSpacing(10)
+        layout.addSpacing(self._SPACING)
         layout.addWidget(self._ui_tabs_advanced_debug())
         layout.addWidget(self._ui_tabs_advanced_cache())
         layout.addStretch()

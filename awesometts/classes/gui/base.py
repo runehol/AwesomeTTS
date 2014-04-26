@@ -38,6 +38,22 @@ class Dialog(QtGui.QDialog):
     Base used for all dialog windows.
     """
 
+    _FONT_HEADER = QtGui.QFont()
+    _FONT_HEADER.setPointSize(12)
+    _FONT_HEADER.setBold(True)
+
+    _FONT_INFO = QtGui.QFont()
+    _FONT_INFO.setItalic(True)
+
+    _FONT_LABEL = QtGui.QFont()
+    _FONT_LABEL.setBold(True)
+
+    _FONT_TITLE = QtGui.QFont()
+    _FONT_TITLE.setPointSize(20)
+    _FONT_TITLE.setBold(True)
+
+    _SPACING = 10
+
     __slots__ = [
         '_addon',  # bundle of config, logger, paths, router, version
     ]
@@ -86,15 +102,10 @@ class Dialog(QtGui.QDialog):
         """
 
         name = QtGui.QLabel("AwesomeTTS")
-        name_font = QtGui.QFont()
-        name_font.setPointSize(20)
-        name_font.setBold(True)
-        name.setFont(name_font)
+        name.setFont(self._FONT_TITLE)
 
         version = QtGui.QLabel(self._addon.version)
-        version_font = QtGui.QFont()
-        version_font.setItalic(True)
-        version.setFont(version_font)
+        version.setFont(self._FONT_INFO)
 
         layout = QtGui.QHBoxLayout()
         layout.addWidget(name)
@@ -139,8 +150,10 @@ class ServiceDialog(Dialog):
     generator, mass file generator, template tag builder).
     """
 
+    _OPTIONS_WIDGETS = (QtGui.QComboBox, QtGui.QAbstractSpinBox)
+
     __slots__ = [
-        '_panel_ready'  # map of svc_ids to True if that service is ready
+        '_panel_ready',  # map of svc_ids to True if that service is ready
     ]
 
     def __init__(self, *args, **kwargs):
@@ -150,7 +163,6 @@ class ServiceDialog(Dialog):
         """
 
         self._panel_ready = {}
-
         super(ServiceDialog, self).__init__(*args, **kwargs)
 
     # UI Construction ########################################################
@@ -164,6 +176,7 @@ class ServiceDialog(Dialog):
 
         horizontal = QtGui.QHBoxLayout()
         horizontal.addLayout(self._ui_services())
+        horizontal.addSpacing(self._SPACING)
         horizontal.addLayout(self._ui_control())
 
         layout.addLayout(horizontal)
@@ -203,7 +216,11 @@ class ServiceDialog(Dialog):
         horizontal.addWidget(dropdown)
         horizontal.addStretch()
 
+        header = QtGui.QLabel("Configure Service")
+        header.setFont(self._FONT_HEADER)
+
         layout = QtGui.QVBoxLayout()
+        layout.addWidget(header)
         layout.addLayout(horizontal)
         layout.addWidget(stack)
 
@@ -211,20 +228,40 @@ class ServiceDialog(Dialog):
 
     def _ui_control(self):
         """
-        Return the text input and a preview button.
+        Returns the "Test Settings" header, the text input and a preview
+        button.
+
+        Subclasses should either extend this or replace it, but if they
+        replace this (e.g. to display the text input differently), the
+        objects created must have setObjectName() called with 'text'
+        and 'preview'.
         """
 
-        layout = QtGui.QVBoxLayout()
-
-        text = QtGui.QPlainTextEdit()
+        text = QtGui.QLineEdit()
+        text.keyPressEvent = lambda key_event: (
+            self._on_preview()
+            if key_event.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]
+            else QtGui.QLineEdit.keyPressEvent(text, key_event)
+        )
         text.setObjectName('text')
+        text.setPlaceholderText("type a phrase to test...")
 
         button = QtGui.QPushButton("&Preview")
         button.setObjectName('preview')
         button.clicked.connect(self._on_preview)
 
-        layout.addWidget(text)
-        layout.addWidget(button)
+        horizontal = QtGui.QHBoxLayout()
+        horizontal.addWidget(text)
+        horizontal.addWidget(button)
+
+        header = QtGui.QLabel("Preview")
+        header.setFont(self._FONT_HEADER)
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(header)
+        layout.addLayout(horizontal)
+        layout.addStretch()
+        layout.addSpacing(self._SPACING)
 
         return layout
 
@@ -233,7 +270,7 @@ class ServiceDialog(Dialog):
     def show(self, *args, **kwargs):
         """
         Recall the last used (or default) service and call in to
-        activate its panel.
+        activate its panel, then clear the input text box.
         """
 
         svc_id = self._addon.router.get_services()['current']
@@ -241,92 +278,122 @@ class ServiceDialog(Dialog):
         idx = dropdown.findData(svc_id)
 
         dropdown.setCurrentIndex(idx)
-        self._on_service_activated(idx, svc_id)
+        self._on_service_activated(idx, svc_id, True)
+
+        text = self.findChild(QtGui.QWidget, 'text')
+        try:
+            text.setText("")
+        except AttributeError:
+            text.setPlainText("")
 
         super(ServiceDialog, self).show(*args, **kwargs)
 
-    def _on_service_activated(self, idx, svc_id=None):
+    def _on_service_activated(self, idx, svc_id=None, initial=False):
         """
-        Switch the stack widget to the given service, constructing the
-        panel if it has not already been constructed.
+        Construct the target widget if it has not already been built,
+        recall the last-used values for the options, and then switch the
+        stack to it.
         """
 
         if not svc_id:
             svc_id = self.findChild(QtGui.QComboBox, 'service').itemData(idx)
+
         stack = self.findChild(QtGui.QStackedWidget, 'panels')
+        panel_unbuilt = svc_id not in self._panel_ready
 
-        if svc_id not in self._panel_ready:
-            self._panel_ready[svc_id] = True
-            self._addon.logger.debug("Constructing panel for %s", svc_id)
+        if panel_unbuilt or initial:
+            widget = stack.widget(idx)
+            options = self._addon.router.get_options(svc_id)
 
-            row = 1
-            panel = stack.widget(idx).layout()
+            if panel_unbuilt:
+                self._on_service_activated_build(svc_id, widget, options)
 
-            font = QtGui.QFont()
-            font.setBold(True)
+            if initial:
+                vinputs = widget.findChildren(self._OPTIONS_WIDGETS)
 
-            for option in self._addon.router.get_options(svc_id):
-                label = QtGui.QLabel(option['label'])
-                label.setFont(font)
+                assert len(vinputs) == len(options)
 
-                if isinstance(option['values'], tuple):
-                    start, end = option['values'][0], option['values'][1]
+                for i in range(len(options)):
+                    option, vinput = options[i], vinputs[i]
 
-                    vinput = (
-                        QtGui.QDoubleSpinBox
-                        if isinstance(start, float) or isinstance(end, float)
-                        else QtGui.QSpinBox
-                    )()
-
-                    vinput.setRange(start, end)
-                    if len(option['values']) > 2:
-                        vinput.setSuffix(" " + option['values'][2])
-
-                    vinput.setValue(option['current'])
-
-                else:  # list of tuples
-                    vinput = QtGui.QComboBox()
-                    for value, text in option['values']:
-                        vinput.addItem(text, value)
-
-                    vinput.setCurrentIndex(vinput.findData(option['current']))
-
-                panel.addWidget(label, row, 0)
-                panel.addWidget(vinput, row, 1)
-
-                row += 1
-
-            font = QtGui.QFont()
-            font.setItalic(True)
-
-            label = QtGui.QLabel(self._addon.router.get_desc(svc_id))
-            label.setWordWrap(True)
-            label.setFont(font)
-
-            panel.addWidget(label, row, 0, 1, 2, QtCore.Qt.AlignBottom)
-            panel.setRowStretch(row, 1)
+                    if isinstance(option['values'], tuple):
+                        vinput.setValue(option['current'])
+                    else:
+                        vinput.setCurrentIndex(
+                            vinput.findData(option['current'])
+                        )
 
         stack.setCurrentIndex(idx)
+
+        if panel_unbuilt and not initial:
+            self.adjustSize()
+
+    def _on_service_activated_build(self, svc_id, widget, options):
+        """
+        Based on the list of options, build a grid of labels and input
+        controls.
+        """
+
+        self._panel_ready[svc_id] = True
+        self._addon.logger.debug("Constructing panel for %s", svc_id)
+
+        row = 1
+        panel = widget.layout()
+
+        for option in options:
+            label = QtGui.QLabel(option['label'])
+            label.setFont(self._FONT_LABEL)
+
+            if isinstance(option['values'], tuple):
+                start, end = option['values'][0], option['values'][1]
+
+                vinput = (
+                    QtGui.QDoubleSpinBox
+                    if isinstance(start, float) or isinstance(end, float)
+                    else QtGui.QSpinBox
+                )()
+
+                vinput.setRange(start, end)
+                if len(option['values']) > 2:
+                    vinput.setSuffix(" " + option['values'][2])
+
+            else:  # list of tuples
+                vinput = QtGui.QComboBox()
+                for value, text in option['values']:
+                    vinput.addItem(text, value)
+
+            panel.addWidget(label, row, 0)
+            panel.addWidget(vinput, row, 1)
+
+            row += 1
+
+        label = QtGui.QLabel(self._addon.router.get_desc(svc_id))
+        label.setWordWrap(True)
+        label.setFont(self._FONT_INFO)
+
+        panel.addWidget(label, row, 0, 1, 2, QtCore.Qt.AlignBottom)
+        panel.setRowStretch(row, 1)
 
     def _on_preview(self):
         """
         Handle parsing the inputs and passing onto the router.
         """
 
-        button = self.findChild(QtGui.QPushButton, 'preview')
-        button.setDisabled(True)
-
         dropdown = self.findChild(QtGui.QComboBox, 'service')
         idx = dropdown.currentIndex()
         vinputs = self.findChild(QtGui.QStackedWidget, 'panels') \
-            .widget(idx) \
-            .findChildren((QtGui.QComboBox, QtGui.QAbstractSpinBox))
+            .widget(idx).findChildren(self._OPTIONS_WIDGETS)
         svc_id = dropdown.itemData(idx)
         options = self._addon.router.get_options(svc_id)
 
         assert len(options) == len(vinputs)
 
-        text = self.findChild(QtGui.QPlainTextEdit, 'text').toPlainText()
+        text_input = self.findChild(QtGui.QWidget, 'text')
+        try:
+            text_value = text_input.text()
+        except AttributeError:
+            text_value = text_input.toPlainText()
+
         values = {}
 
         for i in range(len(options)):
@@ -336,6 +403,10 @@ class ServiceDialog(Dialog):
                 if isinstance(vinput, QtGui.QAbstractSpinBox)
                 else vinput.itemData(vinput.currentIndex())
             )
+
+        button = self.findChild(QtGui.QPushButton, 'preview')
+        button.setDisabled(True)
+        text_input.setDisabled(True)
 
         def callback(exception=None):
             """
@@ -347,5 +418,7 @@ class ServiceDialog(Dialog):
                 aqt.utils.showWarning(exception.message, self)
 
             button.setDisabled(False)
+            text_input.setDisabled(False)
+            text_input.setFocus()
 
-        self._addon.router.play(svc_id, text, values, callback)
+        self._addon.router.play(svc_id, text_value, values, callback)

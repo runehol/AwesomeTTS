@@ -23,9 +23,189 @@
 File generation dialogs
 """
 
-__all__ = ['EditorGenerator']
+__all__ = ['BrowserGenerator', 'EditorGenerator']
+
+from PyQt4 import QtGui
 
 from .base import ServiceDialog
+
+
+class BrowserGenerator(ServiceDialog):
+    """
+    Provides a dialog for generating many media files to multiple cards
+    from the card browser.
+    """
+
+    __slots__ = [
+    ]
+
+    def __init__(self, *args, **kwargs):
+        """
+        Sets our title.
+        """
+
+        super(BrowserGenerator, self).__init__(*args, **kwargs)
+        self.setWindowTitle("Mass Generate MP3s w/ %s" % self.windowTitle())
+
+    # UI Construction ########################################################
+
+    def _ui_control(self):
+        """
+        Returns the superclass's text and preview buttons, adding our
+        inputs to control the mass generation process, and then the base
+        class's cancel/OK buttons.
+        """
+
+        header = QtGui.QLabel("Fields and Handling")
+        header.setFont(self._FONT_HEADER)
+
+        intro = QtGui.QLabel(
+            "AwesomeTTS will read the text in the source field, generate an "
+            "MP3 file, and place it into the destination field."
+        )
+        intro.setFont(self._FONT_INFO)
+        intro.setWordWrap(True)
+
+        layout = super(BrowserGenerator, self)._ui_control()
+        layout.addWidget(header)
+        layout.addWidget(intro)
+        layout.addLayout(self._ui_control_fields())
+        layout.addWidget(self._ui_control_handling())
+        layout.addWidget(self._ui_buttons())
+
+        return layout
+
+    def _ui_control_fields(self):
+        """
+        Returns a grid layout with the source and destination fields.
+
+        Note that populating the field dropdowns is deferred to the
+        show() event handler because the available fields might change
+        from call to call.
+        """
+
+        source_label = QtGui.QLabel("Source Field:")
+        source_label.setFont(self._FONT_LABEL)
+
+        source_dropdown = QtGui.QComboBox()
+        source_dropdown.setObjectName('source')
+
+        dest_label = QtGui.QLabel("Destination Field:")
+        dest_label.setFont(self._FONT_LABEL)
+
+        dest_dropdown = QtGui.QComboBox()
+        dest_dropdown.setObjectName('dest')
+
+        layout = QtGui.QGridLayout()
+        layout.addWidget(source_label, 0, 0)
+        layout.addWidget(source_dropdown, 0, 1)
+        layout.addWidget(dest_label, 1, 0)
+        layout.addWidget(dest_dropdown, 1, 1)
+
+        return layout
+
+    def _ui_control_handling(self):
+        """
+        Return the append/overwrite radio buttons and behavior checkbox.
+        """
+
+        append = QtGui.QRadioButton(
+            "&Append [sound:xxx] Tag onto Destination Field"
+        )
+        append.setObjectName('append')
+        append.toggled.connect(self._on_handling_toggled)
+
+        overwrite = QtGui.QRadioButton(
+            "Over&write the Destination Field w/ Media Filename"
+        )
+        overwrite.setObjectName('overwrite')
+        overwrite.toggled.connect(self._on_handling_toggled)
+
+        behavior = QtGui.QCheckBox()
+        behavior.setObjectName('behavior')
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(append)
+        layout.addWidget(overwrite)
+        layout.addWidget(behavior)
+
+        widget = QtGui.QWidget()
+        widget.setLayout(layout)
+
+        return widget
+
+    # Events #################################################################
+
+    def show(self, *args, **kwargs):
+        """
+        Populate the source and destination dropdowns, recall the
+        handling and behavior inputs, and focus the source dropdown.
+
+        Note that the fields are dumped and repopulated each time,
+        because the list of fields might change between displays of the
+        window.
+        """
+
+        # TODO would be nice if this only included fields from selected notes
+        import anki.find
+        import aqt
+        fields = sorted(anki.find.fieldNames(aqt.mw.col, downcase=False))
+
+        config = self._addon.config
+
+        source = self.findChild(QtGui.QComboBox, 'source')
+        source.clear()
+        source.addItems(fields)
+        try:
+            source.setCurrentIndex(fields.index(config['last_mass_source']))
+        except ValueError:
+            pass
+
+        dest = self.findChild(QtGui.QComboBox, 'dest')
+        dest.clear()
+        dest.addItems(fields)
+        try:
+            dest.setCurrentIndex(fields.index(config['last_mass_dest']))
+        except ValueError:
+            pass
+
+        self.findChild(
+            QtGui.QRadioButton,
+            'append' if self._addon.config['last_mass_append']
+            else 'overwrite',
+        ).setChecked(True)
+
+        self.findChild(QtGui.QCheckBox, 'behavior') \
+            .setChecked(self._addon.config['last_mass_behavior'])
+
+        super(BrowserGenerator, self).show(*args, **kwargs)
+
+        source.setFocus()
+
+    def accept(self, *args, **kwargs):
+        """
+        TODO
+        """
+
+        # TODO do recording code
+        # TODO update all four mass_xxx configuration settings
+        # TODO double-check that Router class is setup to remember
+        # the service used and its options
+
+        super(BrowserGenerator, self).accept(*args, **kwargs)
+
+    def _on_handling_toggled(self):
+        """
+        Change the text on the behavior checkbox based on the append
+        or overwrite behavior.
+        """
+
+        append = self.findChild(QtGui.QRadioButton, 'append')
+        behavior = self.findChild(QtGui.QCheckBox, 'behavior')
+        behavior.setText(
+            "Remove Existing [sound:xxx] Tag(s)" if append.isChecked()
+            else "Wrap the Filename in [sound:xxx] Tag"
+        )
 
 
 class EditorGenerator(ServiceDialog):
@@ -42,26 +222,54 @@ class EditorGenerator(ServiceDialog):
         """
 
         super(EditorGenerator, self).__init__(*args, **kwargs)
-        self.setWindowTitle("Insert TTS File w/ %s" % self.windowTitle())
+        self.setWindowTitle("Insert MP3 w/ %s" % self.windowTitle())
 
     # UI Construction ########################################################
 
     def _ui_control(self):
         """
-        Returns the superclass's text and preview buttons, adding the
-        base class's cancel/OK buttons.
+        Replaces the superclass's version of this with a version that
+        returns a "Preview and Record" header, larger text input area,
+        and preview button on its own line.
         """
 
-        layout = super(EditorGenerator, self)._ui_control()
+        header = QtGui.QLabel("Preview and Record")
+        header.setFont(self._FONT_HEADER)
+
+        text = QtGui.QPlainTextEdit()
+        text.setObjectName('text')
+        text.setTabChangesFocus(True)
+
+        button = QtGui.QPushButton("&Preview")
+        button.setObjectName('preview')
+        button.clicked.connect(self._on_preview)
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(header)
+        layout.addWidget(text)
+        layout.addWidget(button)
         layout.addWidget(self._ui_buttons())
 
         return layout
 
     # Events #################################################################
 
+    def show(self, *args, **kwargs):
+        """
+        Focus the text area after displaying the dialog.
+        """
+
+        super(EditorGenerator, self).show(*args, **kwargs)
+
+        self.findChild(QtGui.QPlainTextEdit, 'text').setFocus()
+
     def accept(self, *args, **kwargs):
         """
         TODO
         """
+
+        # TODO do recording code
+        # TODO double-check that Router class is setup to remember
+        # the service used and its options
 
         super(EditorGenerator, self).accept(*args, **kwargs)

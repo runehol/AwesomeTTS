@@ -441,6 +441,8 @@ class Configurator(Dialog):
                 QtCore.Qt.Key_Escape,
                 QtCore.Qt.Key_Backspace,
                 QtCore.Qt.Key_Delete,
+                QtCore.Qt.Key_Enter,
+                QtCore.Qt.Key_Return,
             ]
             else key_event.key()
         )

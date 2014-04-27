@@ -25,7 +25,7 @@ Dispatch management of available services
 __all__ = ['Router']
 
 import os.path
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 
 from .services import Trait as BaseTrait
 
@@ -53,6 +53,9 @@ class Router(object):
     thread and then call the callback when done. Otherwise, the callback
     can be called immediately with neither blocking nor threading.
 
+    All methods in this class that take a callback do NOT raise
+    exceptions directly, but rather pass exceptions to the callback.
+
     While the router is in charge of keeping track of the "current"
     values (i.e. last used or default) for services and options, it is
     NOT in charge of the last used from/to fields for mass generation,
@@ -79,7 +82,7 @@ class Router(object):
 
             - mappings (list of tuples): each with service ID, class
             - aliases (list of tuples): alternate-to-official service IDs
-            - normalize (callable): for sanitizing service IDs
+            - normalize (callable): for service IDs and option keys
             - textize (callable): for sanitizing human input text
 
         The paths object should be a bundle with the following:
@@ -193,7 +196,45 @@ class Router(object):
 
         return service['options']
 
-    def play(self, svc_id, text, options, callback=None):
+    def play_html(self, html, callback):
+        """
+        Read in the passed HTML, attempt to discover <tts> tags in it,
+        and pass them to play() for processing.
+        """
+
+        try:
+            from BeautifulSoup import BeautifulSoup
+
+            for tag in BeautifulSoup(html)('tts'):
+                text = ''.join(tag.findAll(text=True))
+                if not text:
+                    continue
+
+                attr = {
+                    self._services.normalize(key): value
+                    for key, value in tag.attrs
+                }
+
+                try:
+                    svc_id = attr.pop('service')
+                except KeyError:
+                    callback(KeyError(
+                        "The following tag needs a 'service' attribute:\n%s" %
+                        str(tag)
+                    ))
+                    continue
+
+                self.play(
+                    svc_id,
+                    text,
+                    attr,
+                    callback,
+                )
+
+        except StandardError as exception:
+            callback(exception)
+
+    def play(self, svc_id, text, options, callback):
         """
         Playback the text with the given options on the service
         identified by svc_id. All input is normalized before processing
@@ -213,11 +254,11 @@ class Router(object):
         try:
             svc_id, service, text, options, path = \
                 self._validate(svc_id, text, options)
+            cache_hit = os.path.exists(path)
+
         except StandardError as exception:
             callback(exception)
             return
-
-        cache_hit = os.path.exists(path)
 
         self._logger.debug(
             "Parsed play() request to '%s' w/ %s and \"%s\" at %s (cache %s)",
@@ -256,9 +297,6 @@ class Router(object):
             - 4th: cache path (or paths, if multiple texts passed)
         """
 
-        svc_id, service = self._fetch_options(svc_id)
-        svc_options = service['options']
-
         if isinstance(text_or_texts, list):
             text_or_texts = [
                 self._services.textize(text)
@@ -272,13 +310,17 @@ class Router(object):
             if not text_or_texts:
                 raise ValueError("The input text must be set.")
 
+        svc_id, service = self._fetch_options(svc_id)
+        svc_options = service['options']
+        svc_options_keys = [svc_option['key'] for svc_option in svc_options]
+
         options = {
             key: value
             for key, value in [
                 (self._services.normalize(key), value)
                 for key, value in options.items()
             ]
-            if key in [svc_option['key'] for svc_option in svc_options]
+            if key in svc_options_keys
         }
 
         problems = self._validate_options(options, svc_options)
@@ -552,7 +594,7 @@ class Router(object):
         )
 
 
-class _Pool(QtCore.QObject):
+class _Pool(QtGui.QWidget):
     """
     Managers a pool of worker threads to keep the UI responsive.
     """

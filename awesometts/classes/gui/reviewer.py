@@ -30,6 +30,7 @@ alert windows. It also may have more visual components in the future.
 __all__ = ['Reviewer']
 
 from BeautifulSoup import BeautifulSoup
+from PyQt4.QtCore import Qt
 
 
 # n.b. Previously, before playing handlers, these event handlers checked to
@@ -80,10 +81,51 @@ class Reviewer(object):
         self._parent = parent
         self._playback = playback
 
-    def play_html(self, html):
+    def card_handler(self, state, card):
+
+        if state == 'question' and self._addon.config['automatic_questions']:
+            self._play_html(card.q())
+
+        elif state == 'answer' and self._addon.config['automatic_answers']:
+            self._play_html(card.a())
+
+    def key_handler(self, key_event, state, card, propagate):
+        """
+        Examines the key event to see if the user has triggered one of their
+        shortcut options.
+
+        If we do not handle the key here, then it is passed through to the
+        normal Anki Reviewer implementation.
+        """
+
+        if state not in ['answer', 'question']:
+            propagate(key_event)
+            return
+
+        code = key_event.key()
+        passthru = True
+
+        # if the user sets his/her shortcut the one of the built-in audio
+        # shortcuts, we will play all sounds, starting with the built-in(s)
+        if code in [Qt.Key_R, Qt.Key_F5]:
+            propagate(key_event)
+            passthru = False
+
+        if code == self._addon.config['tts_key_q']:
+            self._play_html(card.q())
+            passthru = False
+
+        if state == 'answer' and code == self._addon.config['tts_key_a']:
+            self._play_html(card.a())
+            passthru = False
+
+        if passthru:
+            propagate(key_event)
+
+    def _play_html(self, html):
         """
         Read in the passed HTML, attempt to discover <tts> tags in it,
-        and pass them to play() for processing.
+        and pass them to the router for processing.
 
         TODO: Look at adding back support for [?tts] tags.
         """

@@ -194,18 +194,24 @@ reviewer = classes.gui.Reviewer(
     alerts=aqt.utils.showWarning,
     parent=aqt.mw,
 )
-
 anki.hooks.addHook(
     'showQuestion',
-    lambda: config['automatic_questions'] and
-        reviewer.play_html(aqt.mw.reviewer.card.q()),
+    lambda: reviewer.card_handler('question', aqt.mw.reviewer.card),
 )
 anki.hooks.addHook(
     'showAnswer',
-    lambda: config['automatic_answers'] and
-        reviewer.play_html(aqt.mw.reviewer.card.a()),
+    lambda: reviewer.card_handler('answer', aqt.mw.reviewer.card),
 )
-# TODO: setup shortcut key bindings
+aqt.mw.reviewer._keyHandler = anki.hooks.wrap(
+    aqt.mw.reviewer._keyHandler,
+    lambda key_event, _old: reviewer.key_handler(
+        key_event=key_event,
+        state=aqt.mw.reviewer.state,
+        card=aqt.mw.reviewer.card,
+        propagate=_old,
+    ),
+    'around',  # setting 'around' allows me to block call to original function
+)
 
 classes.gui.Action(
     target=classes.Bundle(

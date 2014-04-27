@@ -48,8 +48,10 @@ from . import classes
 VERSION = "1.0 Beta 11 (develop)"
 
 
-# When determining the code directory, abspath() is needed since the
-# __file__ constant is not a full path by itself.
+# Paths
+#
+# n.b. When determining the code directory, abspath() is needed since
+# the __file__ constant is not a full path by itself.
 
 PATH_ADDON = os.path.dirname(os.path.abspath(__file__))
 
@@ -66,10 +68,14 @@ if not os.path.isdir(PATH_TEMP):
     os.mkdir(PATH_TEMP)
 
 
+# Regular expression patterns
+
 RE_SOUND_BRACKET_TAG = re.compile(r'\[sound:[^\]]+\]', re.IGNORECASE)
 
 RE_WHITESPACE = re.compile(r'\s+')
 
+
+# Conversions and transformations
 
 TO_BOOL = lambda value: bool(int(value))  # workaround for bool('0') == True
 
@@ -79,6 +85,8 @@ TO_NORMALIZED = lambda value: ''.join(
     if char.isalpha() or char.isdigit()
 )
 
+
+# Filters
 
 STRIP_HTML = anki.utils.stripHTML
 
@@ -180,6 +188,25 @@ addon = classes.Bundle(
     version=VERSION,
 )
 
+reviewer = classes.gui.Reviewer(
+    addon=addon,
+    playback=anki.sound.play,
+    alerts=aqt.utils.showWarning,
+    parent=aqt.mw,
+)
+
+anki.hooks.addHook(
+    'showQuestion',
+    lambda: config['automatic_questions'] and
+        reviewer.play_html(aqt.mw.reviewer.card.q()),
+)
+anki.hooks.addHook(
+    'showAnswer',
+    lambda: config['automatic_answers'] and
+        reviewer.play_html(aqt.mw.reviewer.card.a()),
+)
+# TODO: setup shortcut key bindings
+
 classes.gui.Action(
     target=classes.Bundle(
         constructor=classes.gui.Configurator,
@@ -250,55 +277,3 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
         ),
     )
 )
-
-# n.b. Previously, before playing handlers, these event handlers checked to
-# make sure that 'not sound.hasSound()'. I am guessing that this was done
-# because AwesomeTTS did not know how to properly deal with multiple sounds
-# at the time and they would play simultaneously.
-#
-# FIXME. It is possible, I suppose, that people might have the exact same
-# audio file on a card via a [sound:xxx] tag as they do as a <tts> template
-# tag. We can probably detect this by seeing if two of the same hashed
-# filename end up in the queue (and I say "filename" because one would be
-# coming from the media directory and another would be coming from the cache
-# directory). This would probably need to be fixed in the router by having the
-# router examine whether the exact same hashed filename is in the Anki
-# playback queue already or looking at any [sound:xxx] tags on the card before
-# playing back the on-the-fly sound.
-#
-# A similar problem probably exists in reviewer_key_handler for folks who
-# includes their question card template within their answer card template and
-# whose tts_key_q == tts_key_a.
-#
-# Unfortunately, it looks like inspecting anki.sound.mplayerQueue won't work
-# out on Windows because the path gets blown away by the temporary file
-# creation code.
-#
-# ALTERNATIVELY, if examination of the tag or playback queue turns out to not
-# work out so well, this could become two checkbox options on the "On-the-Fly
-# Mode" tab for both question and answer sides.
-
-# FIXME temporarily dummied out
-#anki.hooks.addHook(
-#    'showQuestion',
-#    lambda: config['automatic_questions'] and router.play_html(
-#        html=aqt.mw.reviewer.card.q(),
-#        callback=lambda exception: exception and aqt.utils.showWarning(
-#            exception.message,
-#            aqt.mw,
-#        ),
-#    ),
-#)
-#
-#anki.hooks.addHook(
-#    'showAnswer',
-#    lambda: config['automatic_answers'] and router.play_html(
-#        aqt.mw.reviewer.card.a(),
-#        callback=lambda exception: exception and aqt.utils.showWarning(
-#            exception.message,
-#            aqt.mw,
-#        ),
-#    ),
-#)
-
-# TODO: setup shortcut key bindings

@@ -168,45 +168,6 @@ class Router(object):
 
         return service['options']
 
-    # Temporarily dummied out -- to be moved FIXME
-    #def play_html(self, html, callback):
-    #    """
-    #    Read in the passed HTML, attempt to discover <tts> tags in it,
-    #    and pass them to play() for processing.
-    #    """
-
-    #    try:
-    #        from BeautifulSoup import BeautifulSoup
-
-    #        for tag in BeautifulSoup(html)('tts'):
-    #            text = ''.join(tag.findAll(text=True))
-    #            if not text:
-    #                continue
-
-    #            attr = {
-    #                self._services.normalize(key): value
-    #                for key, value in tag.attrs
-    #            }
-
-    #            try:
-    #                svc_id = attr.pop('service')
-    #            except KeyError:
-    #                callback(KeyError(
-    #                    "The following tag needs a 'service' attribute:\n%s" %
-    #                    str(tag)
-    #                ))
-    #                continue
-
-    #            self.play(
-    #                svc_id,
-    #                text,
-    #                attr,
-    #                callback,
-    #            )
-
-    #    except StandardError as exception:
-    #        callback(exception)
-
     def __call__(self, svc_id, text, options, callbacks):
         """
         Given the service ID and associated options, pass the text into

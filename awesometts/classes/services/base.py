@@ -179,7 +179,7 @@ class Service(object):
 
         A sample call might look like this:
 
-            service.play(
+            service.run(
                 text="Hello world.",
                 options={'voice': 'en-us', 'speed': 200},
                 path='/home/user/Anki/addons/awesometts/cache/file.mp3',

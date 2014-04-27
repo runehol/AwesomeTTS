@@ -162,16 +162,21 @@ class ServiceDialog(Dialog):
     _OPTIONS_WIDGETS = (QtGui.QComboBox, QtGui.QAbstractSpinBox)
 
     __slots__ = [
+        '_alerts',       # API to display error messages
         '_panel_ready',  # map of svc_ids to True if that service is ready
+        '_playback',     # API to playback audio with Anki
     ]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, playback, alerts, *args, **kwargs):
         """
         Initialize the mechanism for keeping track of which panels are
         loaded.
         """
 
+        self._alerts = alerts
         self._panel_ready = {}
+        self._playback = playback
+
         super(ServiceDialog, self).__init__(*args, **kwargs)
 
     # UI Construction ########################################################
@@ -406,19 +411,19 @@ class ServiceDialog(Dialog):
         text_input, text_value = self._get_service_text()
         self._disable_inputs()
 
-        def callback(exception=None):
-            """
-            Display any error and re-enable the Preview button.
-            """
-
-            if exception:
-                import aqt.utils
-                aqt.utils.showWarning(exception.message, self)
-
-            self._disable_inputs(False)
-            text_input.setFocus()
-
-        self._addon.router.play(svc_id, text_value, values, callback)
+        self._addon.router(
+            svc_id=svc_id,
+            text=text_value,
+            options=values,
+            callbacks=dict(
+                done=lambda: (
+                    self._disable_inputs(False),
+                    text_input.setFocus()
+                ),
+                okay=self._playback,
+                fail=lambda exception: self._alerts(exception.message, self),
+            ),
+        )
 
     # Auxiliary ##############################################################
 

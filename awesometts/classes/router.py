@@ -64,13 +64,13 @@ class Router(object):
 
     __slots__ = [
         '_busy',       # list of file paths that are in-progress
+        '_cache_dir',  # path for writing cached media files
         '_logger',     # logger-like interface with debug(), info(), etc.
-        '_paths',      # bundle with cache, temp
         '_pool',       # instance of the _Pool class for managing threads
         '_services',   # bundle with aliases, avail, lookup
     ]
 
-    def __init__(self, services, paths, logger):
+    def __init__(self, services, cache_dir, logger):
         """
         The services should be a bundle with the following:
 
@@ -81,10 +81,8 @@ class Router(object):
             - args (tuple): to be passed to Service constructors
             - kwargs (dict): to be passed to Service constructors
 
-        The paths object should be a bundle with the following:
-
-            - cache (str): semi-persistent for services to store files
-            - temp (str): temporary storage for scratch and transcoding
+        The cache directory should be one where media files get stored
+        for a semi-permanent time.
 
         The logger object should have an interface like the one used by
         the standard library logging module, with debug(), info(), and
@@ -108,8 +106,8 @@ class Router(object):
         }
 
         self._busy = []
+        self._cache_dir = cache_dir
         self._logger = logger
-        self._paths = paths
         self._pool = _Pool()
         self._services = services
 
@@ -170,84 +168,99 @@ class Router(object):
 
         return service['options']
 
-    def play_html(self, html, callback):
+    # Temporarily dummied out -- to be moved FIXME
+    #def play_html(self, html, callback):
+    #    """
+    #    Read in the passed HTML, attempt to discover <tts> tags in it,
+    #    and pass them to play() for processing.
+    #    """
+
+    #    try:
+    #        from BeautifulSoup import BeautifulSoup
+
+    #        for tag in BeautifulSoup(html)('tts'):
+    #            text = ''.join(tag.findAll(text=True))
+    #            if not text:
+    #                continue
+
+    #            attr = {
+    #                self._services.normalize(key): value
+    #                for key, value in tag.attrs
+    #            }
+
+    #            try:
+    #                svc_id = attr.pop('service')
+    #            except KeyError:
+    #                callback(KeyError(
+    #                    "The following tag needs a 'service' attribute:\n%s" %
+    #                    str(tag)
+    #                ))
+    #                continue
+
+    #            self.play(
+    #                svc_id,
+    #                text,
+    #                attr,
+    #                callback,
+    #            )
+
+    #    except StandardError as exception:
+    #        callback(exception)
+
+    def __call__(self, svc_id, text, options, callbacks):
         """
-        Read in the passed HTML, attempt to discover <tts> tags in it,
-        and pass them to play() for processing.
+        Given the service ID and associated options, pass the text into
+        the service for processing.
+
+        The callbacks parameter is a dict and contains the following:
+
+            - 'done' (optional): called as soon as the call is complete
+            - 'okay' (required): called with a path to the media file
+            - 'fail' (required): called with an exception for validation
+               errors or failed service calls occurs
+
+        Because it is asynchronous in nature, this method does not raise
+        exceptions normally; they are passed to callbacks['fail'].
+
+        "Exceptions" to that rule:
+
+            - an AssertionError is raised the caller failed to supply
+              the required callbacks
+            - an exception could be theoretically be raised if the
+              threading subsystem failed
         """
+
+        assert 'done' not in callbacks or callable(callbacks['done'])
+        assert 'okay' in callbacks and callable(callbacks['okay'])
+        assert 'fail' in callbacks and callable(callbacks['fail'])
 
         try:
-            from BeautifulSoup import BeautifulSoup
+            self._logger.debug(
+                "Call for '%s' w/ %s\n%s",
+                svc_id, options, _PREFIXED("<<< ", text),
+            )
 
-            for tag in BeautifulSoup(html)('tts'):
-                text = ''.join(tag.findAll(text=True))
-                if not text:
-                    continue
-
-                attr = {
-                    self._services.normalize(key): value
-                    for key, value in tag.attrs
-                }
-
-                try:
-                    svc_id = attr.pop('service')
-                except KeyError:
-                    callback(KeyError(
-                        "The following tag needs a 'service' attribute:\n%s" %
-                        str(tag)
-                    ))
-                    continue
-
-                self.play(
-                    svc_id,
-                    text,
-                    attr,
-                    callback,
-                )
-
-        except StandardError as exception:
-            callback(exception)
-
-    def play(self, svc_id, text, options, callback):
-        """
-        Playback the text with the given options on the service
-        identified by svc_id. All input is normalized before processing
-        it, resulting in a consistent hashed filename. Options are
-        validated against what the service reports being available.
-
-        Cache hits are played back via Anki's API and a callback made to
-        the callback, if specified, immediately. Otherwise, the service
-        run() method is called before playback and the callback occur.
-        """
-
-        self._logger.debug(
-            "Got play() request for '%s' w/ %s\n%s",
-            svc_id, options, _PREFIXED("<<< ", text),
-        )
-
-        try:
-            svc_id, service, text, options, path = \
-                self._validate(svc_id, text, options)
+            text = self._validate_text(text)
+            svc_id, service, options = self._validate_service(svc_id, options)
+            path = self._validate_path(svc_id, text, options)
             cache_hit = os.path.exists(path)
 
+            self._logger.debug(
+                "Parsed call to '%s' w/ %s and \"%s\" at %s (cache %s)",
+                svc_id, options, text, path, "hit" if cache_hit else "miss",
+            )
+
         except StandardError as exception:
-            callback(exception)
+            if 'done' in callbacks:
+                callbacks['done']()
+            callbacks['fail'](exception)
+
             return
 
-        self._logger.debug(
-            "Parsed play() request to '%s' w/ %s and \"%s\" at %s (cache %s)",
-            svc_id, options, text, path, "hit" if cache_hit else "miss",
-        )
-
-        def success():
-            """Playback sound and execute callback."""
-
-            import anki.sound
-            anki.sound.play(path)
-            callback(None)
-
         if cache_hit:
-            success()
+            if 'done' in callbacks:
+                callbacks['done']()
+            callbacks['okay'](path)
 
         else:
             self._busy.append(path)
@@ -255,34 +268,35 @@ class Router(object):
                 task=lambda: service['instance'].run(text, options, path),
                 callback=lambda exception: (
                     self._busy.remove(path),
-                    exception and callback(exception) or success(),
+                    'done' in callbacks and callbacks['done'](),
+                    exception and callbacks['fail'](exception) or
+                        callbacks['okay'](path),
                 )
             )
 
-    def _validate(self, svc_id, text_or_texts, options):
+    def _validate_text(self, text):
+        """
+        Normalize the text and return it. If after normalization, the
+        text is empty, raises a ValueError.
+        """
+
+        text = self._services.textize(text)
+        if not text:
+            raise ValueError("The input text must be set.")
+
+        return text
+
+    def _validate_service(self, svc_id, options):
         """
         Finds the given service ID, normalizes the text, and validates
         the options, returning the following:
 
             - 0th: normalized service ID
             - 1st: service lookup dict
-            - 2nd: normalized text (or texts, if multiple passed)
+            - 2nd: normalized text
             - 3rd: options, normalized and defaults filled in
-            - 4th: cache path (or paths, if multiple texts passed)
+            - 4th: cache path
         """
-
-        if isinstance(text_or_texts, list):
-            text_or_texts = [
-                self._services.textize(text)
-                for text in text_or_texts
-            ]
-            if next((True for text in text_or_texts if not text), False):
-                raise ValueError("All input text in the set must be set.")
-
-        else:
-            text_or_texts = self._services.textize(text_or_texts)
-            if not text_or_texts:
-                raise ValueError("The input text must be set.")
 
         svc_id, service = self._fetch_options(svc_id)
         svc_options = service['options']
@@ -304,29 +318,7 @@ class Router(object):
                 (svc_id, service['name'], "; ".join(problems))
             )
 
-        if isinstance(text_or_texts, list):
-            path_or_paths = [
-                self._path_cache(svc_id, text, options)
-                for text in text_or_texts
-            ]
-            if next(
-                (True for path in path_or_paths if path in self._busy),
-                False,
-            ):
-                raise self.BusyError(
-                    "The %s service is busy processing some of these." %
-                    service['name']
-                )
-
-        else:
-            path_or_paths = self._path_cache(svc_id, text_or_texts, options)
-            if path_or_paths in self._busy:
-                raise self.BusyError(
-                    "The %s service is already busy processing %s." %
-                    (service['name'], path_or_paths)
-                )
-
-        return svc_id, service, text_or_texts, options, path_or_paths
+        return svc_id, service, options
 
     def _validate_options(self, options, svc_options):
         """
@@ -393,6 +385,22 @@ class Router(object):
         )
 
         return problems
+
+    def _validate_path(self, svc_id, text, options):
+        """
+        Given the service ID, its associated options, and the desired
+        text, generate a cache path. If the file is already being
+        processed, raise a BusyError.
+        """
+
+        path = self._path_cache(svc_id, text, options)
+        if path in self._busy:
+            raise self.BusyError(
+                "The '%s' service is already busy processing %s." %
+                (svc_id, path)
+            )
+
+        return path
 
     def _fetch_options(self, svc_id):
         """
@@ -524,7 +532,7 @@ class Router(object):
 
         from hashlib import sha1
         return os.path.join(
-            self._paths.cache,
+            self._cache_dir,
             '.'.join([
                 '-'.join([
                     svc_id,

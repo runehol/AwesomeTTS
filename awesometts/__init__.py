@@ -37,8 +37,10 @@ from PyQt4.QtCore import Qt
 
 import anki.hooks
 import anki.utils
+import anki.sound
 import aqt
 import aqt.clayout
+import aqt.utils
 
 from . import classes
 
@@ -159,10 +161,7 @@ router = classes.Router(
             logger=logger,
         ),
     ),
-    paths=classes.Bundle(
-        cache=PATH_CACHE,
-        temp=PATH_TEMP,
-    ),
+    cache_dir=PATH_CACHE,
     logger=logger,
 )
 
@@ -198,7 +197,12 @@ anki.hooks.addHook(
         target=classes.Bundle(
             constructor=classes.gui.BrowserGenerator,
             args=(),
-            kwargs=dict(addon=addon, parent=browser),
+            kwargs=dict(
+                addon=addon,
+                playback=anki.sound.play,
+                alerts=aqt.utils.showWarning,
+                parent=browser,
+            ),
         ),
         text="Awesome&TTS Mass Generator...",
         parent=browser.form.menuEdit,
@@ -213,7 +217,12 @@ anki.hooks.addHook(
             target=classes.Bundle(
                 constructor=classes.gui.EditorGenerator,
                 args=(),
-                kwargs=dict(addon=addon, parent=editor.parentWindow),
+                kwargs=dict(
+                    addon=addon,
+                    playback=anki.sound.play,
+                    alerts=aqt.utils.showWarning,
+                    parent=editor.parentWindow,
+                ),
             ),
             style=editor.plastiqueStyle,
         ),
@@ -231,7 +240,12 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
             target=classes.Bundle(
                 constructor=ServiceDialog,  # FIXME replace w/ TemplateBuilder
                 args=(),
-                kwargs=dict(addon=addon, parent=card_layout),
+                kwargs=dict(
+                    addon=addon,
+                    playback=anki.sound.play,
+                    alerts=aqt.utils.showWarning,
+                    parent=card_layout,
+                ),
             ),
         ),
     )
@@ -264,26 +278,27 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
 # work out so well, this could become two checkbox options on the "On-the-Fly
 # Mode" tab for both question and answer sides.
 
-anki.hooks.addHook(
-    'showQuestion',
-    lambda: config['automatic_questions'] and router.play_html(
-        html=aqt.mw.reviewer.card.q(),
-        callback=lambda exception: exception and aqt.utils.showWarning(
-            exception.message,
-            aqt.mw,
-        ),
-    ),
-)
-
-anki.hooks.addHook(
-    'showAnswer',
-    lambda: config['automatic_answers'] and router.play_html(
-        aqt.mw.reviewer.card.a(),
-        callback=lambda exception: exception and aqt.utils.showWarning(
-            exception.message,
-            aqt.mw,
-        ),
-    ),
-)
+# FIXME temporarily dummied out
+#anki.hooks.addHook(
+#    'showQuestion',
+#    lambda: config['automatic_questions'] and router.play_html(
+#        html=aqt.mw.reviewer.card.q(),
+#        callback=lambda exception: exception and aqt.utils.showWarning(
+#            exception.message,
+#            aqt.mw,
+#        ),
+#    ),
+#)
+#
+#anki.hooks.addHook(
+#    'showAnswer',
+#    lambda: config['automatic_answers'] and router.play_html(
+#        aqt.mw.reviewer.card.a(),
+#        callback=lambda exception: exception and aqt.utils.showWarning(
+#            exception.message,
+#            aqt.mw,
+#        ),
+#    ),
+#)
 
 # TODO: setup shortcut key bindings

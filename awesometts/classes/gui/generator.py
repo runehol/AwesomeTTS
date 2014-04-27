@@ -134,6 +134,16 @@ class BrowserGenerator(ServiceDialog):
 
         return widget
 
+    def _ui_buttons(self):
+        """
+        Adjust title of the OK button.
+        """
+
+        buttons = super(BrowserGenerator, self)._ui_buttons()
+        buttons.findChild(QtGui.QAbstractButton, 'okay').setText("&Generate")
+
+        return buttons
+
     # Events #################################################################
 
     def show(self, *args, **kwargs):
@@ -251,6 +261,16 @@ class EditorGenerator(ServiceDialog):
         layout.addWidget(self._ui_buttons())
 
         return layout
+
+    def _ui_buttons(self):
+        """
+        Adjust title of the OK button.
+        """
+
+        buttons = super(EditorGenerator, self)._ui_buttons()
+        buttons.findChild(QtGui.QAbstractButton, 'okay').setText("&Record")
+
+        return buttons
 
     # Events #################################################################
 

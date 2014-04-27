@@ -131,6 +131,12 @@ class Dialog(QtGui.QDialog):
             QtGui.QDialogButtonBox.Ok
         )
 
+        for btn in buttons.buttons():
+            if buttons.buttonRole(btn) == QtGui.QDialogButtonBox.AcceptRole:
+                btn.setObjectName('okay')
+            elif buttons.buttonRole(btn) == QtGui.QDialogButtonBox.RejectRole:
+                btn.setObjectName('cancel')
+
         return buttons
 
     # Events #################################################################
@@ -149,6 +155,9 @@ class ServiceDialog(Dialog):
     Base used for all service-related dialog windows (e.g. single file
     generator, mass file generator, template tag builder).
     """
+
+    _INPUT_WIDGETS = (QtGui.QAbstractButton, QtGui.QComboBox, QtGui.QLineEdit,
+        QtGui.QPlainTextEdit)
 
     _OPTIONS_WIDGETS = (QtGui.QComboBox, QtGui.QAbstractSpinBox)
 
@@ -379,34 +388,9 @@ class ServiceDialog(Dialog):
         Handle parsing the inputs and passing onto the router.
         """
 
-        dropdown = self.findChild(QtGui.QComboBox, 'service')
-        idx = dropdown.currentIndex()
-        vinputs = self.findChild(QtGui.QStackedWidget, 'panels') \
-            .widget(idx).findChildren(self._OPTIONS_WIDGETS)
-        svc_id = dropdown.itemData(idx)
-        options = self._addon.router.get_options(svc_id)
-
-        assert len(options) == len(vinputs)
-
-        text_input = self.findChild(QtGui.QWidget, 'text')
-        try:
-            text_value = text_input.text()
-        except AttributeError:
-            text_value = text_input.toPlainText()
-
-        values = {}
-
-        for i in range(len(options)):
-            option, vinput = options[i], vinputs[i]
-            values[option['key']] = (
-                vinput.value()
-                if isinstance(vinput, QtGui.QAbstractSpinBox)
-                else vinput.itemData(vinput.currentIndex())
-            )
-
-        button = self.findChild(QtGui.QPushButton, 'preview')
-        button.setDisabled(True)
-        text_input.setDisabled(True)
+        svc_id, values = self._get_service_values()
+        text_input, text_value = self._get_service_text()
+        self._disable_inputs()
 
         def callback(exception=None):
             """
@@ -417,8 +401,57 @@ class ServiceDialog(Dialog):
                 import aqt.utils
                 aqt.utils.showWarning(exception.message, self)
 
-            button.setDisabled(False)
-            text_input.setDisabled(False)
+            self._disable_inputs(False)
             text_input.setFocus()
 
         self._addon.router.play(svc_id, text_value, values, callback)
+
+    # Auxiliary ##############################################################
+
+    def _disable_inputs(self, flag=True):
+        """
+        Mass disable (or enable if flag is False) all inputs, except the
+        cancel button.
+        """
+
+        for widget in [
+            widget
+            for widget in self.findChildren(self._INPUT_WIDGETS)
+            if widget.objectName() != 'cancel'
+        ]:
+            widget.setDisabled(flag)
+
+    def _get_service_values(self):
+        """
+        Return the service ID and a dict of all the options.
+        """
+
+        dropdown = self.findChild(QtGui.QComboBox, 'service')
+        idx = dropdown.currentIndex()
+        vinputs = self.findChild(QtGui.QStackedWidget, 'panels') \
+            .widget(idx).findChildren(self._OPTIONS_WIDGETS)
+        svc_id = dropdown.itemData(idx)
+        options = self._addon.router.get_options(svc_id)
+
+        assert len(options) == len(vinputs)
+
+        return svc_id, {
+            options[i]['key']:
+                vinputs[i].value()
+                if isinstance(vinputs[i], QtGui.QAbstractSpinBox)
+                else vinputs[i].itemData(vinputs[i].currentIndex())
+            for i in range(len(options))
+        }
+
+    def _get_service_text(self):
+        """
+        Return the text box and its phrase.
+        """
+
+        text_input = self.findChild(QtGui.QWidget, 'text')
+        try:
+            text_value = text_input.text()
+        except AttributeError:
+            text_value = text_input.toPlainText()
+
+        return text_input, text_value

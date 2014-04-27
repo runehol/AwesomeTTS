@@ -55,11 +55,6 @@ class Router(object):
 
     All methods in this class that take a callback do NOT raise
     exceptions directly, but rather pass exceptions to the callback.
-
-    While the router is in charge of keeping track of the "current"
-    values (i.e. last used or default) for services and options, it is
-    NOT in charge of the last used from/to fields for mass generation,
-    which is quite specific to that particular form.
     """
 
     Trait = BaseTrait
@@ -69,14 +64,13 @@ class Router(object):
 
     __slots__ = [
         '_busy',       # list of file paths that are in-progress
-        '_config',     # dict with lame_flags, last_service, last_options
         '_logger',     # logger-like interface with debug(), info(), etc.
         '_paths',      # bundle with cache, temp
         '_pool',       # instance of the _Pool class for managing threads
         '_services',   # bundle with aliases, avail, lookup
     ]
 
-    def __init__(self, services, paths, config, logger):
+    def __init__(self, services, paths, logger):
         """
         The services should be a bundle with the following:
 
@@ -84,18 +78,13 @@ class Router(object):
             - aliases (list of tuples): alternate-to-official service IDs
             - normalize (callable): for service IDs and option keys
             - textize (callable): for sanitizing human input text
+            - args (tuple): to be passed to Service constructors
+            - kwargs (dict): to be passed to Service constructors
 
         The paths object should be a bundle with the following:
 
             - cache (str): semi-persistent for services to store files
             - temp (str): temporary storage for scratch and transcoding
-
-        The config object should have a readable and settable dict-like
-        interface with the following keys available:
-
-            - lame_flags (str): parameters to pass to LAME transcoder
-            - last_service (str): key to the last service used
-            - last_options (dict): mapping of last options per service
 
         The logger object should have an interface like the one used by
         the standard library logging module, with debug(), info(), and
@@ -119,7 +108,6 @@ class Router(object):
         }
 
         self._busy = []
-        self._config = config
         self._logger = logger
         self._paths = paths
         self._pool = _Pool()
@@ -139,7 +127,7 @@ class Router(object):
 
     def get_services(self):
         """
-        Returns available services and the "current" service ID.
+        Returns available services.
         """
 
         if not self._services.avail:
@@ -148,23 +136,11 @@ class Router(object):
             for service in self._services.lookup.values():
                 self._load_service(service)
 
-            self._services.avail = {
-                'values': sorted([
-                    (svc_id, service['name'])
-                    for svc_id, service in self._services.lookup.items()
-                    if service['instance']
-                ], key=lambda (svc_id, text): text.lower()),
-            }
-
-            last_service = \
-                self._services.normalize(self._config['last_service'])
-            if last_service in self._services.aliases:
-                last_service = self._services.aliases[last_service]
-
-            self._services.avail['current'] = (
-                last_service if last_service in self._services.lookup.keys()
-                else self._services.avail['values'][0][0]
-            )
+            self._services.avail = sorted([
+                (svc_id, service['name'])
+                for svc_id, service in self._services.lookup.items()
+                if service['instance']
+            ], key=lambda (svc_id, text): text.lower())
 
         return self._services.avail
 
@@ -187,9 +163,7 @@ class Router(object):
     def get_options(self, svc_id):
         """
         Returns a list of options that should be displayed for the
-        service, with defaults highlighted and the indices of the last
-        used option items (from last_options in the config object) or
-        the default option items.
+        service, with defaults highlighted.
         """
 
         svc_id, service = self._fetch_options(svc_id)
@@ -435,7 +409,6 @@ class Router(object):
                 service['name'],
             )
 
-            last_options = self._config['last_options'].get(svc_id, {})
             service['options'] = []
 
             for option in service['instance'].options():
@@ -463,33 +436,6 @@ class Router(object):
                         else (item[0], item[1] + " [default]")
                         for item in option['values']
                     ]
-
-                try:
-                    option['current'] = last_options[option['key']]
-
-                    if isinstance(option['values'], tuple):
-                        if (
-                            option['current'] < option['values'][0] or
-                            option['current'] > option['values'][1]
-                        ):
-                            raise ValueError
-
-                    else:  # list of tuples
-                        next(
-                            True
-                            for item in option['values']
-                            if item[0] == option['current']
-                        )
-
-                except (KeyError, ValueError, StopIteration):
-                    if 'default' in option:
-                        option['current'] = option['default']
-
-                    elif isinstance(option['values'], tuple):
-                        option['current'] = option['values'][0]
-
-                    else:  # list of tuples
-                        option['current'] = option['values'][0][0]
 
                 service['options'].append(option)
 
@@ -541,9 +487,8 @@ class Router(object):
 
         try:
             service['instance'] = service['class'](
-                temp_dir=self._paths.temp,
-                lame_flags=self._config['lame_flags'],
-                logger=self._logger,
+                *self._services.args,
+                **self._services.kwargs
             )
 
             self._logger.info("%s service initialized", service['name'])

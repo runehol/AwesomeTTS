@@ -205,7 +205,7 @@ class ServiceDialog(Dialog):
         stack = QtGui.QStackedWidget()
         stack.setObjectName('panels')
 
-        for svc_id, text in self._addon.router.get_services()['values']:
+        for svc_id, text in self._addon.router.get_services():
             dropdown.addItem(text, svc_id)
 
             label = QtGui.QLabel("Pass the following to %s:" % text)
@@ -282,12 +282,13 @@ class ServiceDialog(Dialog):
         activate its panel, then clear the input text box.
         """
 
-        svc_id = self._addon.router.get_services()['current']
         dropdown = self.findChild(QtGui.QComboBox, 'service')
-        idx = dropdown.findData(svc_id)
+        idx = dropdown.findData(self._addon.config['last_service'])
+        if idx == -1:
+            idx = 0
 
         dropdown.setCurrentIndex(idx)
-        self._on_service_activated(idx, svc_id, True)
+        self._on_service_activated(idx, True)
 
         text = self.findChild(QtGui.QWidget, 'text')
         try:
@@ -297,22 +298,21 @@ class ServiceDialog(Dialog):
 
         super(ServiceDialog, self).show(*args, **kwargs)
 
-    def _on_service_activated(self, idx, svc_id=None, initial=False):
+    def _on_service_activated(self, idx, initial=False):
         """
         Construct the target widget if it has not already been built,
         recall the last-used values for the options, and then switch the
         stack to it.
         """
 
-        if not svc_id:
-            svc_id = self.findChild(QtGui.QComboBox, 'service').itemData(idx)
-
+        svc_id = self.findChild(QtGui.QComboBox, 'service').itemData(idx)
         stack = self.findChild(QtGui.QStackedWidget, 'panels')
         panel_unbuilt = svc_id not in self._panel_ready
 
         if panel_unbuilt or initial:
             widget = stack.widget(idx)
             options = self._addon.router.get_options(svc_id)
+            last_options = self._addon.config['last_options'].get(svc_id, {})
 
             if panel_unbuilt:
                 self._on_service_activated_build(svc_id, widget, options)
@@ -326,11 +326,25 @@ class ServiceDialog(Dialog):
                     option, vinput = options[i], vinputs[i]
 
                     if isinstance(option['values'], tuple):
-                        vinput.setValue(option['current'])
+                        try:
+                            vinput.setValue(last_options[option['key']])
+                        except KeyError:
+                            try:
+                                vinput.setValue(option['default'])
+                            except KeyError:
+                                vinput.setValue(option['values'][0])
                     else:
-                        vinput.setCurrentIndex(
-                            vinput.findData(option['current'])
-                        )
+                        try:
+                            vinput.setCurrentIndex(
+                                vinput.findData(last_options[option['key']])
+                            )
+                        except KeyError:
+                            try:
+                                vinput.setCurrentIndex(
+                                    vinput.findData(option['default'])
+                                )
+                            except KeyError:
+                                pass
 
         stack.setCurrentIndex(idx)
 

@@ -152,12 +152,17 @@ router = classes.Router(
         ],
         normalize=TO_NORMALIZED,
         textize=STRIP_ALL,
+        args=(),
+        kwargs=dict(
+            temp_dir=PATH_TEMP,
+            lame_flags=config['lame_flags'],
+            logger=logger,
+        ),
     ),
     paths=classes.Bundle(
         cache=PATH_CACHE,
         temp=PATH_TEMP,
     ),
-    config=config,
     logger=logger,
 )
 

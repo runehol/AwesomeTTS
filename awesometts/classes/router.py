@@ -46,15 +46,6 @@ class Router(object):
     By having a routing-like object sit in-between the UI and the actual
     service code, Service implementations can be lazily loaded and their
     results can be cached, transparently to both sides.
-
-    Additionally, some methods on the router offer callbacks. In this
-    case, if the method is going to call a service that might block,
-    then the method can arrange for that call to occur on a different
-    thread and then call the callback when done. Otherwise, the callback
-    can be called immediately with neither blocking nor threading.
-
-    All methods in this class that take a callback do NOT raise
-    exceptions directly, but rather pass exceptions to the callback.
     """
 
     Trait = BaseTrait
@@ -108,7 +99,7 @@ class Router(object):
         self._busy = []
         self._cache_dir = cache_dir
         self._logger = logger
-        self._pool = _Pool()
+        self._pool = _Pool(logger)
         self._services = services
 
     def by_trait(self, trait):
@@ -185,10 +176,15 @@ class Router(object):
 
         "Exceptions" to that rule:
 
-            - an AssertionError is raised the caller failed to supply
+            - an AssertionError is raised if the caller failed to supply
               the required callbacks
             - an exception could be theoretically be raised if the
               threading subsystem failed
+            - an exception raised in the callbacks themselves must be
+              handled in the actual callback code; e.g. an exception in
+              the 'done' handler will not cause the 'fail' handler to
+              be called, or an exception in the 'fail' handler would
+              not recall the 'fail' handler again
         """
 
         assert 'done' not in callbacks or callable(callbacks['done'])
@@ -211,7 +207,7 @@ class Router(object):
                 svc_id, options, text, path, "hit" if cache_hit else "miss",
             )
 
-        except StandardError as exception:
+        except Exception as exception:  # catch all, pylint:disable=W0703
             if 'done' in callbacks:
                 callbacks['done']()
             callbacks['fail'](exception)
@@ -462,16 +458,13 @@ class Router(object):
 
             self._logger.info("%s service initialized", service['name'])
 
-        except StandardError:
+        except Exception:  # catch all, pylint:disable=W0703
             service['instance'] = None  # flag this service as unavailable
 
             from traceback import format_exc
-            trace_lines = format_exc().split('\n')
-
             self._logger.warn(
                 "Initialization failed for %s service\n%s",
-                service['name'],
-                _PREFIXED("!!! ", trace_lines),
+                service['name'], _PREFIXED("!!! ", format_exc().split('\n')),
             )
 
     def _path_cache(self, svc_id, text, options):
@@ -514,22 +507,22 @@ class _Pool(QtGui.QWidget):
     """
 
     __slots__ = [
-        '_next_id',    # the next ID we will use
-        '_callbacks',  # mapping of IDs to the desired callbacks
-        '_workers',    # mapping of IDs to worker instances
+        '_current_id',  # the last/current worker ID in-use
+        '_logger',      # for writing messages about threads
+        '_threads',     # dict of IDs mapping workers and callbacks in Router
     ]
 
-    def __init__(self):
+    def __init__(self, logger, *args, **kwargs):
         """
         Initialize my internal state (next ID and lookup pools for the
         callbacks and workers).
         """
 
-        super(_Pool, self).__init__()
+        super(_Pool, self).__init__(*args, **kwargs)
 
-        self._next_id = 0
-        self._callbacks = {}
-        self._workers = {}
+        self._current_id = 0
+        self._logger = logger
+        self._threads = {}
 
     def spawn(self, task, callback):
         """
@@ -537,24 +530,71 @@ class _Pool(QtGui.QWidget):
         completes, the callback will be called.
         """
 
-        self._next_id += 1
-        self._callbacks[self._next_id] = callback
-        self._workers[self._next_id] = _Worker(self._next_id, task)
+        self._current_id += 1
+        thread = self._threads[self._current_id] = {
+            # keeping a reference to worker prevents garbage collection
+            'callback': callback,
+            'worker': _Worker(self._current_id, task),
+        }
 
-        self.connect(self._workers[self._next_id], _SIGNAL, self._on_signal)
+        self.connect(thread['worker'], _SIGNAL, self._on_worker_signal)
+        thread['worker'].finished.connect(self._on_worker_finished)
+        thread['worker'].start()
 
-        self._workers[self._next_id].start()
+        self._logger.debug(
+            "Spawned thread [%d]; pool=%s",
+            self._current_id, self._threads,
+        )
 
-    def _on_signal(self, worker_id, exception):
+    def _on_worker_signal(self, thread_id, exception=None, stack_trace=None):
         """
-        When the worker thread finishes, execute its callback and clean
-        up references to it.
+        When the worker signals it's done with its task, execute the
+        callback that was registered for it, passing on any exception.
         """
 
-        self._callbacks[worker_id](exception)
+        if exception:
+            if not exception.message and hasattr(exception, 'reason'):
+                exception.message = exception.reason  # used by URLError
 
-        del self._callbacks[worker_id]
-        del self._workers[worker_id]
+            self._logger.debug(
+                "Exception from thread [%d] (%s); executing callback\n%s",
+
+                self._current_id, exception.message or "no message",
+
+                _PREFIXED("!!! ", stack_trace.split('\n'))
+                if isinstance(stack_trace, basestring)
+                else "Stack trace unavailable",
+            )
+        else:
+            self._logger.debug(
+                "Completion from thread [%d]; executing callback",
+                self._current_id,
+            )
+
+        self._threads[thread_id]['callback'](exception)
+
+    def _on_worker_finished(self):
+        """
+        When the worker is finished, which happens sometime briefly
+        after it's done with its task, delete it from the thread pool.
+        """
+
+        thread_ids = [
+            thread_id
+            for thread_id, thread in self._threads.items()
+            if thread['worker'].isFinished()
+        ]
+
+        if not thread_ids:
+            return
+
+        for thread_id in thread_ids:
+            del self._threads[thread_id]
+
+        self._logger.debug(
+            "Reaped thread%s %s; pool=%s",
+            "s" if len(thread_ids) != 1 else "", thread_ids, self._threads,
+        )
 
 
 class _Worker(QtCore.QThread):
@@ -563,18 +603,18 @@ class _Worker(QtCore.QThread):
     """
 
     __slots__ = [
-        '_id',     # my worker ID; used to communicate back to main thread
-        '_task',   # the task I will need to call when run
+        '_thread_id',  # my thread ID; used to communicate back to main thread
+        '_task',       # the task I will need to call when run
     ]
 
-    def __init__(self, worker_id, task):
+    def __init__(self, thread_id, task):
         """
         Save my worker ID and task.
         """
 
         super(_Worker, self).__init__()
 
-        self._id = worker_id
+        self._id = thread_id
         self._task = task
 
     def run(self):
@@ -585,8 +625,9 @@ class _Worker(QtCore.QThread):
 
         try:
             self._task()
-        except StandardError as exception:
-            self.emit(_SIGNAL, self._id, exception)
+        except Exception as exception:  # catch all, pylint:disable=W0703
+            from traceback import format_exc
+            self.emit(_SIGNAL, self._id, exception, format_exc())
             return
 
-        self.emit(_SIGNAL, self._id, None)
+        self.emit(_SIGNAL, self._id)

@@ -163,7 +163,8 @@ class ServiceDialog(Dialog):
 
     __slots__ = [
         '_alerts',       # API to display error messages
-        '_panel_ready',  # map of svc_ids to True if that service is ready
+        '_panel_built',  # dict, svc_id to True if panel has been constructed
+        '_panel_set',    # dict, svc_id to True if panel values have been set
         '_playback',     # API to playback audio with Anki
     ]
 
@@ -174,7 +175,8 @@ class ServiceDialog(Dialog):
         """
 
         self._alerts = alerts
-        self._panel_ready = {}
+        self._panel_built = {}
+        self._panel_set = {}
         self._playback = playback
 
         super(ServiceDialog, self).__init__(*args, **kwargs)
@@ -287,6 +289,8 @@ class ServiceDialog(Dialog):
         activate its panel, then clear the input text box.
         """
 
+        self._panel_set = {}  # these must be reloaded with each window open
+
         dropdown = self.findChild(QtGui.QComboBox, 'service')
         idx = dropdown.findData(self._addon.config['last_service'])
         if idx == -1:
@@ -312,44 +316,21 @@ class ServiceDialog(Dialog):
 
         svc_id = self.findChild(QtGui.QComboBox, 'service').itemData(idx)
         stack = self.findChild(QtGui.QStackedWidget, 'panels')
-        panel_unbuilt = svc_id not in self._panel_ready
 
-        if panel_unbuilt or initial:
+        panel_unbuilt = svc_id not in self._panel_built
+        panel_unset = svc_id not in self._panel_set
+
+        if panel_unbuilt or panel_unset:
             widget = stack.widget(idx)
             options = self._addon.router.get_options(svc_id)
-            last_options = self._addon.config['last_options'].get(svc_id, {})
 
             if panel_unbuilt:
+                self._panel_built[svc_id] = True
                 self._on_service_activated_build(svc_id, widget, options)
 
-            if initial:
-                vinputs = widget.findChildren(self._OPTIONS_WIDGETS)
-
-                assert len(vinputs) == len(options)
-
-                for i in range(len(options)):
-                    option, vinput = options[i], vinputs[i]
-
-                    if isinstance(option['values'], tuple):
-                        try:
-                            vinput.setValue(last_options[option['key']])
-                        except KeyError:
-                            try:
-                                vinput.setValue(option['default'])
-                            except KeyError:
-                                vinput.setValue(option['values'][0])
-                    else:
-                        try:
-                            vinput.setCurrentIndex(
-                                vinput.findData(last_options[option['key']])
-                            )
-                        except KeyError:
-                            try:
-                                vinput.setCurrentIndex(
-                                    vinput.findData(option['default'])
-                                )
-                            except KeyError:
-                                pass
+            if panel_unset:
+                self._panel_set[svc_id] = True
+                self._on_service_activated_set(svc_id, widget, options)
 
         stack.setCurrentIndex(idx)
 
@@ -362,7 +343,6 @@ class ServiceDialog(Dialog):
         controls.
         """
 
-        self._panel_ready[svc_id] = True
         self._addon.logger.debug("Constructing panel for %s", svc_id)
 
         row = 1
@@ -401,6 +381,45 @@ class ServiceDialog(Dialog):
 
         panel.addWidget(label, row, 0, 1, 2, QtCore.Qt.AlignBottom)
         panel.setRowStretch(row, 1)
+
+    def _on_service_activated_set(self, svc_id, widget, options):
+        """
+        Based on the list of options and the user's last known options,
+        restore the values of all input controls.
+        """
+
+        self._addon.logger.debug("Restoring options for %s", svc_id)
+
+        last_options = self._addon.config['last_options'].get(svc_id, {})
+        vinputs = widget.findChildren(self._OPTIONS_WIDGETS)
+
+        assert len(vinputs) == len(options)
+
+        for i in range(len(options)):
+            option, vinput = options[i], vinputs[i]
+
+            # TODO this needs better error checking
+
+            if isinstance(option['values'], tuple):
+                try:
+                    vinput.setValue(last_options[option['key']])
+                except KeyError:
+                    try:
+                        vinput.setValue(option['default'])
+                    except KeyError:
+                        vinput.setValue(option['values'][0])
+            else:
+                try:
+                    vinput.setCurrentIndex(
+                        vinput.findData(last_options[option['key']])
+                    )
+                except KeyError:
+                    try:
+                        vinput.setCurrentIndex(
+                            vinput.findData(option['default'])
+                        )
+                    except KeyError:
+                        pass
 
     def _on_preview(self):
         """

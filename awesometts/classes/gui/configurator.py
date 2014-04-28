@@ -65,6 +65,7 @@ class Configurator(Dialog):
         }
 
         super(Configurator, self).__init__(*args, **kwargs)
+        self.setWindowTitle("%s Configuration" % self.windowTitle())
 
     # UI Construction ########################################################
 

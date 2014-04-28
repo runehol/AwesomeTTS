@@ -553,18 +553,39 @@ class _Pool(QtGui.QWidget):
         """
 
         if exception:
-            if not exception.message and hasattr(exception, 'reason'):
-                exception.message = exception.reason  # used by URLError
+            if not (
+                hasattr(exception, 'message') and
+                isinstance(exception.message, basestring) and
+                exception.message
+            ):
+                exception.message = "No additional details available"
+
+                # handling for a 'reason' but no 'message' (e.g. URLError)
+                if hasattr(exception, 'reason'):
+                    reason = exception.reason
+
+                    if isinstance(reason, basestring) and reason:
+                        exception.message = reason
+
+                    else:
+                        for attribute in ['message', 'strerror']:
+                            if hasattr(reason, attribute):
+                                value = getattr(reason, attribute)
+
+                                if isinstance(value, basestring) and value:
+                                    exception.message = value
+                                    break
 
             self._logger.debug(
                 "Exception from thread [%d] (%s); executing callback\n%s",
 
-                self._current_id, exception.message or "no message",
+                self._current_id, exception.message,
 
                 _PREFIXED("!!! ", stack_trace.split('\n'))
                 if isinstance(stack_trace, basestring)
                 else "Stack trace unavailable",
             )
+
         else:
             self._logger.debug(
                 "Completion from thread [%d]; executing callback",

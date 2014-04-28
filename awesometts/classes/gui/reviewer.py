@@ -152,10 +152,13 @@ class Reviewer(object):
                 options=attr,
                 callbacks=dict(
                     okay=self._playback,
-                    fail=lambda exception: self._alerts(
-                        "Unable to play this tag:\n%s\n\n%s" %
-                        (str(tag), exception.message),
-                        self._parent,
-                    ),
+                    fail=lambda exception:
+                        # we can safely ignore "service busy" errors in review
+                        isinstance(exception, self._addon.router.BusyError) or
+                        self._alerts(
+                            "Unable to play this tag:\n%s\n\n%s" %
+                            (str(tag), exception.message),
+                            self._parent,
+                        ),
                 ),
             )

@@ -303,7 +303,7 @@ class EditorGenerator(ServiceDialog):
             callbacks=dict(
                 done=lambda: self._disable_inputs(False),
                 okay=lambda path: (
-                    # TODO call a self._remember() method
+                    self._addon.config.update(self._remember_values()),
                     super(EditorGenerator, self).accept(*args, **kwargs),
                     self._editor.addMedia(path),
                 ),

@@ -493,3 +493,18 @@ class ServiceDialog(Dialog):
             text_value = text_input.toPlainText()
 
         return text_input, text_value
+
+    def _remember_values(self):
+        """
+        Returns a dict of the options that need to be updated to
+        remember the state of the form.
+        """
+
+        svc_id, values = self._get_service_values()
+        return {
+            'last_service': svc_id,
+            'last_options': dict(
+                self._addon.config['last_options'].items() +
+                [(svc_id, values)]
+            ),
+        }

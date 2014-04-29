@@ -233,6 +233,7 @@ anki.hooks.addHook(
             constructor=classes.gui.BrowserGenerator,
             args=(),
             kwargs=dict(
+                browser=browser,
                 addon=addon,
                 playback=anki.sound.play,
                 alerts=aqt.utils.showWarning,

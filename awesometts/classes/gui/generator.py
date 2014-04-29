@@ -37,12 +37,17 @@ class BrowserGenerator(ServiceDialog):
     """
 
     __slots__ = [
+        '_browser',  # reference to the current Anki browser window
+        '_notes',    # the list of Note objects selected when window opened
     ]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, browser, *args, **kwargs):
         """
         Sets our title.
         """
+
+        self._browser = browser
+        self._notes = None  # set in show()
 
         super(BrowserGenerator, self).__init__(*args, **kwargs)
         self.setWindowTitle("Mass Generate MP3s w/ %s" % self.windowTitle())
@@ -156,10 +161,21 @@ class BrowserGenerator(ServiceDialog):
         window.
         """
 
-        # TODO would be nice if this only included fields from selected notes
-        import anki.find
-        import aqt
-        fields = sorted(anki.find.fieldNames(aqt.mw.col, downcase=False))
+        # FIXME. For a very large selectedNotes() set, doing this might be too
+        # slow. An alternative might be to load the form UI, disable all the
+        # input controls, display a message, load the notes in another thread,
+        # then re-enable the input controls.
+
+        self._notes = [
+            self._browser.mw.col.getNote(note_id)
+            for note_id in self._browser.selectedNotes()
+        ]
+
+        fields = sorted({
+            field
+            for note in self._notes
+            for field in note.keys()
+        })
 
         config = self._addon.config
 

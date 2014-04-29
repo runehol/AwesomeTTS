@@ -176,7 +176,8 @@ router = classes.Router(
 
 
 # GUI interaction with Anki, pylint:disable=C0103
-# n.b. be careful wrapping methods that have return values; see anki.hooks
+# n.b. be careful wrapping methods that have return values (see anki.hooks);
+#      in general, only the 'before' mode absolves us of responsibility
 
 from .classes.gui.base import ServiceDialog  # FIXME remove
 
@@ -226,7 +227,6 @@ classes.gui.Action(
 )
 
 anki.hooks.addHook(
-    # FIXME menu should gray when no cards are selected in Browser
     'browser.setupMenus',
     lambda browser: classes.gui.Action(
         target=classes.Bundle(
@@ -242,6 +242,13 @@ anki.hooks.addHook(
         text="Awesome&TTS Mass Generator...",
         parent=browser.form.menuEdit,
     ),
+)
+aqt.browser.Browser.updateTitle = anki.hooks.wrap(
+    aqt.browser.Browser.updateTitle,
+    lambda browser: browser.findChild(classes.gui.Action).setEnabled(
+        bool(browser.form.tableView.selectionModel().selectedRows())
+    ),
+    'before',
 )
 
 anki.hooks.addHook(

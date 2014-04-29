@@ -40,6 +40,7 @@ import anki.utils
 import anki.sound
 import aqt
 import aqt.clayout
+import aqt.editor
 import aqt.utils
 
 from . import classes
@@ -175,6 +176,7 @@ router = classes.Router(
 
 
 # GUI interaction with Anki, pylint:disable=C0103
+# n.b. be careful wrapping methods that have return values; see anki.hooks
 
 from .classes.gui.base import ServiceDialog  # FIXME remove
 
@@ -245,7 +247,6 @@ anki.hooks.addHook(
 anki.hooks.addHook(
     'setupEditorButtons',
     lambda editor: editor.iconsBox.addWidget(
-        # FIXME button should gray when Add Card / Browser editor loses focus
         classes.gui.Button(
             target=classes.Bundle(
                 constructor=classes.gui.EditorGenerator,
@@ -261,6 +262,12 @@ anki.hooks.addHook(
             style=editor.plastiqueStyle,
         ),
     ),
+)
+aqt.editor.Editor.enableButtons = anki.hooks.wrap(
+    aqt.editor.Editor.enableButtons,
+    lambda editor, val=True: editor.widget.findChild(classes.gui.Button)
+        .setEnabled(val),
+    'before',
 )
 
 aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
@@ -282,5 +289,6 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
                 ),
             ),
         ),
-    )
+    ),
+    'after',  # must use 'after' so that 'buttons' attribute is set
 )

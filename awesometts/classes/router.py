@@ -485,16 +485,19 @@ class Router(object):
         ])
 
         from hashlib import sha1
+
+        hex_digest = sha1(
+            hash_input.encode('utf-8') if isinstance(hash_input, unicode)
+            else hash_input
+        ).hexdigest()
+
+        assert len(hex_digest) == 40, "unexpected output from hash library"
         return os.path.join(
             self._cache_dir,
             '.'.join([
                 '-'.join([
-                    svc_id,
-                    sha1(
-                        hash_input.encode('utf-8')
-                        if isinstance(hash_input, unicode)
-                        else hash_input
-                    ).hexdigest(),
+                    svc_id, hex_digest[:8], hex_digest[8:16],
+                    hex_digest[16:24], hex_digest[24:32], hex_digest[32:],
                 ]),
                 'mp3',
             ]),

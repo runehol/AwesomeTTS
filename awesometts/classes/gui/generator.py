@@ -224,13 +224,15 @@ class EditorGenerator(ServiceDialog):
     """
 
     __slots__ = [
+        '_editor',  # reference to one of the editors in the Anki GUI
     ]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, editor, *args, **kwargs):
         """
         Sets our title.
         """
 
+        self._editor = editor
         super(EditorGenerator, self).__init__(*args, **kwargs)
         self.setWindowTitle("Insert MP3 w/ %s" % self.windowTitle())
 
@@ -285,11 +287,29 @@ class EditorGenerator(ServiceDialog):
 
     def accept(self, *args, **kwargs):
         """
-        TODO
+        Given the user's options and text, calls the service to make a
+        recording. If successful, the options are remembered and the MP3
+        inserted into the field.
         """
 
-        # TODO do recording code
-        # TODO double-check that Router class is setup to remember
-        # the service used and its options
+        svc_id, values = self._get_service_values()
+        text_input, text_value = self._get_service_text()
+        self._disable_inputs()
 
-        super(EditorGenerator, self).accept(*args, **kwargs)
+        self._addon.router(
+            svc_id=svc_id,
+            text=text_value,
+            options=values,
+            callbacks=dict(
+                done=lambda: self._disable_inputs(False),
+                okay=lambda path: (
+                    # TODO call a self._remember() method
+                    super(EditorGenerator, self).accept(*args, **kwargs),
+                    self._editor.addMedia(path),
+                ),
+                fail=lambda exception: (
+                    self._alerts(exception.message, self),
+                    text_input.setFocus(),
+                ),
+            ),
+        )

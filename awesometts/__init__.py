@@ -251,6 +251,7 @@ anki.hooks.addHook(
                 constructor=classes.gui.EditorGenerator,
                 args=(),
                 kwargs=dict(
+                    editor=editor,
                     addon=addon,
                     playback=anki.sound.play,
                     alerts=aqt.utils.showWarning,

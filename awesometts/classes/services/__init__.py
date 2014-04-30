@@ -32,6 +32,7 @@ __all__ = [
     'Google',
     'SAPI5',
     'Say',
+    'TTSAPICom',
 ]
 
 from .common import Trait
@@ -41,3 +42,4 @@ from .espeak import ESpeak
 from .google import Google
 from .sapi5 import SAPI5
 from .say import Say
+from .ttsapicom import TTSAPICom

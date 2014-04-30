@@ -157,6 +157,7 @@ router = classes.Router(
             ('google', classes.services.Google),
             ('sapi5', classes.services.SAPI5),
             ('say', classes.services.Say),
+            ('ttsapicom', classes.services.TTSAPICom),
         ],
         aliases=[
             ('g', 'google'),

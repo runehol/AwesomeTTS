@@ -537,6 +537,7 @@ class _Pool(QtGui.QWidget):
         thread = self._threads[self._current_id] = {
             # keeping a reference to worker prevents garbage collection
             'callback': callback,
+            'done': False,
             'worker': _Worker(self._current_id, task),
         }
 
@@ -596,17 +597,19 @@ class _Pool(QtGui.QWidget):
             )
 
         self._threads[thread_id]['callback'](exception)
+        self._threads[thread_id]['done'] = True
 
     def _on_worker_finished(self):
         """
         When the worker is finished, which happens sometime briefly
-        after it's done with its task, delete it from the thread pool.
+        after it's done with its task, delete it from the thread pool if
+        its callback has already executed.
         """
 
         thread_ids = [
             thread_id
             for thread_id, thread in self._threads.items()
-            if thread['worker'].isFinished()
+            if thread['done'] and thread['worker'].isFinished()
         ]
 
         if not thread_ids:

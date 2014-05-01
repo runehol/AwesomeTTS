@@ -582,7 +582,7 @@ class _Pool(QtGui.QWidget):
             self._logger.debug(
                 "Exception from thread [%d] (%s); executing callback\n%s",
 
-                self._current_id, exception.message,
+                thread_id, exception.message,
 
                 _PREFIXED("!!! ", stack_trace.split('\n'))
                 if isinstance(stack_trace, basestring)
@@ -592,7 +592,7 @@ class _Pool(QtGui.QWidget):
         else:
             self._logger.debug(
                 "Completion from thread [%d]; executing callback",
-                self._current_id,
+                thread_id,
             )
 
         self._threads[thread_id]['callback'](exception)

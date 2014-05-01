@@ -213,12 +213,44 @@ class BrowserGenerator(ServiceDialog):
         TODO
         """
 
+        source, dest = self._get_field_values()
+
+        eligible_notes = [
+            note
+            for note in self._notes
+            if source in note.keys() and dest in note.keys()
+        ]
+
+        if not eligible_notes:
+            self._alerts(
+                "Of the %d notes selected in the browser, none have both "
+                "'%s' and '%s' fields." % (len(self._notes), source, dest)
+                if len(self._notes) > 1
+                else "The selected note does not have both '%s' and '%s'"
+                    "fields." % (source, dest),
+                self,
+            )
+            return
+
+        svc_id, values = self._get_service_values()
+
+
         # TODO do recording code
         # TODO update all four mass_xxx configuration settings
         # TODO double-check that Router class is setup to remember
         # the service used and its options
 
         super(BrowserGenerator, self).accept(*args, **kwargs)
+
+    def _get_field_values(self):
+        """
+        Return the user's source and destination fields.
+        """
+
+        return (
+            self.findChild(QtGui.QComboBox, 'source').currentText(),
+            self.findChild(QtGui.QComboBox, 'dest').currentText(),
+        )
 
     def _on_handling_toggled(self):
         """

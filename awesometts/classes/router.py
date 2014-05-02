@@ -178,10 +178,11 @@ class Router(object):
 
         The callbacks parameter is a dict and contains the following:
 
-            - 'done' (optional): called as soon as the call is complete
+            - 'done' (optional): called before the okay/fail callback
             - 'okay' (required): called with a path to the media file
             - 'fail' (required): called with an exception for validation
                errors or failed service calls occurs
+            - 'then' (optional): called after the okay/fail callback
 
         Because it is asynchronous in nature, this method does not raise
         exceptions normally; they are passed to callbacks['fail'].
@@ -202,6 +203,7 @@ class Router(object):
         assert 'done' not in callbacks or callable(callbacks['done'])
         assert 'okay' in callbacks and callable(callbacks['okay'])
         assert 'fail' in callbacks and callable(callbacks['fail'])
+        assert 'then' not in callbacks or callable(callbacks['then'])
 
         try:
             self._logger.debug(
@@ -223,6 +225,8 @@ class Router(object):
             if 'done' in callbacks:
                 callbacks['done']()
             callbacks['fail'](exception)
+            if 'then' in callbacks:
+                callbacks['then']()
 
             return
 
@@ -230,6 +234,8 @@ class Router(object):
             if 'done' in callbacks:
                 callbacks['done']()
             callbacks['okay'](path)
+            if 'then' in callbacks:
+                callbacks['then']()
 
         else:
             self._busy.append(path)
@@ -240,6 +246,7 @@ class Router(object):
                     'done' in callbacks and callbacks['done'](),
                     exception and callbacks['fail'](exception) or
                         callbacks['okay'](path),
+                    'then' in callbacks and callbacks['then'](),
                 )
             )
 

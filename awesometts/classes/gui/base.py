@@ -435,12 +435,10 @@ class ServiceDialog(Dialog):
             text=text_value,
             options=values,
             callbacks=dict(
-                done=lambda: (
-                    self._disable_inputs(False),
-                    text_input.setFocus()
-                ),
+                done=lambda: self._disable_inputs(False),
                 okay=self._playback,
                 fail=lambda exception: self._alerts(exception.message, self),
+                then=text_input.setFocus,
             ),
         )
 

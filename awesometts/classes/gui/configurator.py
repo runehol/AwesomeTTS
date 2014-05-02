@@ -397,7 +397,7 @@ class Configurator(Dialog):
 
         super(Configurator, self).show(*args, **kwargs)
 
-    def accept(self, *args, **kwargs):
+    def accept(self):
         """
         Saves state on all form inputs. This should be roughly the
         opposite of the show() method.
@@ -417,7 +417,7 @@ class Configurator(Dialog):
             if widget.objectName() in self._PROPERTY_KEYS
         })
 
-        super(Configurator, self).accept(*args, **kwargs)
+        super(Configurator, self).accept()
 
     def keyPressEvent(self, key_event):  # from PyQt4, pylint:disable=C0103
         """

@@ -179,6 +179,7 @@ class Router(object):
         The callbacks parameter is a dict and contains the following:
 
             - 'done' (optional): called before the okay/fail callback
+            - 'miss' (optional): called before the service on cache miss
             - 'okay' (required): called with a path to the media file
             - 'fail' (required): called with an exception for validation
                errors or failed service calls occurs
@@ -201,6 +202,7 @@ class Router(object):
         """
 
         assert 'done' not in callbacks or callable(callbacks['done'])
+        assert 'miss' not in callbacks or callable(callbacks['miss'])
         assert 'okay' in callbacks and callable(callbacks['okay'])
         assert 'fail' in callbacks and callable(callbacks['fail'])
         assert 'then' not in callbacks or callable(callbacks['then'])
@@ -238,6 +240,9 @@ class Router(object):
                 callbacks['then']()
 
         else:
+            if 'miss' in callbacks:
+                callbacks['miss']()
+
             self._busy.append(path)
             self._pool.spawn(
                 task=lambda: service['instance'].run(text, options, path),

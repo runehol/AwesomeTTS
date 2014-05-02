@@ -39,6 +39,7 @@ class BrowserGenerator(ServiceDialog):
     __slots__ = [
         '_browser',  # reference to the current Anki browser window
         '_notes',    # the list of Note objects selected when window opened
+        '_process',  # state during processing; see accept() method below
     ]
 
     def __init__(self, browser, *args, **kwargs):
@@ -48,6 +49,7 @@ class BrowserGenerator(ServiceDialog):
 
         self._browser = browser
         self._notes = None  # set in show()
+        self._process = None  # set in accept()
 
         super(BrowserGenerator, self).__init__(*args, **kwargs)
         self.setWindowTitle("Mass Generate MP3s w/ %s" % self.windowTitle())
@@ -208,12 +210,13 @@ class BrowserGenerator(ServiceDialog):
 
         source.setFocus()
 
-    def accept(self, *args, **kwargs):
+    def accept(self):
         """
-        TODO
+        Check to make sure that we have at least one note, pull the
+        service options, and kick off the processing.
         """
 
-        source, dest = self._get_field_values()
+        source, dest, append, behavior = self._get_field_values()
 
         eligible_notes = [
             note
@@ -232,24 +235,208 @@ class BrowserGenerator(ServiceDialog):
             )
             return
 
-        svc_id, values = self._get_service_values()
+        svc_id, options = self._get_service_values()
 
+        self._process = {
+            'service': {
+                'id': svc_id,
+                'options': options,
+            },
+            'fields': {
+                'source': source,
+                'dest': dest,
+            },
+            'handling': {
+                'append': append,
+                'behavior': behavior,
+            },
+            'cancel': False,  # TODO hook up through progress dialog
+            'queue': eligible_notes,
+            'counts': {
+                'total': len(self._notes),
+                'skip': len(self._notes) - len(eligible_notes),
+                'done': 0,  # all notes processed
+                'okay': 0,  # calls which resulted in a successful MP3
+                'fail': 0,  # calls which resulted in an exception
+                'miss': 0,  # calls requiring the service be queried
+            },
+            'exceptions': {},
+            'throttling':
+                self._addon.config['throttle_threshold']
+                if self._addon.router.has_trait(
+                    svc_id,
+                    self._addon.router.Trait.INTERNET
+                )
+                else False,
+        }
 
-        # TODO do recording code
-        # TODO update all four mass_xxx configuration settings
-        # TODO double-check that Router class is setup to remember
-        # the service used and its options
+        self._disable_inputs()
+        self._accept_next()
 
-        super(BrowserGenerator, self).accept(*args, **kwargs)
+    def _accept_next(self):
+        """
+        Pop the next note off the queue, if not throttled, and process.
+        """
+
+        if not self._process['queue'] or self._process['cancel']:
+            self._accept_done(self._process['cancel'])
+            return
+
+        if (
+            self._process['throttling'] and
+            self._process['counts']['miss'] > self._process['throttling']
+        ):
+            # TODO do throttling here
+            # should start a QTimer that upon each timeout, updates the
+            # countdown in the progress dialog; once it reaches zero, the
+            # QTimer should be cancelled and _accept_next() should be called
+            # once again
+
+            return
+
+        note = self._process['queue'].pop(0)
+
+        def miss():
+            """Count the cache miss."""
+
+            self._process['counts']['miss'] += 1
+
+        def done():
+            """Count the processed note."""
+
+            self._process['counts']['done'] += 1
+
+        def okay(path):
+            """Count the success and update the note."""
+
+            self._process['counts']['okay'] += 1
+
+            # TODO update the note
+
+        def fail(exception):
+            """Count the failure and the unique message."""
+
+            self._process['counts']['fail'] += 1
+
+            message = exception.message
+            try:
+                self._process['exceptions'][message] += 1
+            except KeyError:
+                self._process['exceptions'][message] = 1
+
+        self._addon.router(
+            svc_id=self._process['service']['id'],
+            text=note[self._process['fields']['source']],
+            options=self._process['service']['options'],
+            callbacks=dict(
+                miss=miss, done=done, okay=okay, fail=fail,
+                then=self._accept_next,
+            ),
+        )
+
+    def _accept_done(self, cancelled):
+        """
+        Display statistics and close out the dialog.
+        """
+
+        messages = [
+            "The %d note%s you selected %s been processed. " % (
+                self._process['counts']['total'],
+                "s" if self._process['counts']['total'] != 1 else "",
+                "have" if self._process['counts']['total'] != 1 else "has",
+            )
+            if self._process['counts']['done'] ==
+                self._process['counts']['total']
+            else "%d of the %d note%s you selected %s processed. " % (
+                self._process['counts']['done'],
+                self._process['counts']['total'],
+                "s" if self._process['counts']['total'] != 1 else "",
+                "were" if self._process['counts']['done'] != 1 else "was",
+            ),
+
+            "%d note%s skipped for not having both the source and "
+            "destination fields. Of those remaining, " % (
+                self._process['counts']['skip'],
+                "s were" if self._process['counts']['skip'] != 1
+                else " was",
+            )
+            if self._process['counts']['skip']
+            else "During processing, "
+        ]
+
+        if self._process['counts']['fail']:
+            if self._process['counts']['okay']:
+                messages.append(
+                    "%d note%s successfully updated, but "
+                    "%d note%s failed while processing." % (
+                        self._process['counts']['okay'],
+                        "s were" if self._process['counts']['okay'] != 1
+                        else " was",
+                        self._process['counts']['fail'],
+                        "s" if self._process['counts']['fail'] != 1
+                        else "",
+                    )
+                )
+            else:
+                messages.append("no notes were successfully updated.")
+
+            messages.append("\n\n")
+
+            if len(self._process['exceptions']) == 1:
+                messages.append("The following problem was encountered:")
+                messages += [
+                    "\n%s (%d time%s)" %
+                    (message, count, "s" if count != 1 else "")
+                    for message, count
+                    in self._process['exceptions'].items()
+                ]
+            else:
+                messages.append("The following problems were encountered:")
+                messages += [
+                    "\n- %s (%d time%s)" %
+                    (message, count, "s" if count != 1 else "")
+                    for message, count
+                    in self._process['exceptions'].items()
+                ]
+
+        else:
+            messages.append("there were no errors.")
+
+        self._disable_inputs(False)
+        self._alerts("".join(messages), self)
+        self._process = None
+
+        if not cancelled:
+            self._addon.config.update(self._remember_values())
+
+        super(BrowserGenerator, self).accept()
+
+    def _remember_values(self):
+
+        source, dest, append, behavior = self._get_field_values()
+
+        return dict(
+            super(BrowserGenerator, self)._remember_values().items() +
+            [
+                ('last_mass_append', append),
+                ('last_mass_behavior', behavior),
+                ('last_mass_dest', dest),
+                ('last_mass_source', source),
+            ]
+        )
+
 
     def _get_field_values(self):
         """
-        Return the user's source and destination fields.
+        Returns the user's source and destination fields, append state,
+        and handling mode.
         """
 
         return (
             self.findChild(QtGui.QComboBox, 'source').currentText(),
             self.findChild(QtGui.QComboBox, 'dest').currentText(),
+            self.findChild(QtGui.QRadioButton, 'append').isChecked(),
+            self.findChild(QtGui.QCheckBox, 'behavior').isChecked(),
         )
 
     def _on_handling_toggled(self):
@@ -333,7 +520,7 @@ class EditorGenerator(ServiceDialog):
 
         self.findChild(QtGui.QPlainTextEdit, 'text').setFocus()
 
-    def accept(self, *args, **kwargs):
+    def accept(self):
         """
         Given the user's options and text, calls the service to make a
         recording. If successful, the options are remembered and the MP3
@@ -352,7 +539,7 @@ class EditorGenerator(ServiceDialog):
                 done=lambda: self._disable_inputs(False),
                 okay=lambda path: (
                     self._addon.config.update(self._remember_values()),
-                    super(EditorGenerator, self).accept(*args, **kwargs),
+                    super(EditorGenerator, self).accept(),
                     self._editor.addMedia(path),
                 ),
                 fail=lambda exception: (

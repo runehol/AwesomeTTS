@@ -97,6 +97,14 @@ class Say(Service):
                 values=self._voices,
                 transform=lambda value: str(value).strip().lower(),
             ),
+
+            dict(
+                key='speed',
+                label="Speed",
+                values=(10, 500, "wpm"),
+                transform=int,
+                default=175,
+            ),
         ]
 
     def run(self, text, options, path):
@@ -106,7 +114,13 @@ class Say(Service):
 
         output_aiff = self.path_temp('aiff')
 
-        self.cli_call('say', '-v', options['voice'], '-o', output_aiff, text)
+        self.cli_call(
+            'say',
+            '-v', options['voice'],
+            '-r', options['speed'],
+            '-o', output_aiff,
+            text,
+        )
 
         self.cli_transcode(output_aiff, path)
 

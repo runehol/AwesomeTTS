@@ -29,19 +29,13 @@ __all__ = []
 import json
 import logging
 import os
-import os.path
 import re
 import sys
 
 from PyQt4.QtCore import Qt
 
-import anki.hooks
-import anki.utils
-import anki.sound
+import anki
 import aqt
-import aqt.clayout
-import aqt.editor
-import aqt.utils
 
 from . import classes
 
@@ -179,8 +173,6 @@ router = classes.Router(
 # n.b. be careful wrapping methods that have return values (see anki.hooks);
 #      in general, only the 'before' mode absolves us of responsibility
 
-from .classes.gui.base import ServiceDialog  # FIXME remove
-
 addon = classes.Bundle(
     config=config,
     logger=logger,
@@ -279,25 +271,26 @@ aqt.editor.Editor.enableButtons = anki.hooks.wrap(
     'before',
 )
 
-aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
-    aqt.clayout.CardLayout.setupButtons,
-    lambda card_layout: card_layout.buttons.insertWidget(
-        # today, the card layout form has 7 buttons/stretchers; in the event
-        # that this changes in the future, bump the button to the first slot
-        3 if card_layout.buttons.count() == 7 else 0,
-        classes.gui.Button(
-            text="Add &TTS",
-            target=classes.Bundle(
-                constructor=ServiceDialog,  # FIXME replace w/ TemplateBuilder
-                args=(),
-                kwargs=dict(
-                    addon=addon,
-                    playback=anki.sound.play,
-                    alerts=aqt.utils.showWarning,
-                    parent=card_layout,
-                ),
-            ),
-        ),
-    ),
-    'after',  # must use 'after' so that 'buttons' attribute is set
-)
+# TODO Future feature -- TTS on-the-fly template builder
+# aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
+#     aqt.clayout.CardLayout.setupButtons,
+#     lambda card_layout: card_layout.buttons.insertWidget(
+#         # today, the card layout form has 7 buttons/stretchers; in the event
+#         # that this changes in the future, bump the button to the first slot
+#         3 if card_layout.buttons.count() == 7 else 0,
+#         classes.gui.Button(
+#             text="Add &TTS",
+#             target=classes.Bundle(
+#                 constructor=classes.gui.TemplateBuilder,
+#                 args=(),
+#                 kwargs=dict(
+#                     addon=addon,
+#                     playback=anki.sound.play,
+#                     alerts=aqt.utils.showWarning,
+#                     parent=card_layout,
+#                 ),
+#             ),
+#         ),
+#     ),
+#     'after',  # must use 'after' so that 'buttons' attribute is set
+# )

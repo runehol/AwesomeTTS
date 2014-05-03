@@ -24,6 +24,10 @@
 
 """
 Entry point for AwesomeTTS add-on from Anki
+
+Performs any needed migration tasks (e.g. renaming conf.db to config.db,
+removal of old modules and packages, removal of other unneeded files),
+then loads the 'awesometts' package to bootstrap the add-on.
 """
 
 __all__ = []
@@ -43,20 +47,27 @@ if __name__ == "__main__":
 # Begin temporary migration code from Beta 10 and older
 
 import os
-import os.path
 
-_PKG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'awesometts')
+def os_call(callee, *args, **kwargs):
+    """Call the function with the given arguments, ignoring OSError."""
 
-for _path in [
-    'main.py', 'main.pyc', 'main.pyo',
-    'util.py', 'util.pyc', 'util.pyo',
-]:
     try:
-        os.unlink(os.path.join(_PKG, _path))
+        callee(*args, **kwargs)
     except OSError:
         pass
 
-for _path in [
+_PKG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'awesometts')
+
+for _filename in [
+    'main.py', 'main.pyc', 'main.pyo',
+    'util.py', 'util.pyc', 'util.pyo',
+]:
+    os_call(os.unlink, os.path.join(_PKG, _filename))
+
+for _directory, _filenames in [
+    ('designer', [
+        'configurator.ui', 'filegenerator.ui', 'massgenerator.ui',
+    ]),
     ('forms', [
         'configurator.py', 'configurator.pyc', 'configurator.pyo',
         'filegenerator.py', 'filegenerator.pyc', 'filegenerator.pyo',
@@ -71,25 +82,20 @@ for _path in [
         'say.py', 'say.pyc', 'say.pyo',
         '__init__.py', '__init__.pyc', '__init__.pyo',
     ]),
+    ('tools', [
+        'build_ui.sh',
+    ]),
 ]:
-    for _subpath in _path[1]:
-        try:
-            os.unlink(os.path.join(_PKG, _path[0], _subpath))
-        except OSError:
-            pass
+    for _filename in _filenames:
+        os_call(os.unlink, os.path.join(_PKG, _directory, _filename))
 
-    try:
-        os.rmdir(os.path.join(_PKG, _path[0]))
-    except OSError:
-        pass
+    os_call(os.rmdir, os.path.join(_PKG, _directory))
 
-try:
-    os.rename(
-        os.path.join(_PKG, 'conf.db'),
-        os.path.join(_PKG, 'config.db'),
-    )
-except OSError:
-    pass
+os_call(
+    os.rename,
+    os.path.join(_PKG, 'conf.db'),
+    os.path.join(_PKG, 'config.db'),
+)
 
 # End temporary migration code
 

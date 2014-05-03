@@ -25,7 +25,7 @@ File generation dialogs
 
 __all__ = ['BrowserGenerator', 'EditorGenerator']
 
-from PyQt4 import QtGui
+from PyQt4 import QtCore, QtGui
 
 from .base import ServiceDialog
 
@@ -258,16 +258,14 @@ class BrowserGenerator(ServiceDialog):
                 'done': 0,  # all notes processed
                 'okay': 0,  # calls which resulted in a successful MP3
                 'fail': 0,  # calls which resulted in an exception
-                'miss': 0,  # calls requiring the service be queried
             },
             'exceptions': {},
-            'throttling':
-                self._addon.config['throttle_threshold']
-                if self._addon.router.has_trait(
-                    svc_id,
-                    self._addon.router.Trait.INTERNET
-                )
-                else False,
+            'throttling': {
+                'calls': 0,  # number of cache misses in this batch
+                'sleep': self._addon.config['throttle_sleep'],
+                'threshold': self._addon.config['throttle_threshold'],
+            } if self._addon.router.has_trait(svc_id,
+                self._addon.router.Trait.INTERNET) else False,
         }
 
         self._disable_inputs()
@@ -284,22 +282,21 @@ class BrowserGenerator(ServiceDialog):
 
         if (
             self._process['throttling'] and
-            self._process['counts']['miss'] > self._process['throttling']
+            self._process['throttling']['calls'] >=
+            self._process['throttling']['threshold']
         ):
-            # TODO do throttling here
-            # should start a QTimer that upon each timeout, updates the
-            # countdown in the progress dialog; once it reaches zero, the
-            # QTimer should be cancelled and _accept_next() should be called
-            # once again
+            self._process['throttling']['countdown'] = \
+                self._process['throttling']['sleep']
 
+            timer = QtCore.QTimer()
+            self._process['throttling']['timer'] = timer
+
+            timer.timeout.connect(self._accept_throttled)
+            timer.setInterval(1000)
+            timer.start()
             return
 
         note = self._process['queue'].pop(0)
-
-        def miss():
-            """Count the cache miss."""
-
-            self._process['counts']['miss'] += 1
 
         def done():
             """Count the processed note."""
@@ -324,15 +321,43 @@ class BrowserGenerator(ServiceDialog):
             except KeyError:
                 self._process['exceptions'][message] = 1
 
+        callbacks = dict(
+            done=done, okay=okay, fail=fail,
+            then=self._accept_next,
+        )
+
+        if self._process['throttling']:
+            def miss():
+                """Count the cache miss."""
+
+                self._process['throttling']['calls'] += 1
+
+            callbacks['miss'] = miss
+
         self._addon.router(
             svc_id=self._process['service']['id'],
             text=note[self._process['fields']['source']],
             options=self._process['service']['options'],
-            callbacks=dict(
-                miss=miss, done=done, okay=okay, fail=fail,
-                then=self._accept_next,
-            ),
+            callbacks=callbacks,
         )
+
+    def _accept_throttled(self):
+        """
+        Called for every "timeout" of the timer during a throttling.
+        """
+
+        self._process['throttling']['countdown'] -= 1
+
+        if self._process['throttling']['countdown'] <= 0:
+            self._process['throttling']['timer'].stop()
+            self._process['throttling']['countdown'] = None
+            self._process['throttling']['timer'] = None
+            self._process['throttling']['calls'] = 0
+            self._accept_next()
+
+        else:
+            # TODO update dialog
+            print 'waiting', self._process['throttling']['countdown']
 
     def _accept_done(self, cancelled):
         """

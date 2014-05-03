@@ -37,17 +37,19 @@ class BrowserGenerator(ServiceDialog):
     """
 
     __slots__ = [
-        '_browser',  # reference to the current Anki browser window
-        '_notes',    # the list of Note objects selected when window opened
-        '_process',  # state during processing; see accept() method below
+        '_browser',       # reference to the current Anki browser window
+        '_strip_sounds',  # callable to remove [sound:xxx] tags from notes
+        '_notes',         # list of Note objects selected when window opened
+        '_process',       # state during processing; see accept() method below
     ]
 
-    def __init__(self, browser, *args, **kwargs):
+    def __init__(self, browser, strip_sounds, *args, **kwargs):
         """
         Sets our title.
         """
 
         self._browser = browser
+        self._strip_sounds = strip_sounds
         self._notes = None  # set in show()
         self._process = None  # set in accept()
 
@@ -250,10 +252,10 @@ class BrowserGenerator(ServiceDialog):
                 'append': append,
                 'behavior': behavior,
             },
-            'cancel': False,  # TODO hook up through progress dialog
             'queue': eligible_notes,
             'counts': {
                 'total': len(self._notes),
+                'elig': len(eligible_notes),
                 'skip': len(self._notes) - len(eligible_notes),
                 'done': 0,  # all notes processed
                 'okay': 0,  # calls which resulted in a successful MP3
@@ -269,6 +271,22 @@ class BrowserGenerator(ServiceDialog):
         }
 
         self._disable_inputs()
+
+        self._browser.mw.checkpoint(
+            "AwesomeTTS MP3 Mass Generator (%d note%s)" % (
+                self._process['counts']['elig'],
+                "s" if self._process['counts']['elig'] != 1 else "",
+            )
+        )
+        self._browser.mw.progress.start(
+            min=0,
+            max=self._process['counts']['elig'],
+            label="Generating MP3 files...",
+            parent=self,
+            immediate=True,
+        )
+        self._browser.model.beginReset()
+
         self._accept_next()
 
     def _accept_next(self):
@@ -276,8 +294,10 @@ class BrowserGenerator(ServiceDialog):
         Pop the next note off the queue, if not throttled, and process.
         """
 
-        if not self._process['queue'] or self._process['cancel']:
-            self._accept_done(self._process['cancel'])
+        self._accept_update()
+
+        if not self._process['queue']:
+            self._accept_done()
             return
 
         if (
@@ -306,9 +326,22 @@ class BrowserGenerator(ServiceDialog):
         def okay(path):
             """Count the success and update the note."""
 
-            self._process['counts']['okay'] += 1
+            filename = self._browser.mw.col.media.addFile(path)
+            dest = self._process['fields']['dest']
 
-            # TODO update the note
+            if self._process['handling']['append']:
+                if self._process['handling']['behavior']:
+                    note[dest] = self._strip_sounds(note[dest])
+                note[dest] += ' [sound:%s]' % filename
+
+            else:
+                if self._process['handling']['behavior']:
+                    note[dest] = '[sound:%s]' % filename
+                else:
+                    note[dest] = filename
+
+            self._process['counts']['okay'] += 1
+            note.flush()
 
         def fail(exception):
             """Count the failure and the unique message."""
@@ -347,22 +380,57 @@ class BrowserGenerator(ServiceDialog):
         """
 
         self._process['throttling']['countdown'] -= 1
+        self._accept_update()
 
         if self._process['throttling']['countdown'] <= 0:
             self._process['throttling']['timer'].stop()
-            self._process['throttling']['countdown'] = None
-            self._process['throttling']['timer'] = None
+            del self._process['throttling']['countdown']
+            del self._process['throttling']['timer']
             self._process['throttling']['calls'] = 0
             self._accept_next()
 
-        else:
-            # TODO update dialog
-            print 'waiting', self._process['throttling']['countdown']
+    def _accept_update(self):
+        """
+        Update the progress bar and message.
+        """
 
-    def _accept_done(self, cancelled):
+        self._browser.mw.progress.update(
+            label="finished %d of %d%s\n"
+                  "%d successful, %d failed\n"
+                  "\n"
+                  "%s" % (
+                      self._process['counts']['done'],
+                      self._process['counts']['elig'],
+
+                      " (%d skipped)" % self._process['counts']['skip']
+                      if self._process['counts']['skip']
+                      else "",
+
+                      self._process['counts']['okay'],
+                      self._process['counts']['fail'],
+
+                      "sleeping for %d second%s" % (
+                          self._process['throttling']['countdown'],
+                          "s"
+                          if self._process['throttling']['countdown'] != 1
+                          else ""
+                      )
+                      if (
+                          self._process['throttling'] and
+                          'countdown' in self._process['throttling']
+                      )
+                      else " "
+                  ),
+            value=self._process['counts']['done'],
+        )
+
+    def _accept_done(self):
         """
         Display statistics and close out the dialog.
         """
+
+        self._browser.model.endReset()
+        self._browser.mw.progress.finish()
 
         messages = [
             "The %d note%s you selected %s been processed. " % (
@@ -429,10 +497,9 @@ class BrowserGenerator(ServiceDialog):
 
         self._disable_inputs(False)
         self._alerts("".join(messages), self)
+        self._notes = None
         self._process = None
-
-        if not cancelled:
-            self._addon.config.update(self._remember_values())
+        self._addon.config.update(self._remember_values())
 
         super(BrowserGenerator, self).accept()
 

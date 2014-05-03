@@ -234,6 +234,7 @@ anki.hooks.addHook(
             args=(),
             kwargs=dict(
                 browser=browser,
+                strip_sounds=STRIP_SOUNDS,
                 addon=addon,
                 playback=anki.sound.play,
                 alerts=aqt.utils.showWarning,

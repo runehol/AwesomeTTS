@@ -36,6 +36,14 @@ class BrowserGenerator(ServiceDialog):
     from the card browser.
     """
 
+    # TODO. It would be nice if the progress dialog shown during generation
+    # offered a cancel button (labeled "Stop"). This would work just by having
+    # an additional 'cancelled' flag on the _process object that we check for
+    # at the beginning of _accept_next(), possibly in the same conditional as
+    # the "not self._process['queue']" check. Additionally, a cancelled=True
+    # flag should be passed to _accept_done() that causes the user's service
+    # and handling/behavior preferences to NOT be persisted to the database.
+
     __slots__ = [
         '_browser',       # reference to the current Anki browser window
         '_strip_sounds',  # callable to remove [sound:xxx] tags from notes

@@ -30,10 +30,12 @@ all carry a speaker icon (if supported by the desktop environment).
 
 __all__ = ['ICON', 'Action', 'Button']
 
-from PyQt4 import QtCore, QtGui
+from PyQt4 import Qt, QtCore, QtGui
 
 
 ICON = QtGui.QIcon(':/icons/speaker.png')
+
+SHORTCUT = Qt.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_T)
 
 
 class _Connector(object):  # used like a mixin, pylint:disable=R0903
@@ -84,7 +86,7 @@ class Action(QtGui.QAction, _Connector):
         QtGui.QAction.__init__(self, ICON, text, parent)
         _Connector.__init__(self, self.triggered, target)
 
-        self.setShortcut('Ctrl+t')
+        self.setShortcut(SHORTCUT)
 
         if isinstance(parent, QtGui.QMenu):
             parent.addAction(self)
@@ -110,12 +112,14 @@ class Button(QtGui.QPushButton, _Connector):
             self.setIconSize(QtCore.QSize(15, 15))
 
         else:
-            # FIXME How do I localize the tooltip for Mac OS X? (i.e. Cmd+T)
             self.setFixedWidth(20)
             self.setFixedHeight(20)
             self.setFocusPolicy(QtCore.Qt.NoFocus)
-            self.setShortcut('Ctrl+t')
-            self.setToolTip("Insert an audio clip with AwesomeTTS (Ctrl+T)")
+            self.setShortcut(SHORTCUT)
+            self.setToolTip(
+                "Insert an audio clip with AwesomeTTS (%s)" %
+                SHORTCUT.toString(Qt.QKeySequence.NativeText)
+            )
 
         if style:
             self.setStyle(style)

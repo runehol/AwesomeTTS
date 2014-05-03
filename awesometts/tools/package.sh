@@ -35,8 +35,8 @@ fi
 
 if [[ -e "$target" ]]
 then
-    echo "$target already exists." 1>&2
-    exit 1
+    echo "Removing old package.."
+    rm -fv "$target"
 fi
 
 oldPwd=$PWD

@@ -33,6 +33,12 @@ then
 	target=$PWD/$target
 fi
 
+if [[ "$target" != *"/addons"* ]]
+then
+    echo "$target does not include '/addons', which should be present." 1>&2
+    exit 1
+fi
+
 if [[ ! -d "$target" ]]
 then
     echo "$target is not a directory." 1>&2
@@ -68,12 +74,10 @@ cp -v AwesomeTTS.py "$target/AwesomeTTS.py"
 mkdir -v "$target/awesometts"
 cp -v awesometts/LICENSE.txt "$target/awesometts"
 cp -v awesometts/*.py "$target/awesometts"
-mkdir -v "$target/awesometts/classes"
-cp -v awesometts/classes/*.py "$target/awesometts/classes"
-mkdir -v "$target/awesometts/classes/gui"
-cp -v awesometts/classes/gui/*.py awesometts/classes/gui/*.vbs "$target/awesometts/classes/gui"
-mkdir -v "$target/awesometts/classes/services"
-cp -v awesometts/classes/services/*.py awesometts/classes/services/*.vbs "$target/awesometts/classes/services"
+mkdir -v "$target/awesometts/gui"
+cp -v awesometts/gui/*.py "$target/awesometts/gui"
+mkdir -v "$target/awesometts/service"
+cp -v awesometts/service/*.py awesometts/service/*.vbs "$target/awesometts/service"
 
 if [[ -n "$saveConf" ]]
 then

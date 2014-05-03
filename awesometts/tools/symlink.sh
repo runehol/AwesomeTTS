@@ -33,6 +33,12 @@ then
 	target=$PWD/$target
 fi
 
+if [[ "$target" != *"/addons"* ]]
+then
+    echo "$target does not include '/addons', which should be present." 1>&2
+    exit 1
+fi
+
 if [[ ! -d "$target" ]]
 then
     echo "$target is not a directory." 1>&2

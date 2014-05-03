@@ -159,7 +159,8 @@ class Reviewer(object):
                 svc_id = attr.pop('service')
             except KeyError:
                 self._alerts(
-                    "This tag needs a 'service' attribute:\n%s" % str(tag),
+                    "This tag needs a 'service' attribute:\n%s" %
+                    tag.prettify().decode('utf-8'),
                     self._parent,
                 )
                 continue
@@ -174,8 +175,10 @@ class Reviewer(object):
                         # we can safely ignore "service busy" errors in review
                         isinstance(exception, self._addon.router.BusyError) or
                         self._alerts(
-                            "Unable to play this tag:\n%s\n\n%s" %
-                            (str(tag), exception.message),
+                            "Unable to play this tag:\n%s\n\n%s" % (
+                                tag.prettify().decode('utf-8'),
+                                exception.message,
+                            ),
                             self._parent,
                         ),
                 ),

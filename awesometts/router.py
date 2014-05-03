@@ -27,7 +27,7 @@ __all__ = ['Router']
 import os.path
 from PyQt4 import QtCore, QtGui
 
-from .services import Trait as BaseTrait
+from .service import Trait as BaseTrait
 
 
 _SIGNAL = QtCore.SIGNAL('awesomeTtsThreadDone')

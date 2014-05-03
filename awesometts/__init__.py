@@ -37,7 +37,15 @@ from PyQt4.QtCore import Qt
 import anki
 import aqt
 
-from . import classes
+from . import (
+    gui,
+    service,
+)
+
+from .bundle import Bundle
+from .config import Config
+from .logger import Logger
+from .router import Router
 
 
 VERSION = "1.0 Beta 11 (develop)"
@@ -94,7 +102,7 @@ STRIP_ALL = lambda text: STRIP_WHITESPACE(STRIP_SOUNDS(STRIP_HTML(text)))
 
 # Core class initialization and dependency setup, pylint:disable=C0103
 
-logger = classes.Logger(
+logger = Logger(
     name='AwesomeTTS',
     handlers=dict(
         debug_file=logging.FileHandler(
@@ -111,8 +119,8 @@ logger = classes.Logger(
     ),
 )
 
-config = classes.Config(
-    db=classes.Bundle(
+config = Config(
+    db=Bundle(
         path=PATH_CONFIG,
         table='general',
         normalize=TO_NORMALIZED,
@@ -143,14 +151,14 @@ config = classes.Config(
     ],
 )
 
-router = classes.Router(
-    services=classes.Bundle(
+router = Router(
+    services=Bundle(
         mappings=[
-            ('ekho', classes.services.Ekho),
-            ('espeak', classes.services.ESpeak),
-            ('google', classes.services.Google),
-            ('sapi5', classes.services.SAPI5),
-            ('say', classes.services.Say),
+            ('ekho', service.Ekho),
+            ('espeak', service.ESpeak),
+            ('google', service.Google),
+            ('sapi5', service.SAPI5),
+            ('say', service.Say),
         ],
         aliases=[
             ('g', 'google'),
@@ -173,17 +181,17 @@ router = classes.Router(
 # n.b. be careful wrapping methods that have return values (see anki.hooks);
 #      in general, only the 'before' mode absolves us of responsibility
 
-addon = classes.Bundle(
+addon = Bundle(
     config=config,
     logger=logger,
-    paths=classes.Bundle(
+    paths=Bundle(
         cache=PATH_CACHE,
     ),
     router=router,
     version=VERSION,
 )
 
-reviewer = classes.gui.Reviewer(
+reviewer = gui.Reviewer(
     addon=addon,
     playback=anki.sound.play,
     alerts=aqt.utils.showWarning,
@@ -208,9 +216,9 @@ aqt.mw.reviewer._keyHandler = anki.hooks.wrap(
     'around',  # setting 'around' allows me to block call to original function
 )
 
-classes.gui.Action(
-    target=classes.Bundle(
-        constructor=classes.gui.Configurator,
+gui.Action(
+    target=Bundle(
+        constructor=gui.Configurator,
         args=(),
         kwargs=dict(addon=addon, parent=aqt.mw),
     ),
@@ -220,9 +228,9 @@ classes.gui.Action(
 
 anki.hooks.addHook(
     'browser.setupMenus',
-    lambda browser: classes.gui.Action(
-        target=classes.Bundle(
-            constructor=classes.gui.BrowserGenerator,
+    lambda browser: gui.Action(
+        target=Bundle(
+            constructor=gui.BrowserGenerator,
             args=(),
             kwargs=dict(
                 browser=browser,
@@ -239,7 +247,7 @@ anki.hooks.addHook(
 )
 aqt.browser.Browser.updateTitle = anki.hooks.wrap(
     aqt.browser.Browser.updateTitle,
-    lambda browser: browser.findChild(classes.gui.Action).setEnabled(
+    lambda browser: browser.findChild(gui.Action).setEnabled(
         bool(browser.form.tableView.selectionModel().selectedRows())
     ),
     'before',
@@ -248,9 +256,9 @@ aqt.browser.Browser.updateTitle = anki.hooks.wrap(
 anki.hooks.addHook(
     'setupEditorButtons',
     lambda editor: editor.iconsBox.addWidget(
-        classes.gui.Button(
-            target=classes.Bundle(
-                constructor=classes.gui.EditorGenerator,
+        gui.Button(
+            target=Bundle(
+                constructor=gui.EditorGenerator,
                 args=(),
                 kwargs=dict(
                     editor=editor,
@@ -266,7 +274,7 @@ anki.hooks.addHook(
 )
 aqt.editor.Editor.enableButtons = anki.hooks.wrap(
     aqt.editor.Editor.enableButtons,
-    lambda editor, val=True: editor.widget.findChild(classes.gui.Button)
+    lambda editor, val=True: editor.widget.findChild(gui.Button)
         .setEnabled(val),
     'before',
 )
@@ -278,10 +286,10 @@ aqt.editor.Editor.enableButtons = anki.hooks.wrap(
 #         # today, the card layout form has 7 buttons/stretchers; in the event
 #         # that this changes in the future, bump the button to the first slot
 #         3 if card_layout.buttons.count() == 7 else 0,
-#         classes.gui.Button(
+#         gui.Button(
 #             text="Add &TTS",
-#             target=classes.Bundle(
-#                 constructor=classes.gui.TemplateBuilder,
+#             target=Bundle(
+#                 constructor=gui.TemplateBuilder,
 #                 args=(),
 #                 kwargs=dict(
 #                     addon=addon,

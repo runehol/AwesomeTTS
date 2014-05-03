@@ -77,14 +77,14 @@ class ESpeak(Service):
 
         self._voices = sorted([
             (
-                match.group(2),
+                match.group(2).lower(),
 
                 "%s (%s)" % (match.group(4), match.group(2)) if match.group(4)
                 else match.group(2),
             )
             for match in [re_voice.match(line) for line in output]
             if match and match.group(2) != 'Pty'
-        ], key=lambda voice: str.lower(voice[1]))
+        ], key=lambda voice: voice[1].lower())
 
         if not self._voices:
             raise EnvironmentError("No usable output from `espeak --voices`")
@@ -109,7 +109,7 @@ class ESpeak(Service):
                 values=self._voices,
                 transform=lambda value: ''.join(
                     char.lower()
-                    for char in value
+                    for char in str(value)
                     if char.isalpha() or char == '-'
                 ),
             ),

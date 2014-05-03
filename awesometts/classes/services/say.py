@@ -62,7 +62,7 @@ class Say(Service):
 
         self._voices = sorted([
             (
-                match.group(1),
+                match.group(1).lower(),
 
                 "%s (%s)" % (match.group(1), match.group(4).replace('_', '-'))
                 if match.group(4)
@@ -73,7 +73,7 @@ class Say(Service):
                 for line in self.cli_output('say', '-v', '?')
             ]
             if match
-        ], key=lambda voice: str.lower(voice[0]))
+        ])
 
         if not self._voices:
             raise EnvironmentError("No usable output from call to `say -v ?`")
@@ -95,7 +95,7 @@ class Say(Service):
                 key='voice',
                 label="Voice",
                 values=self._voices,
-                transform=str.strip,
+                transform=lambda value: str(value).strip().lower(),
             ),
         ]
 

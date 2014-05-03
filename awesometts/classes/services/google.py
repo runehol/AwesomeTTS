@@ -105,7 +105,7 @@ class Google(Service):
                 ],
                 transform=lambda value: ''.join(
                     char.lower()
-                    for char in value.split('-').pop(0)
+                    for char in str(value).split('-').pop(0)
                     if char.isalpha()
                 ),
             ),

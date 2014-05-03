@@ -85,10 +85,10 @@ class SAPI5(Service):
         output = self.cli_output(self._binary, self._SCRIPT, '-vl')
 
         self._voices = sorted({
-            (voice.strip(), voice.strip())
+            (voice.strip().lower(), voice.strip())
             for voice in output[output.index('--Voice List--') + 1:]
             if voice.strip()
-        }, key=lambda voice: voice[1].lower())
+        })
 
         if not self._voices:
             raise EnvironmentError("No usable output from `sapi5.vbs -vl`")
@@ -110,7 +110,7 @@ class SAPI5(Service):
                 key='voice',
                 label="Voice",
                 values=self._voices,
-                transform=str.strip,
+                transform=lambda value: str(value).strip().lower(),
             ),
         ]
 

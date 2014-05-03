@@ -84,7 +84,11 @@ class Ekho(Service):
             strictly correct for Ekho to process.
             """
 
-            value = ''.join(char.lower() for char in value if char.isalpha())
+            value = ''.join(
+                char.lower()
+                for char in str(value)
+                if char.isalpha()
+            )
 
             return (
                 'Mandarin' if value in [

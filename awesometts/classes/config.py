@@ -26,12 +26,12 @@ Storage and management of add-on configuration
 # TODO Would it be possible to get these configuration options to sync with
 #      AnkiWeb, e.g. by moving them into the collections database?
 
-__all__ = ['Conf']
+__all__ = ['Config']
 
 import sqlite3
 
 
-class Conf(object):
+class Config(object):
     """
     Exposes a class whose instances have a dict-like interface for
     handling retrieving, caching, and serializing configuration stored
@@ -70,56 +70,47 @@ class Conf(object):
                 return sqlite3.Cursor.execute(self, sql)
 
     __slots__ = [
-        '_path',         # path to SQLite3 database
-        '_table',        # SQLite3 table where preferences are stored
-        '_sanitize',     # regex object for sanitizing names
-        '_definitions',  # map of official lookup names to column definitions
+        '_db',           # path to database, table name, normalize callable
+        '_cols',         # map of official lookup names to column definitions
         '_cache',        # in-memory lookup of preferences
         '_logger',       # where to send logging messages
         '_events',       # map of lookup names to the callable(s) they trigger
     ]
 
-    def _normalize(self, name):
-        """
-        Returns a lowercase version of the name with only characters
-        permitted by the sanitization regex object.
-        """
-
-        return self._sanitize.sub('', name.lower())
-
-    def __init__(self, db, definitions, logger, events=None):
+    def __init__(self, db, cols, logger, events=None):
         """
         Given a database specification, list of column definitions,
         logger, and optional event list, loads the configuration state.
 
-        The database specification should be a single tuple, with:
+        The database specification should be a bundle, with:
 
-        - 0th: full path to database
-        - 1st: table name
-        - 2nd: sanitization function for normalizing columns
+            - path: full path to database
+            - table: table name
+            - normalize: sanitization function for normalizing columns
 
         The column definitions should be a list of tuples, each with:
 
-        - 0th: SQLite3 column name
-        - 1st: SQLite3 column affinity
-        - 2nd: default Python value to use when introducing new configuration
-        - 3rd: mapping function from SQLite3 type to Python type
-        - 4th: mapping function from Python type to SQLite3 type
+            - 0th: SQLite3 column name
+            - 1st: SQLite3 column affinity
+            - 2nd: default Python value to use when introducing a new
+                   configuration item or a value cannot be parsed
+            - 3rd: mapping function from SQLite3 type to Python type
+            - 4th: mapping function from Python type to SQLite3 type
 
         The logger is a reference to any class instance or module with a
         logger-like interface (e.g. debug(), info(), warn() callables).
 
         The event list should be a list of tuples, each with:
 
-        - 0th: list of column names or single column name to trigger the event
-        - 1th: callable to callback to when this value is loaded or updated
+            - 0th: list of column names or single column name to trigger
+            - 1th: callable when this value is loaded or updated
         """
 
-        self._path, self._table, self._sanitize = db
-        self._definitions = {
-            self._normalize(definition[0]): definition
-            for definition
-            in definitions
+        self._db = db
+
+        self._cols = {
+            self._db.normalize(col[0]): col
+            for col in cols
         }
         self._logger = logger
 
@@ -145,8 +136,8 @@ class Conf(object):
             triggers = [triggers]
 
         for trigger in triggers:
-            trigger = self._normalize(trigger)
-            assert trigger in self._definitions, "%s does not exist" % trigger
+            trigger = self._db.normalize(trigger)
+            assert trigger in self._cols, "%s does not exist" % trigger
 
             try:
                 self._events[trigger].append(callback)
@@ -163,7 +154,7 @@ class Conf(object):
         """
 
         # open database connection
-        connection = sqlite3.connect(self._path, isolation_level=None)
+        connection = sqlite3.connect(self._db.path, isolation_level=None)
         connection.row_factory = sqlite3.Row
         cursor = connection.cursor(self._LoggableCursor)
         cursor.set_logger(self._logger)
@@ -171,98 +162,81 @@ class Conf(object):
         # check for existence of the configuration table
         if len(cursor.execute(
             'SELECT name FROM sqlite_master WHERE type=? AND name=?',
-            ('table', self._table),
+            ('table', self._db.table),
         ).fetchall()):
             # detect existing columns
-            existing_columns = [
-                column['name'].lower()
-                for column
-                in cursor.execute('PRAGMA table_info(%s)' % self._table)
+            existing_cols = [
+                meta['name'].lower()
+                for meta
+                in cursor.execute('PRAGMA table_info(%s)' % self._db.table)
             ]
 
             # detect any new columns not present in database
-            missing_definitions = [
-                definition
-                for definition
-                in self._definitions.values()
-                if definition[0].lower() not in existing_columns
+            missing_cols = [
+                col
+                for col in self._cols.values()
+                if col[0].lower() not in existing_cols
             ]
 
-            if missing_definitions:
+            if missing_cols:
                 self._logger.info(
                     "Performing table update for %s",
-                    ", ".join([
-                        definition[0]
-                        for definition
-                        in missing_definitions
-                    ]),
+                    ", ".join([col[0] for col in missing_cols]),
                 )
 
                 # insert any missing columns
-                for definition in missing_definitions:
+                for col in missing_cols:
                     cursor.execute('ALTER TABLE %s ADD COLUMN %s %s' % (
-                        self._table,
-                        definition[0],
-                        definition[1],
+                        self._db.table,
+                        col[0],
+                        col[1],
                     ))
 
                 # set default values for newly-inserted columns
                 cursor.execute(
                     'UPDATE %s SET %s' % (
-                        self._table,
-                        ', '.join([
-                            "%s=?" % definition[0]
-                            for definition
-                            in missing_definitions
-                        ]),
+                        self._db.table,
+                        ', '.join(["%s=?" % col[0] for col in missing_cols]),
                     ),
-                    tuple(
-                        definition[4](definition[2])
-                        for definition
-                        in missing_definitions
-                    ),
+                    tuple(col[4](col[2]) for col in missing_cols),
                 )
 
             # populate in-memory store of the values from database
-            row = cursor.execute('SELECT * FROM %s' % self._table).fetchone()
-            for name, definition in self._definitions.items():
+            row = cursor.execute('SELECT * FROM %s' % self._db.table) \
+                .fetchone()
+            for name, col in self._cols.items():
                 # attempt to retrieve value; if it fails, use the default
                 try:
-                    self._cache[name] = definition[3](row[definition[0]])
+                    self._cache[name] = col[3](row[col[0]])
                 except ValueError:
-                    self._cache[name] = definition[2]
+                    self._cache[name] = col[2]
 
         else:
-            all_definitions = self._definitions.values()
+            all_cols = self._cols.values()
 
             self._logger.info("Creating new configuration table")
 
             # create the table
             cursor.execute('CREATE TABLE %s (%s)' % (
-                self._table,
+                self._db.table,
                 ', '.join([
-                    '%s %s' % (definition[0], definition[1])
-                    for definition
-                    in all_definitions
+                    '%s %s' % (col[0], col[1])
+                    for col in all_cols
                 ]),
             ))
 
             # set the default values
             cursor.execute(
                 'INSERT INTO %s VALUES(%s)' % (
-                    self._table,
-                    ', '.join(['?' for definition in all_definitions]),
+                    self._db.table,
+                    ', '.join(['?' for col in all_cols]),
                 ),
-                tuple(
-                    definition[4](definition[2])
-                    for definition
-                    in all_definitions
-                ),
+                tuple(col[4](col[2]) for col in all_cols),
             )
 
             # populate in-memory store with the defaults we just inserted
-            for name, definition in self._definitions.items():
-                self._cache[name] = definition[2]
+            for name, col in self._cols.items():
+                self._cache[name] = col[2]
 
         # close database connection
         cursor.close()
@@ -281,12 +255,12 @@ class Conf(object):
         option. If the name does not exist, default will be returned.
         """
 
-        name = self._normalize(name)
+        name = self._db.normalize(name)
         return self._cache[name] if name in self._cache else default
 
     def __getattr__(self, name):
         """
-        Retrieve a configuration value using the conf.xxx syntax,
+        Retrieve a configuration value using the config.xxx syntax,
         raising an AttributeError if the name does not exist.
         """
 
@@ -297,11 +271,11 @@ class Conf(object):
 
     def __getitem__(self, name):
         """
-        Retrieve a configuration value using the conf['xxx'] syntax,
+        Retrieve a configuration value using the config['xxx'] syntax,
         raising a KeyError if the name does not exist.
         """
 
-        return self._cache[self._normalize(name)]
+        return self._cache[self._db.normalize(name)]
 
     def update(self, *updates_dict, **kw_updates):
         """
@@ -318,12 +292,12 @@ class Conf(object):
 
         updates = kw_updates or updates_dict[0]
 
-        # remap dict into a list of (name, definition, new value)-tuples
+        # remap dict into a list of (name, col, new value)-tuples
         updates = [
-            (name, self._definitions[name], value)
+            (name, self._cols[name], value)
             for name, value
             in [
-                (self._normalize(unnormalized_name), value)
+                (self._db.normalize(unnormalized_name), value)
                 for unnormalized_name, value
                 in updates.items()
             ]
@@ -336,7 +310,7 @@ class Conf(object):
 
         # update in-memory store of the values and notify callback handlers
         unique_callbacks = set()
-        for name, definition, value in updates:
+        for name, col, value in updates:
             self._cache[name] = value
             if name in self._events:
                 unique_callbacks.update(self._events[name])
@@ -344,24 +318,22 @@ class Conf(object):
             callback(self)
 
         # open database connection
-        connection = sqlite3.connect(self._path, isolation_level=None)
+        connection = sqlite3.connect(self._db.path, isolation_level=None)
         cursor = connection.cursor(self._LoggableCursor)
         cursor.set_logger(self._logger)
 
         # persist to SQLite3 database
         cursor.execute(
             'UPDATE %s SET %s' % (
-                self._table,
+                self._db.table,
                 ', '.join([
-                    "%s=?" % definition[0]
-                    for name, definition, value
-                    in updates
+                    "%s=?" % col[0]
+                    for name, col, value in updates
                 ]),
             ),
             tuple(
-                definition[4](value)
-                for name, definition, value
-                in updates
+                col[4](value)
+                for name, col, value in updates
             ),
         )
 
@@ -372,14 +344,14 @@ class Conf(object):
     def __setattr__(self, name, value):
         """
         Handled the same as for update(), but with a single name using
-        the conf.xxx = yyy syntax.
+        the config.xxx = yyy syntax.
 
         Raises KeyError if any key is not a supported name.
         """
 
         if name not in self.__slots__:
-            name = self._normalize(name)
-            if name in self._definitions:
+            name = self._db.normalize(name)
+            if name in self._cols:
                 self.update({name: value})
                 return
 
@@ -388,7 +360,7 @@ class Conf(object):
     def __setitem__(self, name, value):
         """
         Handled the same as for update(), but with a single name using
-        the conf['xxx'] = yyy syntax.
+        the config['xxx'] = yyy syntax.
 
         Raises KeyError if any key is not a supported name.
         """

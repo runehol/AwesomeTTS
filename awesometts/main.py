@@ -23,9 +23,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = '1.0 Beta 11 (develop)'
+from . import (
+    VERSION as version,
+    STRIP_ALL as service_text,
+    STRIP_SOUNDS,
+)
 
-import os, re, time
+import re, time
 from PyQt4.QtCore import Qt
 from PyQt4.QtGui import (
     QAction,
@@ -38,49 +42,36 @@ from PyQt4.QtGui import (
     QWidget,
 )
 
-from anki import sound
 from anki.hooks import addHook, wrap
-from anki.utils import stripHTML
 from aqt import mw, utils
-from aqt.reviewer import Reviewer
 
-from awesometts import conf
+from awesometts import config, router
 import awesometts.forms as forms
-import awesometts.regex as regex
-import awesometts.services as services
-from .paths import CACHE_DIR, relative
-
-
-TTS_service = {  # TODO consider moving into services package's __init__
-    service_key: service_def
-
-    for service_module in [
-        getattr(services, package_name)
-        for package_name
-        in dir(services)
-        if not package_name.startswith('_') and not package_name.endswith('_')
-    ]
-    if hasattr(service_module, 'TTS_service')
-
-    for (service_key, service_def) in service_module.TTS_service.items()
-}
 
 
 ######## utils
 def playTTSFromText(text):
+    def callback(exception):
+        if exception:
+            print exception.message
+
     for service, html_tags in getTTSFromHTML(text).items():
         for html_tag in html_tags:
-            TTS_service[service]['play'](
-                service_text(''.join(html_tag.findAll(text=True))),
-                html_tag['voice'],
+            router.play(
+                service,
+                ''.join(html_tag.findAll(text=True)),
+                html_tag.attrMap,
+                callback,
             )
 
     for service, bracket_tags in getTTSFromText(text).items():
         for bracket_tag in bracket_tags:
             match = re.match(r'(.*?):(.*)', bracket_tag, re.M|re.I)
-            TTS_service[service]['play'](
-                service_text(match.group(2)),
-                match.group(1),
+            router.play(
+                service,
+                match.group(2),
+                {'voice': match.group(1)},
+                callback,
             )
 
 def getTTSFromText(text):
@@ -133,11 +124,11 @@ def service_form(module, parent):
 
     for service_key, service_def, combo_box in lookup:
         combo_box.addItems([voice[1] for voice in service_def['voices']])
-        if service_key in conf.last_voice:
+        if service_key in config.last_voice:
             try:
                 combo_box.setCurrentIndex(service_def['voices'].index(next(
                     voice for voice in service_def['voices']
-                    if voice[0] == conf.last_voice[service_key]
+                    if voice[0] == config.last_voice[service_key]
                 )))
             except StopIteration:
                 pass
@@ -150,7 +141,7 @@ def service_form(module, parent):
         stack_widget.setLayout(vertical_layout)
         form.stackedWidget.addWidget(stack_widget)
 
-        if service_key == conf.last_service:
+        if service_key == config.last_service:
             form.comboBoxService.setCurrentIndex(
                 form.stackedWidget.count() - 1
             )
@@ -171,17 +162,7 @@ def service_store(anki_callable, path):
 
     return_value = anki_callable(unicode(path, getfilesystemencoding()))
 
-    if not path.startswith(CACHE_DIR):
-        unlink(path)
-
     return return_value
-
-def service_text(text):
-
-    text = regex.SOUND_BRACKET_TAG.sub('', stripHTML(text))
-    text = regex.WHITESPACE.sub(' ', text).strip()
-
-    return text
 
 
 ############################ MP3 File Generator
@@ -209,10 +190,10 @@ def ATTS_Factedit_button(editor):
         if preview:
             service_def['play'](service_text(text), voice)
         else:
-            conf.update(
+            config.update(
                 last_service=service_key,
                 last_voice=dict(
-                    conf.last_voice.items() +
+                    config.last_voice.items() +
                     [(service_key, voice)]
                 )
             )
@@ -228,22 +209,22 @@ def ATTS_Factedit_button(editor):
         execute(preview=False)
 
 
-def ATTS_Fact_edit_setupFields(editor):
-    button = QPushButton(editor.widget)
-
-    # FIXME How does one localize Ctrl+G to Cmd+G for the Mac OS X platform?
-    button.setFixedHeight(20)
-    button.setFixedWidth(20)
-    button.setFocusPolicy(Qt.NoFocus)
-    button.setIcon(QIcon(':/icons/speaker.png'))
-    button.setShortcut('Ctrl+g')
-    button.setStyle(editor.plastiqueStyle)
-    button.setToolTip("Insert an audio clip with AwesomeTTS (Ctrl+G)")
-
-    button.clicked.connect(lambda: ATTS_Factedit_button(editor))
-    editor.iconsBox.addWidget(button)
-
-addHook('setupEditorButtons', ATTS_Fact_edit_setupFields)
+#def ATTS_Fact_edit_setupFields(editor):
+#    button = QPushButton(editor.widget)
+#
+#    # FIXME How does one localize Ctrl+T to Cmd+T for the Mac OS X platform?
+#    button.setFixedHeight(20)
+#    button.setFixedWidth(20)
+#    button.setFocusPolicy(Qt.NoFocus)
+#    button.setIcon(QIcon(':/icons/speaker.png'))
+#    button.setShortcut('Ctrl+t')
+#    button.setStyle(editor.plastiqueStyle)
+#    button.setToolTip("Insert an audio clip with AwesomeTTS (Ctrl+T)")
+#
+#    button.clicked.connect(lambda: ATTS_Factedit_button(editor))
+#    editor.iconsBox.addWidget(button)
+#
+#addHook('setupEditorButtons', ATTS_Fact_edit_setupFields)
 
 
 ############################ MP3 Mass Generator
@@ -290,8 +271,9 @@ def generate_audio_files(notes, form, service_def, voice, source_field, dest_fie
             voice,
         )
 
-        if not path.startswith(CACHE_DIR):
-            cache_misses += 1
+        # FIXME via router, determine if call required a service call
+        # if not path.startswith(CACHE_DIR):
+        #     cache_misses += 1
 
         filename = service_store(mw.col.media.addFile, path)
 
@@ -303,10 +285,7 @@ def generate_audio_files(notes, form, service_def, voice, source_field, dest_fie
                     note[dest_field] = filename
             else:
                 if form.checkBoxSndTag.isChecked():
-                    note[dest_field] = regex.SOUND_BRACKET_TAG.sub(
-                        '',
-                        note[dest_field],
-                    ).strip()
+                    note[dest_field] = STRIP_SOUNDS(note[dest_field])
                 note[dest_field] += ' [sound:'+ filename +']'
 
             update_count += 1
@@ -333,7 +312,7 @@ def onGenerate(browser):
     form.sourceFieldComboBox.addItems(fields)
     try:
         form.sourceFieldComboBox.setCurrentIndex(
-            fields.index(conf.last_mass_source)
+            fields.index(config.last_mass_source)
         )
     except ValueError:
         pass
@@ -341,7 +320,7 @@ def onGenerate(browser):
     form.destinationFieldComboBox.addItems(fields)
     try:
         form.destinationFieldComboBox.setCurrentIndex(
-            fields.index(conf.last_mass_dest)
+            fields.index(config.last_mass_dest)
         )
     except ValueError:
         pass
@@ -368,12 +347,12 @@ def onGenerate(browser):
     source_field = fields[form.sourceFieldComboBox.currentIndex()]
     dest_field = fields[form.destinationFieldComboBox.currentIndex()]
 
-    conf.update(
+    config.update(
         last_mass_source=source_field,
         last_mass_dest=dest_field,
         last_service=service_key,
         last_voice=dict(
-            conf.last_voice.items() +
+            config.last_voice.items() +
             [(service_key, voice)]
         )
     )
@@ -423,190 +402,99 @@ def onGenerate(browser):
         ]))
 
 
-def setupMenu(browser):
-    action = QAction("AwesomeTTS MP3 Mass Generator", browser)
-    action.triggered.connect(lambda: onGenerate(browser))
-
-    browser.form.menuEdit.addAction(action)
-
-addHook("browser.setupMenus", setupMenu)
-
-######### Configurator
-
-def KeyToString(val):
-    if val:
-        for k, v in vars(Qt).iteritems():
-            if v == val and k[:4] == "Key_":
-                return k[4:]
-        return 'Unknown'
-    else:
-        return 'Unassigned'
-
-def Conf_keyPressEvent(dialog, buttons, e):
-    buttons = [button for button in buttons if button.getkey]
-
-    if not buttons:
-        return QDialog.keyPressEvent(dialog, e)
-
-    for button in buttons:
-        button.keyval = (
-            None if e.key() in [
-                Qt.Key_Escape,
-                Qt.Key_Backspace,
-                Qt.Key_Delete
-            ]
-            else e.key()
-        )
-        button.setText(KeyToString(button.keyval))
-        button.getkey = False
-
-def getKey(button):
-    button.setText("Press a new hotkey")
-    button.getkey = True
-
-def editConf():
-    d = QDialog()
-
-    form = forms.configurator.Ui_Dialog()
-    form.setupUi(d)
-
-    form.pushKeyQ.getkey = form.pushKeyA.getkey = False
-    form.pushKeyQ.keyval = conf.tts_key_q
-    form.pushKeyQ.setText(KeyToString(form.pushKeyQ.keyval))
-    form.pushKeyQ.clicked.connect(lambda: getKey(form.pushKeyQ))
-
-    form.pushKeyA.keyval = conf.tts_key_a
-    form.pushKeyA.setText(KeyToString(form.pushKeyA.keyval))
-    form.pushKeyA.clicked.connect(lambda: getKey(form.pushKeyA))
-
-    d.keyPressEvent = lambda event: Conf_keyPressEvent(
-        d,
-        [form.pushKeyQ, form.pushKeyA],
-        event,
-    )
-
-    form.cAutoQ.setChecked(conf.automatic_questions)
-    form.cAutoA.setChecked(conf.automatic_answers)
-    form.cSubprocessing.setChecked(conf.subprocessing)
-    form.cCaching.setChecked(conf.caching)
-
-    form.lame_flags_edit.setText(conf.lame_flags)
-
-    form.debug_stdout_checkbox.setChecked(conf.debug_stdout)
-    form.debug_file_checkbox.setChecked(conf.debug_file)
-
-
-    cacheListing = (
-        [
-            filename
-            for filename
-            in os.listdir(CACHE_DIR)
-        ]
-        if os.path.isdir(CACHE_DIR)
-        else []
-    )
-    cacheCount = len(cacheListing)
-
-    if cacheCount > 0:
-        import locale
-        locale.setlocale(locale.LC_ALL, '')
-
-        form.pushClearCache.setEnabled(True)
-        form.pushClearCache.setText(
-            'Clear Cache (%s item%s)' %
-            (
-                locale.format('%d', cacheCount, grouping=True),
-                cacheCount != 1 and 's' or ''
-            )
-        )
-
-        def pushClearCacheClicked():
-            form.pushClearCache.setEnabled(False)
-
-            countSuccess = 0
-            countError = 0
-            for cacheFilepath in cacheListing:
-                try:
-                    os.remove(relative(
-                        CACHE_DIR,
-                        cacheFilepath,
-                    ))
-                    countSuccess += 1
-                except OSError:
-                    countError += 1
-
-            if countError > 0:
-                if countSuccess > 0:
-                    form.pushClearCache.setText(
-                        'Partially Emptied Cache (%s item%s remaining)' %
-                        (
-                            locale.format('%d', countError, grouping=True),
-                            countError != 1 and 's' or ''
-                        )
-                    )
-                else:
-                    form.pushClearCache.setText('Unable to Empty Cache')
-            else:
-                form.pushClearCache.setText('Successfully Emptied Cache')
-        form.pushClearCache.clicked.connect(pushClearCacheClicked)
-
-    else:
-        form.pushClearCache.setEnabled(False)
-        form.pushClearCache.setText('Clear Cache (no items)')
-
-    d.setWindowModality(Qt.WindowModal)
-
-    form.label_version.setText("Version "+ version)
-
-    if not d.exec_():
-        return
-
-    conf.update(
-        tts_key_q=form.pushKeyQ.keyval,
-        tts_key_a=form.pushKeyA.keyval,
-        automatic_questions=form.cAutoQ.isChecked(),
-        automatic_answers=form.cAutoA.isChecked(),
-        subprocessing=form.cSubprocessing.isChecked(),
-        caching=form.cCaching.isChecked(),
-        lame_flags=form.lame_flags_edit.text(),
-        debug_stdout=form.debug_stdout_checkbox.isChecked(),
-        debug_file=form.debug_file_checkbox.isChecked(),
-    )
-
-
-conf_action = QAction("AwesomeTTS", mw)
-conf_action.triggered.connect(editConf)
-
-mw.form.menuTools.addAction(conf_action)
+#def setupMenu(browser):
+#    action = QAction("AwesomeTTS MP3 Mass Generator", browser)
+#    action.triggered.connect(lambda: onGenerate(browser))
+#
+#    browser.form.menuEdit.addAction(action)
+#
+#addHook("browser.setupMenus", setupMenu)
 
 
 ######################################### Keys and AutoRead
 
 ## Check pressed key
-def newKeyHandler(self, evt):
-    pkey = evt.key()
-    if self.state == 'answer' or self.state == 'question':
-        if pkey == conf.tts_key_q:
-            playTTSFromText(self.card.q())  #read the TTS tags
-        if self.state == 'answer' and pkey == conf.tts_key_a:
-            playTTSFromText(self.card.a()) #read the TTS tags
-    evt.accept()
 
 
 
-def ATTSautoread(toread, automatic):
-    if not sound.hasSound(toread):
-        if automatic:
-            playTTSFromText(toread)
+# n.b. Previously, before calling playTTSFromText(), these event handlers
+# checked to make sure that 'not sound.hasSound(toread)'. I am guessing that
+# this was done because AwesomeTTS did not know how to properly deal with
+# multiple sounds and they would play simultaneously, but this has been fixed
+# now by calling into the Anki playback API.
+#
+# FIXME. It is possible, I suppose, that people might have the exact same
+# audio file on a card via a [sound:xxx] tag as they do as a <tts> template
+# tag. We can probably detect this by seeing if two of the same hashed
+# filename end up in the queue (and I say "filename" because one would be
+# coming from the media directory and another would be coming from the cache
+# directory). This would probably need to be fixed in the router by having the
+# router examine whether the exact same hashed filename is in the Anki
+# playback queue already or looking at the [sound:xxx] tag on the card more
+# carefully before playing back the on-the-fly sound.
+#
+# A similar problem probably exists in reviewer_key_handler for folks who
+# includes their question card template within their answer card template and
+# whose tts_key_q == tts_key_a.
+#
+# Unfortunately, it looks like inspecting anki.sound.mplayerQueue won't work
+# out on Windows because the path gets blown away by the temporary file
+# creation code.
+#
+# ALTERNATIVELY, if examination of the tag or playback queue turns out to not
+# work out so well, this could become two checkbox options on the "On-the-Fly
+# Mode" tab for both question and answer sides.
 
-def ATTS_OnQuestion(self):
-    ATTSautoread(self.card.q(), conf.automatic_questions)
+addHook(
+    'showQuestion',
+    lambda: config.automatic_questions and
+        playTTSFromText(mw.reviewer.card.q()),
+)
 
-def ATTS_OnAnswer(self):
-    ATTSautoread(self.card.a(), conf.automatic_answers)
+addHook(
+    'showAnswer',
+    lambda: config.automatic_answers and
+        playTTSFromText(mw.reviewer.card.a()),
+)
 
 
+# no other hook, see http://ankisrs.net/docs/addons.html; pylint:disable=W0212
 
-Reviewer._keyHandler = wrap(Reviewer._keyHandler, newKeyHandler, "before")
-Reviewer._showQuestion = wrap(Reviewer._showQuestion, ATTS_OnQuestion, "after")
-Reviewer._showAnswer = wrap(Reviewer._showAnswer, ATTS_OnAnswer, "after")
+def reviewer_key_handler(evt, _old):
+    """
+    Examines the key event to see if the user has triggered one of their
+    shortcut options.
+
+    If we do not handle the key here, then it is passed through to the
+    normal Anki Reviewer implementation.
+    """
+
+    if mw.reviewer.state not in ['answer', 'question']:
+        return
+
+    code = evt.key()
+    passthru = True
+
+    if code in [Qt.Key_R, Qt.Key_F5]:
+        # if the user sets his/her shortcut the one of the built-in audio
+        # shortcuts, we will play all sounds, starting with the built-in(s)
+
+        _old(evt)
+        passthru = False
+
+    if code == config.tts_key_q:
+        playTTSFromText(mw.reviewer.card.q())
+        passthru = False
+
+    if mw.reviewer.state == 'answer' and code == config.tts_key_a:
+        playTTSFromText(mw.reviewer.card.a())
+        passthru = False
+
+    if passthru:
+        _old(evt)
+
+mw.reviewer._keyHandler = wrap(
+    mw.reviewer._keyHandler,
+    reviewer_key_handler,
+    'around',  # setting 'around' allows me to block call to original function
+)

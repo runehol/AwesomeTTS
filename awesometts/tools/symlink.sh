@@ -50,14 +50,12 @@ then
     exit 1
 fi
 
-if [[ -f "$target/awesometts/conf.db" ]]
+if [[ -f "$target/awesometts/config.db" ]]
 then
     echo "Saving configuration.."
-    saveConf=`mktemp /tmp/conf.db.XXXXXXXXXX`
-    cp -v "$target/awesometts/conf.db" "$saveConf"
+    saveConf=`mktemp /tmp/config.db.XXXXXXXXXX`
+    cp -v "$target/awesometts/config.db" "$saveConf"
 fi
-
-./tools/build_ui.sh
 
 cd ..
 
@@ -72,7 +70,7 @@ ln -sv "$PWD/awesometts" "$target"
 if [[ -n "$saveConf" ]]
 then
     echo "Restoring configuration.."
-    mv -v "$saveConf" "$target/awesometts/conf.db"
+    mv -v "$saveConf" "$target/awesometts/config.db"
 fi
 
 cd "$oldPwd"

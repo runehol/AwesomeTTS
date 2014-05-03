@@ -19,27 +19,36 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Classes for AwesomeTTS
+GUI classes for AwesomeTTS
 """
 
 __all__ = [
-    # classes
-    'Bundle',
-    'Config',
-    'Logger',
-    'Router',
+    # common
+    'Action',
+    'Button',
 
-    # modules
-    'gui',
-    'services',
+    # dialog windows
+    'Configurator',
+    'BrowserGenerator',
+    'EditorGenerator',
+    # 'Templater',
+
+    # headless
+    'Reviewer',
 ]
 
-from .bundle import Bundle
-from .config import Config
-from .logger import Logger
-from .router import Router
-
-from . import (
-    gui,
-    services,
+from .common import (
+    Action,
+    Button,
 )
+
+from .configurator import Configurator
+
+from .generator import (
+    BrowserGenerator,
+    EditorGenerator,
+)
+
+# from .templater import Templater
+
+from .reviewer import Reviewer

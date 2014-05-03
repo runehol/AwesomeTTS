@@ -2,10 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2013  Anki AwesomeTTS Development Team
-# Copyright (C) 2010-2012  Arthur Helfstein Fragoso
-# Copyright (C) 2013       Dave Shifflett
-# Copyright (C) 2012       Dominic Lerbs
+# Copyright (C) 2014       Anki AwesomeTTS Development Team
+# Copyright (C) 2014       Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,21 +19,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Package for all TTS service implementations
+Service classes for AwesomeTTS
 """
 
 __all__ = [
-    'ekho',
-    'espeak',
+    # common
+    'Trait',
+
+    # services
+    'Ekho',
+    'ESpeak',
     'Google',
-    'sapi5',
-    'say',
+    'SAPI5',
+    'Say',
 ]
 
-from . import (
-    ekho,
-    espeak,
-    Google,
-    sapi5,
-    say,
-)
+from .common import Trait
+
+from .ekho import Ekho
+from .espeak import ESpeak
+from .google import Google
+from .sapi5 import SAPI5
+from .say import Say

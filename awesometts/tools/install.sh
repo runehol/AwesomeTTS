@@ -50,14 +50,12 @@ then
     exit 1
 fi
 
-if [[ -f "$target/awesometts/conf.db" ]]
+if [[ -f "$target/awesometts/config.db" ]]
 then
     echo "Saving configuration.."
-    saveConf=`mktemp /tmp/conf.db.XXXXXXXXXX`
-    cp -v "$target/awesometts/conf.db" "$saveConf"
+    saveConf=`mktemp /tmp/config.db.XXXXXXXXXX`
+    cp -v "$target/awesometts/config.db" "$saveConf"
 fi
-
-./tools/build_ui.sh
 
 cd ..
 
@@ -72,15 +70,15 @@ cp -v awesometts/LICENSE.txt "$target/awesometts"
 cp -v awesometts/*.py "$target/awesometts"
 mkdir -v "$target/awesometts/classes"
 cp -v awesometts/classes/*.py "$target/awesometts/classes"
-mkdir -v "$target/awesometts/services"
-cp -v awesometts/services/*.py awesometts/services/*.vbs "$target/awesometts/services"
-mkdir -v "$target/awesometts/forms"
-cp -v awesometts/forms/*.py "$target/awesometts/forms"
+mkdir -v "$target/awesometts/classes/gui"
+cp -v awesometts/classes/gui/*.py awesometts/classes/gui/*.vbs "$target/awesometts/classes/gui"
+mkdir -v "$target/awesometts/classes/services"
+cp -v awesometts/classes/services/*.py awesometts/classes/services/*.vbs "$target/awesometts/classes/services"
 
 if [[ -n "$saveConf" ]]
 then
     echo "Restoring configuration.."
-    mv -v "$saveConf" "$target/awesometts/conf.db"
+    mv -v "$saveConf" "$target/awesometts/config.db"
 fi
 
 cd "$oldPwd"

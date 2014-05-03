@@ -18,12 +18,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if [[ "$1" != *".zip" ]]
+if [[ -z "$1" ]]
 then
-    echo "Please specify where you want to save the package." 1>&2
+    echo "Please specify your Anki addons directory." 1>&2
     echo 1>&2
     echo "    Usage: $0 <target>" 1>&2
-    echo "     e.g.: $0 ~/AwesomeTTS.zip" 1>&2
+    echo "     e.g.: $0 ~/Anki/addons" 1>&2
     exit 1
 fi
 
@@ -33,17 +33,40 @@ then
 	target=$PWD/$target
 fi
 
-if [[ -e "$target" ]]
+if [[ "$target" != *"/addons"* ]]
 then
-    echo "Removing old package.."
-    rm -fv "$target"
+    echo "$target does not include '/addons', which should be present." 1>&2
+    exit 1
 fi
 
+if [[ ! -d "$target" ]]
+then
+    echo "$target is not a directory." 1>&2
+    exit 1
+fi
+
+if [[ -f "$target/awesometts/config.db" ]]
+then
+    echo "Saving configuration.."
+    saveConf=`mktemp /tmp/config.db.XXXXXXXXXX`
+    cp -v "$target/awesometts/config.db" "$saveConf"
+fi
+
+echo "Cleaning up.."
+rm -fv "$target/AwesomeTTS.py"{,c,o}
+rm -rfv "$target/awesometts"
+
 oldPwd=$PWD
+cd "`dirname "$0"`/.."
 
-cd "`dirname "$0"`/../.."
-
-echo "Packing zip file.."
-zip -9R "$target" awesometts/LICENSE.txt \*.py \*.vbs
+echo "Linking.."
+ln -sv "$PWD/AwesomeTTS.py" "$target"
+ln -sv "$PWD/awesometts" "$target"
 
 cd "$oldPwd"
+
+if [[ -n "$saveConf" ]]
+then
+    echo "Restoring configuration.."
+    mv -v "$saveConf" "$target/awesometts/config.db"
+fi

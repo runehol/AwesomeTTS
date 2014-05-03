@@ -36,7 +36,7 @@ be pulled in and installed with Git.
         $ git clone https://github.com/AwesomeTTS/AwesomeTTS.git
         $ cd AwesomeTTS
         $ git checkout [ref]  (if not using "develop", e.g. pre/v1.0-beta11)
-        $ awesometts/tools/install.sh [addons directory]  (e.g. ~/Anki/addons)
+        $ tools/install.sh [addons directory]  (e.g. ~/Anki/addons)
 
 - **Using Symlinks for Development:**
   Build and symlink the files into your Anki `addons` directory using the
@@ -47,7 +47,7 @@ be pulled in and installed with Git.
         $ git clone https://github.com/AwesomeTTS/AwesomeTTS.git
         $ cd AwesomeTTS
         $ git checkout [ref]  (if not using "develop", e.g. pre/v1.0-beta11)
-        $ awesometts/tools/symlink.sh [addons directory]  (e.g. ~/Anki/addons)
+        $ tools/symlink.sh [addons directory]  (e.g. ~/Anki/addons)
 
 - **Package into a Zip File:**
   Build and package the files into a zip archive for installation somewhere
@@ -57,4 +57,4 @@ be pulled in and installed with Git.
         $ git clone https://github.com/AwesomeTTS/AwesomeTTS.git
         $ cd AwesomeTTS
         $ git checkout [ref]  (if not using "develop", e.g. pre/v1.0-beta11)
-        $ awesometts/tools/package.sh [zip target]  (e.g. ~/AwesomeTTS.zip)
+        $ tools/package.sh [zip target]  (e.g. ~/AwesomeTTS.zip)

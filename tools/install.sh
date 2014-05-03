@@ -45,17 +45,6 @@ then
     exit 1
 fi
 
-oldPwd=$PWD
-cd "`dirname "$0"`/.."
-
-if [[ "$PWD" == "$target"* ]]
-then
-    echo "$target is a parent directory of the package to be symlinked." 1>&2
-    echo "This is probably not what you meant. Are you inside a symlink?" 1>&2
-    cd "$oldPwd"
-    exit 1
-fi
-
 if [[ -f "$target/awesometts/config.db" ]]
 then
     echo "Saving configuration.."
@@ -63,20 +52,27 @@ then
     cp -v "$target/awesometts/config.db" "$saveConf"
 fi
 
-cd ..
-
 echo "Cleaning up.."
 rm -fv "$target/AwesomeTTS.py"{,c,o}
 rm -rfv "$target/awesometts"
 
-echo "Linking.."
-ln -sv "$PWD/AwesomeTTS.py" "$target"
-ln -sv "$PWD/awesometts" "$target"
+oldPwd=$PWD
+cd "`dirname "$0"`/.."
+
+echo "Installing.."
+cp -v AwesomeTTS.py "$target/AwesomeTTS.py"
+mkdir -v "$target/awesometts"
+cp -v awesometts/LICENSE.txt "$target/awesometts"
+cp -v awesometts/*.py "$target/awesometts"
+mkdir -v "$target/awesometts/gui"
+cp -v awesometts/gui/*.py "$target/awesometts/gui"
+mkdir -v "$target/awesometts/service"
+cp -v awesometts/service/*.py awesometts/service/*.vbs "$target/awesometts/service"
+
+cd "$oldPwd"
 
 if [[ -n "$saveConf" ]]
 then
     echo "Restoring configuration.."
     mv -v "$saveConf" "$target/awesometts/config.db"
 fi
-
-cd "$oldPwd"

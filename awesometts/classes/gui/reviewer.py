@@ -29,6 +29,8 @@ alert windows. It also may have more visual components in the future.
 
 __all__ = ['Reviewer']
 
+import re
+
 from BeautifulSoup import BeautifulSoup
 from PyQt4.QtCore import Qt
 
@@ -57,8 +59,8 @@ from PyQt4.QtCore import Qt
 # creation code.
 #
 # ALTERNATIVELY, if examination of the tag or playback queue turns out to not
-# work out so well, this could become two checkbox options on the "On-the-Fly
-# Mode" tab for both question and answer sides.
+# work out so well, checking sound.hasSound() could become two checkbox
+# options on the "On-the-Fly Mode" tab for both question and answer sides.
 
 
 class Reviewer(object):
@@ -66,6 +68,11 @@ class Reviewer(object):
     Provides interaction for on-the-fly functionality and Anki's
     reviewer mode.
     """
+
+    RE_LEGACY_TAGS = re.compile(
+        r'\[\s*(\w?)\s*tts\s*:([^\]]+)\]',
+        re.MULTILINE | re.IGNORECASE,
+    )
 
     __slots__ = [
         '_addon',
@@ -82,6 +89,11 @@ class Reviewer(object):
         self._playback = playback
 
     def card_handler(self, state, card):
+        """
+        Examines the state the of the reviewer and whether automatic
+        questions or answers are enabled, passing off to the internal
+        playback method if so.
+        """
 
         if state == 'question' and self._addon.config['automatic_questions']:
             self._play_html(card.q())
@@ -91,11 +103,15 @@ class Reviewer(object):
 
     def key_handler(self, key_event, state, card, propagate):
         """
-        Examines the key event to see if the user has triggered one of their
-        shortcut options.
+        Examines the key event to see if the user has triggered one of
+        thei shortcut options.
 
-        If we do not handle the key here, then it is passed through to the
-        normal Anki Reviewer implementation.
+        If we do not handle the key here, then it is passed through to
+        the normal Anki Reviewer implementation.
+
+        As a special case, if the user sets his/her shortcut to one of
+        the built-in audio shorts (i.e. R, F5), will play ALL sounds,
+        starting with the built-in ones.
         """
 
         if state not in ['answer', 'question']:
@@ -105,8 +121,6 @@ class Reviewer(object):
         code = key_event.key()
         passthru = True
 
-        # if the user sets his/her shortcut the one of the built-in audio
-        # shortcuts, we will play all sounds, starting with the built-in(s)
         if code in [Qt.Key_R, Qt.Key_F5]:
             propagate(key_event)
             passthru = False
@@ -127,11 +141,15 @@ class Reviewer(object):
         Read in the passed HTML, attempt to discover <tts> tags in it,
         and pass them to the router for processing.
 
-        TODO: Look at adding back support for [?tts] tags.
+        Additionally, old-style [GTTS], [TTS], and [ATTS] tags are
+        detected and played back, e.g.
+
+            - [GTTS:voice:text] or [TTS:g:voice:text] for Google TTS
+            - [TTS:espeak:voice:text] for eSpeak
         """
 
         for tag in BeautifulSoup(html)('tts'):
-            text = ''.join(tag.findAll(text=True))
+            text = ''.join(tag.findAll(text=True)).strip()
             if not text:
                 continue
 
@@ -160,5 +178,59 @@ class Reviewer(object):
                             (str(tag), exception.message),
                             self._parent,
                         ),
+                ),
+            )
+
+        def bad_legacy_tag(legacy, message):
+            """Reassembles the legacy given tag and displays an alert."""
+
+            self._alerts(
+                "Unable to play this tag:\n[%sTTS:%s]\n\n%s" %
+                (legacy[0], legacy[1], message),
+                self._parent,
+            )
+
+        for legacy in self.RE_LEGACY_TAGS.findall(html):
+            components = legacy[1].split(':')
+
+            if legacy[0] and legacy[0].strip().lower() == 'g':
+                if len(components) < 2:
+                    bad_legacy_tag(
+                        legacy,
+                        "Old-style GTTS bracket tags must specify the "
+                        "voice, e.g. [GTTS:es:hola], [GTTS:es:{{Front}}], "
+                        "[GTTS:en:{{text:Back}}]",
+                    )
+                    continue
+
+                svc_id = 'google'
+
+            else:
+                if len(components) < 3:
+                    bad_legacy_tag(
+                        legacy,
+                        "Old-style TTS bracket tags must specify service and "
+                        "voice, e.g. [TTS:g:es:mundo], [TTS:g:es:{{Front}}], "
+                        "[TTS:g:en:{{text:Back}}]",
+                    )
+                    continue
+
+                svc_id = components.pop(0)
+
+            voice = components.pop(0)
+
+            text = ':'.join(components).strip()
+            if not text:
+                continue
+
+            self._addon.router(
+                svc_id=svc_id,
+                text=text,
+                options={'voice': voice},
+                callbacks=dict(
+                    okay=self._playback,
+                    fail=lambda exception:
+                        isinstance(exception, self._addon.router.BusyError) or
+                        bad_legacy_tag(legacy, exception.message),
                 ),
             )

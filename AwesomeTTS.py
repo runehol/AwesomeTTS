@@ -49,6 +49,7 @@ _PKG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'awesometts')
 
 for _path in [
     'config.py', 'config.pyc', 'config.pyo',
+    'main.py', 'main.pyc', 'main.pyo',
     'util.py', 'util.pyc', 'util.pyo',
 ]:
     try:

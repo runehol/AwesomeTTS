@@ -92,7 +92,7 @@ class Festival(Service):
 
     def options(self):
         """
-        Provides access to voice.
+        Provides access to voice and volume.
         """
 
         def transform_voice(value):

@@ -54,60 +54,58 @@ class Google(Service):
         Provides access to voice only.
         """
 
+        voice_codes = {
+            'af': "Afrikaans", 'ar': "Arabic", 'bs': "Bosnian",
+            'ca': "Catalan", 'cs': "Czech", 'cy': "Welsh", 'da': "Danish",
+            'de': "German", 'el': "Greek", 'en': "English", 'eo': "Esperanto",
+            'es': "Spanish", 'fi': "Finnish", 'fr': "French", 'hi': "Hindi",
+            'hr': "Croatian", 'ht': "Haitian Creole", 'hu': "Hungarian",
+            'hy': "Armenian", 'id': "Indonesian", 'is': "Icelandic",
+            'it': "Italian", 'ja': "Japanese", 'ko': "Korean", 'la': "Latin",
+            'lv': "Latvian", 'mk': "Macedonian", 'nl': "Dutch",
+            'no': "Norwegian", 'pl': "Polish", 'pt': "Portuguese",
+            'ro': "Romanian", 'ru': "Russian", 'sk': "Slovak",
+            'sq': "Albanian", 'sr': "Serbian", 'sv': "Swedish",
+            'sw': "Swahili", 'ta': "Tamil", 'th': "Thai", 'tr': "Turkish",
+            'vi': "Vietnamese", 'zh': "Chinese",
+        }
+
+        voice_list = sorted([
+            (code, "%s (%s)" % (name, code))
+            for code, name in voice_codes.items()
+        ], key=lambda voice: voice[1])
+
+        voice_lookup = dict([
+            (self.normalize(name), code)
+            for code, name in voice_codes.items()
+        ] + [
+            (self.normalize(code), code)
+            for code in voice_codes.keys()
+        ])
+
+        def transform_voice(value):
+            """Normalize and attempt to convert to official code."""
+
+            normalized = self.normalize(value)
+
+            if normalized in voice_lookup:
+                return voice_lookup[normalized]
+
+            # if input is more than two characters, maybe the user was trying
+            # a country-specific code (e.g. es-mx); chop it off and try again
+            if len(normalized) > 2:
+                normalized = normalized[0:2]
+                if normalized in voice_lookup:
+                    return voice_lookup[normalized]
+
+            return value
+
         return [
             dict(
                 key='voice',
                 label="Voice",
-                values=[
-                    ('af', "Afrikaans (af)"),
-                    ('sq', "Albanian (sq)"),
-                    ('ar', "Arabic (ar)"),
-                    ('hy', "Armenian (hy)"),
-                    ('bs', "Bosnian (bs)"),
-                    ('ca', "Catalan (ca)"),
-                    ('zh', "Chinese (zh)"),
-                    ('hr', "Croatian (hr)"),
-                    ('cs', "Czech (cs)"),
-                    ('da', "Danish (da)"),
-                    ('nl', "Dutch (nl)"),
-                    ('en', "English (en)"),
-                    ('eo', "Esperanto (eo)"),
-                    ('fi', "Finnish (fi)"),
-                    ('fr', "French (fr)"),
-                    ('de', "German (de)"),
-                    ('el', "Greek (el)"),
-                    ('ht', "Haitian Creole (ht)"),
-                    ('hi', "Hindi (hi)"),
-                    ('hu', "Hungarian (hu)"),
-                    ('is', "Icelandic (is)"),
-                    ('id', "Indonesian (id)"),
-                    ('it', "Italian (it)"),
-                    ('ja', "Japanese (ja)"),
-                    ('ko', "Korean (ko)"),
-                    ('la', "Latin (la)"),
-                    ('lv', "Latvian (lv)"),
-                    ('mk', "Macedonian (mk)"),
-                    ('no', "Norwegian (no)"),
-                    ('pl', "Polish (pl)"),
-                    ('pt', "Portuguese (pt)"),
-                    ('ro', "Romanian (ro)"),
-                    ('ru', "Russian (ru)"),
-                    ('sr', "Serbian (sr)"),
-                    ('sk', "Slovak (sk)"),
-                    ('es', "Spanish (es)"),
-                    ('sw', "Swahili (sw)"),
-                    ('sv', "Swedish (sv)"),
-                    ('ta', "Tamil (ta)"),
-                    ('th', "Thai (th)"),
-                    ('tr', "Turkish (tr)"),
-                    ('vi', "Vietnamese (vi)"),
-                    ('cy', "Welsh (cy)"),
-                ],
-                transform=lambda value: ''.join(
-                    char.lower()
-                    for char in str(value).split('-').pop(0)
-                    if char.isalpha()
-                ),
+                values=voice_list,
+                transform=transform_voice,
             ),
         ]
 

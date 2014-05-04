@@ -28,8 +28,8 @@ TTS services for use with AwesomeTTS.
 __all__ = ['Service']
 
 import abc
+import sys
 import subprocess
-import anki.utils
 
 
 class Service(object):
@@ -67,6 +67,9 @@ class Service(object):
 
     # startup information for Windows to keep command window hidden
     CLI_SI = None
+
+    # will be set to True if user is running Linux
+    IS_LINUX = False
 
     # will be set to True if user is running Mac OS X
     IS_MACOSX = False
@@ -470,5 +473,8 @@ if subprocess.mswindows:
         except AttributeError:
             pass
 
-elif anki.utils.isMac:
+elif sys.platform.startswith('darwin'):
     Service.IS_MACOSX = True
+
+elif sys.platform.startswith('linux'):
+    Service.IS_LINUX = True

@@ -114,7 +114,13 @@ class Festival(Service):
                 transform=transform_voice,
             ),
 
-            # TODO add volume scale or output frequency?
+            dict(
+                key='volume',
+                label="Volume",
+                values=(10, 250, "%"),
+                transform=int,
+                default=100,
+            ),
         ]
 
     def run(self, text, options, path):
@@ -130,6 +136,7 @@ class Festival(Service):
             'text2wave',
             '-o', output_wav,
             '-eval', '(voice_%s)' % options['voice'],
+            '-scale', options['volume'] / 100.0,
             input_file,
         )
 

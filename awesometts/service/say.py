@@ -129,14 +129,22 @@ class Say(Service):
 
         output_aiff = self.path_temp('aiff')
 
-        self.cli_call(
-            'say',
-            '-v', options['voice'],
-            '-r', options['speed'],
-            '-o', output_aiff,
-            text,
-        )
+        try:
+            self.cli_call(
+                'say',
+                '-v', options['voice'],
+                '-r', options['speed'],
+                '-o', output_aiff,
+                text,
+            )
 
-        self.cli_transcode(output_aiff, path)
+            self.cli_transcode(
+                output_aiff,
+                path,
+                require=dict(
+                    size_in=4096,
+                ),
+            )
 
-        self.path_unlink(output_aiff)
+        finally:
+            self.path_unlink(output_aiff)

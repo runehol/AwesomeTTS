@@ -168,21 +168,29 @@ class Ekho(Service):
         input_file = self.path_workaround(text)
         output_wav = self.path_temp('wav')
 
-        self.cli_call(
-            [
-                'ekho',
-                '-v', options['voice'],
-                '-s', options['speed'],
-                '-p', options['pitch'],
-                '-r', options['rate'],
-                '-a', options['volume'],
-                '-o', output_wav,
-            ] + (
-                ['-f', input_file] if input_file
-                else ['--', text]
+        try:
+            self.cli_call(
+                [
+                    'ekho',
+                    '-v', options['voice'],
+                    '-s', options['speed'],
+                    '-p', options['pitch'],
+                    '-r', options['rate'],
+                    '-a', options['volume'],
+                    '-o', output_wav,
+                ] + (
+                    ['-f', input_file] if input_file
+                    else ['--', text]
+                )
             )
-        )
 
-        self.cli_transcode(output_wav, path)
+            self.cli_transcode(
+                output_wav,
+                path,
+                require=dict(
+                    size_in=4096,
+                ),
+            )
 
-        self.path_unlink(input_file, output_wav)
+        finally:
+            self.path_unlink(input_file, output_wav)

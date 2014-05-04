@@ -28,6 +28,7 @@ TTS services for use with AwesomeTTS.
 __all__ = ['Service']
 
 import abc
+import os
 import sys
 import subprocess
 
@@ -247,10 +248,22 @@ class Service(object):
 
         return returned
 
-    def cli_transcode(self, input_path, output_path):
+    def cli_transcode(self, input_path, output_path, require=None):
         """
         Runs the LAME transcoder to create a new MP3 file.
         """
+
+        if (
+            require and 'size_in' in require and
+            os.path.getsize(input_path) < require['size_in']
+        ):
+            raise ValueError(
+                "Input to transcoder was %d-byte stream; wanted %d+ bytes "
+                "(the service might not have liked your input text)" % (
+                    os.path.getsize(input_path),
+                    require['size_in'],
+                )
+            )
 
         self.cli_call(
             self.CLI_LAME,

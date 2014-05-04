@@ -130,14 +130,22 @@ class Festival(Service):
         input_file = self.path_input(text)
         output_wav = self.path_temp('wav')
 
-        self.cli_call(
-            'text2wave',
-            '-o', output_wav,
-            '-eval', '(voice_%s)' % options['voice'],
-            '-scale', options['volume'] / 100.0,
-            input_file,
-        )
+        try:
+            self.cli_call(
+                'text2wave',
+                '-o', output_wav,
+                '-eval', '(voice_%s)' % options['voice'],
+                '-scale', options['volume'] / 100.0,
+                input_file,
+            )
 
-        self.cli_transcode(output_wav, path)
+            self.cli_transcode(
+                output_wav,
+                path,
+                require=dict(
+                    size_in=4096,
+                ),
+            )
 
-        self.path_unlink(input_file, output_wav)
+        finally:
+            self.path_unlink(input_file, output_wav)

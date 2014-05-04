@@ -139,13 +139,21 @@ class SAPI5(Service):
 
         output_wav = self.path_temp('wav')
 
-        self.cli_call(
-            self._binary, self._SCRIPT, '-hex',
-            '-voice', hexstr(options['voice']),
-            '-o', output_wav,
-            hexstr(text),  # n.b. double dash is unnecessary due to hex string
-        )
+        try:
+            self.cli_call(
+                self._binary, self._SCRIPT, '-hex',
+                '-voice', hexstr(options['voice']),
+                '-o', output_wav,
+                hexstr(text),  # double dash unnecessary due to hex encoding
+            )
 
-        self.cli_transcode(output_wav, path)
+            self.cli_transcode(
+                output_wav,
+                path,
+                require=dict(
+                    size_in=4096,
+                ),
+            )
 
-        self.path_unlink(output_wav)
+        finally:
+            self.path_unlink(output_wav)

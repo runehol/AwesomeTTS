@@ -350,10 +350,19 @@ class Service(object):
                     )
                 )
 
-        with open(path, 'wb') as response_output:
-            response_output.write(response.read())
-
+        payload = response.read()
         response.close()
+
+        if require and 'size' in require and len(payload) < require['size']:
+            raise ValueError(
+                "Web request returned a %d-byte stream; wanted %d+ bytes" % (
+                    len(payload),
+                    require['size'],
+                )
+            )
+
+        with open(path, 'wb') as response_output:
+            response_output.write(payload)
 
     def path_temp(self, extension):
         """

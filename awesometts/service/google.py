@@ -126,5 +126,6 @@ class Google(Service):
             require=dict(
                 status=200,
                 mime='audio/mpeg',
+                size=1024,
             ),
         )

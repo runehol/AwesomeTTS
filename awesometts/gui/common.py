@@ -30,12 +30,12 @@ all carry a speaker icon (if supported by the desktop environment).
 
 __all__ = ['ICON', 'Action', 'Button']
 
-from PyQt4 import Qt, QtCore, QtGui
+from PyQt4 import QtCore, QtGui
 
 
 ICON = QtGui.QIcon(':/icons/speaker.png')
 
-SHORTCUT = Qt.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_T)
+SHORTCUT = QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_T)
 
 
 class _Connector(object):  # used like a mixin, pylint:disable=R0903
@@ -118,7 +118,7 @@ class Button(QtGui.QPushButton, _Connector):
             self.setShortcut(SHORTCUT)
             self.setToolTip(
                 "Insert an audio clip with AwesomeTTS (%s)" %
-                SHORTCUT.toString(Qt.QKeySequence.NativeText)
+                SHORTCUT.toString(QtGui.QKeySequence.NativeText)
             )
 
         if style:

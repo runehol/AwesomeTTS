@@ -36,7 +36,6 @@ class Festival(Service):
     __slots__ = [
         '_version',       # we get this while testing for the festival binary
         '_voice_list',    # list of installed voices as a list of tuples
-        '_voice_lookup',  # map of normalized voice names to official names
     ]
 
     NAME = "Festival"
@@ -76,11 +75,6 @@ class Festival(Service):
         if not self._voice_list:
             raise EnvironmentError("No usable voices found in %s" % base_dir)
 
-        self._voice_lookup = {
-            self.normalize(voice[0]): voice[0]
-            for voice in self._voice_list
-        }
-
     def desc(self):
         """
         Returns a version string with terse description and release
@@ -95,14 +89,18 @@ class Festival(Service):
         Provides access to voice and volume.
         """
 
+        voice_lookup = {
+            self.normalize(voice[0]): voice[0]
+            for voice in self._voice_list
+        }
+
         def transform_voice(value):
             """Normalize and attempt to convert to official voice."""
 
             normalized = self.normalize(value)
 
             return (
-                self._voice_lookup[normalized]
-                if normalized in self._voice_lookup
+                voice_lookup[normalized] if normalized in voice_lookup
                 else value
             )
 

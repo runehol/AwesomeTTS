@@ -43,7 +43,6 @@ class SAPI5(Service):
     __slots__ = [
         '_binary',        # path to the cscript binary
         '_voice_list',    # list of installed voices as a list of tuples
-        '_voice_lookup',  # map of normalized voice names to official names
     ]
 
     NAME = "SAPI 5"
@@ -94,11 +93,6 @@ class SAPI5(Service):
         if not self._voice_list:
             raise EnvironmentError("No usable output from `sapi5.vbs -vl`")
 
-        self._voice_lookup = {
-            self.normalize(voice[0]): voice[0]
-            for voice in self._voice_list
-        }
-
     def desc(self):
         """
         Returns a short, static description.
@@ -111,14 +105,18 @@ class SAPI5(Service):
         Provides access to voice only.
         """
 
+        voice_lookup = {
+            self.normalize(voice[0]): voice[0]
+            for voice in self._voice_list
+        }
+
         def transform_voice(value):
             """Normalize and attempt to convert to official voice."""
 
             normalized = self.normalize(value)
 
             return (
-                self._voice_lookup[normalized]
-                if normalized in self._voice_lookup
+                voice_lookup[normalized] if normalized in voice_lookup
                 else value
             )
 

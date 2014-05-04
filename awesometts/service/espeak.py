@@ -118,6 +118,9 @@ class ESpeak(Service):
         if not self._voice_list:
             raise EnvironmentError("No usable output from `espeak --voices`")
 
+        # provide various alternative voice inputs; unlike most other
+        # services, we handle this setup in init so that we have access to the
+        # regex match objects, which dictate the relative precedence
         self._voice_lookup = dict([
             # start with aliases for MBROLA top-level languages (e.g. es)
             (self.normalize(match.group(2)), match.group(4))
@@ -153,16 +156,28 @@ class ESpeak(Service):
         Provides access to voice, speed, word gap, pitch, and amplitude.
         """
 
+        voice_lookup = self._voice_lookup
+
         def transform_voice(value):
             """Normalize and attempt to convert to official voice."""
 
             normalized = self.normalize(value)
+            if normalized in voice_lookup:
+                return voice_lookup[normalized]
 
-            return (
-                self._voice_lookup[normalized]
-                if normalized in self._voice_lookup
-                else value
-            )
+            # if input is more than two characters, maybe the user was trying
+            # a country-specific code (e.g. es-mx); chop it off and try again
+            if len(normalized) > 2:
+                if len(normalized) > 3:  # try the 3-character version first
+                    normalized = normalized[0:3]
+                    if normalized in voice_lookup:
+                        return voice_lookup[normalized]
+
+                normalized = normalized[0:2]
+                if normalized in voice_lookup:
+                    return voice_lookup[normalized]
+
+            return value
 
         return [
             dict(

@@ -36,7 +36,6 @@ class Ekho(Service):
 
     __slots__ = [
         '_voice_list',    # list of installed voices as a list of tuples
-        '_voice_lookup',  # map of normalized voice names to official names
     ]
 
     NAME = "Ekho"
@@ -66,11 +65,6 @@ class Ekho(Service):
         if not self._voice_list:
             raise EnvironmentError("No usable output from `ekho --help`")
 
-        self._voice_lookup = {
-            self.normalize(voice[0]): voice[0]
-            for voice in self._voice_list
-        }
-
     def desc(self):
         """
         Returns a simple version using `ekho --version`.
@@ -83,27 +77,36 @@ class Ekho(Service):
         Provides access to voice, speed, pitch, rate, and volume.
         """
 
+        voice_lookup = {
+            self.normalize(voice[0]): voice[0]
+            for voice in self._voice_list
+        }
+
         def transform_voice(value):
             """Normalize and attempt to convert to official voice."""
 
             normalized = self.normalize(value)
-            normalized = (
-                'mandarin' if normalized in [
-                    'cmn', 'cosc', 'goyu', 'huyu', 'mand', 'zh', 'zhcn',
-                ]
-                else 'cantonese' if normalized in [
-                    'cant', 'guzh', 'yue', 'yyef', 'zhhk', 'zhyue',
-                ]
-                else 'hakka' if normalized in ['hak', 'hakk', 'kejia']
-                else 'tibetan' if normalized in ['cent', 'west']
-                # else 'ngangien' if normalized in []
-                else 'hangul' if normalized in ['ko', 'kor', 'kore', 'korean']
-                else normalized
-            )
 
             return (
-                self._voice_lookup[normalized]
-                if normalized in self._voice_lookup
+                voice_lookup[normalized] if normalized in voice_lookup
+
+                else voice_lookup['mandarin'] if 'mandarin' in voice_lookup
+                    and normalized in ['cmn', 'cosc', 'goyu', 'huyu', 'mand',
+                        'zh', 'zhcn']
+
+                else voice_lookup['cantonese'] if 'cantonese' in voice_lookup
+                    and normalized in ['cant', 'guzh', 'yue', 'yyef', 'zhhk',
+                        'zhyue']
+
+                else voice_lookup['hakka'] if 'hakka' in voice_lookup
+                    and normalized in ['hak', 'hakk', 'kejia']
+
+                else voice_lookup['tibetan'] if 'tibetan' in voice_lookup
+                    and normalized in ['cent', 'west']
+
+                else voice_lookup['hangul'] if 'hangul' in voice_lookup
+                    and normalized in ['ko', 'kor', 'kore', 'korean']
+
                 else value
             )
 
@@ -114,8 +117,8 @@ class Ekho(Service):
             transform=transform_voice,
         )
 
-        if 'mandarin' in self._voice_lookup:
-            voice_option['default'] = self._voice_lookup['mandarin']
+        if 'mandarin' in voice_lookup:  # default is Mandarin, if we have it
+            voice_option['default'] = voice_lookup['mandarin']
 
         return [
             voice_option,

@@ -87,7 +87,6 @@ class Google(Service):
             """Normalize and attempt to convert to official code."""
 
             normalized = self.normalize(value)
-
             if normalized in voice_lookup:
                 return voice_lookup[normalized]
 

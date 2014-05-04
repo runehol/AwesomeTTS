@@ -46,18 +46,16 @@ class BrowserGenerator(ServiceDialog):
 
     __slots__ = [
         '_browser',       # reference to the current Anki browser window
-        '_strip_sounds',  # callable to remove [sound:xxx] tags from notes
         '_notes',         # list of Note objects selected when window opened
         '_process',       # state during processing; see accept() method below
     ]
 
-    def __init__(self, browser, strip_sounds, *args, **kwargs):
+    def __init__(self, browser, *args, **kwargs):
         """
         Sets our title.
         """
 
         self._browser = browser
-        self._strip_sounds = strip_sounds
         self._notes = None  # set in show()
         self._process = None  # set in accept()
 
@@ -339,7 +337,7 @@ class BrowserGenerator(ServiceDialog):
 
             if self._process['handling']['append']:
                 if self._process['handling']['behavior']:
-                    note[dest] = self._strip_sounds(note[dest])
+                    note[dest] = self._addon.strip.sounds(note[dest]).strip()
                 note[dest] += ' [sound:%s]' % filename
 
             else:

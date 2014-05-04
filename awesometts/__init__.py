@@ -73,8 +73,6 @@ if not os.path.isdir(PATH_TEMP):
 
 # Regular expression patterns
 
-RE_SOUND_BRACKET_TAG = re.compile(r'\[sound:[^\]]+\]', re.IGNORECASE)
-
 RE_WHITESPACE = re.compile(r'\s+')
 
 
@@ -93,7 +91,7 @@ TO_NORMALIZED = lambda value: ''.join(
 
 STRIP_HTML = anki.utils.stripHTML
 
-STRIP_SOUNDS = lambda text: RE_SOUND_BRACKET_TAG.sub('', text).strip()
+STRIP_SOUNDS = anki.sound.stripSounds
 
 STRIP_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
 
@@ -190,6 +188,9 @@ addon = Bundle(
         cache=PATH_CACHE,
     ),
     router=router,
+    strip=Bundle(
+        sounds=STRIP_SOUNDS,
+    ),
     version=VERSION,
 )
 
@@ -236,7 +237,6 @@ anki.hooks.addHook(
             args=(),
             kwargs=dict(
                 browser=browser,
-                strip_sounds=STRIP_SOUNDS,
                 addon=addon,
                 playback=anki.sound.play,
                 alerts=aqt.utils.showWarning,

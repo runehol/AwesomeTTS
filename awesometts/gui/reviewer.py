@@ -77,7 +77,6 @@ class Reviewer(object):
     __slots__ = [
         '_addon',
         '_alerts',
-        '_normalize',
         '_parent',
         '_playback',
     ]
@@ -99,7 +98,7 @@ class Reviewer(object):
             self._play_html(card.q())
 
         elif state == 'answer' and self._addon.config['automatic_answers']:
-            self._play_html(card.a())
+            self._play_html(self._get_answer(card))
 
     def key_handler(self, key_event, state, card, propagate):
         """
@@ -130,11 +129,19 @@ class Reviewer(object):
             passthru = False
 
         if state == 'answer' and code == self._addon.config['tts_key_a']:
-            self._play_html(card.a())
+            self._play_html(self._get_answer(card))
             passthru = False
 
         if passthru:
             propagate(key_event)
+
+    def _get_answer(self, card):
+        """
+        Attempts to strip out the question side of the card in the blob
+        of HTML we get as the "answer" HTML.
+        """
+
+        return card.a().replace(card.q(), '')
 
     def _play_html(self, html):
         """

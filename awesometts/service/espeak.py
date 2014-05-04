@@ -50,6 +50,16 @@ class ESpeak(Service):
         from the `espeak --voices` output. If running on Windows, the
         registry will be searched to attempt to locate the eSpeak binary
         if it is not already in the path.
+
+        eSpeak is a little unique in that it will accept a wide array of
+        things with its --voices parameter, such as language (e.g. es),
+        country-specific language (e.g. es-mx), or a specific voice file
+        name (e.g. mexican-mbrola-1). It is also unique in that it has
+        one list of native voices and another list of MBROLA voices.
+
+        For our purposes, we use the voice names as the official driver
+        of the 'voice' option, but we accept and remap the top-level and
+        country-specific language codes to the "official" voice names.
         """
 
         super(ESpeak, self).__init__(*args, **kwargs)
@@ -57,7 +67,7 @@ class ESpeak(Service):
         self._binary = 'espeak'
 
         try:
-            output = self.cli_output(self._binary, '--voices')
+            es_output = self.cli_output(self._binary, '--voices')
 
         except OSError:
             if self.IS_WINDOWS:
@@ -68,32 +78,67 @@ class ESpeak(Service):
                     ),
                     self._binary,
                 )
-                output = self.cli_output(self._binary, '--voices')
+                es_output = self.cli_output(self._binary, '--voices')
 
             else:
                 raise
 
+        mb_output = self.cli_output(self._binary, '--voices=mb')
+
         import re
-        re_voice = re.compile(r'^\s*(\d+\s+)?([-\w]+)(\s+[-\w]\s+([-\w]+))?')
+        re_voice = re.compile(r'^\s*\d+\s+((\w+)[-\w]*)\s+([-\w])\s+([-\w]+)')
+
+        es_matches = [
+            match
+            for match in [re_voice.match(line) for line in es_output]
+            if match
+        ]
+
+        mb_matches = [
+            match
+            for match in [re_voice.match(line) for line in mb_output]
+            if match
+        ]
 
         self._voice_list = sorted([
             (
-                match.group(2),
+                match.group(4),
 
-                "%s (%s)" % (match.group(4), match.group(2)) if match.group(4)
-                else match.group(2),
+                "%s (%s%s)" % (
+                    match.group(4),
+                    'male ' if match.group(3).upper() == 'M'
+                    else 'female ' if match.group(3).upper() == 'F'
+                    else '',
+                    match.group(1),
+                ),
             )
-            for match in [re_voice.match(line) for line in output]
-            if match and match.group(2) != 'Pty'
+            for match in es_matches + mb_matches
         ], key=lambda voice: voice[1].lower())
 
         if not self._voice_list:
             raise EnvironmentError("No usable output from `espeak --voices`")
 
-        self._voice_lookup = {
-            self.normalize(voice[0]): voice[0]
+        self._voice_lookup = dict([
+            # start with aliases for MBROLA top-level languages (e.g. es)
+            (self.normalize(match.group(2)), match.group(4))
+            for match in mb_matches
+        ] + [
+            # then add/override for MBROLA country languages (e.g. es-mx)
+            (self.normalize(match.group(1)), match.group(4))
+            for match in mb_matches
+        ] + [
+            # then add/override with native top-level languages (e.g. es)
+            (self.normalize(match.group(2)), match.group(4))
+            for match in es_matches
+        ] + [
+            # then add/override for native country languages (e.g. es-mx)
+            (self.normalize(match.group(1)), match.group(4))
+            for match in es_matches
+        ] + [
+            # then add/override for official voices (e.g. mexican-mbrola-1)
+            (self.normalize(voice[0]), voice[0])
             for voice in self._voice_list
-        }
+        ])
 
     def desc(self):
         """

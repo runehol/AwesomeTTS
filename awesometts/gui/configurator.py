@@ -212,7 +212,7 @@ class Configurator(Dialog):
         flags.setPlaceholderText("e.g. '-q 5' for medium quality")
 
         addl = QtGui.QLabel(
-            "Changes in these flags will be retroactive to old MP3s. "
+            "Changes in these flags will NOT be retroactive to old MP3s. "
             "Depending on the change, you may want to regenerate MP3s and/or "
             "clear your cache on the Advanced tab.",
         )

@@ -141,7 +141,11 @@ class Reviewer(object):
         of HTML we get as the "answer" HTML.
         """
 
-        return card.a().replace(card.q(), '')
+        question_html = card.q()
+
+        return card.a() \
+            .replace(question_html, '') \
+            .replace(self._addon.strip.sounds(question_html), '')
 
     def _play_html(self, html):
         """

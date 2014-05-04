@@ -74,6 +74,12 @@ class Reviewer(object):
         re.MULTILINE | re.IGNORECASE,
     )
 
+    RE_ANSWER_DIVIDER = re.compile(
+        # allows extra whitespace, optional quotes, and optional self-closing
+        r'<\s*hr\s+id\s*=\s*.?\s*answer\s*.?\s*/?\s*>',
+        re.IGNORECASE,
+    )
+
     __slots__ = [
         '_addon',
         '_alerts',
@@ -139,13 +145,29 @@ class Reviewer(object):
         """
         Attempts to strip out the question side of the card in the blob
         of HTML we get as the "answer" HTML.
+
+        This is done in three ways:
+            - remove question HTML (verbatim)
+            - remove question HTML (with any [sound:xxx] tags stripped)
+            - find any <hr id=answer> tag, and chop off anything leading
+              up to the first such tag
         """
 
         question_html = card.q()
 
-        return card.a() \
-            .replace(question_html, '') \
-            .replace(self._addon.strip.sounds(question_html), '')
+        answer_html = self.RE_ANSWER_DIVIDER.split(
+            card.a()
+                .replace(question_html, '')
+                .replace(self._addon.strip.sounds(question_html), ''),
+
+            1,  # remove at most one segment in the event of multiple dividers
+        ).pop().strip()
+
+        self._addon.logger.debug("Reinterpreted answer HTML as:\n%s" % (
+            "\n".join("<<< " + line for line in answer_html.split("\n"))
+        ))
+
+        return answer_html
 
     def _play_html(self, html):
         """

@@ -74,10 +74,15 @@ class Reviewer(object):
         re.MULTILINE | re.IGNORECASE,
     )
 
+    RE_ANSWER_DIVIDER = re.compile(
+        # allows extra whitespace, optional quotes, and optional self-closing
+        r'<\s*hr\s+id\s*=\s*.?\s*answer\s*.?\s*/?\s*>',
+        re.IGNORECASE,
+    )
+
     __slots__ = [
         '_addon',
         '_alerts',
-        '_normalize',
         '_parent',
         '_playback',
     ]
@@ -99,7 +104,7 @@ class Reviewer(object):
             self._play_html(card.q())
 
         elif state == 'answer' and self._addon.config['automatic_answers']:
-            self._play_html(card.a())
+            self._play_html(self._get_answer(card))
 
     def key_handler(self, key_event, state, card, propagate):
         """
@@ -130,11 +135,39 @@ class Reviewer(object):
             passthru = False
 
         if state == 'answer' and code == self._addon.config['tts_key_a']:
-            self._play_html(card.a())
+            self._play_html(self._get_answer(card))
             passthru = False
 
         if passthru:
             propagate(key_event)
+
+    def _get_answer(self, card):
+        """
+        Attempts to strip out the question side of the card in the blob
+        of HTML we get as the "answer" HTML.
+
+        This is done in three ways:
+            - remove question HTML (verbatim)
+            - remove question HTML (with any [sound:xxx] tags stripped)
+            - find any <hr id=answer> tag, and chop off anything leading
+              up to the first such tag
+        """
+
+        question_html = card.q()
+
+        answer_html = self.RE_ANSWER_DIVIDER.split(
+            card.a()
+                .replace(question_html, '')
+                .replace(self._addon.strip.sounds(question_html), ''),
+
+            1,  # remove at most one segment in the event of multiple dividers
+        ).pop().strip()
+
+        self._addon.logger.debug("Reinterpreted answer HTML as:\n%s" % (
+            "\n".join("<<< " + line for line in answer_html.split("\n"))
+        ))
+
+        return answer_html
 
     def _play_html(self, html):
         """

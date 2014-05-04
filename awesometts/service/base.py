@@ -297,10 +297,6 @@ class Service(object):
         #         URL,
         #     ])
 
-        # TODO Ensure that the caller of run(), which will call this, is
-        # capable of catching and gracefully handling exceptions thrown
-        # here so as to not annoy the user.
-
         from urllib2 import urlopen, Request, quote
 
         url = addr if not query else '?'.join([

@@ -410,15 +410,22 @@ class Service(object):
                 text.encode('ascii')
 
             except UnicodeError:
-                temporary_txt = self.path_temp('txt')
-
-                from codecs import open as copen
-                with copen(temporary_txt, mode='w', encoding='utf-8') as out:
-                    out.write(text)
-
-                return temporary_txt
+                return self.path_input(text)
 
         return False
+
+    def path_input(self, text):
+        """
+        Returns a path to a file containing the given unicode text.
+        """
+
+        temporary_txt = self.path_temp('txt')
+
+        from codecs import open as copen
+        with copen(temporary_txt, mode='w', encoding='utf-8') as out:
+            out.write(text)
+
+        return temporary_txt
 
     def reg_hklm(self, key, name):
         """

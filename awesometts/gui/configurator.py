@@ -128,6 +128,10 @@ class Configurator(Dialog):
             'automatic_answers',
             'tts_key_a',
             "Answers / Backs of Cards",
+            addl="When reading answers, AwesomeTTS will attempt to find and "
+                 "exclude the fronts of cards from playback. You can help by "
+                 "using {{FrontSide}} and/or including an <hr id=answer> tag "
+                 "in your Back Template(s)."
         ))
         layout.addStretch()
 
@@ -136,7 +140,10 @@ class Configurator(Dialog):
 
         return tab
 
-    def _ui_tabs_onthefly_group(self, automatic_key, shortcut_key, label):
+    def _ui_tabs_onthefly_group(
+        self,
+        automatic_key, shortcut_key, label, addl=None,
+    ):
         """
         Returns the "Questions / Fronts of Cards" and "Answers / Backs
         of Cards" input groups.
@@ -159,6 +166,12 @@ class Configurator(Dialog):
         layout = QtGui.QVBoxLayout()
         layout.addWidget(automatic)
         layout.addWidget(shortcut)
+
+        if addl:
+            addl = QtGui.QLabel(addl)
+            addl.setTextFormat(QtCore.Qt.PlainText)
+            addl.setWordWrap(True)
+            layout.addWidget(addl)
 
         group = QtGui.QGroupBox(label)
         group.setLayout(layout)

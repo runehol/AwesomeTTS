@@ -61,8 +61,10 @@ class BrowserGenerator(ServiceDialog):
         self._notes = None  # set in show()
         self._process = None  # set in accept()
 
-        super(BrowserGenerator, self).__init__(*args, **kwargs)
-        self.setWindowTitle("Mass Generate MP3s w/ %s" % self.windowTitle())
+        super(BrowserGenerator, self).__init__(
+            title="Mass Generator",
+            *args, **kwargs
+        )
 
     # UI Construction ########################################################
 
@@ -568,8 +570,10 @@ class EditorGenerator(ServiceDialog):
         """
 
         self._editor = editor
-        super(EditorGenerator, self).__init__(*args, **kwargs)
-        self.setWindowTitle("Insert MP3 w/ %s" % self.windowTitle())
+        super(EditorGenerator, self).__init__(
+            title="Insert MP3",
+            *args, **kwargs
+        )
 
     # UI Construction ########################################################
 

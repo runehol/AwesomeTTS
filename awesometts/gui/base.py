@@ -56,9 +56,10 @@ class Dialog(QtGui.QDialog):
 
     __slots__ = [
         '_addon',  # bundle of config, logger, paths, router, version
+        '_title',  # description of this window
     ]
 
-    def __init__(self, addon, parent):
+    def __init__(self, title, addon, parent):
         """
         Set the modal status for the dialog, sets its layout to the
         return value of the _ui() method, and sets a default title.
@@ -66,16 +67,17 @@ class Dialog(QtGui.QDialog):
 
         self._addon = addon
         self._addon.logger.debug(
-            "Constructing %s dialog",
-            self.__class__.__name__,
+            "Constructing %s (%s) dialog",
+            title, self.__class__.__name__,
         )
+        self._title = title
 
         super(Dialog, self).__init__(parent)
 
         self.setModal(True)
         self.setLayout(self._ui())
         self.setWindowIcon(ICON)
-        self.setWindowTitle("AwesomeTTS")
+        self.setWindowTitle("AwesomeTTS: " + title)
 
     # UI Construction ########################################################
 
@@ -101,14 +103,14 @@ class Dialog(QtGui.QDialog):
         of the base class _ui() method.
         """
 
-        name = QtGui.QLabel("AwesomeTTS")
-        name.setFont(self._FONT_TITLE)
+        title = QtGui.QLabel(self._title)
+        title.setFont(self._FONT_TITLE)
 
-        version = QtGui.QLabel(self._addon.version)
+        version = QtGui.QLabel("AwesomeTTS\n" + self._addon.version)
         version.setFont(self._FONT_INFO)
 
         layout = QtGui.QHBoxLayout()
-        layout.addWidget(name)
+        layout.addWidget(title)
         layout.addStretch()
         layout.addWidget(version)
 

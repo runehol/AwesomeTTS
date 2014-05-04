@@ -64,8 +64,10 @@ class Configurator(Dialog):
             if len(key) > 4 and key.startswith('Key_')
         }
 
-        super(Configurator, self).__init__(*args, **kwargs)
-        self.setWindowTitle("%s Configuration" % self.windowTitle())
+        super(Configurator, self).__init__(
+            title="Configuration",
+            *args, **kwargs
+        )
 
     # UI Construction ########################################################
 

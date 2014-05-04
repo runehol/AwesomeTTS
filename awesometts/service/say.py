@@ -35,8 +35,9 @@ class Say(Service):
     """
 
     __slots__ = [
-        '_binary',  # path to the eSpeak binary
-        '_voices',  # list of installed voices as a list of tuples
+        '_binary',        # path to the eSpeak binary
+        '_voice_list',    # list of installed voices as a list of tuples
+        '_voice_lookup',  # map of normalized voice names to official names
     ]
 
     NAME = "Mac OS X Say"
@@ -60,9 +61,9 @@ class Say(Service):
         import re
         re_voice = re.compile(r'^\s*([-\w]+( [-\w]+)*)(\s+([-\w]+))?')
 
-        self._voices = sorted([
+        self._voice_list = sorted([
             (
-                match.group(1).lower(),
+                match.group(1),
 
                 "%s (%s)" % (match.group(1), match.group(4).replace('_', '-'))
                 if match.group(4)
@@ -73,10 +74,15 @@ class Say(Service):
                 for line in self.cli_output('say', '-v', '?')
             ]
             if match
-        ])
+        ], key=lambda voice: voice[1].lower())
 
-        if not self._voices:
+        if not self._voice_list:
             raise EnvironmentError("No usable output from call to `say -v ?`")
+
+        self._voice_lookup = {
+            self.normalize(voice[0]): voice[0]
+            for voice in self._voice_list
+        }
 
     def desc(self):
         """
@@ -90,12 +96,23 @@ class Say(Service):
         Provides access to voice only.
         """
 
+        def transform_voice(value):
+            """Normalize and attempt to convert to official voice."""
+
+            normalized = self.normalize(value)
+
+            return (
+                self._voice_lookup[normalized]
+                if normalized in self._voice_lookup
+                else value
+            )
+
         return [
             dict(
                 key='voice',
                 label="Voice",
-                values=self._voices,
-                transform=lambda value: str(value).strip().lower(),
+                values=self._voice_list,
+                transform=transform_voice,
             ),
 
             dict(

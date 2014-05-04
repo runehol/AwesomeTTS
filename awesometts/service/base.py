@@ -58,6 +58,7 @@ class Service(object):
     __slots__ = [
         '_lame_flags',  # for passing to LAME transcoder
         '_logger',      # logging interface with debug(), info(), etc.
+        'normalize',    # callable for standardizing string values
         '_temp_dir',    # for temporary scratch space
     ]
 
@@ -81,7 +82,7 @@ class Service(object):
     # e.g. TRAITS = [Trait.INTERNET, Trait.TRANSCODING]
     TRAITS = None
 
-    def __init__(self, temp_dir, lame_flags, logger):
+    def __init__(self, temp_dir, lame_flags, normalize, logger):
         """
         Attempt to initialize the service, raising a exception if the
         service cannot be used. If the service needs to make any calls
@@ -109,6 +110,7 @@ class Service(object):
 
         self._lame_flags = lame_flags
         self._logger = logger
+        self.normalize = normalize
         self._temp_dir = temp_dir
 
     @abc.abstractmethod

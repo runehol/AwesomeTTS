@@ -41,8 +41,9 @@ class SAPI5(Service):
     """
 
     __slots__ = [
-        '_binary',  # path to the cscript binary
-        '_voices',  # list of installed voices as a list of tuples
+        '_binary',        # path to the cscript binary
+        '_voice_list',    # list of installed voices as a list of tuples
+        '_voice_lookup',  # map of normalized voice names to official names
     ]
 
     NAME = "SAPI 5"
@@ -84,14 +85,19 @@ class SAPI5(Service):
 
         output = self.cli_output(self._binary, self._SCRIPT, '-vl')
 
-        self._voices = sorted({
-            (voice.strip().lower(), voice.strip())
+        self._voice_list = sorted({
+            (voice.strip(), voice.strip())
             for voice in output[output.index('--Voice List--') + 1:]
             if voice.strip()
-        })
+        }, key=lambda voice: voice[1].lower())
 
-        if not self._voices:
+        if not self._voice_list:
             raise EnvironmentError("No usable output from `sapi5.vbs -vl`")
+
+        self._voice_lookup = {
+            self.normalize(voice[0]): voice[0]
+            for voice in self._voice_list
+        }
 
     def desc(self):
         """
@@ -105,12 +111,23 @@ class SAPI5(Service):
         Provides access to voice only.
         """
 
+        def transform_voice(value):
+            """Normalize and attempt to convert to official voice."""
+
+            normalized = self.normalize(value)
+
+            return (
+                self._voice_lookup[normalized]
+                if normalized in self._voice_lookup
+                else value
+            )
+
         return [
             dict(
                 key='voice',
                 label="Voice",
-                values=self._voices,
-                transform=lambda value: str(value).strip().lower(),
+                values=self._voice_list,
+                transform=transform_voice,
             ),
         ]
 

@@ -35,8 +35,9 @@ class ESpeak(Service):
     """
 
     __slots__ = [
-        '_binary',   # path to the eSpeak binary
-        '_voices',   # list of installed voices as a list of tuples
+        '_binary',        # path to the eSpeak binary
+        '_voice_list',    # list of installed voices as a list of tuples
+        '_voice_lookup',  # map of normalized voice names to official names
     ]
 
     NAME = "eSpeak"
@@ -75,9 +76,9 @@ class ESpeak(Service):
         import re
         re_voice = re.compile(r'^\s*(\d+\s+)?([-\w]+)(\s+[-\w]\s+([-\w]+))?')
 
-        self._voices = sorted([
+        self._voice_list = sorted([
             (
-                match.group(2).lower(),
+                match.group(2),
 
                 "%s (%s)" % (match.group(4), match.group(2)) if match.group(4)
                 else match.group(2),
@@ -86,8 +87,13 @@ class ESpeak(Service):
             if match and match.group(2) != 'Pty'
         ], key=lambda voice: voice[1].lower())
 
-        if not self._voices:
+        if not self._voice_list:
             raise EnvironmentError("No usable output from `espeak --voices`")
+
+        self._voice_lookup = {
+            self.normalize(voice[0]): voice[0]
+            for voice in self._voice_list
+        }
 
     def desc(self):
         """
@@ -102,16 +108,23 @@ class ESpeak(Service):
         Provides access to voice, speed, word gap, pitch, and amplitude.
         """
 
+        def transform_voice(value):
+            """Normalize and attempt to convert to official voice."""
+
+            normalized = self.normalize(value)
+
+            return (
+                self._voice_lookup[normalized]
+                if normalized in self._voice_lookup
+                else value
+            )
+
         return [
             dict(
                 key='voice',
                 label="Voice",
-                values=self._voices,
-                transform=lambda value: ''.join(
-                    char.lower()
-                    for char in str(value)
-                    if char.isalpha() or char == '-'
-                ),
+                values=self._voice_list,
+                transform=transform_voice,
             ),
 
             dict(

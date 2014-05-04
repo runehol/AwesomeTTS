@@ -35,7 +35,8 @@ class Ekho(Service):
     """
 
     __slots__ = [
-        '_voices',   # list of installed voices as a list of tuples
+        '_voice_list',    # list of installed voices as a list of tuples
+        '_voice_lookup',  # map of normalized voice names to official names
     ]
 
     NAME = "Ekho"
@@ -56,14 +57,19 @@ class Ekho(Service):
         re_list = re.compile(r'(language|voice).+available', re.IGNORECASE)
         re_voice = re.compile(r"'(\w+)'")
 
-        self._voices = sorted({
+        self._voice_list = sorted({
             (capture, capture)
             for line in output if re_list.search(line)
             for capture in re_voice.findall(line)
-        })
+        }, key=lambda voice: voice[1].lower())
 
-        if not self._voices:
+        if not self._voice_list:
             raise EnvironmentError("No usable output from `ekho --help`")
+
+        self._voice_lookup = {
+            self.normalize(voice[0]): voice[0]
+            for voice in self._voice_list
+        }
 
     def desc(self):
         """
@@ -78,41 +84,41 @@ class Ekho(Service):
         """
 
         def transform_voice(value):
-            """
-            Do some basic conversions to attempt to guess the language
-            the user wanted when dealing with values that are not
-            strictly correct for Ekho to process.
-            """
+            """Normalize and attempt to convert to official voice."""
 
-            value = ''.join(
-                char.lower()
-                for char in str(value)
-                if char.isalpha()
+            normalized = self.normalize(value)
+            normalized = (
+                'mandarin' if normalized in [
+                    'cmn', 'cosc', 'goyu', 'huyu', 'mand', 'zh', 'zhcn',
+                ]
+                else 'cantonese' if normalized in [
+                    'cant', 'guzh', 'yue', 'yyef', 'zhhk', 'zhyue',
+                ]
+                else 'hakka' if normalized in ['hak', 'hakk', 'kejia']
+                else 'tibetan' if normalized in ['cent', 'west']
+                # else 'ngangien' if normalized in []
+                else 'hangul' if normalized in ['ko', 'kor', 'kore', 'korean']
+                else normalized
             )
 
             return (
-                'Mandarin' if value in [
-                    'cmn', 'cosc', 'goyu', 'huyu', 'mand', 'zh', 'zhcn',
-                ]
-                else 'Cantonese' if value in [
-                    'cant', 'guzh', 'yue', 'yyef', 'zhhk', 'zhyue',
-                ]
-                else 'Hakka' if value in ['hak', 'hakk', 'kejia']
-                else 'Tibetan' if value in ['cent', 'west']
-                # else 'Ngangien' if value in []
-                else 'Hangul' if value in ['ko', 'kor', 'kore', 'korean']
-                else value[0].upper() + value[1:].lower() if len(value) > 1
+                self._voice_lookup[normalized]
+                if normalized in self._voice_lookup
                 else value
             )
 
+        voice_option = dict(
+            key='voice',
+            label="Voice",
+            values=self._voice_list,
+            transform=transform_voice,
+        )
+
+        if 'mandarin' in self._voice_lookup:
+            voice_option['default'] = self._voice_lookup['mandarin']
+
         return [
-            dict(
-                key='voice',
-                label="Voice",
-                values=self._voices,
-                transform=transform_voice,
-                default='Mandarin',
-            ),
+            voice_option,
 
             dict(
                 key='speed',

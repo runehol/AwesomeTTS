@@ -156,6 +156,7 @@ router = Router(
         mappings=[
             ('ekho', service.Ekho),
             ('espeak', service.ESpeak),
+            ('festival', service.Festival),
             ('google', service.Google),
             ('sapi5', service.SAPI5),
             ('say', service.Say),

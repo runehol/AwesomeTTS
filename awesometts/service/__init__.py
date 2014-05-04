@@ -29,6 +29,7 @@ __all__ = [
     # services
     'Ekho',
     'ESpeak',
+    'Festival',
     'Google',
     'SAPI5',
     'Say',
@@ -38,6 +39,7 @@ from .common import Trait
 
 from .ekho import Ekho
 from .espeak import ESpeak
+from .festival import Festival
 from .google import Google
 from .sapi5 import SAPI5
 from .say import Say

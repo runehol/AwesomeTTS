@@ -91,6 +91,7 @@ class Dialog(QtGui.QDialog):
 
         layout = QtGui.QVBoxLayout()
         layout.addLayout(self._ui_banner())
+        layout.addWidget(self._ui_divider())
 
         return layout
 
@@ -115,6 +116,19 @@ class Dialog(QtGui.QDialog):
         layout.addWidget(version)
 
         return layout
+
+    def _ui_divider(self):
+        """
+        Returns a horizontal divider.
+
+        For subclasses, this method will be called automatically as part
+        of the base class _ui() method.
+        """
+
+        frame = QtGui.QFrame()
+        frame.setFrameStyle(QtGui.QFrame.HLine | QtGui.QFrame.Sunken)
+
+        return frame
 
     def _ui_buttons(self):
         """

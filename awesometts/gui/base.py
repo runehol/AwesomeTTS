@@ -91,7 +91,7 @@ class Dialog(QtGui.QDialog):
 
         layout = QtGui.QVBoxLayout()
         layout.addLayout(self._ui_banner())
-        layout.addWidget(self._ui_divider())
+        layout.addWidget(self._ui_divider(QtGui.QFrame.HLine))
 
         return layout
 
@@ -117,16 +117,16 @@ class Dialog(QtGui.QDialog):
 
         return layout
 
-    def _ui_divider(self):
+    def _ui_divider(self, orientation_style=QtGui.QFrame.VLine):
         """
-        Returns a horizontal divider.
+        Returns a divider.
 
         For subclasses, this method will be called automatically as part
         of the base class _ui() method.
         """
 
         frame = QtGui.QFrame()
-        frame.setFrameStyle(QtGui.QFrame.HLine | QtGui.QFrame.Sunken)
+        frame.setFrameStyle(orientation_style | QtGui.QFrame.Sunken)
 
         return frame
 
@@ -208,6 +208,8 @@ class ServiceDialog(Dialog):
 
         horizontal = QtGui.QHBoxLayout()
         horizontal.addLayout(self._ui_services())
+        horizontal.addSpacing(self._SPACING)
+        horizontal.addWidget(self._ui_divider())
         horizontal.addSpacing(self._SPACING)
         horizontal.addLayout(self._ui_control())
 

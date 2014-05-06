@@ -24,9 +24,11 @@ Template generation dialog
 
 __all__ = ['Templater']
 
-from PyQt4 import QtGui
+from PyQt4 import QtCore, QtGui
 
 from .base import ServiceDialog
+
+# all methods might need 'self' in the future, pylint:disable=R0201
 
 
 class Templater(ServiceDialog):
@@ -58,53 +60,91 @@ class Templater(ServiceDialog):
         field input selector, then the base class's cancel/OK buttons.
         """
 
-        header = QtGui.QLabel("Source Fields")
+        header = QtGui.QLabel("Tag Options")
         header.setFont(self._FONT_HEADER)
 
         intro = QtGui.QLabel(
-            "During review mode, AwesomeTTS will automatically read the text "
-            "from the source field that you specify here, send it to the "
-            "service on the left, pass your chosen options, and playback the "
-            "result."
+            "In review mode, AwesomeTTS can automatically read the text from "
+            "any <tts> tags in the template, generating on-the-fly audio "
+            "playback. You can specify a specific note field to read from or "
+            "customize the text yourself."
         )
         intro.setFont(self._FONT_INFO)
+        intro.setTextFormat(QtCore.Qt.PlainText)
         intro.setWordWrap(True)
+
+        hint = QtGui.QLabel(
+            "Normally, the content of <tts> tags are visible like any other "
+            "HTML tag, but you can alter their appearance with inline CSS or "
+            "the note-wide style rules."
+        )
+        hint.setFont(self._FONT_INFO)
+        hint.setTextFormat(QtCore.Qt.PlainText)
+        hint.setWordWrap(True)
 
         layout = super(Templater, self)._ui_control()
         layout.addWidget(header)
         layout.addWidget(intro)
-        layout.addWidget(self._ui_control_field())
-        layout.addWidget(self._ui_control_display())
+        layout.addWidget(hint)
+        layout.addLayout(self._ui_control_fields())
         layout.addWidget(self._ui_buttons())
 
         return layout
 
-    def _ui_control_field(self):
+    def _ui_control_fields(self):
         """
         Returns a dropdown box to let the user select a source field.
         """
 
+        layout = QtGui.QGridLayout()
+
+        for row, label, name, options in [
+            (0, "Field:", 'field', [
+                ('', "customize the tag's content"),
+            ] + [
+                (field, field)
+                for field in sorted({
+                    field['name']
+                    for field in self._card_layout.model['flds']
+                })
+            ]),
+
+            (1, "Visibility:", 'hide', [
+                ('normal', "insert the tag as-is"),
+                ('inline', "hide just this tag w/ inline CSS"),
+                ('global', "add rule to hide any TTS tag for this note type"),
+            ]),
+
+            (2, "Add to:", 'target', [
+                ('front', "Front Template"),
+                ('back', "Back Template"),
+            ]),
+        ]:
+            label = QtGui.QLabel(label)
+            label.setFont(self._FONT_LABEL)
+
+            layout.addWidget(
+                label,
+                row, 0,
+            )
+            layout.addWidget(
+                self._ui_control_fields_dropdown(name, options),
+                row, 1,
+            )
+
+        return layout
+
+    def _ui_control_fields_dropdown(self, name, options):
+        """
+        Returns a dropdown with the given list of options.
+        """
+
         dropdown = QtGui.QComboBox()
-        dropdown.setObjectName('source')
-        dropdown.addItems(
-            ["(insert an empty tag)"] +
-            sorted({
-                field['name']
-                for field in self._card_layout.model['flds']
-            })
-        )
+        dropdown.setObjectName(name)
+        for value, label in options:
+            dropdown.addItem(label, value)
 
         return dropdown
-
-    def _ui_control_display(self):
-        """
-        Returns a checkbox to let the user set the style on the tag.
-        """
-
-        checkbox = QtGui.QCheckBox("Use Inline CSS to Hide the Tag's Content")
-        checkbox.setObjectName('hide')
-
-        return checkbox
 
     def _ui_buttons(self):
         """

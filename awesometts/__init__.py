@@ -36,6 +36,7 @@ from PyQt4.QtCore import Qt
 
 import anki
 import aqt
+import aqt.clayout
 
 from . import (
     gui,
@@ -135,6 +136,9 @@ config = Config(
         ('last_mass_source', 'text', 'Front', str, str),
         ('last_service', 'text', 'google', str, str),
         ('last_options', 'text', {}, json.loads, json.dumps),
+        ('templater_field', 'text', 'Front', str, str),
+        ('templater_hide', 'text', 'normal', str, str),
+        ('templater_target', 'text', 'front', str, str),
         ('throttle_sleep', 'integer', 600, int, int),
         ('throttle_threshold', 'integer', 250, int, int),
         ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
@@ -281,26 +285,26 @@ aqt.editor.Editor.enableButtons = anki.hooks.wrap(
     'before',
 )
 
-# TODO Future feature -- TTS on-the-fly template builder
-# aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
-#     aqt.clayout.CardLayout.setupButtons,
-#     lambda card_layout: card_layout.buttons.insertWidget(
-#         # today, the card layout form has 7 buttons/stretchers; in the event
-#         # that this changes in the future, bump the button to the first slot
-#         3 if card_layout.buttons.count() == 7 else 0,
-#         gui.Button(
-#             text="Add &TTS",
-#             target=Bundle(
-#                 constructor=gui.TemplateBuilder,
-#                 args=(),
-#                 kwargs=dict(
-#                     addon=addon,
-#                     playback=anki.sound.play,
-#                     alerts=aqt.utils.showWarning,
-#                     parent=card_layout,
-#                 ),
-#             ),
-#         ),
-#     ),
-#     'after',  # must use 'after' so that 'buttons' attribute is set
-# )
+aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
+    aqt.clayout.CardLayout.setupButtons,
+    lambda card_layout: card_layout.buttons.insertWidget(
+        # today, the card layout form has 7 buttons/stretchers; in the event
+        # that this changes in the future, bump the button to the first slot
+        3 if card_layout.buttons.count() == 7 else 0,
+        gui.Button(
+            text="Add &TTS",
+            target=Bundle(
+                constructor=gui.Templater,
+                args=(),
+                kwargs=dict(
+                    card_layout=card_layout,
+                    addon=addon,
+                    playback=anki.sound.play,
+                    alerts=aqt.utils.showWarning,
+                    parent=card_layout,
+                ),
+            ),
+        ),
+    ),
+    'after',  # must use 'after' so that 'buttons' attribute is set
+)

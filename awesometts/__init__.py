@@ -294,6 +294,7 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
                 constructor=gui.Templater,
                 args=(),
                 kwargs=dict(
+                    card_layout=card_layout,
                     addon=addon,
                     playback=anki.sound.play,
                     alerts=aqt.utils.showWarning,

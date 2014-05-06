@@ -36,13 +36,15 @@ class Templater(ServiceDialog):
     """
 
     __slots__ = [
+        '_card_layout',  # reference to the card layout window
     ]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, card_layout, *args, **kwargs):
         """
         Sets our title.
         """
 
+        self._card_layout = card_layout
         super(Templater, self).__init__(
             title="Add On-the-Fly TTS Tag",
             *args, **kwargs
@@ -84,8 +86,13 @@ class Templater(ServiceDialog):
 
         dropdown = QtGui.QComboBox()
         dropdown.setObjectName('source')
-        dropdown.addItem("(insert an empty tag)")
-        # TODO populate with fields
+        dropdown.addItems(
+            ["(insert an empty tag)"] +
+            sorted({
+                field['name']
+                for field in self._card_layout.model['flds']
+            })
+        )
 
         return dropdown
 

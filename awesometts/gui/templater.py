@@ -182,6 +182,7 @@ class Templater(ServiceDialog):
         values = self._remember_values()
         tform = self._card_layout.tab['tform']
 
+        from cgi import escape
         target = getattr(tform, values['templater_target'])
         target.setPlainText('\n'.join([
             target.toPlainText(),
@@ -189,7 +190,7 @@ class Templater(ServiceDialog):
                 values['last_service'],
 
                 ' '.join([
-                    '%s="%s"' % (key, value)  # FIXME encode value for HTML
+                    '%s="%s"' % (key, escape(str(value)))
                     for key, value in
                         values['last_options'][values['last_service']].items()
                         + (

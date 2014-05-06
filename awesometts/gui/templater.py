@@ -172,3 +172,54 @@ class Templater(ServiceDialog):
             dropdown.setCurrentIndex(max(index, 0))
 
         dropdown.setFocus()  # abuses fact that 'field' is last in the loop
+
+    def accept(self):
+        """
+        Given the user's selected service and options, assembles a TTS
+        tag and then remembers the options.
+        """
+
+        values = self._remember_values()
+
+        target = getattr(
+            self._card_layout.tab['tform'],
+            values['templater_target'],
+        )
+        target.setPlainText('\n'.join([
+            target.toPlainText(),
+            '<tts service="%s" %s>%s</tts>' % (
+                values['last_service'],
+
+                ' '.join([
+                    '%s="%s"' % (key, value)  # FIXME encode value for HTML
+                    for key, value in
+                        values['last_options'][values['last_service']].items()
+                        + (
+                            [('style', 'display: none')]
+                            if values['templater_hide'] == 'inline' else []
+                        )
+                ]),
+
+                '{{%s}}' % values['templater_field']
+                if values['templater_field']
+                else '',
+            ),
+        ]))
+
+        self._addon.config.update(values)
+        super(Templater, self).accept()
+
+    def _remember_values(self):
+        """
+        Adds support to remember the three dropdowns, in addition to the
+        service options handled by the superclass.
+        """
+
+        return dict(
+            super(Templater, self)._remember_values().items() +
+            [
+                ('templater_' + name, widget.itemData(widget.currentIndex()))
+                for name in ['hide', 'target', 'field']
+                for widget in [self.findChild(QtGui.QComboBox, name)]
+            ]
+        )

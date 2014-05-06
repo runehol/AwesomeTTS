@@ -155,3 +155,20 @@ class Templater(ServiceDialog):
         buttons.findChild(QtGui.QAbstractButton, 'okay').setText("&Insert")
 
         return buttons
+
+    # Events #################################################################
+
+    def show(self, *args, **kwargs):
+        """
+        Restore the three dropdown's last known state and then focus the
+        field dropdown.
+        """
+
+        super(Templater, self).show(*args, **kwargs)
+
+        for name in ['hide', 'target', 'field']:
+            dropdown = self.findChild(QtGui.QComboBox, name)
+            index = dropdown.findData(self._addon.config['templater_' + name])
+            dropdown.setCurrentIndex(max(index, 0))
+
+        dropdown.setFocus()  # abuses fact that 'field' is last in the loop

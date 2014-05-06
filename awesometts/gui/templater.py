@@ -180,11 +180,9 @@ class Templater(ServiceDialog):
         """
 
         values = self._remember_values()
+        tform = self._card_layout.tab['tform']
 
-        target = getattr(
-            self._card_layout.tab['tform'],
-            values['templater_target'],
-        )
+        target = getattr(tform, values['templater_target'])
         target.setPlainText('\n'.join([
             target.toPlainText(),
             '<tts service="%s" %s>%s</tts>' % (
@@ -205,6 +203,15 @@ class Templater(ServiceDialog):
                 else '',
             ),
         ]))
+
+        if values['templater_hide'] == 'global':
+            existing_css = tform.css.toPlainText()
+            extra_css = 'tts { display: none }'
+            if existing_css.find(extra_css) < 0:
+                tform.css.setPlainText('\n'.join([
+                    existing_css,
+                    extra_css,
+                ]))
 
         self._addon.config.update(values)
         super(Templater, self).accept()

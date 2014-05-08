@@ -247,7 +247,7 @@ anki.hooks.addHook(
                 parent=browser,
             ),
         ),
-        text="Awesome&TTS Mass Generator...",
+        text="Add Audio to Selected Notes w/ Awesome&TTS...",
         parent=browser.form.menuEdit,
     ),
 )
@@ -263,6 +263,7 @@ anki.hooks.addHook(
     'setupEditorButtons',
     lambda editor: editor.iconsBox.addWidget(
         gui.Button(
+            tooltip="Record and insert an audio clip here w/ AwesomeTTS",
             target=Bundle(
                 constructor=gui.EditorGenerator,
                 args=(),
@@ -293,6 +294,7 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
         3 if card_layout.buttons.count() == 7 else 0,
         gui.Button(
             text="Add &TTS",
+            tooltip="Insert a tag for on-the-fly playback w/ AwesomeTTS",
             target=Bundle(
                 constructor=gui.Templater,
                 args=(),

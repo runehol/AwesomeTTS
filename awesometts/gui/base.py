@@ -49,7 +49,7 @@ class Dialog(QtGui.QDialog):
     _FONT_LABEL.setBold(True)
 
     _FONT_TITLE = QtGui.QFont()
-    _FONT_TITLE.setPointSize(20)
+    _FONT_TITLE.setPointSize(16)
     _FONT_TITLE.setBold(True)
 
     _SPACING = 10

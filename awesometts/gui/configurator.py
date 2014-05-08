@@ -171,6 +171,7 @@ class Configurator(Dialog):
 
         if addl:
             addl = QtGui.QLabel(addl)
+            addl.setFont(self._FONT_INFO)
             addl.setTextFormat(QtCore.Qt.PlainText)
             addl.setWordWrap(True)
             layout.addWidget(addl)
@@ -193,6 +194,7 @@ class Configurator(Dialog):
             "on a hash of the selected service, options, and phrase. This "
             "change should ensure unique and portable filenames.",
         )
+        notes.setFont(self._FONT_INFO)
         notes.setWordWrap(True)
 
         layout = QtGui.QVBoxLayout()
@@ -213,13 +215,7 @@ class Configurator(Dialog):
         Returns the "LAME Transcoder" input group.
         """
 
-        notes = QtGui.QLabel(
-            "Specify flags to be passed to lame when generating MP3s "
-            "(affects %s). Edit with caution." %
-            ', '.join(self._addon.router.by_trait(
-                self._addon.router.Trait.TRANSCODING,
-            )),
-        )
+        notes = QtGui.QLabel("Specify flags passed to lame when making MP3s.")
         notes.setWordWrap(True)
 
         flags = QtGui.QLineEdit()
@@ -227,10 +223,14 @@ class Configurator(Dialog):
         flags.setPlaceholderText("e.g. '-q 5' for medium quality")
 
         addl = QtGui.QLabel(
-            "Changes in these flags will NOT be retroactive to old MP3s. "
+            "Affects %s. Changes will NOT be retroactive to old MP3s. "
             "Depending on the change, you may want to regenerate MP3s and/or "
-            "clear your cache on the Advanced tab.",
+            "clear your cache on the Advanced tab. Edit with caution." %
+            ', '.join(self._addon.router.by_trait(
+                self._addon.router.Trait.TRANSCODING,
+            ))
         )
+        addl.setFont(self._FONT_INFO)
         addl.setWordWrap(True)
 
         layout = QtGui.QVBoxLayout()
@@ -250,10 +250,7 @@ class Configurator(Dialog):
 
         notes = QtGui.QLabel(
             "Tweak how often AwesomeTTS takes a break when downloading files "
-            "from online services (affects %s)." %
-            ', '.join(self._addon.router.by_trait(
-                self._addon.router.Trait.INTERNET,
-            )),
+            "from online services."
         )
         notes.setWordWrap(True)
 
@@ -280,9 +277,19 @@ class Configurator(Dialog):
         horizontal.addWidget(sleep)
         horizontal.addStretch()
 
+        addl = QtGui.QLabel(
+            "Affects %s." %
+            ', '.join(self._addon.router.by_trait(
+                self._addon.router.Trait.INTERNET,
+            ))
+        )
+        addl.setFont(self._FONT_INFO)
+        addl.setWordWrap(True)
+
         vertical = QtGui.QVBoxLayout()
         vertical.addWidget(notes)
         vertical.addLayout(horizontal)
+        vertical.addWidget(addl)
 
         group = QtGui.QGroupBox("Download Throttling")
         group.setLayout(vertical)
@@ -333,21 +340,22 @@ class Configurator(Dialog):
         Returns the "Media Cache" input group.
         """
 
+        button = QtGui.QPushButton("Clear Cache")
+        button.setObjectName('on_cache')
+        button.clicked.connect(lambda: self._on_cache_clear(button))
+
         notes = QtGui.QLabel(
             "Media files are cached locally for successive playback and "
             "recording requests. The cache improves performance of the "
             "add-on, particularly when using the on-the-fly mode, but you "
             "may want to clear it from time to time."
         )
+        notes.setFont(self._FONT_INFO)
         notes.setWordWrap(True)
 
-        button = QtGui.QPushButton("Clear Cache")
-        button.setObjectName('on_cache')
-        button.clicked.connect(lambda: self._on_cache_clear(button))
-
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(notes)
         layout.addWidget(button)
+        layout.addWidget(notes)
 
         group = QtGui.QGroupBox("Media Cache")
         group.setLayout(layout)

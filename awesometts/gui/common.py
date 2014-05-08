@@ -97,7 +97,7 @@ class Button(QtGui.QPushButton, _Connector):
     Provides a button to show a dialog when clicked.
     """
 
-    def __init__(self, target, text=None, style=None):
+    def __init__(self, target, tooltip, text=None, style=None):
         """
         Initializes the button and wires its 'clicked' event.
 
@@ -115,11 +115,12 @@ class Button(QtGui.QPushButton, _Connector):
             self.setFixedWidth(20)
             self.setFixedHeight(20)
             self.setFocusPolicy(QtCore.Qt.NoFocus)
-            self.setShortcut(SHORTCUT)
-            self.setToolTip(
-                "Insert an audio clip with AwesomeTTS (%s)" %
-                SHORTCUT.toString(QtGui.QKeySequence.NativeText)
-            )
+
+        self.setShortcut(SHORTCUT)
+        self.setToolTip(
+            "%s (%s)" %
+            (tooltip, SHORTCUT.toString(QtGui.QKeySequence.NativeText))
+        )
 
         if style:
             self.setStyle(style)

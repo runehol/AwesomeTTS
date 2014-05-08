@@ -36,6 +36,12 @@ class BrowserGenerator(ServiceDialog):
     from the card browser.
     """
 
+    INTRO = (
+        "AwesomeTTS will scan the %d note%s selected in the Browser, "
+        "determine %s the source field, store the audio in your collection, "
+        "and update the destination with either a [sound] tag or filename."
+    )
+
     # TODO. It would be nice if the progress dialog shown during generation
     # offered a cancel button (labeled "Stop"). This would work just by having
     # an additional 'cancelled' flag on the _process object that we check for
@@ -60,7 +66,7 @@ class BrowserGenerator(ServiceDialog):
         self._process = None  # set in accept()
 
         super(BrowserGenerator, self).__init__(
-            title="Mass Generator",
+            title="Add TTS Audio to Selected Notes",
             *args, **kwargs
         )
 
@@ -76,18 +82,25 @@ class BrowserGenerator(ServiceDialog):
         header = QtGui.QLabel("Fields and Handling")
         header.setFont(self._FONT_HEADER)
 
-        intro = QtGui.QLabel(
-            "AwesomeTTS will read the text in the source field, generate an "
-            "MP3 file, and place it into the destination field."
-        )
+        intro = QtGui.QLabel(self.INTRO)
         intro.setFont(self._FONT_INFO)
+        intro.setObjectName('intro')
         intro.setWordWrap(True)
+
+        warning = QtGui.QLabel(
+            "Please note that if you use bare filenames, the 'Check Media' "
+            "feature in Anki will not detect audio files as in-use, even if "
+            "you insert the field into your templates."
+        )
+        warning.setFont(self._FONT_INFO)
+        warning.setWordWrap(True)
 
         layout = super(BrowserGenerator, self)._ui_control()
         layout.addWidget(header)
         layout.addWidget(intro)
         layout.addLayout(self._ui_control_fields())
         layout.addWidget(self._ui_control_handling())
+        layout.addWidget(warning)
         layout.addWidget(self._ui_buttons())
 
         return layout
@@ -182,6 +195,14 @@ class BrowserGenerator(ServiceDialog):
             self._browser.mw.col.getNote(note_id)
             for note_id in self._browser.selectedNotes()
         ]
+
+        self.findChild(QtGui.QLabel, 'intro').setText(
+            self.INTRO % (
+                len(self._notes),
+                "s" if len(self._notes) != 1 else "",
+                "which have" if len(self._notes) != 1 else "if it has",
+            )
+        )
 
         fields = sorted({
             field
@@ -281,7 +302,7 @@ class BrowserGenerator(ServiceDialog):
         self._disable_inputs()
 
         self._browser.mw.checkpoint(
-            "AwesomeTTS MP3 Mass Generator (%d note%s)" % (
+            "AwesomeTTS Batch Update (%d note%s)" % (
                 self._process['counts']['elig'],
                 "s" if self._process['counts']['elig'] != 1 else "",
             )
@@ -569,7 +590,7 @@ class EditorGenerator(ServiceDialog):
 
         self._editor = editor
         super(EditorGenerator, self).__init__(
-            title="Insert MP3",
+            title="Add TTS Audio to Note",
             *args, **kwargs
         )
 
@@ -585,6 +606,14 @@ class EditorGenerator(ServiceDialog):
         header = QtGui.QLabel("Preview and Record")
         header.setFont(self._FONT_HEADER)
 
+        intro = QtGui.QLabel(
+            "This text will be inserted as a [sound] tag and then "
+            "synchronized along with other media in your collection."
+        )
+        intro.setFont(self._FONT_INFO)
+        intro.setTextFormat(QtCore.Qt.PlainText)
+        intro.setWordWrap(True)
+
         text = QtGui.QPlainTextEdit()
         text.setObjectName('text')
         text.setTabChangesFocus(True)
@@ -595,6 +624,7 @@ class EditorGenerator(ServiceDialog):
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(header)
+        layout.addWidget(intro)
         layout.addWidget(text)
         layout.addWidget(button)
         layout.addWidget(self._ui_buttons())

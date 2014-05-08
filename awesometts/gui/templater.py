@@ -48,7 +48,7 @@ class Templater(ServiceDialog):
 
         self._card_layout = card_layout
         super(Templater, self).__init__(
-            title="Add On-the-Fly TTS Tag",
+            title="Add On-the-Fly TTS Tag to Template",
             *args, **kwargs
         )
 
@@ -76,7 +76,7 @@ class Templater(ServiceDialog):
         hint = QtGui.QLabel(
             "Normally, the content of <tts> tags are visible like any other "
             "HTML tag, but you can alter their appearance with inline CSS or "
-            "the note-wide style rules."
+            "the shared style rules."
         )
         hint.setFont(self._FONT_INFO)
         hint.setTextFormat(QtCore.Qt.PlainText)

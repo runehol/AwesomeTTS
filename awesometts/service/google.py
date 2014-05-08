@@ -47,7 +47,8 @@ class Google(Service):
         Returns a short, static description.
         """
 
-        return "Google Translate text-to-speech web API"
+        return "Google Translate text-to-speech web API " \
+            "(supports short phrases only)"  # FIXME needs to be fixed
 
     def options(self):
         """

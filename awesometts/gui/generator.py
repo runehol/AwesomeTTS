@@ -213,18 +213,16 @@ class BrowserGenerator(ServiceDialog):
         source = self.findChild(QtGui.QComboBox, 'source')
         source.clear()
         source.addItems(fields)
-        try:
-            source.setCurrentIndex(fields.index(config['last_mass_source']))
-        except ValueError:
-            pass
+        source.setCurrentIndex(
+            max(source.findData(config['last_mass_source']), 0)
+        )
 
         dest = self.findChild(QtGui.QComboBox, 'dest')
         dest.clear()
         dest.addItems(fields)
-        try:
-            dest.setCurrentIndex(fields.index(config['last_mass_dest']))
-        except ValueError:
-            pass
+        dest.setCurrentIndex(
+            max(dest.findData(config['last_mass_dest']), 0)
+        )
 
         self.findChild(
             QtGui.QRadioButton,

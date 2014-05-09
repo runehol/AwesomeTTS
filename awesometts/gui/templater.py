@@ -166,8 +166,9 @@ class Templater(ServiceDialog):
 
         for name in ['hide', 'target', 'field']:
             dropdown = self.findChild(QtGui.QComboBox, name)
-            index = dropdown.findData(self._addon.config['templater_' + name])
-            dropdown.setCurrentIndex(max(index, 0))
+            dropdown.setCurrentIndex(max(
+                dropdown.findData(self._addon.config['templater_' + name]), 0
+            ))
 
         dropdown.setFocus()  # abuses fact that 'field' is last in the loop
 

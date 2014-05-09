@@ -81,6 +81,9 @@ RE_WHITESPACE = re.compile(r'\s+')
 
 TO_BOOL = lambda value: bool(int(value))  # workaround for bool('0') == True
 
+TO_JSON_DICT = lambda value: isinstance(value, basestring) and \
+    value.lstrip().startswith('{') and json.loads(value) or {}
+
 TO_NORMALIZED = lambda value: ''.join(
     char.lower()
     for char in value
@@ -135,7 +138,7 @@ config = Config(
         ('last_mass_dest', 'text', 'Back', unicode, unicode),
         ('last_mass_source', 'text', 'Front', unicode, unicode),
         ('last_service', 'text', 'google', str, str),
-        ('last_options', 'text', {}, json.loads, json.dumps),
+        ('last_options', 'text', {}, TO_JSON_DICT, json.dumps),
         ('templater_field', 'text', 'Front', unicode, unicode),
         ('templater_hide', 'text', 'normal', str, str),
         ('templater_target', 'text', 'front', str, str),

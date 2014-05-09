@@ -171,7 +171,6 @@ class Configurator(Dialog):
 
         if addl:
             addl = QtGui.QLabel(addl)
-            addl.setFont(self._FONT_INFO)
             addl.setTextFormat(QtCore.Qt.PlainText)
             addl.setWordWrap(True)
             layout.addWidget(addl)
@@ -194,7 +193,6 @@ class Configurator(Dialog):
             "on a hash of the selected service, options, and phrase. This "
             "change should ensure unique and portable filenames.",
         )
-        notes.setFont(self._FONT_INFO)
         notes.setWordWrap(True)
 
         layout = QtGui.QVBoxLayout()
@@ -230,7 +228,6 @@ class Configurator(Dialog):
                 self._addon.router.Trait.TRANSCODING,
             ))
         )
-        addl.setFont(self._FONT_INFO)
         addl.setWordWrap(True)
 
         layout = QtGui.QVBoxLayout()
@@ -283,7 +280,6 @@ class Configurator(Dialog):
                 self._addon.router.Trait.INTERNET,
             ))
         )
-        addl.setFont(self._FONT_INFO)
         addl.setWordWrap(True)
 
         vertical = QtGui.QVBoxLayout()
@@ -350,7 +346,6 @@ class Configurator(Dialog):
             "add-on, particularly when using the on-the-fly mode, but you "
             "may want to clear it from time to time."
         )
-        notes.setFont(self._FONT_INFO)
         notes.setWordWrap(True)
 
         layout = QtGui.QVBoxLayout()

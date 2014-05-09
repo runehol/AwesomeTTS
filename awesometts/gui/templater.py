@@ -69,7 +69,6 @@ class Templater(ServiceDialog):
             "playback. You can specify a specific note field to read from or "
             "customize the text yourself."
         )
-        intro.setFont(self._FONT_INFO)
         intro.setTextFormat(QtCore.Qt.PlainText)
         intro.setWordWrap(True)
 
@@ -78,7 +77,6 @@ class Templater(ServiceDialog):
             "HTML tag, but you can alter their appearance with inline CSS or "
             "the shared style rules."
         )
-        hint.setFont(self._FONT_INFO)
         hint.setTextFormat(QtCore.Qt.PlainText)
         hint.setWordWrap(True)
 

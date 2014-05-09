@@ -83,7 +83,6 @@ class BrowserGenerator(ServiceDialog):
         header.setFont(self._FONT_HEADER)
 
         intro = QtGui.QLabel(self.INTRO)
-        intro.setFont(self._FONT_INFO)
         intro.setObjectName('intro')
         intro.setWordWrap(True)
 
@@ -92,7 +91,6 @@ class BrowserGenerator(ServiceDialog):
             "feature in Anki will not detect audio files as in-use, even if "
             "you insert the field into your templates."
         )
-        warning.setFont(self._FONT_INFO)
         warning.setWordWrap(True)
 
         layout = super(BrowserGenerator, self)._ui_control()
@@ -610,7 +608,6 @@ class EditorGenerator(ServiceDialog):
             "This text will be inserted as a [sound] tag and then "
             "synchronized along with other media in your collection."
         )
-        intro.setFont(self._FONT_INFO)
         intro.setTextFormat(QtCore.Qt.PlainText)
         intro.setWordWrap(True)
 

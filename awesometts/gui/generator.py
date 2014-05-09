@@ -212,14 +212,16 @@ class BrowserGenerator(ServiceDialog):
 
         source = self.findChild(QtGui.QComboBox, 'source')
         source.clear()
-        source.addItems(fields)
+        for field in fields:
+            source.addItem(field, field)
         source.setCurrentIndex(
             max(source.findData(config['last_mass_source']), 0)
         )
 
         dest = self.findChild(QtGui.QComboBox, 'dest')
         dest.clear()
-        dest.addItems(fields)
+        for field in fields:
+            dest.addItem(field, field)
         dest.setCurrentIndex(
             max(dest.findData(config['last_mass_dest']), 0)
         )

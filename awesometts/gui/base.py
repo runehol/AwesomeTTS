@@ -310,10 +310,7 @@ class ServiceDialog(Dialog):
         self._panel_set = {}  # these must be reloaded with each window open
 
         dropdown = self.findChild(QtGui.QComboBox, 'service')
-        idx = dropdown.findData(self._addon.config['last_service'])
-        if idx == -1:
-            idx = 0
-
+        idx = max(dropdown.findData(self._addon.config['last_service']), 0)
         dropdown.setCurrentIndex(idx)
         self._on_service_activated(idx, True)
 
@@ -414,30 +411,41 @@ class ServiceDialog(Dialog):
         assert len(vinputs) == len(options)
 
         for i in range(len(options)):
-            option, vinput = options[i], vinputs[i]
+            opt, vinput = options[i], vinputs[i]
 
-            # TODO this needs better error checking
-
-            if isinstance(option['values'], tuple):
+            if isinstance(opt['values'], tuple):
                 try:
-                    vinput.setValue(last_options[option['key']])
-                except KeyError:
+                    val = last_options[opt['key']]
+                    if not opt['values'][0] <= val <= opt['values'][1]:
+                        raise ValueError
+
+                except (KeyError, ValueError):
                     try:
-                        vinput.setValue(option['default'])
-                    except KeyError:
-                        vinput.setValue(option['values'][0])
+                        val = opt['default']
+                        if not opt['values'][0] <= val <= opt['values'][1]:
+                            raise ValueError
+
+                    except (KeyError, ValueError):
+                        val = opt['values'][0]
+
+                vinput.setValue(val)
+
             else:
                 try:
-                    vinput.setCurrentIndex(
-                        vinput.findData(last_options[option['key']])
-                    )
-                except KeyError:
+                    idx = vinput.findData(last_options[opt['key']])
+                    if idx < 0:
+                        raise ValueError
+
+                except (KeyError, ValueError):
                     try:
-                        vinput.setCurrentIndex(
-                            vinput.findData(option['default'])
-                        )
-                    except KeyError:
-                        pass
+                        idx = vinput.findData(opt['default'])
+                        if idx < 0:
+                            raise ValueError
+
+                    except (KeyError, ValueError):
+                        idx = 0
+
+                vinput.setCurrentIndex(idx)
 
     def _on_preview(self):
         """

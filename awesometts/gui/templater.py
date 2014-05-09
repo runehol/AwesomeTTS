@@ -178,33 +178,33 @@ class Templater(ServiceDialog):
         tag and then remembers the options.
         """
 
-        values = self._remember_values()
+        now = self._get_all()
         tform = self._card_layout.tab['tform']
 
         from cgi import escape
-        target = getattr(tform, values['templater_target'])
+        target = getattr(tform, now['templater_target'])
         target.setPlainText('\n'.join([
             target.toPlainText(),
             '<tts service="%s" %s>%s</tts>' % (
-                values['last_service'],
+                now['last_service'],
 
                 ' '.join([
                     '%s="%s"' % (key, escape(str(value)))
                     for key, value in
-                        values['last_options'][values['last_service']].items()
+                        now['last_options'][now['last_service']].items()
                         + (
                             [('style', 'display: none')]
-                            if values['templater_hide'] == 'inline' else []
+                            if now['templater_hide'] == 'inline' else []
                         )
                 ]),
 
-                '{{%s}}' % values['templater_field']
-                if values['templater_field']
+                '{{%s}}' % now['templater_field']
+                if now['templater_field']
                 else '',
             ),
         ]))
 
-        if values['templater_hide'] == 'global':
+        if now['templater_hide'] == 'global':
             existing_css = tform.css.toPlainText()
             extra_css = 'tts { display: none }'
             if existing_css.find(extra_css) < 0:
@@ -213,17 +213,17 @@ class Templater(ServiceDialog):
                     extra_css,
                 ]))
 
-        self._addon.config.update(values)
+        self._addon.config.update(now)
         super(Templater, self).accept()
 
-    def _remember_values(self):
+    def _get_all(self):
         """
         Adds support to remember the three dropdowns, in addition to the
         service options handled by the superclass.
         """
 
         return dict(
-            super(Templater, self)._remember_values().items() +
+            super(Templater, self)._get_all().items() +
             [
                 ('templater_' + name, widget.itemData(widget.currentIndex()))
                 for name in ['hide', 'target', 'field']

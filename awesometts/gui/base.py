@@ -518,10 +518,10 @@ class ServiceDialog(Dialog):
 
         return text_input, text_value
 
-    def _remember_values(self):
+    def _get_all(self):
         """
         Returns a dict of the options that need to be updated to
-        remember the state of the form.
+        remember and process the state of the form.
         """
 
         svc_id, values = self._get_service_values()

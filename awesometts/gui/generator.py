@@ -243,7 +243,11 @@ class BrowserGenerator(ServiceDialog):
         service options, and kick off the processing.
         """
 
-        source, dest, append, behavior = self._get_field_values()
+        now = self._get_all()
+        source = now['last_mass_source']
+        dest = now['last_mass_dest']
+        append = now['last_mass_append']
+        behavior = now['last_mass_behavior']
 
         eligible_notes = [
             note
@@ -262,9 +266,11 @@ class BrowserGenerator(ServiceDialog):
             )
             return
 
-        svc_id, options = self._get_service_values()
+        svc_id = now['last_service']
+        options = now['last_options'][now['last_service']]
 
         self._process = {
+            'all': now,
             'service': {
                 'id': svc_id,
                 'options': options,
@@ -520,20 +526,23 @@ class BrowserGenerator(ServiceDialog):
         else:
             messages.append("there were no errors.")
 
+        self._addon.config.update(self._process['all'])
         self._disable_inputs(False)
         self._alerts("".join(messages), self)
         self._notes = None
         self._process = None
-        self._addon.config.update(self._remember_values())
 
         super(BrowserGenerator, self).accept()
 
-    def _remember_values(self):
+    def _get_all(self):
+        """
+        Adds support for fields and behavior.
+        """
 
         source, dest, append, behavior = self._get_field_values()
 
         return dict(
-            super(BrowserGenerator, self)._remember_values().items() +
+            super(BrowserGenerator, self)._get_all().items() +
             [
                 ('last_mass_append', append),
                 ('last_mass_behavior', behavior),
@@ -654,18 +663,18 @@ class EditorGenerator(ServiceDialog):
         inserted into the field.
         """
 
-        svc_id, values = self._get_service_values()
+        now = self._get_all()
         text_input, text_value = self._get_service_text()
         self._disable_inputs()
 
         self._addon.router(
-            svc_id=svc_id,
+            svc_id=now['last_service'],
             text=text_value,
-            options=values,
+            options=now['last_options'][now['last_service']],
             callbacks=dict(
                 done=lambda: self._disable_inputs(False),
                 okay=lambda path: (
-                    self._addon.config.update(self._remember_values()),
+                    self._addon.config.update(now),
                     super(EditorGenerator, self).accept(),
                     self._editor.addMedia(path),
                 ),

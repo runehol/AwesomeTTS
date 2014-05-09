@@ -153,7 +153,7 @@ class ESpeak(Service):
 
     def options(self):
         """
-        Provides access to voice, speed, word gap, pitch, and amplitude.
+        Provides access to voice, speed, word gap, pitch, and volume.
         """
 
         voice_lookup = self._voice_lookup
@@ -212,8 +212,8 @@ class ESpeak(Service):
             ),
 
             dict(
-                key='amp',
-                label="Amplitude",
+                key='volume',
+                label="Volume",
                 values=(0, 200),
                 transform=int,
                 default=100,
@@ -237,7 +237,7 @@ class ESpeak(Service):
                     '-s', options['speed'],
                     '-g', int(options['gap'] * 100.0),
                     '-p', options['pitch'],
-                    '-a', options['amp'],
+                    '-a', options['volume'],
                     '-w', output_wav,
                 ] + (
                     ['-f', input_file] if input_file

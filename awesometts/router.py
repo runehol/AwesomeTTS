@@ -249,8 +249,8 @@ class Router(object):
                 callback=lambda exception: (
                     self._busy.remove(path),
                     'done' in callbacks and callbacks['done'](),
-                    exception and callbacks['fail'](exception) or
-                        callbacks['okay'](path),
+                    callbacks['fail'](exception) if exception
+                        else callbacks['okay'](path),
                     'then' in callbacks and callbacks['then'](),
                 )
             )

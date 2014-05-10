@@ -49,7 +49,7 @@ from .logger import Logger
 from .router import Router
 
 
-VERSION = "1.0 Beta 11 (develop)"
+VERSION = "1.0 Beta 11"
 
 
 # Paths

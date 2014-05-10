@@ -298,20 +298,11 @@ class Service(object):
         optional query string. Additionally, a require dict may be
         passed to enforce a status code (key 'status') and/or
         Content-Type (key 'mime').
-        """
 
-        # TODO Test this code against a system proxy. Previously, this
-        # needed to be prepended by hand for mplayer's sake, but we are
-        # no longer passing URLs directly to mplayer. The documentation
-        # for urllib2 leads me to believe that it might be handled
-        # automatically. The old code worked as follows...
-        #
-        # PROXIES = urllib.getproxies()
-        # if PROXIES and 'http' in PROXIES:
-        #     URL = '/'.join([
-        #         PROXIES['http'].replace('http:', 'http_proxy:').rstrip('/'),
-        #         URL,
-        #     ])
+        The underlying library here already understands how to search
+        the environment for proxy settings (e.g. HTTP_PROXY), so we do
+        not need to do anything extra for that.
+        """
 
         from urllib2 import urlopen, Request, quote
 

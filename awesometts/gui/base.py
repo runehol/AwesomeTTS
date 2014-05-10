@@ -463,7 +463,11 @@ class ServiceDialog(Dialog):
             callbacks=dict(
                 done=lambda: self._disable_inputs(False),
                 okay=self._playback,
-                fail=lambda exception: self._alerts(exception.message, self),
+                fail=lambda exception: self._alerts(
+                    "The service could not playback the phrase.\n\n%s" %
+                    exception.message,
+                    self,
+                ),
                 then=text_input.setFocus,
             ),
         )

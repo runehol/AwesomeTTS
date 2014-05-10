@@ -681,7 +681,11 @@ class EditorGenerator(ServiceDialog):
                     self._editor.addMedia(path),
                 ),
                 fail=lambda exception: (
-                    self._alerts(exception.message, self),
+                    self._alerts(
+                        "The service could not record the phrase.\n\n%s" %
+                        exception.message,
+                        self,
+                    ),
                     text_input.setFocus(),
                 ),
             ),

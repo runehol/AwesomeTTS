@@ -284,8 +284,15 @@ anki.hooks.addHook(
 )
 aqt.editor.Editor.enableButtons = anki.hooks.wrap(
     aqt.editor.Editor.enableButtons,
-    lambda editor, val=True: editor.widget.findChild(gui.Button)
-        .setEnabled(val),
+    lambda editor, val=True: (
+        editor.widget.findChild(gui.Button).setEnabled(val),
+
+        # Temporarily disable shortcut to Browser window's "Add Audio to
+        # Selected Notes" menu so this more "local" shortcut works instead.
+        # Has no effect on "Add" as findChildren() returns empty list there.
+        [action.muzzle(val) for action
+            in editor.parentWindow.findChildren(gui.Action)],
+    ),
     'before',
 )
 

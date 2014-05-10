@@ -109,6 +109,11 @@ class Configurator(Dialog):
             "Advanced",
         )
 
+        tabs.currentChanged.connect(lambda: (
+            tabs.adjustSize(),
+            self.adjustSize(),
+        ))
+
         return tabs
 
     def _ui_tabs_onthefly(self):

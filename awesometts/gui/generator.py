@@ -530,11 +530,11 @@ class BrowserGenerator(ServiceDialog):
 
         self._addon.config.update(self._process['all'])
         self._disable_inputs(False)
-        self._alerts("".join(messages), self)
         self._notes = None
         self._process = None
 
         super(BrowserGenerator, self).accept()
+        self._alerts("".join(messages), self._browser)
 
     def _get_all(self):
         """

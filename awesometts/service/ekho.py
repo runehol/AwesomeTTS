@@ -70,7 +70,10 @@ class Ekho(Service):
         Returns a simple version using `ekho --version`.
         """
 
-        return "ekho %s" % self.cli_output('ekho', '--version').pop(0)
+        return "ekho %s (%d voices)" % (
+            self.cli_output('ekho', '--version').pop(0),
+            len(self._voice_list),
+        )
 
     def options(self):
         """

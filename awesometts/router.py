@@ -107,12 +107,12 @@ class Router(object):
         Returns a list of service names that advertise the given trait.
         """
 
-        return [
+        return sorted([
             service['name']
             for service
             in self._services.lookup.values()
             if trait in service['traits']
-        ]
+        ], key=lambda name: name.lower())
 
     def has_trait(self, svc_id, trait):
         """

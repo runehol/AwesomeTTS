@@ -149,7 +149,10 @@ class ESpeak(Service):
         location from `espeak --version`.
         """
 
-        return self.cli_output(self._binary, '--version').pop(0)
+        return "%s (%d voices)" % (
+            self.cli_output(self._binary, '--version').pop(0),
+            len(self._voice_list),
+        )
 
     def options(self):
         """

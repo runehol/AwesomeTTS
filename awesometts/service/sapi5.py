@@ -45,7 +45,7 @@ class SAPI5(Service):
         '_voice_list',    # list of installed voices as a list of tuples
     ]
 
-    NAME = "SAPI 5"
+    NAME = "Microsoft Speech API"
 
     TRAITS = [Trait.TRANSCODING]
 
@@ -98,7 +98,7 @@ class SAPI5(Service):
         Returns a short, static description.
         """
 
-        return "Microsoft Speech API (SAPI) 5 via Visual Basic"
+        return "SAPI 5.0 via Visual Basic (%d voices)" % len(self._voice_list)
 
     def options(self):
         """

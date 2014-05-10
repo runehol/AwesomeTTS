@@ -39,7 +39,7 @@ class Say(Service):
         '_voice_list',    # list of installed voices as a list of tuples
     ]
 
-    NAME = "Mac OS X Say"
+    NAME = "OS X Speech Synthesis"
 
     TRAITS = [Trait.TRANSCODING]
 
@@ -83,7 +83,7 @@ class Say(Service):
         Returns a short, static description.
         """
 
-        return "Mac OS X Say Command"
+        return "say CLI command (%d voices)" % len(self._voice_list)
 
     def options(self):
         """

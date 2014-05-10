@@ -35,6 +35,10 @@ class Google(Service):
     Provides a Service-compliant implementation for Google Translate.
     """
 
+    # FIXME. This service currently only supports short phrases.
+    # See https://github.com/AwesomeTTS/AwesomeTTS/issues/21
+    # Once fixed, the text returned by desc() should be updated.
+
     __slots__ = [
     ]
 
@@ -42,46 +46,45 @@ class Google(Service):
 
     TRAITS = [Trait.INTERNET]
 
+    _VOICE_CODES = {
+        'af': "Afrikaans", 'ar': "Arabic", 'bs': "Bosnian", 'ca': "Catalan",
+        'cs': "Czech", 'cy': "Welsh", 'da': "Danish", 'de': "German",
+        'el': "Greek", 'en': "English", 'eo': "Esperanto", 'es': "Spanish",
+        'fi': "Finnish", 'fr': "French", 'hi': "Hindi", 'hr': "Croatian",
+        'ht': "Haitian Creole", 'hu': "Hungarian", 'hy': "Armenian",
+        'id': "Indonesian", 'is': "Icelandic", 'it': "Italian",
+        'ja': "Japanese", 'ko': "Korean", 'la': "Latin", 'lv': "Latvian",
+        'mk': "Macedonian", 'nl': "Dutch", 'no': "Norwegian", 'pl': "Polish",
+        'pt': "Portuguese", 'ro': "Romanian", 'ru': "Russian",
+        'sk': "Slovak", 'sq': "Albanian", 'sr': "Serbian", 'sv': "Swedish",
+        'sw': "Swahili", 'ta': "Tamil", 'th': "Thai", 'tr': "Turkish",
+        'vi': "Vietnamese", 'zh': "Chinese",
+    }
+
     def desc(self):
         """
         Returns a short, static description.
         """
 
         return "Google Translate text-to-speech web API " \
-            "(supports short phrases only)"  # FIXME needs to be fixed
+            "(%d voices, short phrases only)" % len(self._VOICE_CODES)
 
     def options(self):
         """
         Provides access to voice only.
         """
 
-        voice_codes = {
-            'af': "Afrikaans", 'ar': "Arabic", 'bs': "Bosnian",
-            'ca': "Catalan", 'cs': "Czech", 'cy': "Welsh", 'da': "Danish",
-            'de': "German", 'el': "Greek", 'en': "English", 'eo': "Esperanto",
-            'es': "Spanish", 'fi': "Finnish", 'fr': "French", 'hi': "Hindi",
-            'hr': "Croatian", 'ht': "Haitian Creole", 'hu': "Hungarian",
-            'hy': "Armenian", 'id': "Indonesian", 'is': "Icelandic",
-            'it': "Italian", 'ja': "Japanese", 'ko': "Korean", 'la': "Latin",
-            'lv': "Latvian", 'mk': "Macedonian", 'nl': "Dutch",
-            'no': "Norwegian", 'pl': "Polish", 'pt': "Portuguese",
-            'ro': "Romanian", 'ru': "Russian", 'sk': "Slovak",
-            'sq': "Albanian", 'sr': "Serbian", 'sv': "Swedish",
-            'sw': "Swahili", 'ta': "Tamil", 'th': "Thai", 'tr': "Turkish",
-            'vi': "Vietnamese", 'zh': "Chinese",
-        }
-
         voice_list = sorted([
             (code, "%s (%s)" % (name, code))
-            for code, name in voice_codes.items()
+            for code, name in self._VOICE_CODES.items()
         ], key=lambda voice: voice[1])
 
         voice_lookup = dict([
             (self.normalize(name), code)
-            for code, name in voice_codes.items()
+            for code, name in self._VOICE_CODES.items()
         ] + [
             (self.normalize(code), code)
-            for code in voice_codes.keys()
+            for code in self._VOICE_CODES.keys()
         ])
 
         def transform_voice(value):

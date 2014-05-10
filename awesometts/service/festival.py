@@ -82,7 +82,7 @@ class Festival(Service):
         binary.
         """
 
-        return self._version
+        return "%s (%d voices)" % (self._version, len(self._voice_list))
 
     def options(self):
         """

@@ -1,8 +1,8 @@
 # AwesomeTTS
 
-AwesomeTTS brings text-to-speech support to Anki, including Ekho, eSpeak,
-Festival, GoogleTTS, the Mac OS X `say` command, and Microsoft's Speech API
-(SAPI 5).
+AwesomeTTS brings text-to-speech support to [Anki](http://ankisrs.net),
+including Ekho, eSpeak, Festival, Google Translate, the OS X Speech Synthesis
+Manager, and the Microsoft Speech API.
 
 More information about the add-on and how to use it can be found on its
 [AnkiWeb add-on page](https://ankiweb.net/shared/info/301952613).
@@ -10,9 +10,9 @@ More information about the add-on and how to use it can be found on its
 AwesomeTTS is free and open source software, released under version 3 of the
 GNU General Public License.
 
-## Building and Installing
+## Installation
 
-There are a few different ways one can build/install this add-on.
+There are a few different ways one can install this add-on.
 
 ### Stable Package
 
@@ -29,10 +29,10 @@ and [specific releases](https://github.com/AwesomeTTS/AwesomeTTS/releases) can
 be pulled in and installed with Git.
 
 - **Straight Install:**
-  Build and copy the files into your Anki `addons` directory using the
-  `install.sh` helper, removing any other installation of AwesomeTTS. If you
-  have an existing configuration file, it will be saved, but your cache will
-  be cleared.
+  Copy the files into your Anki `addons` directory using the `install.sh`
+  helper, removing any other installation of AwesomeTTS. If you have an
+  existing configuration file, it will be saved, but your cache will be
+  cleared.
 
         $ git clone https://github.com/AwesomeTTS/AwesomeTTS.git
         $ cd AwesomeTTS
@@ -40,10 +40,10 @@ be pulled in and installed with Git.
         $ tools/install.sh [addons directory]  (e.g. ~/Anki/addons)
 
 - **Using Symlinks for Development:**
-  Build and symlink the files into your Anki `addons` directory using the
-  `symlink.sh` helper, removing any other installation of AwesomeTTS. If you
-  have an existing configuration file, it will be saved, but your cache will
-  be cleared _unless_ your new symlink happens to have a cache directory.
+  Symlink the files into your Anki `addons` directory using the `symlink.sh`
+  helper, removing any other installation of AwesomeTTS. If you have an
+  existing configuration file, it will be saved, but your cache will be
+  cleared _unless_ your new symlink happens to have a cache directory.
 
         $ git clone https://github.com/AwesomeTTS/AwesomeTTS.git
         $ cd AwesomeTTS
@@ -51,9 +51,8 @@ be pulled in and installed with Git.
         $ tools/symlink.sh [addons directory]  (e.g. ~/Anki/addons)
 
 - **Package into a Zip File:**
-  Build and package the files into a zip archive for installation somewhere
-  else using the `package.sh` helper. This is also how the package is built
-  for AnkiWeb.
+  Package the files into a zip archive for installation somewhere else using
+  the `package.sh` helper. This is also how the package is built for AnkiWeb.
 
         $ git clone https://github.com/AwesomeTTS/AwesomeTTS.git
         $ cd AwesomeTTS

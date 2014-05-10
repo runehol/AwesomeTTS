@@ -59,7 +59,7 @@ VERSION = "1.0 Beta 11"
 
 PATH_ADDON = os.path.dirname(os.path.abspath(__file__))
 
-PATH_CACHE = os.path.join(PATH_ADDON, 'cache')
+PATH_CACHE = os.path.join(PATH_ADDON, '.cache')
 if not os.path.isdir(PATH_CACHE):
     os.mkdir(PATH_CACHE)
 
@@ -67,7 +67,7 @@ PATH_CONFIG = os.path.join(PATH_ADDON, 'config.db')
 
 PATH_LOG = os.path.join(PATH_ADDON, 'addon.log')
 
-PATH_TEMP = os.path.join(PATH_ADDON, 'temp')
+PATH_TEMP = os.path.join(PATH_ADDON, '.temp')
 if not os.path.isdir(PATH_TEMP):
     os.mkdir(PATH_TEMP)
 

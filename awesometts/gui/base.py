@@ -76,6 +76,10 @@ class Dialog(QtGui.QDialog):
 
         self.setModal(True)
         self.setLayout(self._ui())
+        self.setWindowFlags(
+            self.windowFlags() &
+            ~QtCore.Qt.WindowContextHelpButtonHint
+        )
         self.setWindowIcon(ICON)
         self.setWindowTitle("AwesomeTTS: " + title)
 

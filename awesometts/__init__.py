@@ -174,7 +174,7 @@ router = Router(
         args=(),
         kwargs=dict(
             temp_dir=PATH_TEMP,
-            lame_flags=config['lame_flags'],
+            lame_flags=lambda: config['lame_flags'],
             normalize=TO_NORMALIZED,
             logger=logger,
         ),

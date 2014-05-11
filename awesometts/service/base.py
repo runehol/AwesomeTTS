@@ -57,7 +57,7 @@ class Service(object):
     __metaclass__ = abc.ABCMeta
 
     __slots__ = [
-        '_lame_flags',  # for passing to LAME transcoder
+        '_lame_flags',  # callable to get flag string for LAME transcoder
         '_logger',      # logging interface with debug(), info(), etc.
         'normalize',    # callable for standardizing string values
         '_temp_dir',    # for temporary scratch space
@@ -101,8 +101,9 @@ class Service(object):
         only temporarily (e.g. temporary input files to feed services,
         temporary audio files that need to be transcoded to MP3).
 
-        The lame_flags will be passed to LAME transcoder if the service
-        needs to transcode between different audio file types.
+        The lame_flags is a callable to retrieve a string of flags to be
+        passed to LAME transcoder if the service needs to transcode
+        between different audio file types.
 
         The logger object should have an interface like the one used by
         the standard library logging module, with debug(), info(), and
@@ -267,7 +268,7 @@ class Service(object):
 
         self.cli_call(
             self.CLI_LAME,
-            self._lame_flags.split(),
+            self._lame_flags().split(),
             input_path,
             output_path,
         )

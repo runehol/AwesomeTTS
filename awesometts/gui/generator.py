@@ -38,8 +38,8 @@ class BrowserGenerator(ServiceDialog):
 
     INTRO = (
         "AwesomeTTS will scan the %d note%s selected in the Browser, "
-        "determine %s the source field, store the audio in your collection, "
-        "and update the destination with either a [sound] tag or filename."
+        "determine %s both fields, store the audio in your collection, and "
+        "update the destination with either a [sound] tag or filename."
     )
 
     # TODO. It would be nice if the progress dialog shown during generation

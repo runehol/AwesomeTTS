@@ -70,7 +70,7 @@ class Reviewer(object):
     """
 
     RE_LEGACY_TAGS = re.compile(
-        r'\[\s*(\w?)\s*tts\s*:([^\]]+)\]',
+        r'\[\s*(\w?)\s*tts\s*:([^\[\]]+)',
         re.MULTILINE | re.IGNORECASE,
     )
 

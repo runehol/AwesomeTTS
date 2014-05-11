@@ -250,7 +250,11 @@ class Router(object):
                     self._busy.remove(path),
                     'done' in callbacks and callbacks['done'](),
                     callbacks['fail'](exception) if exception
-                        else callbacks['okay'](path),
+                        else callbacks['okay'](path) if os.path.exists(path)
+                        else callbacks['fail'](RuntimeError(
+                            "The %s service did not successfully write out "
+                            "an MP3." % service['name']
+                        )),
                     'then' in callbacks and callbacks['then'](),
                 )
             )

@@ -254,6 +254,12 @@ class Service(object):
         Runs the LAME transcoder to create a new MP3 file.
         """
 
+        if not os.path.exists(input_path):
+            raise RuntimeError(
+                "The input file to transcode to an MP3 could not be found. "
+                "Please report this problem if it persists."
+            )
+
         if (
             require and 'size_in' in require and
             os.path.getsize(input_path) < require['size_in']
@@ -272,6 +278,12 @@ class Service(object):
             input_path,
             output_path,
         )
+
+        if not os.path.exists(output_path):
+            raise RuntimeError(
+                "Transcoding the audio stream failed. Are the flags you "
+                "specified for LAME (%s) okay?" % self._lame_flags()
+            )
 
     def _cli_exec(self, callee, args, purpose):
         """

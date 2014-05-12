@@ -389,7 +389,12 @@ class BrowserGenerator(ServiceDialog):
 
         callbacks = dict(
             done=done, okay=okay, fail=fail,
-            then=self._accept_next,
+
+            # The call to _accept_next() is done via a single-shot QTimer for
+            # a few reasons: keep the UI responsive, avoid a "maximum
+            # recursion depth exceeded" exception if we hit a string of cached
+            # files, and allow time to respond to a "cancel" (TODO beta 12).
+            then=lambda: QtCore.QTimer.singleShot(0, self._accept_next),
         )
 
         if self._process['throttling']:

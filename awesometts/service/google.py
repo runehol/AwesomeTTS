@@ -56,19 +56,28 @@ class Google(Service):
         """
 
         voice_codes = {
+            # n.b. When modifying any variants, make sure that there are
+            # aliases defined in the voice_lookup list below for the most
+            # common alternate codes, including an alias from the base
+            # language to the variant with the most native speakers.
+
             'af': "Afrikaans", 'ar': "Arabic", 'bs': "Bosnian",
             'ca': "Catalan", 'cs': "Czech", 'cy': "Welsh", 'da': "Danish",
-            'de': "German", 'el': "Greek", 'en': "English", 'eo': "Esperanto",
-            'es': "Spanish", 'fi': "Finnish", 'fr': "French", 'hi': "Hindi",
-            'hr': "Croatian", 'ht': "Haitian Creole", 'hu': "Hungarian",
-            'hy': "Armenian", 'id': "Indonesian", 'is': "Icelandic",
-            'it': "Italian", 'ja': "Japanese", 'ko': "Korean", 'la': "Latin",
-            'lv': "Latvian", 'mk': "Macedonian", 'nl': "Dutch",
-            'no': "Norwegian", 'pl': "Polish", 'pt': "Portuguese",
-            'ro': "Romanian", 'ru': "Russian", 'sk': "Slovak",
-            'sq': "Albanian", 'sr': "Serbian", 'sv': "Swedish",
-            'sw': "Swahili", 'ta': "Tamil", 'th': "Thai", 'tr': "Turkish",
-            'vi': "Vietnamese", 'zh': "Chinese",
+            'de': "German", 'el': "Greek", 'en-AU': "English, Australian",
+            'en-GB': "English, British", 'en-US': "English, American",
+            'eo': "Esperanto", 'es-419': "Spanish, Americas",
+            'es-ES': "Spanish, European", 'fi': "Finnish", 'fr': "French",
+            'hi': "Hindi", 'hr': "Croatian", 'ht': "Haitian Creole",
+            'hu': "Hungarian", 'hy': "Armenian", 'id': "Indonesian",
+            'is': "Icelandic", 'it': "Italian", 'ja': "Japanese",
+            'ko': "Korean", 'la': "Latin", 'lv': "Latvian",
+            'mk': "Macedonian", 'nl': "Dutch", 'no': "Norwegian",
+            'pl': "Polish", 'pt-BR': "Portuguese, Brazilian",
+            'pt-PT': "Portuguese, European", 'ro': "Romanian",
+            'ru': "Russian", 'sk': "Slovak", 'sq': "Albanian",
+            'sr': "Serbian", 'sv': "Swedish", 'sw': "Swahili", 'ta': "Tamil",
+            'th': "Thai", 'tr': "Turkish", 'vi': "Vietnamese",
+            'zh-CMN': "Chinese, Mandarin", 'zh-YUE': "Chinese, Cantonese",
         }
 
         voice_list = sorted([
@@ -77,9 +86,47 @@ class Google(Service):
         ], key=lambda voice: voice[1])
 
         voice_lookup = dict([
+            # aliases for Chinese, Cantonese (fewer speakers)
+            (self.normalize(alias), 'zh-YUE')
+            for alias in ['Cantonese', 'zh-TW', 'YUE']
+        ] + [
+            # aliases for Chinese, Mandarin (most speakers)
+            (self.normalize(alias), 'zh-CMN')
+            for alias in ['Mandarin', 'Chinese', 'zh', 'zh-CN', 'CMN']
+        ] + [
+            # aliases for Spanish, European (fewer speakers)
+            (self.normalize(alias), 'es-ES')
+            for alias in ['es-EU']
+        ] + [
+            # aliases for Spanish, Americas (most speakers)
+            (self.normalize(alias), 'es-419')
+            for alias in ['Spanish', 'es', 'es-LA', 'es-MX', 'es-US']
+        ] + [
+            # aliases for English, Australian (fewer speakers)
+            (self.normalize(alias), 'en-AU')
+            for alias in ['en-NZ']
+        ] + [
+            # aliases for English, British (moderate number)
+            (self.normalize(alias), 'en-GB')
+            for alias in ['en-EU', 'en-UK']
+        ] + [
+            # aliases for English, American (most speakers)
+            (self.normalize(alias), 'en-US')
+            for alias in ['English', 'en']
+        ] + [
+            # aliases for Portuguese, European (fewer speakers)
+            (self.normalize(alias), 'pt-PT')
+            for alias in ['pt-EU']
+        ] + [
+            # aliases for Portuguese, Brazilian (most speakers)
+            (self.normalize(alias), 'pt-BR')
+            for alias in ['Portuguese', 'pt']
+        ] + [
+            # then add/override for full names (e.g. Spanish, Americas)
             (self.normalize(name), code)
             for code, name in voice_codes.items()
         ] + [
+            # then add/override for official voices (e.g. es-419)
             (self.normalize(code), code)
             for code in voice_codes.keys()
         ])
@@ -92,7 +139,7 @@ class Google(Service):
                 return voice_lookup[normalized]
 
             # if input is more than two characters, maybe the user was trying
-            # a country-specific code (e.g. es-mx); chop it off and try again
+            # a country-specific code (e.g. es-CO); chop it off and try again
             if len(normalized) > 2:
                 normalized = normalized[0:2]
                 if normalized in voice_lookup:

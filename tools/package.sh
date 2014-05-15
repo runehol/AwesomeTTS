@@ -40,7 +40,7 @@ then
 fi
 
 oldPwd=$PWD
-cd "`dirname "$0"`/.."
+cd "$(dirname "$0")/.."
 
 echo "Packing zip file.."
 zip -9R "$target" awesometts/LICENSE.txt \*.py \*.vbs

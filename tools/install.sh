@@ -48,7 +48,7 @@ fi
 if [[ -f "$target/awesometts/config.db" ]]
 then
     echo "Saving configuration.."
-    saveConf=`mktemp /tmp/config.db.XXXXXXXXXX`
+    saveConf=$(mktemp /tmp/config.db.XXXXXXXXXX)
     cp -v "$target/awesometts/config.db" "$saveConf"
 fi
 
@@ -57,7 +57,7 @@ rm -fv "$target/AwesomeTTS.py"{,c,o}
 rm -rfv "$target/awesometts"
 
 oldPwd=$PWD
-cd "`dirname "$0"`/.."
+cd "$(dirname "$0")/.."
 
 echo "Installing.."
 cp -v AwesomeTTS.py "$target/AwesomeTTS.py"

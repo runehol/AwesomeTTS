@@ -63,6 +63,9 @@ class Service(object):
         '_temp_dir',    # for temporary scratch space
     ]
 
+    # when getting CLI output, try using these decodings, in this order
+    CLI_DECODINGS = ['ascii', 'utf-8', 'latin-1']
+
     # where we can find the lame transcoder
     CLI_LAME = 'lame'
 
@@ -232,6 +235,19 @@ class Service(object):
 
         if not returned:
             raise EnvironmentError("Call returned no output")
+
+        if not isinstance(returned, unicode):
+            for encoding in self.CLI_DECODINGS:
+                try:
+                    returned = returned.decode(encoding)
+                    self._logger.info("CLI decoding success w/ %s", encoding)
+                    break
+                except (LookupError, UnicodeError):
+                    self._logger.warn("CLI decoding failed w/ %s", encoding)
+                    pass
+            else:
+                self._logger.error("All CLI decodings failed; forcing ASCII")
+                returned = returned.decode('ascii', errors='ignore')
 
         returned = returned.strip()
 
@@ -485,6 +501,7 @@ class Service(object):
 # on the base class, if necessary given the running operating system.
 
 if subprocess.mswindows:
+    Service.CLI_DECODINGS.append('mbcs')
     Service.CLI_LAME = 'lame.exe'
     Service.CLI_SI = subprocess.STARTUPINFO()
     Service.IS_WINDOWS = True

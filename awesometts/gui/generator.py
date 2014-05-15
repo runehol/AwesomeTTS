@@ -539,7 +539,13 @@ class BrowserGenerator(ServiceDialog):
         self._process = None
 
         super(BrowserGenerator, self).accept()
-        self._alerts("".join(messages), self._browser)
+
+        # this alert is done by way of a singleShot() callback to avoid random
+        # crashes on Mac OS X, which happen <5% of the time if called directly
+        QtCore.QTimer.singleShot(
+            0,
+            lambda: self._alerts("".join(messages), self._browser),
+        )
 
     def _get_all(self):
         """

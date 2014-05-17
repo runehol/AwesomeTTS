@@ -86,11 +86,9 @@ class BrowserGenerator(ServiceDialog):
         intro.setObjectName('intro')
         intro.setWordWrap(True)
 
-        warning = QtGui.QLabel(
-            "Please note that if you use bare filenames, the 'Check Media' "
-            "feature in Anki will not detect audio files as in-use, even if "
-            "you insert the field into your templates."
-        )
+        warning = QtGui.QLabel()
+        warning.setMinimumHeight(60)  # despite adjustSize(), OS X misbehaves
+        warning.setObjectName('warning')
         warning.setWordWrap(True)
 
         layout = super(BrowserGenerator, self)._ui_control()
@@ -151,10 +149,14 @@ class BrowserGenerator(ServiceDialog):
 
         behavior = QtGui.QCheckBox()
         behavior.setObjectName('behavior')
+        behavior.stateChanged.connect(
+            lambda status: self._on_handling_or_behavior_changed(),
+        )
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(append)
         layout.addWidget(overwrite)
+        layout.addSpacing(self._SPACING)
         layout.addWidget(behavior)
 
         widget = QtGui.QWidget()
@@ -589,6 +591,23 @@ class BrowserGenerator(ServiceDialog):
         behavior.setText(
             "Remove Existing [sound:xxx] Tag(s)" if append.isChecked()
             else "Wrap the Filename in [sound:xxx] Tag"
+        )
+
+        self._on_handling_or_behavior_changed(append, behavior)
+
+    def _on_handling_or_behavior_changed(self, append=None, behavior=None):
+        """
+        Hide or display the warning text about bare filenames.
+        """
+
+        append = append or self.findChild(QtGui.QRadioButton, 'append')
+        behavior = behavior or self.findChild(QtGui.QCheckBox, 'behavior')
+        self.findChild(QtGui.QLabel, 'warning').setText(
+            "Please note that if you use bare filenames, the 'Check Media' "
+            "feature in Anki will not detect audio files as in-use, even if "
+            "you insert the field into your templates."
+            if not (append.isChecked() or behavior.isChecked())
+            else ""
         )
 
 

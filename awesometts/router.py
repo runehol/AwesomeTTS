@@ -519,7 +519,7 @@ class Router(object):
         hex_digest = sha1(
             hash_input.encode('utf-8') if isinstance(hash_input, unicode)
             else hash_input
-        ).hexdigest()
+        ).hexdigest().lower()
 
         assert len(hex_digest) == 40, "unexpected output from hash library"
         return os.path.join(

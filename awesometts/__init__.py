@@ -74,6 +74,8 @@ if not os.path.isdir(PATH_TEMP):
 
 # Regular expression patterns
 
+RE_FILES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}\.mp3')  # Router _path_cache
+
 RE_WHITESPACE = re.compile(r'\s+')
 
 
@@ -93,13 +95,16 @@ TO_NORMALIZED = lambda value: ''.join(
 
 # Filters
 
+STRIP_FILES = lambda text: RE_FILES.sub('', text).strip()
+
 STRIP_HTML = anki.utils.stripHTML
 
 STRIP_SOUNDS = anki.sound.stripSounds
 
 STRIP_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
 
-STRIP_ALL = lambda text: STRIP_WHITESPACE(STRIP_SOUNDS(STRIP_HTML(text)))
+STRIP_ALL = lambda text: \
+    STRIP_WHITESPACE(STRIP_FILES(STRIP_SOUNDS(STRIP_HTML(text))))
 
 
 # Core class initialization and dependency setup, pylint:disable=C0103

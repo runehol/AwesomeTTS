@@ -288,12 +288,24 @@ class Service(object):
                 )
             )
 
-        self.cli_call(
-            self.CLI_LAME,
-            self._lame_flags().split(),
-            input_path,
-            output_path,
-        )
+        try:
+            self.cli_call(
+                self.CLI_LAME,
+                self._lame_flags().split(),
+                input_path,
+                output_path,
+            )
+
+        except OSError as os_error:
+            from errno import ENOENT
+            if os_error.errno == ENOENT:
+                raise OSError(
+                    ENOENT,
+                    "Unable to find lame to transcode the audio. "
+                    "It might not have been installed.",
+                )
+            else:
+                raise
 
         if not os.path.exists(output_path):
             raise RuntimeError(

@@ -38,8 +38,8 @@ class BrowserGenerator(ServiceDialog):
 
     INTRO = (
         "AwesomeTTS will scan the %d note%s selected in the Browser, "
-        "determine %s the source field, store the audio in your collection, "
-        "and update the destination with either a [sound] tag or filename."
+        "determine %s both fields, store the audio in your collection, and "
+        "update the destination with either a [sound] tag or filename."
     )
 
     # TODO. It would be nice if the progress dialog shown during generation
@@ -86,11 +86,9 @@ class BrowserGenerator(ServiceDialog):
         intro.setObjectName('intro')
         intro.setWordWrap(True)
 
-        warning = QtGui.QLabel(
-            "Please note that if you use bare filenames, the 'Check Media' "
-            "feature in Anki will not detect audio files as in-use, even if "
-            "you insert the field into your templates."
-        )
+        warning = QtGui.QLabel()
+        warning.setMinimumHeight(60)  # despite adjustSize(), OS X misbehaves
+        warning.setObjectName('warning')
         warning.setWordWrap(True)
 
         layout = super(BrowserGenerator, self)._ui_control()
@@ -151,10 +149,14 @@ class BrowserGenerator(ServiceDialog):
 
         behavior = QtGui.QCheckBox()
         behavior.setObjectName('behavior')
+        behavior.stateChanged.connect(
+            lambda status: self._on_handling_or_behavior_changed(),
+        )
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(append)
         layout.addWidget(overwrite)
+        layout.addSpacing(self._SPACING)
         layout.addWidget(behavior)
 
         widget = QtGui.QWidget()
@@ -389,7 +391,12 @@ class BrowserGenerator(ServiceDialog):
 
         callbacks = dict(
             done=done, okay=okay, fail=fail,
-            then=self._accept_next,
+
+            # The call to _accept_next() is done via a single-shot QTimer for
+            # a few reasons: keep the UI responsive, avoid a "maximum
+            # recursion depth exceeded" exception if we hit a string of cached
+            # files, and allow time to respond to a "cancel" (TODO beta 12).
+            then=lambda: QtCore.QTimer.singleShot(0, self._accept_next),
         )
 
         if self._process['throttling']:
@@ -530,11 +537,17 @@ class BrowserGenerator(ServiceDialog):
 
         self._addon.config.update(self._process['all'])
         self._disable_inputs(False)
-        self._alerts("".join(messages), self)
         self._notes = None
         self._process = None
 
         super(BrowserGenerator, self).accept()
+
+        # this alert is done by way of a singleShot() callback to avoid random
+        # crashes on Mac OS X, which happen <5% of the time if called directly
+        QtCore.QTimer.singleShot(
+            0,
+            lambda: self._alerts("".join(messages), self._browser),
+        )
 
     def _get_all(self):
         """
@@ -578,6 +591,23 @@ class BrowserGenerator(ServiceDialog):
         behavior.setText(
             "Remove Existing [sound:xxx] Tag(s)" if append.isChecked()
             else "Wrap the Filename in [sound:xxx] Tag"
+        )
+
+        self._on_handling_or_behavior_changed(append, behavior)
+
+    def _on_handling_or_behavior_changed(self, append=None, behavior=None):
+        """
+        Hide or display the warning text about bare filenames.
+        """
+
+        append = append or self.findChild(QtGui.QRadioButton, 'append')
+        behavior = behavior or self.findChild(QtGui.QCheckBox, 'behavior')
+        self.findChild(QtGui.QLabel, 'warning').setText(
+            "Please note that if you use bare filenames, the 'Check Media' "
+            "feature in Anki will not detect audio files as in-use, even if "
+            "you insert the field into your templates."
+            if not (append.isChecked() or behavior.isChecked())
+            else ""
         )
 
 
@@ -681,7 +711,11 @@ class EditorGenerator(ServiceDialog):
                     self._editor.addMedia(path),
                 ),
                 fail=lambda exception: (
-                    self._alerts(exception.message, self),
+                    self._alerts(
+                        "The service could not record the phrase.\n\n%s" %
+                        exception.message,
+                        self,
+                    ),
                     text_input.setFocus(),
                 ),
             ),

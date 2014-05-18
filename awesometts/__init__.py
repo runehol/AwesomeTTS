@@ -59,7 +59,7 @@ VERSION = "1.0 Beta 12 (develop)"
 
 PATH_ADDON = os.path.dirname(os.path.abspath(__file__))
 
-PATH_CACHE = os.path.join(PATH_ADDON, 'cache')
+PATH_CACHE = os.path.join(PATH_ADDON, '.cache')
 if not os.path.isdir(PATH_CACHE):
     os.mkdir(PATH_CACHE)
 
@@ -67,12 +67,14 @@ PATH_CONFIG = os.path.join(PATH_ADDON, 'config.db')
 
 PATH_LOG = os.path.join(PATH_ADDON, 'addon.log')
 
-PATH_TEMP = os.path.join(PATH_ADDON, 'temp')
+PATH_TEMP = os.path.join(PATH_ADDON, '.temp')
 if not os.path.isdir(PATH_TEMP):
     os.mkdir(PATH_TEMP)
 
 
 # Regular expression patterns
+
+RE_FILES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}\.mp3')  # Router _path_cache
 
 RE_WHITESPACE = re.compile(r'\s+')
 
@@ -93,13 +95,16 @@ TO_NORMALIZED = lambda value: ''.join(
 
 # Filters
 
+STRIP_FILES = lambda text: RE_FILES.sub('', text).strip()
+
 STRIP_HTML = anki.utils.stripHTML
 
 STRIP_SOUNDS = anki.sound.stripSounds
 
 STRIP_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
 
-STRIP_ALL = lambda text: STRIP_WHITESPACE(STRIP_SOUNDS(STRIP_HTML(text)))
+STRIP_ALL = lambda text: \
+    STRIP_WHITESPACE(STRIP_FILES(STRIP_SOUNDS(STRIP_HTML(text))))
 
 
 # Core class initialization and dependency setup, pylint:disable=C0103
@@ -174,7 +179,7 @@ router = Router(
         args=(),
         kwargs=dict(
             temp_dir=PATH_TEMP,
-            lame_flags=config['lame_flags'],
+            lame_flags=lambda: config['lame_flags'],
             normalize=TO_NORMALIZED,
             logger=logger,
         ),
@@ -284,8 +289,15 @@ anki.hooks.addHook(
 )
 aqt.editor.Editor.enableButtons = anki.hooks.wrap(
     aqt.editor.Editor.enableButtons,
-    lambda editor, val=True: editor.widget.findChild(gui.Button)
-        .setEnabled(val),
+    lambda editor, val=True: (
+        editor.widget.findChild(gui.Button).setEnabled(val),
+
+        # Temporarily disable shortcut to Browser window's "Add Audio to
+        # Selected Notes" menu so this more "local" shortcut works instead.
+        # Has no effect on "Add" as findChildren() returns empty list there.
+        [action.muzzle(val) for action
+            in editor.parentWindow.findChildren(gui.Action)],
+    ),
     'before',
 )
 

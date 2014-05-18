@@ -37,6 +37,8 @@ ICON = QtGui.QIcon(':/icons/speaker.png')
 
 SHORTCUT = QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_T)
 
+NO_SHORTCUT = QtGui.QKeySequence()
+
 
 class _Connector(object):  # used like a mixin, pylint:disable=R0903
     """
@@ -74,6 +76,15 @@ class Action(QtGui.QAction, _Connector):
     """
     Provides a menu action to show a dialog when triggered.
     """
+
+    def muzzle(self, disable):
+        """
+        If disable is True, then this shortcut will be temporarily
+        disabled (i.e. muzzled), but the action will remain available
+        if it would normally be.
+        """
+
+        self.setShortcut(NO_SHORTCUT if disable else SHORTCUT)
 
     def __init__(self, target, text, parent):
         """

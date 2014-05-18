@@ -70,7 +70,7 @@ class Reviewer(object):
     """
 
     RE_LEGACY_TAGS = re.compile(
-        r'\[\s*(\w?)\s*tts\s*:([^\]]+)\]',
+        r'\[\s*(\w?)\s*tts\s*:([^\[\]]+)',
         re.MULTILINE | re.IGNORECASE,
     )
 
@@ -209,7 +209,7 @@ class Reviewer(object):
                         isinstance(exception, self._addon.router.BusyError) or
                         self._alerts(
                             "Unable to play this tag:\n%s\n\n%s" % (
-                                tag.prettify().decode('utf-8'),
+                                tag.prettify().decode('utf-8').strip(),
                                 exception.message,
                             ),
                             self._parent,

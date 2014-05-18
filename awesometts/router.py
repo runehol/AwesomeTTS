@@ -249,8 +249,12 @@ class Router(object):
                 callback=lambda exception: (
                     self._busy.remove(path),
                     'done' in callbacks and callbacks['done'](),
-                    exception and callbacks['fail'](exception) or
-                        callbacks['okay'](path),
+                    callbacks['fail'](exception) if exception
+                        else callbacks['okay'](path) if os.path.exists(path)
+                        else callbacks['fail'](RuntimeError(
+                            "The %s service did not successfully write out "
+                            "an MP3." % service['name']
+                        )),
                     'then' in callbacks and callbacks['then'](),
                 )
             )
@@ -515,7 +519,7 @@ class Router(object):
         hex_digest = sha1(
             hash_input.encode('utf-8') if isinstance(hash_input, unicode)
             else hash_input
-        ).hexdigest()
+        ).hexdigest().lower()
 
         assert len(hex_digest) == 40, "unexpected output from hash library"
         return os.path.join(
@@ -588,23 +592,8 @@ class _Pool(QtGui.QWidget):
                 isinstance(exception.message, basestring) and
                 exception.message
             ):
-                exception.message = "No additional details available"
-
-                # handling for a 'reason' but no 'message' (e.g. URLError)
-                if hasattr(exception, 'reason'):
-                    reason = exception.reason
-
-                    if isinstance(reason, basestring) and reason:
-                        exception.message = reason
-
-                    else:
-                        for attribute in ['message', 'strerror']:
-                            if hasattr(reason, attribute):
-                                value = getattr(reason, attribute)
-
-                                if isinstance(value, basestring) and value:
-                                    exception.message = value
-                                    break
+                exception.message = format(exception) or \
+                    "No additional details available"
 
             self._logger.debug(
                 "Exception from thread [%d] (%s); executing callback\n%s",

@@ -91,23 +91,28 @@ class Configurator(Dialog):
 
         tabs = QtGui.QTabWidget()
 
-        tabs.addTab(
-            self._ui_tabs_onthefly(),
-            QtGui.QIcon(':/icons/text-xml.png'),
-            "On-the-Fly Mode",
-        )
+        # icons do not display correctly on Mac OS X when tab is active
+        from sys import platform
+        use_icons = not platform.startswith('darwin')
 
-        tabs.addTab(
-            self._ui_tabs_mp3gen(),
-            QtGui.QIcon(':/icons/document-new.png'),
-            "MP3 Generation",
-        )
+        for content, icon, label in [
+            (self._ui_tabs_onthefly, 'text-xml', "On-the-Fly Mode"),
+            (self._ui_tabs_mp3gen, 'document-new', "MP3 Generation"),
+            (self._ui_tabs_advanced, 'configure', "Advanced"),
+        ]:
+            if use_icons:
+                tabs.addTab(
+                    content(),
+                    QtGui.QIcon(':/icons/%s.png' % icon),
+                    label,
+                )
+            else:
+                tabs.addTab(content(), label)
 
-        tabs.addTab(
-            self._ui_tabs_advanced(),
-            QtGui.QIcon(':/icons/configure.png'),
-            "Advanced",
-        )
+        tabs.currentChanged.connect(lambda: (
+            tabs.adjustSize(),
+            self.adjustSize(),
+        ))
 
         return tabs
 

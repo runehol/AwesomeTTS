@@ -57,11 +57,14 @@ class Service(object):
     __metaclass__ = abc.ABCMeta
 
     __slots__ = [
-        '_lame_flags',  # for passing to LAME transcoder
+        '_lame_flags',  # callable to get flag string for LAME transcoder
         '_logger',      # logging interface with debug(), info(), etc.
         'normalize',    # callable for standardizing string values
         '_temp_dir',    # for temporary scratch space
     ]
+
+    # when getting CLI output, try using these decodings, in this order
+    CLI_DECODINGS = ['ascii', 'utf-8', 'latin-1']
 
     # where we can find the lame transcoder
     CLI_LAME = 'lame'
@@ -101,8 +104,9 @@ class Service(object):
         only temporarily (e.g. temporary input files to feed services,
         temporary audio files that need to be transcoded to MP3).
 
-        The lame_flags will be passed to LAME transcoder if the service
-        needs to transcode between different audio file types.
+        The lame_flags is a callable to retrieve a string of flags to be
+        passed to LAME transcoder if the service needs to transcode
+        between different audio file types.
 
         The logger object should have an interface like the one used by
         the standard library logging module, with debug(), info(), and
@@ -232,6 +236,19 @@ class Service(object):
         if not returned:
             raise EnvironmentError("Call returned no output")
 
+        if not isinstance(returned, unicode):
+            for encoding in self.CLI_DECODINGS:
+                try:
+                    returned = returned.decode(encoding)
+                    self._logger.info("CLI decoding success w/ %s", encoding)
+                    break
+                except (LookupError, UnicodeError):
+                    self._logger.warn("CLI decoding failed w/ %s", encoding)
+                    pass
+            else:
+                self._logger.error("All CLI decodings failed; forcing ASCII")
+                returned = returned.decode('ascii', errors='ignore')
+
         returned = returned.strip()
 
         if not returned:
@@ -253,6 +270,12 @@ class Service(object):
         Runs the LAME transcoder to create a new MP3 file.
         """
 
+        if not os.path.exists(input_path):
+            raise RuntimeError(
+                "The input file to transcode to an MP3 could not be found. "
+                "Please report this problem if it persists."
+            )
+
         if (
             require and 'size_in' in require and
             os.path.getsize(input_path) < require['size_in']
@@ -265,12 +288,30 @@ class Service(object):
                 )
             )
 
-        self.cli_call(
-            self.CLI_LAME,
-            self._lame_flags.split(),
-            input_path,
-            output_path,
-        )
+        try:
+            self.cli_call(
+                self.CLI_LAME,
+                self._lame_flags().split(),
+                input_path,
+                output_path,
+            )
+
+        except OSError as os_error:
+            from errno import ENOENT
+            if os_error.errno == ENOENT:
+                raise OSError(
+                    ENOENT,
+                    "Unable to find lame to transcode the audio. "
+                    "It might not have been installed.",
+                )
+            else:
+                raise
+
+        if not os.path.exists(output_path):
+            raise RuntimeError(
+                "Transcoding the audio stream failed. Are the flags you "
+                "specified for LAME (%s) okay?" % self._lame_flags()
+            )
 
     def _cli_exec(self, callee, args, purpose):
         """
@@ -472,6 +513,7 @@ class Service(object):
 # on the base class, if necessary given the running operating system.
 
 if subprocess.mswindows:
+    Service.CLI_DECODINGS.append('mbcs')
     Service.CLI_LAME = 'lame.exe'
     Service.CLI_SI = subprocess.STARTUPINFO()
     Service.IS_WINDOWS = True

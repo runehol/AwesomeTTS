@@ -26,7 +26,12 @@ using add-on code `301952613`.
 The [develop branch](https://github.com/AwesomeTTS/AwesomeTTS/tree/develop),
 [hotfixes and previews](https://github.com/AwesomeTTS/AwesomeTTS/branches),
 and [specific releases](https://github.com/AwesomeTTS/AwesomeTTS/releases) can
-be pulled in and installed with Git.
+be downloaded from GitHub or pulled in and installed with `git` and a script.
+
+- **Manually from GitHub:**
+  Choose the specific branch or tagged release you want, and download the zip
+  or tarball. Extract `AwesomeTTS.py` and the `awesometts/` subdirectory into
+  the base of your Anki `addons` directory.
 
 - **Straight Install:**
   Copy the files into your Anki `addons` directory using the `install.sh`

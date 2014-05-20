@@ -70,9 +70,7 @@ class Yandex(Service):
 
     def options(self):
         """
-        Provides access to voice only.
-
-        TODO: Can quality be used?
+        Provides access to voice and quality.
         """
 
         voice_list = sorted([
@@ -126,6 +124,16 @@ class Yandex(Service):
                 values=voice_list,
                 transform=transform_voice,
             ),
+            dict(
+                key='quality',
+                label="Quality",
+                values=[
+                    ('lo', 'low'),
+                    ('hi', 'high'),
+                ],
+                default='hi',
+                transform=lambda value: value.lower().strip()[:2],
+            ),
         ]
 
     def run(self, text, options, path):
@@ -138,13 +146,13 @@ class Yandex(Service):
             addr='http://tts.voicetech.yandex.net/tts',
             query=dict(
                 format='mp3',
-                quality='hi',
+                quality=options['quality'],
                 lang=options['voice'],
                 text=text,
             ),
             require=dict(
                 status=200,
                 mime='audio/mpeg',
-                size=1024,  # TODO verify high enough for low quality
+                size=1024,
             ),
         )

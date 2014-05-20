@@ -33,6 +33,7 @@ __all__ = [
     'Google',
     'SAPI5',
     'Say',
+    'Yandex',
 ]
 
 from .common import Trait
@@ -43,3 +44,4 @@ from .festival import Festival
 from .google import Google
 from .sapi5 import SAPI5
 from .say import Say
+from .yandex import Yandex

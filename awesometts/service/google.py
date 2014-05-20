@@ -35,7 +35,7 @@ class Google(Service):
     Provides a Service-compliant implementation for Google Translate.
     """
 
-    # FIXME. This service currently only supports short phrases.
+    # FIXME. This and Yandex currently only support short phrases.
     # See https://github.com/AwesomeTTS/AwesomeTTS/issues/21
     # Once fixed, the text returned by desc() should be updated.
 

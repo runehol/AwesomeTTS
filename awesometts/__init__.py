@@ -170,6 +170,7 @@ router = Router(
             ('google', service.Google),
             ('sapi5', service.SAPI5),
             ('say', service.Say),
+            ('yandex', service.Yandex),
         ],
         aliases=[
             ('g', 'google'),

@@ -148,7 +148,8 @@ class Reviewer(object):
 
         This is done in three ways:
             - remove question HTML (verbatim)
-            - remove question HTML (with any [sound:xxx] tags stripped)
+            - remove question HTML (with any [sound:xxx] tags stripped),
+              which is how Anki does {{FrontSide}} on the answer side
             - find any <hr id=answer> tag, and chop off anything leading
               up to the first such tag
         """

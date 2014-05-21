@@ -216,10 +216,7 @@ class Router(object):
         assert 'then' not in callbacks or callable(callbacks['then'])
 
         try:
-            self._logger.debug(
-                "Call for '%s' w/ %s\n%s",
-                svc_id, options, _PREFIXED("<<< ", text),
-            )
+            self._logger.debug("Call for '%s' w/ %s", svc_id, options)
 
             if not text:
                 raise ValueError("No speakable text is present")

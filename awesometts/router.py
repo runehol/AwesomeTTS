@@ -221,6 +221,8 @@ class Router(object):
                 svc_id, options, _PREFIXED("<<< ", text),
             )
 
+            if not text:
+                raise ValueError("No speakable text is present")
             svc_id, service, options = self._validate_service(svc_id, options)
             path = self._validate_path(svc_id, text, options)
             cache_hit = os.path.exists(path)

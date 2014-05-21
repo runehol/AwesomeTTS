@@ -176,7 +176,6 @@ router = Router(
             ('g', 'google'),
         ],
         normalize=TO_NORMALIZED,
-        textize=STRIP_ALL,
         args=(),
         kwargs=dict(
             temp_dir=PATH_TEMP,

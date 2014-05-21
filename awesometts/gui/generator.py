@@ -409,7 +409,7 @@ class BrowserGenerator(ServiceDialog):
 
         self._addon.router(
             svc_id=self._process['service']['id'],
-            text=note[self._process['fields']['source']],
+            text=note[self._process['fields']['source']],  # FIXME normalize
             options=self._process['service']['options'],
             callbacks=callbacks,
         )
@@ -701,7 +701,7 @@ class EditorGenerator(ServiceDialog):
 
         self._addon.router(
             svc_id=now['last_service'],
-            text=text_value,
+            text=text_value,  # FIXME normalize
             options=now['last_options'][now['last_service']],
             callbacks=dict(
                 done=lambda: self._disable_inputs(False),

@@ -462,7 +462,7 @@ class ServiceDialog(Dialog):
 
         self._addon.router(
             svc_id=svc_id,
-            text=text_value,
+            text=text_value,  # FIXME normalize
             options=values,
             callbacks=dict(
                 done=lambda: self._disable_inputs(False),

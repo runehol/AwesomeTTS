@@ -200,7 +200,7 @@ class Reviewer(object):
 
             self._addon.router(
                 svc_id=svc_id,
-                text=text,
+                text=text,  # FIXME normalize
                 options=attr,
                 callbacks=dict(
                     okay=self._playback,
@@ -261,7 +261,7 @@ class Reviewer(object):
 
             self._addon.router(
                 svc_id=svc_id,
-                text=text,
+                text=text,  # FIXME normalize
                 options={'voice': voice},
                 callbacks=dict(
                     okay=self._playback,

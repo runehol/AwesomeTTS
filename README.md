@@ -2,7 +2,7 @@
 
 AwesomeTTS brings text-to-speech support to [Anki](http://ankisrs.net),
 including Ekho, eSpeak, Festival, Google Translate, the OS X Speech Synthesis
-Manager, and the Microsoft Speech API.
+Manager, the Microsoft Speech API, and Yandex.Translate.
 
 More information about the add-on and how to use it can be found on its
 [AnkiWeb add-on page](https://ankiweb.net/shared/info/301952613).

@@ -183,7 +183,8 @@ class Reviewer(object):
         """
 
         for tag in BeautifulSoup(html)('tts'):
-            text = ''.join(tag.findAll(text=True)).strip()
+            text = ''.join(tag.findAll(text=True))
+            text = self._addon.strip.from_template(text)
             if not text:
                 continue
 
@@ -201,7 +202,7 @@ class Reviewer(object):
 
             self._addon.router(
                 svc_id=svc_id,
-                text=self._addon.strip.from_template(text),
+                text=text,
                 options=attr,
                 callbacks=dict(
                     okay=self._playback,
@@ -256,13 +257,14 @@ class Reviewer(object):
 
             voice = components.pop(0)
 
-            text = ':'.join(components).strip()
+            text = ':'.join(components)
+            text = self._addon.strip.from_template(text)
             if not text:
                 continue
 
             self._addon.router(
                 svc_id=svc_id,
-                text=self._addon.strip.from_template(text),
+                text=text,
                 options={'voice': voice},
                 callbacks=dict(
                     okay=self._playback,

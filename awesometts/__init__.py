@@ -72,13 +72,6 @@ if not os.path.isdir(PATH_TEMP):
     os.mkdir(PATH_TEMP)
 
 
-# Regular expression patterns
-
-RE_FILES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}\.mp3')  # Router _path_cache
-
-RE_WHITESPACE = re.compile(r'\s+')
-
-
 # Conversions and transformations
 
 TO_BOOL = lambda value: bool(int(value))  # workaround for bool('0') == True
@@ -91,20 +84,6 @@ TO_NORMALIZED = lambda value: ''.join(
     for char in value
     if char.isalpha() or char.isdigit()
 )
-
-
-# Filters
-
-STRIP_FILES = lambda text: RE_FILES.sub('', text).strip()
-
-STRIP_HTML = anki.utils.stripHTML
-
-STRIP_SOUNDS = anki.sound.stripSounds
-
-STRIP_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
-
-STRIP_ALL = lambda text: \
-    STRIP_WHITESPACE(STRIP_FILES(STRIP_SOUNDS(STRIP_HTML(text))))
 
 
 # Core class initialization and dependency setup, pylint:disable=C0103
@@ -176,7 +155,6 @@ router = Router(
             ('g', 'google'),
         ],
         normalize=TO_NORMALIZED,
-        textize=STRIP_ALL,
         args=(),
         kwargs=dict(
             temp_dir=PATH_TEMP,
@@ -194,6 +172,14 @@ router = Router(
 # n.b. be careful wrapping methods that have return values (see anki.hooks);
 #      in general, only the 'before' mode absolves us of responsibility
 
+RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}\.mp3')  # see Router
+RE_WHITESPACE = re.compile(r'\s+')
+
+STRIP_FILENAMES = lambda text: RE_FILENAMES.sub('', text)
+STRIP_HTML = anki.utils.stripHTML
+STRIP_SOUNDS = anki.sound.stripSounds
+STRIP_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
+
 addon = Bundle(
     config=config,
     logger=logger,
@@ -202,6 +188,34 @@ addon = Bundle(
     ),
     router=router,
     strip=Bundle(
+        # for content directly from a note field (e.g. BrowserGenerator runs,
+        # prepopulating a modal input based on some note field)
+        from_note=lambda text:
+            STRIP_WHITESPACE(
+            # STRIP_NOTE_CONDITIONALS(
+            # STRIP_NOTE_CLOZES(
+            STRIP_FILENAMES(
+            STRIP_SOUNDS(
+            STRIP_HTML(
+                text
+            )))),
+
+        # for cleaning up already-processed HTML templates (e.g. on-the-fly,
+        # where cloze has already run but other artifacts might exist)
+        from_template=lambda text:
+            STRIP_WHITESPACE(
+            # STRIP_TEMPLATE_CONDITIONALS(
+            STRIP_FILENAMES(
+            STRIP_SOUNDS(
+            STRIP_HTML(
+                text
+            )))),
+
+        # for direct user input (e.g. previews, EditorGenerator insertion)
+        from_user=STRIP_WHITESPACE,
+
+        # target sounds specifically (e.g. Reviewer uses this to reproduce how
+        # Anki does {{FrontSide}} whereas BrowserGenerator removes old sounds)
         sounds=STRIP_SOUNDS,
     ),
     version=VERSION,

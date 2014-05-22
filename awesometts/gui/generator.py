@@ -409,7 +409,9 @@ class BrowserGenerator(ServiceDialog):
 
         self._addon.router(
             svc_id=self._process['service']['id'],
-            text=note[self._process['fields']['source']],
+            text=self._addon.strip.from_note(
+                note[self._process['fields']['source']]
+            ),
             options=self._process['service']['options'],
             callbacks=callbacks,
         )
@@ -701,7 +703,7 @@ class EditorGenerator(ServiceDialog):
 
         self._addon.router(
             svc_id=now['last_service'],
-            text=text_value,
+            text=self._addon.strip.from_user(text_value),
             options=now['last_options'][now['last_service']],
             callbacks=dict(
                 done=lambda: self._disable_inputs(False),

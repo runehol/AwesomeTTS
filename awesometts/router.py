@@ -68,7 +68,6 @@ class Router(object):
             - mappings (list of tuples): each with service ID, class
             - aliases (list of tuples): alternate-to-official service IDs
             - normalize (callable): for service IDs and option keys
-            - textize (callable): for sanitizing human input text
             - args (tuple): to be passed to Service constructors
             - kwargs (dict): to be passed to Service constructors
 
@@ -176,6 +175,15 @@ class Router(object):
         Given the service ID and associated options, pass the text into
         the service for processing.
 
+        Note that it is the caller who has the context of how the text
+        is being used (e.g. if it's from a database field, an on-the-fly
+        tag, or from user input). Therefore, it is the responsibility of
+        the caller to normalize the text before passing it.
+
+        On the other hand, the passed service ID and options are indeed
+        normalized, since this does not vary from context to context,
+        and can be passed in directly by the caller.
+
         The callbacks parameter is a dict and contains the following:
 
             - 'done' (optional): called before the okay/fail callback
@@ -208,12 +216,10 @@ class Router(object):
         assert 'then' not in callbacks or callable(callbacks['then'])
 
         try:
-            self._logger.debug(
-                "Call for '%s' w/ %s\n%s",
-                svc_id, options, _PREFIXED("<<< ", text),
-            )
+            self._logger.debug("Call for '%s' w/ %s", svc_id, options)
 
-            text = self._validate_text(text)
+            if not text:
+                raise ValueError("No speakable text is present")
             svc_id, service, options = self._validate_service(svc_id, options)
             path = self._validate_path(svc_id, text, options)
             cache_hit = os.path.exists(path)
@@ -258,18 +264,6 @@ class Router(object):
                     'then' in callbacks and callbacks['then'](),
                 )
             )
-
-    def _validate_text(self, text):
-        """
-        Normalize the text and return it. If after normalization, the
-        text is empty, raises a ValueError.
-        """
-
-        text = self._services.textize(text)
-        if not text:
-            raise ValueError("The input text must be set.")
-
-        return text
 
     def _validate_service(self, svc_id, options):
         """

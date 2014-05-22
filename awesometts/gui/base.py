@@ -462,7 +462,7 @@ class ServiceDialog(Dialog):
 
         self._addon.router(
             svc_id=svc_id,
-            text=text_value,
+            text=self._addon.strip.from_user(text_value),
             options=values,
             callbacks=dict(
                 done=lambda: self._disable_inputs(False),

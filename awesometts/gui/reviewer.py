@@ -148,7 +148,8 @@ class Reviewer(object):
 
         This is done in three ways:
             - remove question HTML (verbatim)
-            - remove question HTML (with any [sound:xxx] tags stripped)
+            - remove question HTML (with any [sound:xxx] tags stripped),
+              which is how Anki does {{FrontSide}} on the answer side
             - find any <hr id=answer> tag, and chop off anything leading
               up to the first such tag
         """
@@ -182,7 +183,8 @@ class Reviewer(object):
         """
 
         for tag in BeautifulSoup(html)('tts'):
-            text = ''.join(tag.findAll(text=True)).strip()
+            text = ''.join(tag.findAll(text=True))
+            text = self._addon.strip.from_template(text)
             if not text:
                 continue
 
@@ -255,7 +257,8 @@ class Reviewer(object):
 
             voice = components.pop(0)
 
-            text = ':'.join(components).strip()
+            text = ':'.join(components)
+            text = self._addon.strip.from_template(text)
             if not text:
                 continue
 

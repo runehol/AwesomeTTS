@@ -305,9 +305,12 @@ aqt.editor.Editor.enableButtons = anki.hooks.wrap(
 aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
     aqt.clayout.CardLayout.setupButtons,
     lambda card_layout: card_layout.buttons.insertWidget(
-        # today, the card layout form has 7 buttons/stretchers; in the event
-        # that this changes in the future, bump the button to the first slot
-        3 if card_layout.buttons.count() == 7 else 0,
+        # today, the card layout for regular notes has 7 buttons/stretchers
+        # and the one for cloze notes has 6 (as it lacks the "Flip" button);
+        # position 3 puts our button after "Add Field", but in the event that
+        # the form suddenly has a different number of buttons, let's just
+        # fallback to the far left position
+        3 if card_layout.buttons.count() in [6, 7] else 0,
         gui.Button(
             text="Add &TTS",
             tooltip="Insert a tag for on-the-fly playback w/ AwesomeTTS",

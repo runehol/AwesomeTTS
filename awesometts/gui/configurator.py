@@ -85,8 +85,8 @@ class Configurator(Dialog):
 
     def _ui_tabs(self):
         """
-        Returns a tab widget populated with three tabs: On-the-Fly Mode,
-        MP3 Generation, and Advanced.
+        Returns a tab widget populated with three tabs: On-the-Fly,
+        MP3s, and Advanced.
         """
 
         tabs = QtGui.QTabWidget()
@@ -96,8 +96,8 @@ class Configurator(Dialog):
         use_icons = not platform.startswith('darwin')
 
         for content, icon, label in [
-            (self._ui_tabs_onthefly, 'text-xml', "On-the-Fly Mode"),
-            (self._ui_tabs_mp3gen, 'document-new', "MP3 Generation"),
+            (self._ui_tabs_onthefly, 'text-xml', "On-the-Fly"),
+            (self._ui_tabs_mp3gen, 'document-new', "MP3s"),
             (self._ui_tabs_advanced, 'configure', "Advanced"),
         ]:
             if use_icons:
@@ -118,7 +118,7 @@ class Configurator(Dialog):
 
     def _ui_tabs_onthefly(self):
         """
-        Returns the "On-the-Fly Mode" tab.
+        Returns the "On-the-Fly" tab.
         """
 
         intro = QtGui.QLabel("Control how <tts> template tags are played.")
@@ -187,7 +187,7 @@ class Configurator(Dialog):
 
     def _ui_tabs_mp3gen(self):
         """
-        Returns the "MP3 Generation" tab.
+        Returns the "MP3s" tab.
         """
 
         intro = QtGui.QLabel("Control how MP3s are generated.")

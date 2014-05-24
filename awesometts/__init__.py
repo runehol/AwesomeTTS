@@ -57,7 +57,8 @@ VERSION = "1.0 Beta 11"
 # n.b. When determining the code directory, abspath() is needed since
 # the __file__ constant is not a full path by itself.
 
-PATH_ADDON = os.path.dirname(os.path.abspath(__file__))
+PATH_ADDON = os.path.dirname(os.path.abspath(__file__)) \
+    .decode(sys.getfilesystemencoding())
 
 PATH_CACHE = os.path.join(PATH_ADDON, '.cache')
 if not os.path.isdir(PATH_CACHE):

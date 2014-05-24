@@ -112,8 +112,8 @@ config = Config(
         normalize=TO_NORMALIZED,
     ),
     cols=[
-        ('automaticAnswers', 'integer', False, TO_BOOL, int),
-        ('automaticQuestions', 'integer', False, TO_BOOL, int),
+        ('automaticAnswers', 'integer', True, TO_BOOL, int),
+        ('automaticQuestions', 'integer', True, TO_BOOL, int),
         ('debug_file', 'integer', False, TO_BOOL, int),
         ('debug_stdout', 'integer', False, TO_BOOL, int),
         ('lame_flags', 'text', '--quiet -q 2', str, str),

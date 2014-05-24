@@ -31,6 +31,7 @@ import logging
 import os
 import re
 import sys
+import tempfile
 
 from PyQt4.QtCore import Qt
 
@@ -68,9 +69,7 @@ PATH_CONFIG = os.path.join(PATH_ADDON, 'config.db')
 
 PATH_LOG = os.path.join(PATH_ADDON, 'addon.log')
 
-PATH_TEMP = os.path.join(PATH_ADDON, '.temp')
-if not os.path.isdir(PATH_TEMP):
-    os.mkdir(PATH_TEMP)
+PATH_TEMP = tempfile.gettempdir()
 
 
 # Regular expression patterns

@@ -59,7 +59,7 @@ VERSION = "1.0 Beta 11"
 # the __file__ constant is not a full path by itself.
 
 PATH_ADDON = os.path.dirname(os.path.abspath(__file__)) \
-    .decode(sys.getfilesystemencoding())
+    .decode(sys.getfilesystemencoding())  # sqlite (and others?) needs unicode
 
 PATH_CACHE = os.path.join(PATH_ADDON, '.cache')
 if not os.path.isdir(PATH_CACHE):

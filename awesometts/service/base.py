@@ -29,6 +29,7 @@ __all__ = ['Service']
 
 import abc
 import os
+import shutil
 import sys
 import subprocess
 
@@ -268,6 +269,15 @@ class Service(object):
     def cli_transcode(self, input_path, output_path, require=None):
         """
         Runs the LAME transcoder to create a new MP3 file.
+
+        Note that instead of writing the file immediately to the given
+        output path, this method first writes it a temporary file and
+        then moves it to the output path afterward. This works around a
+        bug on Windows where a user with a non-ASCII username would have
+        a non-ASCII output_path, causing an error when the path is sent
+        via the CLI. However, because the temporary directory on Windows
+        will be of the all-ASCII variety, we can send it through there
+        first and then move it to its final home.
         """
 
         if not os.path.exists(input_path):
@@ -288,12 +298,14 @@ class Service(object):
                 )
             )
 
+        intermediate_path = self.path_temp('mp3')  # see note above
+
         try:
             self.cli_call(
                 self.CLI_LAME,
                 self._lame_flags().split(),
                 input_path,
-                output_path,
+                intermediate_path,
             )
 
         except OSError as os_error:
@@ -307,11 +319,13 @@ class Service(object):
             else:
                 raise
 
-        if not os.path.exists(output_path):
+        if not os.path.exists(intermediate_path):
             raise RuntimeError(
                 "Transcoding the audio stream failed. Are the flags you "
                 "specified for LAME (%s) okay?" % self._lame_flags()
             )
+
+        shutil.move(intermediate_path, output_path)  # see note above
 
     def _cli_exec(self, callee, args, purpose):
         """

@@ -86,6 +86,13 @@ class BrowserGenerator(ServiceDialog):
         intro.setObjectName('intro')
         intro.setWordWrap(True)
 
+        note = QtGui.QLabel(
+            "To adjust handling of cloze or parenthetical text, go to Tools "
+            "> AwesomeTTS > Text from the main window."
+        )
+        note.setTextFormat(QtCore.Qt.PlainText)
+        note.setWordWrap(True)
+
         warning = QtGui.QLabel()
         warning.setMinimumHeight(60)  # despite adjustSize(), OS X misbehaves
         warning.setObjectName('warning')
@@ -94,6 +101,7 @@ class BrowserGenerator(ServiceDialog):
         layout = super(BrowserGenerator, self)._ui_control()
         layout.addWidget(header)
         layout.addWidget(intro)
+        layout.addWidget(note)
         layout.addLayout(self._ui_control_fields())
         layout.addWidget(self._ui_control_handling())
         layout.addWidget(warning)

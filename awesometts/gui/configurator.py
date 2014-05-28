@@ -41,9 +41,9 @@ class Configurator(Dialog):
     _PROPERTY_KEYS = [
         'automatic_answers', 'automatic_questions', 'debug_file',
         'debug_stdout', 'lame_flags', 'strip_note_braces',
-        'strip_note_brackets', 'strip_note_cloze', 'strip_note_parens',
-        'strip_template_braces', 'strip_template_brackets',
-        'strip_template_parens', 'throttle_sleep', 'throttle_threshold',
+        'strip_note_brackets', 'strip_note_parens', 'strip_template_braces',
+        'strip_template_brackets', 'strip_template_parens', 'sub_note_cloze',
+        'sub_template_cloze', 'throttle_sleep', 'throttle_threshold',
         'tts_key_a', 'tts_key_q',
     ]
 
@@ -207,29 +207,34 @@ class Configurator(Dialog):
         layout.addWidget(intro)
         layout.addSpacing(self._SPACING)
         layout.addWidget(self._ui_tabs_text_mode(
-            'strip_template_',
-            "When Handling Template Text (e.g. On-the-Fly)",
-            options=[
+            '_template_',
+            "Handling Template Text (e.g. On-the-Fly)",
+            [
+                ('anki', "process it however Anki rendered it"),
+                ('wrap', "wrap whatever Anki rendered with ellipses"),
+                ('ellipsize', "ignore any hint and just use an ellipsis"),
+                ('remove', "remove it from the text before processing"),
+            ],
+            [
                 ('parens', "parenthetical text, e.g. (generally formal)"),
-                ('brackets', "bracketed text, e.g. [USA], including cloze"),
+                ('brackets', "bracketed text, e.g. [USA]"),
                 ('braces', "curly-braced text, e.g. {always singular}"),
             ],
-            addl=(
-                "Note that if you use cloze, Anki will transform the cloze "
-                "placeholders before On-the-Fly playback runs, so AwesomeTTS "
-                "will not be able to tell your placeholders apart from "
-                "regular text within square brackets."
-            ),
         ))
         layout.addWidget(self._ui_tabs_text_mode(
-            'strip_note_',
-            "When Handling Text from a Note Field (e.g. Browser Generator)",
-            options=[
+            '_note_',
+            "Handling Text from a Note Field (e.g. Browser Generator)",
+            [
+                ('anki', "transform it the same way Anki would render it"),
+                ('wrap', "wrap whatever Anki would render with ellipses"),
+                ('ellipsize', "ignore any hint and just use an ellipsis"),
+                ('remove', "remove it from the text before processing"),
+            ],
+            [
                 ('parens', "parenthetical text, e.g. (casual only)"),
                 ('brackets', "bracketed text, e.g. [Spain]"),
                 ('braces', "curly-braced text, e.g. {usually plural}"),
             ],
-            cloze=True,
         ))
         layout.addSpacing(self._SPACING)
         layout.addWidget(notes)
@@ -240,7 +245,7 @@ class Configurator(Dialog):
 
         return tab
 
-    def _ui_tabs_text_mode(self, key, label, options, cloze=False, addl=None):
+    def _ui_tabs_text_mode(self, infix, label, cloze_options, strip_options):
         """
         Returns the given checkbox options for controlling whether to
         strip from certain parenthetical text. Optionally, additional
@@ -248,32 +253,24 @@ class Configurator(Dialog):
         passing the optional parameters.
         """
 
+        when = QtGui.QLabel("When encountering a cloze,")
+
+        select = QtGui.QComboBox()
+        for option_value, option_text in cloze_options:
+            select.addItem(option_text, option_value)
+        select.setObjectName(infix.join(['sub', 'cloze']))
+
+        horizontal = QtGui.QHBoxLayout()
+        horizontal.addWidget(when)
+        horizontal.addWidget(select)
+        horizontal.addStretch()
+
         layout = QtGui.QVBoxLayout()
+        layout.addLayout(horizontal)
 
-        if addl:
-            addl = QtGui.QLabel(addl)
-            addl.setTextFormat(QtCore.Qt.PlainText)
-            addl.setWordWrap(True)
-            layout.addWidget(addl)
-
-        if cloze:
-            when = QtGui.QLabel("When encountering a cloze,")
-
-            select = QtGui.QComboBox()
-            select.addItem("transform it the same way Anki would", 'anki')
-            select.addItem("use an ellipsis, even with hints", 'ellipsize')
-            select.addItem("completely remove the cloze placeholder", 'zap')
-            select.setObjectName(key + 'cloze')
-
-            horizontal = QtGui.QHBoxLayout()
-            horizontal.addWidget(when)
-            horizontal.addWidget(select)
-
-            layout.addLayout(horizontal)
-
-        for option_subkey, option_label in options:
+        for option_subkey, option_label in strip_options:
             checkbox = QtGui.QCheckBox("Remove " + option_label)
-            checkbox.setObjectName(key + option_subkey)
+            checkbox.setObjectName(infix.join(['strip', option_subkey]))
             layout.addWidget(checkbox)
 
         group = QtGui.QGroupBox(label)

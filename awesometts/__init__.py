@@ -125,11 +125,12 @@ config = Config(
         ('last_options', 'text', {}, TO_JSON_DICT, json.dumps),
         ('strip_note_braces', 'integer', False, TO_BOOL, int),
         ('strip_note_brackets', 'integer', False, TO_BOOL, int),
-        ('strip_note_cloze', 'text', 'anki', str, str),
         ('strip_note_parens', 'integer', False, TO_BOOL, int),
         ('strip_template_braces', 'integer', False, TO_BOOL, int),
         ('strip_template_brackets', 'integer', False, TO_BOOL, int),
         ('strip_template_parens', 'integer', False, TO_BOOL, int),
+        ('sub_note_cloze', 'text', 'anki', str, str),
+        ('sub_template_cloze', 'text', 'anki', str, str),
         ('templater_field', 'text', 'Front', unicode, unicode),
         ('templater_hide', 'text', 'normal', str, str),
         ('templater_target', 'text', 'front', str, str),
@@ -195,26 +196,33 @@ addon = Bundle(
     ),
     router=router,
     strip=Bundle(
+        # n.b. cloze substitution logic happens first in both modes because:
+        # - we need the <span>...</span> markup in on-the-fly to identify it
+        # - Anki won't recognize cloze w/ HTML beginning/ending within braces
+        # - the following STRIP_HTML step will cleanse the HTML out anyway
+
         # for content directly from a note field (e.g. BrowserGenerator runs,
-        # prepopulating a modal input based on some note field)
+        # prepopulating a modal input based on some note field, where cloze
+        # placeholders are still in their unprocessed state)
         from_note=lambda text:
             STRIP_WHITESPACE(
             # STRIP_NOTE_CONDITIONALS(
-            # STRIP_NOTE_CLOZES(
             STRIP_FILENAMES(
             STRIP_SOUNDS(
             STRIP_HTML(
+            # SUB_NOTE_CLOZES(
                 text
             )))),
 
         # for cleaning up already-processed HTML templates (e.g. on-the-fly,
-        # where cloze has already run but other artifacts might exist)
+        # where cloze is marked with <span class=cloze></span> tags)
         from_template=lambda text:
             STRIP_WHITESPACE(
             # STRIP_TEMPLATE_CONDITIONALS(
             STRIP_FILENAMES(
             STRIP_SOUNDS(
             STRIP_HTML(
+            # SUB_TEMPLATE_CLOZES(
                 text
             )))),
 

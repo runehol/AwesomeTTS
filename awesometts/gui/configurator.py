@@ -40,12 +40,16 @@ class Configurator(Dialog):
 
     _PROPERTY_KEYS = [
         'automatic_answers', 'automatic_questions', 'debug_file',
-        'debug_stdout', 'lame_flags', 'throttle_sleep', 'throttle_threshold',
+        'debug_stdout', 'lame_flags', 'strip_note_braces',
+        'strip_note_brackets', 'strip_note_cloze', 'strip_note_parens',
+        'strip_template_braces', 'strip_template_brackets',
+        'strip_template_parens', 'throttle_sleep', 'throttle_threshold',
         'tts_key_a', 'tts_key_q',
     ]
 
     _PROPERTY_WIDGETS = (
-        QtGui.QCheckBox, QtGui.QLineEdit, QtGui.QPushButton, QtGui.QSpinBox,
+        QtGui.QCheckBox, QtGui.QComboBox, QtGui.QLineEdit, QtGui.QPushButton,
+        QtGui.QSpinBox,
     )
 
     __slots__ = [
@@ -86,7 +90,7 @@ class Configurator(Dialog):
     def _ui_tabs(self):
         """
         Returns a tab widget populated with three tabs: On-the-Fly,
-        MP3s, and Advanced.
+        Text, MP3s, and Advanced.
         """
 
         tabs = QtGui.QTabWidget()
@@ -97,6 +101,7 @@ class Configurator(Dialog):
 
         for content, icon, label in [
             (self._ui_tabs_onthefly, 'text-xml', "On-the-Fly"),
+            (self._ui_tabs_text, 'editclear', "Text"),
             (self._ui_tabs_mp3gen, 'document-new', "MP3s"),
             (self._ui_tabs_advanced, 'configure', "Advanced"),
         ]:
@@ -179,6 +184,97 @@ class Configurator(Dialog):
             addl.setTextFormat(QtCore.Qt.PlainText)
             addl.setWordWrap(True)
             layout.addWidget(addl)
+
+        group = QtGui.QGroupBox(label)
+        group.setLayout(layout)
+
+        return group
+
+    def _ui_tabs_text(self):
+        """
+        Returns the "Text" tab.
+        """
+
+        intro = QtGui.QLabel("Configure how AwesomeTTS processes text.")
+
+        notes = QtGui.QLabel(
+            "AwesomeTTS will always automatically strip [sound] tags and "
+            "HTML from both template text and note fields."
+        )
+        notes.setWordWrap(True)
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(intro)
+        layout.addSpacing(self._SPACING)
+        layout.addWidget(self._ui_tabs_text_mode(
+            'strip_template_',
+            "When Handling Template Text (e.g. On-the-Fly)",
+            options=[
+                ('parens', "parenthetical text, e.g. (generally formal)"),
+                ('brackets', "bracketed text, e.g. [USA], including cloze"),
+                ('braces', "curly-braced text, e.g. {always singular}"),
+            ],
+            addl=(
+                "Note that if you use cloze, Anki will transform the cloze "
+                "placeholders before On-the-Fly playback runs, so AwesomeTTS "
+                "will not be able to tell your placeholders apart from "
+                "regular text within square brackets."
+            ),
+        ))
+        layout.addWidget(self._ui_tabs_text_mode(
+            'strip_note_',
+            "When Handling Text from a Note Field (e.g. Browser Generator)",
+            options=[
+                ('parens', "parenthetical text, e.g. (casual only)"),
+                ('brackets', "bracketed text, e.g. [Spain]"),
+                ('braces', "curly-braced text, e.g. {usually plural}"),
+            ],
+            cloze=True,
+        ))
+        layout.addSpacing(self._SPACING)
+        layout.addWidget(notes)
+        layout.addStretch()
+
+        tab = QtGui.QWidget()
+        tab.setLayout(layout)
+
+        return tab
+
+    def _ui_tabs_text_mode(self, key, label, options, cloze=False, addl=None):
+        """
+        Returns the given checkbox options for controlling whether to
+        strip from certain parenthetical text. Optionally, additional
+        copy may also be included and/or the cloze control dropdown by
+        passing the optional parameters.
+        """
+
+        layout = QtGui.QVBoxLayout()
+
+        if addl:
+            addl = QtGui.QLabel(addl)
+            addl.setTextFormat(QtCore.Qt.PlainText)
+            addl.setWordWrap(True)
+            layout.addWidget(addl)
+
+        if cloze:
+            when = QtGui.QLabel("When encountering a cloze,")
+
+            select = QtGui.QComboBox()
+            select.addItem("transform it the same way Anki would", 'anki')
+            select.addItem("use an ellipsis, even with hints", 'ellipsize')
+            select.addItem("completely remove the cloze placeholder", 'zap')
+            select.setObjectName(key + 'cloze')
+
+            horizontal = QtGui.QHBoxLayout()
+            horizontal.addWidget(when)
+            horizontal.addWidget(select)
+
+            layout.addLayout(horizontal)
+
+        for option_subkey, option_label in options:
+            checkbox = QtGui.QCheckBox("Remove " + option_label)
+            checkbox.setObjectName(key + option_subkey)
+            layout.addWidget(checkbox)
 
         group = QtGui.QGroupBox(label)
         group.setLayout(layout)
@@ -388,6 +484,9 @@ class Configurator(Dialog):
                     self._get_key(widget.awesometts_value),
                 )
 
+            elif isinstance(widget, QtGui.QComboBox):
+                widget.setCurrentIndex(max(widget.findData(value), 0))
+
             elif isinstance(widget, QtGui.QSpinBox):
                 widget.setValue(value)
 
@@ -434,6 +533,8 @@ class Configurator(Dialog):
                 else widget.awesometts_value if
                     isinstance(widget, QtGui.QPushButton)
                 else widget.value() if isinstance(widget, QtGui.QSpinBox)
+                else widget.itemData(widget.currentIndex()) if
+                    isinstance(widget, QtGui.QComboBox)
                 else widget.text()
             )
             for widget in self.findChildren(self._PROPERTY_WIDGETS)

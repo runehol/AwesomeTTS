@@ -125,7 +125,7 @@ config = Config(
         ('last_options', 'text', {}, TO_JSON_DICT, json.dumps),
         ('strip_note_braces', 'integer', False, TO_BOOL, int),
         ('strip_note_brackets', 'integer', False, TO_BOOL, int),
-        ('strip_note_cloze', 'text', 'normal', str, str),
+        ('strip_note_cloze', 'text', 'anki', str, str),
         ('strip_note_parens', 'integer', False, TO_BOOL, int),
         ('strip_template_braces', 'integer', False, TO_BOOL, int),
         ('strip_template_brackets', 'integer', False, TO_BOOL, int),

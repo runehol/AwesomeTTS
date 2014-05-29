@@ -181,12 +181,31 @@ router = Router(
 #      in general, only the 'before' mode absolves us of responsibility
 
 RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}\.mp3')  # see Router
+RE_TEXT_IN_BRACES = re.compile(r'\{.+?\}')
+RE_TEXT_IN_BRACKETS = re.compile(r'\[.+?\]')
+RE_TEXT_IN_PARENS = re.compile(r'\(.+?\)')
 RE_WHITESPACE = re.compile(r'\s+')
 
+STRIP_CONDITIONALLY = lambda regex, key, text: \
+    regex.sub('', text) if config[key] else text
 STRIP_FILENAMES = lambda text: RE_FILENAMES.sub('', text)
 STRIP_HTML = anki.utils.stripHTML
 STRIP_SOUNDS = anki.sound.stripSounds
 STRIP_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
+
+STRIP_NOTE_CONDITIONALLY = lambda text: \
+    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACES, 'strip_note_braces',
+    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACKETS, 'strip_note_brackets',
+    STRIP_CONDITIONALLY(RE_TEXT_IN_PARENS, 'strip_note_parens',
+        text
+    )))
+
+STRIP_TEMPLATE_CONDITIONALLY = lambda text: \
+    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACES, 'strip_template_braces',
+    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACKETS, 'strip_template_brackets',
+    STRIP_CONDITIONALLY(RE_TEXT_IN_PARENS, 'strip_template_parens',
+        text
+    )))
 
 addon = Bundle(
     config=config,
@@ -206,25 +225,25 @@ addon = Bundle(
         # placeholders are still in their unprocessed state)
         from_note=lambda text:
             STRIP_WHITESPACE(
-            # STRIP_NOTE_CONDITIONALS(
+            STRIP_NOTE_CONDITIONALLY(
             STRIP_FILENAMES(
             STRIP_SOUNDS(
             STRIP_HTML(
             # SUB_NOTE_CLOZES(
                 text
-            )))),
+            ))))),
 
         # for cleaning up already-processed HTML templates (e.g. on-the-fly,
         # where cloze is marked with <span class=cloze></span> tags)
         from_template=lambda text:
             STRIP_WHITESPACE(
-            # STRIP_TEMPLATE_CONDITIONALS(
+            STRIP_TEMPLATE_CONDITIONALLY(
             STRIP_FILENAMES(
             STRIP_SOUNDS(
             STRIP_HTML(
             # SUB_TEMPLATE_CLOZES(
                 text
-            )))),
+            ))))),
 
         # for direct user input (e.g. previews, EditorGenerator insertion)
         from_user=STRIP_WHITESPACE,

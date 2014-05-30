@@ -189,7 +189,7 @@ RE_WHITESPACE = re.compile(r'\s+')
 STRIP_CONDITIONALLY = lambda regex, key, text: \
     regex.sub('', text) if config[key] else text
 STRIP_FILENAMES = lambda text: RE_FILENAMES.sub('', text)
-STRIP_HTML = anki.utils.stripHTML
+STRIP_HTML = anki.utils.stripHTML  # this also converts character entities
 STRIP_SOUNDS = anki.sound.stripSounds
 STRIP_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
 

@@ -177,35 +177,70 @@ router = Router(
 
 
 # GUI interaction with Anki, pylint:disable=C0103
+# work here benefits from unusual whitespace, pylint:disable=bad-continuation
 # n.b. be careful wrapping methods that have return values (see anki.hooks);
 #      in general, only the 'before' mode absolves us of responsibility
 
+RE_CLOZE_NOTE = re.compile(anki.template.template.clozeReg % r'\d+')
+RE_CLOZE_TEMPLATE = re.compile(
+    # see anki.template.template.clozeText; n.b. the presence of the brackets
+    # in the pattern means that this will only match and replace on the
+    # question side of cards and that the answer side will be read normally
+    r'<span class=.?cloze.?>\[(.+?)\]</span>'
+)
 RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}\.mp3')  # see Router
 RE_TEXT_IN_BRACES = re.compile(r'\{.+?\}')
 RE_TEXT_IN_BRACKETS = re.compile(r'\[.+?\]')
 RE_TEXT_IN_PARENS = re.compile(r'\(.+?\)')
 RE_WHITESPACE = re.compile(r'\s+')
 
-STRIP_CONDITIONALLY = lambda regex, key, text: \
-    regex.sub('', text) if config[key] else text
 STRIP_FILENAMES = lambda text: RE_FILENAMES.sub('', text)
 STRIP_HTML = anki.utils.stripHTML  # this also converts character entities
 STRIP_SOUNDS = anki.sound.stripSounds
 STRIP_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
 
-STRIP_NOTE_CONDITIONALLY = lambda text: \
+STRIP_CONDITIONALLY = lambda regex, key, text: \
+    regex.sub('', text) if config[key] else text
+
+STRIP_CONDITIONALLY_NOTE = lambda text: \
     STRIP_CONDITIONALLY(RE_TEXT_IN_BRACES, 'strip_note_braces',
     STRIP_CONDITIONALLY(RE_TEXT_IN_BRACKETS, 'strip_note_brackets',
     STRIP_CONDITIONALLY(RE_TEXT_IN_PARENS, 'strip_note_parens',
         text
     )))
 
-STRIP_TEMPLATE_CONDITIONALLY = lambda text: \
+STRIP_CONDITIONALLY_TEMPLATE = lambda text: \
     STRIP_CONDITIONALLY(RE_TEXT_IN_BRACES, 'strip_template_braces',
     STRIP_CONDITIONALLY(RE_TEXT_IN_BRACKETS, 'strip_template_brackets',
     STRIP_CONDITIONALLY(RE_TEXT_IN_PARENS, 'strip_template_parens',
         text
     )))
+
+SUB_CLOZES_NOTE = lambda text: RE_CLOZE_NOTE.sub(
+    lambda match:
+        '...' if config['sub_note_cloze'] == 'ellipsize'
+        else '' if config['sub_note_cloze'] == 'remove'
+        else (
+            '... %s ...' % match.group(3).strip('.') if
+                match.group(3) and
+                match.group(3).strip('.')
+            else '...'
+        ) if config['sub_note_cloze'] == 'wrap'
+        else match.group(3) if match.group(3)
+        else '...',
+    text,
+)
+
+SUB_CLOZES_TEMPLATE = lambda text: RE_CLOZE_TEMPLATE.sub(
+    lambda match:
+        '...' if config['sub_template_cloze'] == 'ellipsize'
+        else '' if config['sub_template_cloze'] == 'remove'
+        else '... %s ...' % match.group(1).strip('.') if
+            config['sub_template_cloze'] == 'wrap' and
+            match.group(1).strip('.')
+        else match.group(1),
+    text,
+)
 
 addon = Bundle(
     config=config,
@@ -225,25 +260,25 @@ addon = Bundle(
         # placeholders are still in their unprocessed state)
         from_note=lambda text:
             STRIP_WHITESPACE(
-            STRIP_NOTE_CONDITIONALLY(
+            STRIP_CONDITIONALLY_NOTE(
             STRIP_FILENAMES(
             STRIP_SOUNDS(
             STRIP_HTML(
-            # SUB_NOTE_CLOZES(
+            SUB_CLOZES_NOTE(
                 text
-            ))))),
+            )))))),
 
         # for cleaning up already-processed HTML templates (e.g. on-the-fly,
         # where cloze is marked with <span class=cloze></span> tags)
         from_template=lambda text:
             STRIP_WHITESPACE(
-            STRIP_TEMPLATE_CONDITIONALLY(
+            STRIP_CONDITIONALLY_TEMPLATE(
             STRIP_FILENAMES(
             STRIP_SOUNDS(
             STRIP_HTML(
-            # SUB_TEMPLATE_CLOZES(
+            SUB_CLOZES_TEMPLATE(
                 text
-            ))))),
+            )))))),
 
         # for direct user input (e.g. previews, EditorGenerator insertion)
         from_user=STRIP_WHITESPACE,

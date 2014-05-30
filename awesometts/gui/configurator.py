@@ -210,10 +210,10 @@ class Configurator(Dialog):
             '_template_',
             "Handling Template Text (e.g. On-the-Fly)",
             [
-                ('anki', "process it however Anki rendered it"),
-                ('wrap', "wrap whatever Anki rendered with ellipses"),
-                ('ellipsize', "ignore any hint and just use an ellipsis"),
-                ('remove', "remove it from the text before processing"),
+                ('anki', "read however Anki displayed them"),
+                ('wrap', "read w/ hints wrapped in ellipses"),
+                ('ellipsize', "read as an ellipsis, ignoring hints"),
+                ('remove', "removed entirely"),
             ],
             [
                 ('parens', "parenthetical text, e.g. (generally formal)"),
@@ -225,10 +225,10 @@ class Configurator(Dialog):
             '_note_',
             "Handling Text from a Note Field (e.g. Browser Generator)",
             [
-                ('anki', "transform it the same way Anki would render it"),
-                ('wrap', "wrap whatever Anki would render with ellipses"),
-                ('ellipsize', "ignore any hint and just use an ellipsis"),
-                ('remove', "remove it from the text before processing"),
+                ('anki', "read like Anki would display them"),
+                ('wrap', "read w/ hints wrapped in ellipses"),
+                ('ellipsize', "read as an ellipsis, ignoring hints"),
+                ('remove', "removed entirely"),
             ],
             [
                 ('parens', "parenthetical text, e.g. (casual only)"),
@@ -253,7 +253,7 @@ class Configurator(Dialog):
         passing the optional parameters.
         """
 
-        when = QtGui.QLabel("When encountering a cloze,")
+        when = QtGui.QLabel("Cloze placeholders should be")
 
         select = QtGui.QComboBox()
         for option_value, option_text in cloze_options:

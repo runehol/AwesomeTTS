@@ -663,6 +663,12 @@ class EditorGenerator(ServiceDialog):
         text = QtGui.QPlainTextEdit()
         text.setObjectName('text')
         text.setTabChangesFocus(True)
+        text.keyPressEvent = lambda key_event: \
+            self.accept() if (
+                key_event.modifiers() & QtCore.Qt.ControlModifier and
+                key_event.key() in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter]
+            ) \
+            else QtGui.QPlainTextEdit.keyPressEvent(text, key_event)
 
         button = QtGui.QPushButton("&Preview")
         button.setObjectName('preview')

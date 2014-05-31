@@ -131,6 +131,7 @@ config = Config(
         ('strip_template_parens', 'integer', False, TO_BOOL, int),
         ('sub_note_cloze', 'text', 'anki', str, str),
         ('sub_template_cloze', 'text', 'anki', str, str),
+        ('templater_cloze', 'integer', True, TO_BOOL, int),
         ('templater_field', 'text', 'Front', unicode, unicode),
         ('templater_hide', 'text', 'normal', str, str),
         ('templater_target', 'text', 'front', str, str),

@@ -189,16 +189,19 @@ RE_CLOZE_TEMPLATE = re.compile(
     # question side of cards and that the answer side will be read normally
     r'<span class=.?cloze.?>\[(.+?)\]</span>'
 )
+RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
 RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}\.mp3')  # see Router
 RE_TEXT_IN_BRACES = re.compile(r'\{.+?\}')
 RE_TEXT_IN_BRACKETS = re.compile(r'\[.+?\]')
 RE_TEXT_IN_PARENS = re.compile(r'\(.+?\)')
 RE_WHITESPACE = re.compile(r'\s+')
 
+COLLAPSE_ELLIPSES = lambda text: RE_ELLIPSES.sub(' ... ', text)
+COLLAPSE_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
+
 STRIP_FILENAMES = lambda text: RE_FILENAMES.sub('', text)
 STRIP_HTML = anki.utils.stripHTML  # this also converts character entities
 STRIP_SOUNDS = anki.sound.stripSounds
-STRIP_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
 
 STRIP_CONDITIONALLY = lambda regex, key, text: \
     regex.sub('', text) if config[key] else text
@@ -260,29 +263,35 @@ addon = Bundle(
         # prepopulating a modal input based on some note field, where cloze
         # placeholders are still in their unprocessed state)
         from_note=lambda text:
-            STRIP_WHITESPACE(
+            COLLAPSE_WHITESPACE(
+            COLLAPSE_ELLIPSES(
             STRIP_CONDITIONALLY_NOTE(
             STRIP_FILENAMES(
             STRIP_SOUNDS(
             STRIP_HTML(
             SUB_CLOZES_NOTE(
                 text
-            )))))),
+            ))))))),
 
         # for cleaning up already-processed HTML templates (e.g. on-the-fly,
         # where cloze is marked with <span class=cloze></span> tags)
         from_template=lambda text:
-            STRIP_WHITESPACE(
+            COLLAPSE_WHITESPACE(
+            COLLAPSE_ELLIPSES(
             STRIP_CONDITIONALLY_TEMPLATE(
             STRIP_FILENAMES(
             STRIP_SOUNDS(
             STRIP_HTML(
             SUB_CLOZES_TEMPLATE(
                 text
-            )))))),
+            ))))))),
 
         # for direct user input (e.g. previews, EditorGenerator insertion)
-        from_user=STRIP_WHITESPACE,
+        from_user=lambda text:
+            COLLAPSE_WHITESPACE(
+            COLLAPSE_ELLIPSES(
+                text
+            )),
 
         # target sounds specifically (e.g. Reviewer uses this to reproduce how
         # Anki does {{FrontSide}} whereas BrowserGenerator removes old sounds)

@@ -39,6 +39,7 @@ class Templater(ServiceDialog):
 
     __slots__ = [
         '_card_layout',  # reference to the card layout window
+        '_is_cloze',     # True if the model attached
     ]
 
     def __init__(self, card_layout, *args, **kwargs):
@@ -46,7 +47,10 @@ class Templater(ServiceDialog):
         Sets our title.
         """
 
+        from anki.consts import MODEL_CLOZE
         self._card_layout = card_layout
+        self._is_cloze = card_layout.model['type'] == MODEL_CLOZE
+
         super(Templater, self).__init__(
             title="Add On-the-Fly TTS Tag to Template",
             *args, **kwargs
@@ -94,6 +98,7 @@ class Templater(ServiceDialog):
         Returns a dropdown box to let the user select a source field.
         """
 
+        widgets = {}
         layout = QtGui.QGridLayout()
 
         for row, label, name, options in [
@@ -117,18 +122,36 @@ class Templater(ServiceDialog):
                 ('front', "Front Template"),
                 ('back', "Back Template"),
             ]),
+
+            # row 3 is used below if self._is_cloze is True
         ]:
             label = QtGui.QLabel(label)
             label.setFont(self._FONT_LABEL)
 
-            layout.addWidget(
-                label,
-                row, 0,
-            )
-            layout.addWidget(
-                self._ui_control_fields_dropdown(name, options),
-                row, 1,
-            )
+            widgets[name] = self._ui_control_fields_dropdown(name, options)
+            layout.addWidget(label, row, 0)
+            layout.addWidget(widgets[name], row, 1)
+
+        if self._is_cloze:
+            cloze = QtGui.QCheckBox()
+            cloze.setObjectName('cloze')
+            cloze.setMinimumHeight(25)
+
+            warning = QtGui.QLabel("Remember 'cloze:' for any cloze fields.")
+            warning.setMinimumHeight(25)
+
+            layout.addWidget(cloze, 3, 1)
+            layout.addWidget(warning, 3, 1)
+
+            widgets['field'].setCurrentIndex(-1)
+            widgets['field'].currentIndexChanged.connect(lambda index: (
+                cloze.setVisible(index),
+                cloze.setText(
+                    "%s uses cloze" %
+                    (widgets['field'].itemData(index) if index else "this")
+                ),
+                warning.setVisible(not index),
+            ))
 
         return layout
 
@@ -170,6 +193,10 @@ class Templater(ServiceDialog):
                 dropdown.findData(self._addon.config['templater_' + name]), 0
             ))
 
+        if self._is_cloze:
+            self.findChild(QtGui.QCheckBox, 'cloze') \
+                .setChecked(self._addon.config['templater_cloze'])
+
         dropdown.setFocus()  # abuses fact that 'field' is last in the loop
 
     def accept(self):
@@ -198,8 +225,12 @@ class Templater(ServiceDialog):
                         )
                 ]),
 
-                '{{%s}}' % now['templater_field']
-                if now['templater_field']
+                (
+                    (
+                        '{{cloze:%s}}' if now.get('templater_cloze')
+                        else '{{%s}}'
+                    ) % now['templater_field']
+                ) if now['templater_field']
                 else '',
             ),
         ]))
@@ -218,15 +249,25 @@ class Templater(ServiceDialog):
 
     def _get_all(self):
         """
-        Adds support to remember the three dropdowns, in addition to the
-        service options handled by the superclass.
+        Adds support to remember the three dropdowns and cloze state (if any),
+        in addition to the service options handled by the superclass.
         """
+
+        combos = {
+            name: widget.itemData(widget.currentIndex())
+            for name in ['field', 'hide', 'target']
+            for widget in [self.findChild(QtGui.QComboBox, name)]
+        }
 
         return dict(
             super(Templater, self)._get_all().items() +
-            [
-                ('templater_' + name, widget.itemData(widget.currentIndex()))
-                for name in ['hide', 'target', 'field']
-                for widget in [self.findChild(QtGui.QComboBox, name)]
-            ]
+            [('templater_' + name, value) for name, value in combos.items()] +
+            (
+                [(
+                    'templater_cloze',
+                    self.findChild(QtGui.QCheckBox, 'cloze').isChecked(),
+                )]
+                if self._is_cloze and combos['field']
+                else []
+            )
         )

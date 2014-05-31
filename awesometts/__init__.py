@@ -123,6 +123,15 @@ config = Config(
         ('last_mass_source', 'text', 'Front', unicode, unicode),
         ('last_service', 'text', 'google', str, str),
         ('last_options', 'text', {}, TO_JSON_DICT, json.dumps),
+        ('strip_note_braces', 'integer', False, TO_BOOL, int),
+        ('strip_note_brackets', 'integer', False, TO_BOOL, int),
+        ('strip_note_parens', 'integer', False, TO_BOOL, int),
+        ('strip_template_braces', 'integer', False, TO_BOOL, int),
+        ('strip_template_brackets', 'integer', False, TO_BOOL, int),
+        ('strip_template_parens', 'integer', False, TO_BOOL, int),
+        ('sub_note_cloze', 'text', 'anki', str, str),
+        ('sub_template_cloze', 'text', 'anki', str, str),
+        ('templater_cloze', 'integer', True, TO_BOOL, int),
         ('templater_field', 'text', 'Front', unicode, unicode),
         ('templater_hide', 'text', 'normal', str, str),
         ('templater_target', 'text', 'front', str, str),
@@ -169,16 +178,73 @@ router = Router(
 
 
 # GUI interaction with Anki, pylint:disable=C0103
+# work here benefits from unusual whitespace, pylint:disable=bad-continuation
 # n.b. be careful wrapping methods that have return values (see anki.hooks);
 #      in general, only the 'before' mode absolves us of responsibility
 
+RE_CLOZE_NOTE = re.compile(anki.template.template.clozeReg % r'\d+')
+RE_CLOZE_TEMPLATE = re.compile(
+    # see anki.template.template.clozeText; n.b. the presence of the brackets
+    # in the pattern means that this will only match and replace on the
+    # question side of cards and that the answer side will be read normally
+    r'<span class=.?cloze.?>\[(.+?)\]</span>'
+)
+RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
 RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}\.mp3')  # see Router
+RE_TEXT_IN_BRACES = re.compile(r'\{.+?\}')
+RE_TEXT_IN_BRACKETS = re.compile(r'\[.+?\]')
+RE_TEXT_IN_PARENS = re.compile(r'\(.+?\)')
 RE_WHITESPACE = re.compile(r'\s+')
 
+COLLAPSE_ELLIPSES = lambda text: RE_ELLIPSES.sub(' ... ', text)
+COLLAPSE_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
+
 STRIP_FILENAMES = lambda text: RE_FILENAMES.sub('', text)
-STRIP_HTML = anki.utils.stripHTML
+STRIP_HTML = anki.utils.stripHTML  # this also converts character entities
 STRIP_SOUNDS = anki.sound.stripSounds
-STRIP_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
+
+STRIP_CONDITIONALLY = lambda regex, key, text: \
+    regex.sub('', text) if config[key] else text
+
+STRIP_CONDITIONALLY_NOTE = lambda text: \
+    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACES, 'strip_note_braces',
+    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACKETS, 'strip_note_brackets',
+    STRIP_CONDITIONALLY(RE_TEXT_IN_PARENS, 'strip_note_parens',
+        text
+    )))
+
+STRIP_CONDITIONALLY_TEMPLATE = lambda text: \
+    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACES, 'strip_template_braces',
+    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACKETS, 'strip_template_brackets',
+    STRIP_CONDITIONALLY(RE_TEXT_IN_PARENS, 'strip_template_parens',
+        text
+    )))
+
+SUB_CLOZES_NOTE = lambda text: RE_CLOZE_NOTE.sub(
+    lambda match:
+        '...' if config['sub_note_cloze'] == 'ellipsize'
+        else '' if config['sub_note_cloze'] == 'remove'
+        else (
+            '... %s ...' % match.group(3).strip('.') if
+                match.group(3) and
+                match.group(3).strip('.')
+            else '...'
+        ) if config['sub_note_cloze'] == 'wrap'
+        else match.group(3) if match.group(3)
+        else '...',
+    text,
+)
+
+SUB_CLOZES_TEMPLATE = lambda text: RE_CLOZE_TEMPLATE.sub(
+    lambda match:
+        '...' if config['sub_template_cloze'] == 'ellipsize'
+        else '' if config['sub_template_cloze'] == 'remove'
+        else '... %s ...' % match.group(1).strip('.') if
+            config['sub_template_cloze'] == 'wrap' and
+            match.group(1).strip('.')
+        else match.group(1),
+    text,
+)
 
 addon = Bundle(
     config=config,
@@ -188,31 +254,44 @@ addon = Bundle(
     ),
     router=router,
     strip=Bundle(
+        # n.b. cloze substitution logic happens first in both modes because:
+        # - we need the <span>...</span> markup in on-the-fly to identify it
+        # - Anki won't recognize cloze w/ HTML beginning/ending within braces
+        # - the following STRIP_HTML step will cleanse the HTML out anyway
+
         # for content directly from a note field (e.g. BrowserGenerator runs,
-        # prepopulating a modal input based on some note field)
+        # prepopulating a modal input based on some note field, where cloze
+        # placeholders are still in their unprocessed state)
         from_note=lambda text:
-            STRIP_WHITESPACE(
-            # STRIP_NOTE_CONDITIONALS(
-            # STRIP_NOTE_CLOZES(
+            COLLAPSE_WHITESPACE(
+            COLLAPSE_ELLIPSES(
+            STRIP_CONDITIONALLY_NOTE(
             STRIP_FILENAMES(
             STRIP_SOUNDS(
             STRIP_HTML(
+            SUB_CLOZES_NOTE(
                 text
-            )))),
+            ))))))),
 
         # for cleaning up already-processed HTML templates (e.g. on-the-fly,
-        # where cloze has already run but other artifacts might exist)
+        # where cloze is marked with <span class=cloze></span> tags)
         from_template=lambda text:
-            STRIP_WHITESPACE(
-            # STRIP_TEMPLATE_CONDITIONALS(
+            COLLAPSE_WHITESPACE(
+            COLLAPSE_ELLIPSES(
+            STRIP_CONDITIONALLY_TEMPLATE(
             STRIP_FILENAMES(
             STRIP_SOUNDS(
             STRIP_HTML(
+            SUB_CLOZES_TEMPLATE(
                 text
-            )))),
+            ))))))),
 
         # for direct user input (e.g. previews, EditorGenerator insertion)
-        from_user=STRIP_WHITESPACE,
+        from_user=lambda text:
+            COLLAPSE_WHITESPACE(
+            COLLAPSE_ELLIPSES(
+                text
+            )),
 
         # target sounds specifically (e.g. Reviewer uses this to reproduce how
         # Anki does {{FrontSide}} whereas BrowserGenerator removes old sounds)

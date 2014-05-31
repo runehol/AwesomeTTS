@@ -40,12 +40,16 @@ class Configurator(Dialog):
 
     _PROPERTY_KEYS = [
         'automatic_answers', 'automatic_questions', 'debug_file',
-        'debug_stdout', 'lame_flags', 'throttle_sleep', 'throttle_threshold',
+        'debug_stdout', 'lame_flags', 'strip_note_braces',
+        'strip_note_brackets', 'strip_note_parens', 'strip_template_braces',
+        'strip_template_brackets', 'strip_template_parens', 'sub_note_cloze',
+        'sub_template_cloze', 'throttle_sleep', 'throttle_threshold',
         'tts_key_a', 'tts_key_q',
     ]
 
     _PROPERTY_WIDGETS = (
-        QtGui.QCheckBox, QtGui.QLineEdit, QtGui.QPushButton, QtGui.QSpinBox,
+        QtGui.QCheckBox, QtGui.QComboBox, QtGui.QLineEdit, QtGui.QPushButton,
+        QtGui.QSpinBox,
     )
 
     __slots__ = [
@@ -85,8 +89,8 @@ class Configurator(Dialog):
 
     def _ui_tabs(self):
         """
-        Returns a tab widget populated with three tabs: On-the-Fly Mode,
-        MP3 Generation, and Advanced.
+        Returns a tab widget populated with three tabs: On-the-Fly,
+        Text, MP3s, and Advanced.
         """
 
         tabs = QtGui.QTabWidget()
@@ -96,8 +100,9 @@ class Configurator(Dialog):
         use_icons = not platform.startswith('darwin')
 
         for content, icon, label in [
-            (self._ui_tabs_onthefly, 'text-xml', "On-the-Fly Mode"),
-            (self._ui_tabs_mp3gen, 'document-new', "MP3 Generation"),
+            (self._ui_tabs_onthefly, 'text-xml', "On-the-Fly"),
+            (self._ui_tabs_text, 'editclear', "Text"),
+            (self._ui_tabs_mp3gen, 'document-new', "MP3s"),
             (self._ui_tabs_advanced, 'configure', "Advanced"),
         ]:
             if use_icons:
@@ -118,7 +123,7 @@ class Configurator(Dialog):
 
     def _ui_tabs_onthefly(self):
         """
-        Returns the "On-the-Fly Mode" tab.
+        Returns the "On-the-Fly" tab.
         """
 
         intro = QtGui.QLabel("Control how <tts> template tags are played.")
@@ -185,9 +190,97 @@ class Configurator(Dialog):
 
         return group
 
+    def _ui_tabs_text(self):
+        """
+        Returns the "Text" tab.
+        """
+
+        intro = QtGui.QLabel("Configure how AwesomeTTS processes text.")
+
+        notes = QtGui.QLabel(
+            "AwesomeTTS will always automatically strip [sound] tags and "
+            "HTML from both template text and note fields."
+        )
+        notes.setWordWrap(True)
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(intro)
+        layout.addSpacing(self._SPACING)
+        layout.addWidget(self._ui_tabs_text_mode(
+            '_template_',
+            "Handling Template Text (e.g. On-the-Fly)",
+            [
+                ('anki', "read however Anki displayed them"),
+                ('wrap', "read w/ hints wrapped in ellipses"),
+                ('ellipsize', "read as an ellipsis, ignoring hints"),
+                ('remove', "removed entirely"),
+            ],
+            [
+                ('parens', "parenthetical text, e.g. (generally formal)"),
+                ('brackets', "bracketed text, e.g. [USA]"),
+                ('braces', "curly-braced text, e.g. {always singular}"),
+            ],
+        ))
+        layout.addWidget(self._ui_tabs_text_mode(
+            '_note_',
+            "Handling Text from a Note Field (e.g. Browser Generator)",
+            [
+                ('anki', "read like Anki would display them"),
+                ('wrap', "read w/ hints wrapped in ellipses"),
+                ('ellipsize', "read as an ellipsis, ignoring hints"),
+                ('remove', "removed entirely"),
+            ],
+            [
+                ('parens', "parenthetical text, e.g. (casual only)"),
+                ('brackets', "bracketed text, e.g. [Spain]"),
+                ('braces', "curly-braced text, e.g. {usually plural}"),
+            ],
+        ))
+        layout.addSpacing(self._SPACING)
+        layout.addWidget(notes)
+        layout.addStretch()
+
+        tab = QtGui.QWidget()
+        tab.setLayout(layout)
+
+        return tab
+
+    def _ui_tabs_text_mode(self, infix, label, cloze_options, strip_options):
+        """
+        Returns the given checkbox options for controlling whether to
+        strip from certain parenthetical text. Optionally, additional
+        copy may also be included and/or the cloze control dropdown by
+        passing the optional parameters.
+        """
+
+        when = QtGui.QLabel("Cloze placeholders should be")
+
+        select = QtGui.QComboBox()
+        for option_value, option_text in cloze_options:
+            select.addItem(option_text, option_value)
+        select.setObjectName(infix.join(['sub', 'cloze']))
+
+        horizontal = QtGui.QHBoxLayout()
+        horizontal.addWidget(when)
+        horizontal.addWidget(select)
+        horizontal.addStretch()
+
+        layout = QtGui.QVBoxLayout()
+        layout.addLayout(horizontal)
+
+        for option_subkey, option_label in strip_options:
+            checkbox = QtGui.QCheckBox("Remove " + option_label)
+            checkbox.setObjectName(infix.join(['strip', option_subkey]))
+            layout.addWidget(checkbox)
+
+        group = QtGui.QGroupBox(label)
+        group.setLayout(layout)
+
+        return group
+
     def _ui_tabs_mp3gen(self):
         """
-        Returns the "MP3 Generation" tab.
+        Returns the "MP3s" tab.
         """
 
         intro = QtGui.QLabel("Control how MP3s are generated.")
@@ -388,6 +481,9 @@ class Configurator(Dialog):
                     self._get_key(widget.awesometts_value),
                 )
 
+            elif isinstance(widget, QtGui.QComboBox):
+                widget.setCurrentIndex(max(widget.findData(value), 0))
+
             elif isinstance(widget, QtGui.QSpinBox):
                 widget.setValue(value)
 
@@ -434,6 +530,8 @@ class Configurator(Dialog):
                 else widget.awesometts_value if
                     isinstance(widget, QtGui.QPushButton)
                 else widget.value() if isinstance(widget, QtGui.QSpinBox)
+                else widget.itemData(widget.currentIndex()) if
+                    isinstance(widget, QtGui.QComboBox)
                 else widget.text()
             )
             for widget in self.findChildren(self._PROPERTY_WIDGETS)

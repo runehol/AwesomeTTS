@@ -183,7 +183,7 @@ class Reviewer(object):
         """
 
         for tag in BeautifulSoup(html)('tts'):
-            text = ''.join(tag.findAll(text=True))
+            text = ''.join(unicode(content) for content in tag.contents)
             text = self._addon.strip.from_template(text)
             if not text:
                 continue

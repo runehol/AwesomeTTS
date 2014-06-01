@@ -23,6 +23,8 @@
 File generation dialogs
 """
 
+# pylint:disable=bad-continuation
+
 __all__ = ['BrowserGenerator', 'EditorGenerator']
 
 from PyQt4 import QtCore, QtGui
@@ -702,7 +704,29 @@ class EditorGenerator(ServiceDialog):
 
         super(EditorGenerator, self).show(*args, **kwargs)
 
-        self.findChild(QtGui.QPlainTextEdit, 'text').setFocus()
+        text = self.findChild(QtGui.QPlainTextEdit, 'text')
+        text.setFocus()
+
+        editor = self._editor
+        web = editor.web
+        from_note = self._addon.strip.from_note
+        from_unknown = self._addon.strip.from_unknown
+        try_clipboard = lambda subtype: \
+            from_unknown(QtGui.QApplication.clipboard().text(subtype)[0])
+
+        for origin in [
+            lambda: web.hasSelection and from_note(web.selectedText()),
+            lambda: from_note(web.page().mainFrame().evaluateJavaScript(
+                '$("#f%d").text()' % editor.currentField
+            )),
+            lambda: try_clipboard('html'),
+            lambda: try_clipboard('text'),
+        ]:
+            prefill = origin()
+            if prefill:
+                text.setPlainText(prefill)
+                text.selectAll()
+                break
 
     def accept(self):
         """

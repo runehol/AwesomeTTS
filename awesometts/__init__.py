@@ -194,7 +194,7 @@ RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}\.mp3')  # see Router
 RE_TEXT_IN_BRACES = re.compile(r'\{.+?\}')
 RE_TEXT_IN_BRACKETS = re.compile(r'\[.+?\]')
 RE_TEXT_IN_PARENS = re.compile(r'\(.+?\)')
-RE_WHITESPACE = re.compile(r'\s+')
+RE_WHITESPACE = re.compile(r'[\0\s]+')
 
 COLLAPSE_ELLIPSES = lambda text: RE_ELLIPSES.sub(' ... ', text)
 COLLAPSE_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
@@ -285,6 +285,20 @@ addon = Bundle(
             SUB_CLOZES_TEMPLATE(
                 text
             ))))))),
+
+        # for cleaning up text from unknown sources (e.g. system clipboard)
+        from_unknown=lambda text:
+            COLLAPSE_WHITESPACE(
+            COLLAPSE_ELLIPSES(
+            STRIP_CONDITIONALLY_TEMPLATE(
+            STRIP_CONDITIONALLY_NOTE(
+            STRIP_FILENAMES(
+            STRIP_SOUNDS(
+            STRIP_HTML(
+            SUB_CLOZES_TEMPLATE(
+            SUB_CLOZES_NOTE(
+                text
+            ))))))))),
 
         # for direct user input (e.g. previews, EditorGenerator insertion)
         from_user=lambda text:

@@ -140,6 +140,9 @@ config = Config(
         ('throttle_threshold', 'integer', 10, int, int),
         ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
         ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),
+        ('updates_enabled', 'integer', True, TO_BOOL, int),
+        ('updates_ignore', 'text', '', str, str),
+        ('updates_postpone', 'integer', 0, int, lambda i: int(round(i))),
     ],
     logger=logger,
     events=[

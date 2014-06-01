@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -22,8 +23,6 @@
 """
 File generation dialogs
 """
-
-# pylint:disable=bad-continuation
 
 __all__ = ['BrowserGenerator', 'EditorGenerator']
 

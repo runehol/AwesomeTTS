@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -178,7 +179,6 @@ router = Router(
 
 
 # GUI interaction with Anki, pylint:disable=C0103
-# work here benefits from unusual whitespace, pylint:disable=bad-continuation
 # n.b. be careful wrapping methods that have return values (see anki.hooks);
 #      in general, only the 'before' mode absolves us of responsibility
 

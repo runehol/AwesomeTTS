@@ -45,7 +45,7 @@ class Configurator(Dialog):
         'strip_note_brackets', 'strip_note_parens', 'strip_template_braces',
         'strip_template_brackets', 'strip_template_parens', 'sub_note_cloze',
         'sub_template_cloze', 'throttle_sleep', 'throttle_threshold',
-        'tts_key_a', 'tts_key_q',
+        'tts_key_a', 'tts_key_q', 'updates_enabled',
     ]
 
     _PROPERTY_WIDGETS = (
@@ -396,11 +396,12 @@ class Configurator(Dialog):
         Returns the "Advanced" tab.
         """
 
-        intro = QtGui.QLabel("Control debugging options and the media cache.")
+        intro = QtGui.QLabel("Set advanced options or clear the media cache.")
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(intro)
         layout.addSpacing(self._SPACING)
+        layout.addWidget(self._ui_tabs_advanced_update())
         layout.addWidget(self._ui_tabs_advanced_debug())
         layout.addWidget(self._ui_tabs_advanced_cache())
         layout.addStretch()
@@ -409,6 +410,24 @@ class Configurator(Dialog):
         tab.setLayout(layout)
 
         return tab
+
+    def _ui_tabs_advanced_update(self):
+        """
+        Returns the "enable updates" checkbox.
+        """
+
+        updates = QtGui.QCheckBox(
+            "automatically check for AwesomeTTS updates at start-up"
+        )
+        updates.setObjectName('updates_enabled')
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(updates)
+
+        group = QtGui.QGroupBox("Automatic Updates")
+        group.setLayout(layout)
+
+        return group
 
     def _ui_tabs_advanced_debug(self):
         """

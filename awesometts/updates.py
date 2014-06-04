@@ -74,7 +74,7 @@ class Updates(QtGui.QWidget):
         - done: called as soon as thread finishes
         - fail: called for exceptions or oddities (exception passed)
         - good: called if add-on is up-to-date
-        - need: called if update available (version, description passed)
+        - need: called if update available (version, notes passed)
         - then: called afterward
 
         The only required callback is 'need', as headless checks are
@@ -160,7 +160,7 @@ class Updates(QtGui.QWidget):
         self._logger.info("No updates are available")
         self._on_signal('good')
 
-    def _on_signal_need(self, version, description):
+    def _on_signal_need(self, version, notes):
         """
         Called when the worker finds information about a new version.
 
@@ -169,7 +169,7 @@ class Updates(QtGui.QWidget):
         """
 
         self._logger.warn("Update for %s available" % version)
-        self._on_signal('need', version, description)
+        self._on_signal('need', version, notes)
 
     def _on_finished(self):
         """
@@ -229,16 +229,50 @@ class _Worker(QtCore.QThread):
             url = _SERVICE_URL % {'token': self._token}
             self._logger.debug("Downloading update JSON from %s", url)
 
-            # TODO do an actual check here
-            # TODO check for 'update' key:
-            #     - true: pass back _SIGNAL_NEED w/ version, description
-            #               (if either of these missing, then raise)
-            #     - false: pass back _SIGNAL_GOOD
-            #     - null, undefined, otherwise: raise
+            from urllib2 import urlopen
+            response = urlopen(url, timeout=30)
+            if not response:
+                raise IOError("No response returned from system")
+            if response.getcode() != 200:
+                raise IOError("Unable to communicate with web service")
+            if response.info().gettype() != 'application/json':
+                raise IOError("Web service did not return JSON")
 
-            raise NotImplementedError
-            # self.emit(_SIGNAL_GOOD)
-            # self.emit(_SIGNAL_NEED, "v1.0 Magic", "This update does stuff.")
+            payload = response.read()
+            response.close()
+            if not payload:
+                raise IOError("Payload not returned from web service")
+
+            from json import loads
+            payload = loads(payload)
+            if not isinstance(payload, dict):
+                raise IOError("Web service did not return an object")
+
+            update = payload.get('update')
+
+            if update == True:
+                version = payload.get('version')
+                notes = payload.get('notes')
+
+                if not isinstance(version, basestring) or not version.strip():
+                    raise IOError("No version returned in update object")
+
+                elif not isinstance(notes, basestring) or not notes.strip():
+                    raise IOError("No notes returned in update object")
+
+                else:
+                    self.emit(_SIGNAL_NEED, version.strip(), notes.strip())
+
+            elif update == False:
+                self.emit(_SIGNAL_GOOD)
+
+            else:
+                message = payload.get('message')
+
+                if isinstance(message, basestring) and message.strip():
+                    raise EnvironmentError(message)
+                else:
+                    raise IOError("No version returned in update object")
 
         except Exception as exception:  # catch all, pylint:disable=W0703
             from traceback import format_exc

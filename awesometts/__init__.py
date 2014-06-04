@@ -32,6 +32,7 @@ import logging
 import os
 import re
 import sys
+from time import time
 import tempfile
 
 from PyQt4.QtCore import Qt
@@ -49,7 +50,13 @@ from .bundle import Bundle
 from .config import Config
 from .logger import Logger
 from .router import Router
+from .updates import Updates
 
+
+TOKEN = '/'.join([
+    sys.platform,  # returns win32, darwin, linux2, ...
+    '10b12dev',    # or 10b12pre, 10b12, 10b12qfx1, 10b12qfx2, ...
+])
 
 VERSION = "1.0 Beta 12 (develop)"
 
@@ -178,6 +185,11 @@ router = Router(
     ),
     cache_dir=PATH_CACHE,
     logger=logger,
+)
+
+updates = Updates(
+    logger=logger,
+    token=TOKEN,
 )
 
 
@@ -314,6 +326,7 @@ addon = Bundle(
         # Anki does {{FrontSide}} whereas BrowserGenerator removes old sounds)
         sounds=STRIP_SOUNDS,
     ),
+    updates=updates,
     version=VERSION,
 )
 
@@ -439,3 +452,19 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
     ),
     'after',  # must use 'after' so that 'buttons' attribute is set
 )
+
+
+# Automatic check for new version, if enabled and not postponed/ignored
+
+# TODO on some Anki event/hook (e.g. display of main window), do this...
+if (
+    config['updates_enabled'] and
+    not config['updates_postpone'] or config['updates_postpone'] <= time()
+):
+    updates.check(
+        callbacks=dict(
+            need=lambda version, description:
+                None if config['updates_ignore'] == version
+                else None,  # TODO activate something, e.g. gui.Updater
+        ),
+    )

@@ -47,6 +47,7 @@ class Updates(QtGui.QWidget):
         '_callbacks',     # dict lookup of possible callbacks
         '_got_finished',  # True if the worker is "finished"
         '_got_signal',    # True if we've actually gotten a signal back
+        '_used',          # True if check() has been called this session
         '_worker',        # reference to the current worker
     ]
 
@@ -57,6 +58,8 @@ class Updates(QtGui.QWidget):
         """
 
         super(Updates, self).__init__()
+
+        self._used = False
 
         self._logger = logger
         self._token = token
@@ -92,6 +95,7 @@ class Updates(QtGui.QWidget):
         if self._worker:
             raise RuntimeError("An update check is already in progress")
 
+        self._used = True
         self._callbacks = callbacks
         self._got_finished = False
         self._got_signal = False
@@ -104,6 +108,13 @@ class Updates(QtGui.QWidget):
         self._worker.start()
 
         self._logger.debug("Spawned worker to check for updates")
+
+    def used(self):
+        """
+        Returns True if an update check has been run this session.
+        """
+
+        return self._used
 
     def _on_signal(self, key, *args, **kwargs):
         """

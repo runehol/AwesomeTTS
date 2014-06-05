@@ -456,15 +456,22 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
 
 # Automatic check for new version, if enabled and not postponed/ignored
 
-# TODO on some Anki event/hook (e.g. display of main window), do this...
+# By using the profilesLoaded hook, we do not run the update until the user is
+# actually in a profile, which guarantees the main window has been loaded.
+# Without the main window, update components (e.g. aqt.downloader.download,
+# aqt.addons.GetAddons) that depend on it might fail unexpectedly.
+
 if (
     config['updates_enabled'] and
     not config['updates_postpone'] or config['updates_postpone'] <= time()
 ):
-    updates.check(
-        callbacks=dict(
-            need=lambda version, description:
-                None if config['updates_ignore'] == version
-                else None,  # TODO activate something, e.g. gui.Updater
+    anki.hooks.addHook(
+        'profileLoaded',
+        lambda: updates.used() or updates.check(
+            callbacks=dict(
+                need=lambda version, description:
+                    None if config['updates_ignore'] == version
+                    else None,  # TODO activate something, e.g. gui.Updater
+            ),
         ),
     )

@@ -25,11 +25,8 @@ Update detection and callback handling
 
 __all__ = ['Updates']
 
-from sys import platform
 from PyQt4 import QtCore, QtGui
 
-
-_SERVICE_URL = 'https://ankiatts.appspot.com/update/%(platform)s/%(version)s'
 
 _SIGNAL_NEED = QtCore.SIGNAL('awesomeTtsUpdateNeeded')
 _SIGNAL_GOOD = QtCore.SIGNAL('awesomeTtsUpdateGood')
@@ -43,8 +40,8 @@ class Updates(QtGui.QWidget):
     """
 
     __slots__ = [
+        '_endpoint',      # what URL to check for updates
         '_logger',        # reference to something w/ logging-like interface
-        '_version',       # semantic version for use in the URL
         '_callbacks',     # dict lookup of possible callbacks
         '_got_finished',  # True if the worker is "finished"
         '_got_signal',    # True if we've actually gotten a signal back
@@ -52,18 +49,18 @@ class Updates(QtGui.QWidget):
         '_worker',        # reference to the current worker
     ]
 
-    def __init__(self, logger, version):
+    def __init__(self, endpoint, logger):
         """
-        Initializes the update checker with a logger and the version for
-        use when constructing the URL.
+        Initializes the update checker with the endpoint to use for the
+        update check and a logger.
         """
 
         super(Updates, self).__init__()
 
         self._used = False
 
+        self._endpoint = endpoint
         self._logger = logger
-        self._version = version
 
         self._callbacks = None
         self._got_finished = None
@@ -100,7 +97,7 @@ class Updates(QtGui.QWidget):
         self._callbacks = callbacks
         self._got_finished = False
         self._got_signal = False
-        self._worker = _Worker(self._logger, self._version)
+        self._worker = _Worker(self._endpoint, self._logger)
 
         self.connect(self._worker, _SIGNAL_NEED, self._on_signal_need)
         self.connect(self._worker, _SIGNAL_GOOD, self._on_signal_good)
@@ -214,20 +211,20 @@ class _Worker(QtCore.QThread):
     """
 
     __slots__ = [
+        '_endpoint',      # what URL to check for updates
         '_logger',        # reference to something w/ logging-like interface
-        '_version',       # semantic version for use in the URL
     ]
 
-    def __init__(self, logger, version):
+    def __init__(self, endpoint, logger):
         """
-        Initializes the worker with the logger and machine-readable
-        version string from the creating instance.
+        Initializes the worker with the logger and update endpoint from
+        the creating instance.
         """
 
         super(_Worker, self).__init__()
 
+        self._endpoint = endpoint
         self._logger = logger
-        self._version = version
 
     def run(self):
         """
@@ -235,18 +232,15 @@ class _Worker(QtCore.QThread):
         """
 
         try:
-            url = _SERVICE_URL % {
-                'platform': platform,
-                'version': self._version,
-            }
-            self._logger.debug("Downloading update JSON from %s", url)
+            self._logger.debug("Downloading JSON from %s", self._endpoint)
 
             from urllib2 import urlopen
-            response = urlopen(url, timeout=30)
+            response = urlopen(self._endpoint, timeout=30)
             if not response:
                 raise IOError("No response returned from system")
             if response.getcode() != 200:
-                raise IOError("Unable to communicate with web service")
+                # TODO check for message in JSON.. might need to push down
+                raise IOError("Web service did not return a 200 status")
             if response.info().gettype() != 'application/json':
                 raise IOError("Web service did not return JSON")
 
@@ -264,16 +258,14 @@ class _Worker(QtCore.QThread):
 
             if update == True:
                 version = payload.get('version')
-                notes = payload.get('notes')
-
                 if not isinstance(version, basestring) or not version.strip():
                     raise IOError("No version returned in update object")
 
-                elif not isinstance(notes, basestring) or not notes.strip():
+                notes = payload.get('notes')
+                if not isinstance(notes, basestring) or not notes.strip():
                     raise IOError("No notes returned in update object")
 
-                else:
-                    self.emit(_SIGNAL_NEED, version.strip(), notes.strip())
+                self.emit(_SIGNAL_NEED, version.strip(), notes.strip())
 
             elif update == False:
                 self.emit(_SIGNAL_GOOD)
@@ -284,7 +276,7 @@ class _Worker(QtCore.QThread):
                 if isinstance(message, basestring) and message.strip():
                     raise EnvironmentError(message)
                 else:
-                    raise IOError("No version returned in update object")
+                    raise IOError("No update state returned in update object")
 
         except Exception as exception:  # catch all, pylint:disable=W0703
             from traceback import format_exc

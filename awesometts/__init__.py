@@ -55,6 +55,8 @@ from .updates import Updates
 
 VERSION = '1.0.0-dev'
 
+WEB = 'https://ankiatts.appspot.com'
+
 
 # Paths
 #
@@ -183,8 +185,8 @@ router = Router(
 )
 
 updates = Updates(
+    endpoint='%s/api/update/%s/%s' % (WEB, sys.platform, VERSION),
     logger=logger,
-    version=VERSION,
 )
 
 

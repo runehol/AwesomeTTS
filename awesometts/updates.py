@@ -25,10 +25,11 @@ Update detection and callback handling
 
 __all__ = ['Updates']
 
+from sys import platform
 from PyQt4 import QtCore, QtGui
 
 
-_SERVICE_URL = 'https://ankiatts.appspot.com/update/%(token)s'
+_SERVICE_URL = 'https://ankiatts.appspot.com/update/%(platform)s/%(version)s'
 
 _SIGNAL_NEED = QtCore.SIGNAL('awesomeTtsUpdateNeeded')
 _SIGNAL_GOOD = QtCore.SIGNAL('awesomeTtsUpdateGood')
@@ -43,7 +44,7 @@ class Updates(QtGui.QWidget):
 
     __slots__ = [
         '_logger',        # reference to something w/ logging-like interface
-        '_token',         # machine-readable updater token for URL
+        '_version',       # semantic version for use in the URL
         '_callbacks',     # dict lookup of possible callbacks
         '_got_finished',  # True if the worker is "finished"
         '_got_signal',    # True if we've actually gotten a signal back
@@ -51,9 +52,9 @@ class Updates(QtGui.QWidget):
         '_worker',        # reference to the current worker
     ]
 
-    def __init__(self, logger, token):
+    def __init__(self, logger, version):
         """
-        Initializes the update checker with a logger and the token for
+        Initializes the update checker with a logger and the version for
         use when constructing the URL.
         """
 
@@ -62,7 +63,7 @@ class Updates(QtGui.QWidget):
         self._used = False
 
         self._logger = logger
-        self._token = token
+        self._version = version
 
         self._callbacks = None
         self._got_finished = None
@@ -99,7 +100,7 @@ class Updates(QtGui.QWidget):
         self._callbacks = callbacks
         self._got_finished = False
         self._got_signal = False
-        self._worker = _Worker(self._logger, self._token)
+        self._worker = _Worker(self._logger, self._version)
 
         self.connect(self._worker, _SIGNAL_NEED, self._on_signal_need)
         self.connect(self._worker, _SIGNAL_GOOD, self._on_signal_good)
@@ -174,9 +175,6 @@ class Updates(QtGui.QWidget):
     def _on_signal_need(self, version, notes):
         """
         Called when the worker finds information about a new version.
-
-        Note that unlike the one used in self._token, the version used
-        here is a human-readable one and not one for building a URL.
         """
 
         self._logger.warn("Update for %s available" % version)
@@ -217,19 +215,19 @@ class _Worker(QtCore.QThread):
 
     __slots__ = [
         '_logger',        # reference to something w/ logging-like interface
-        '_token',         # machine-readable updater token for URL
+        '_version',       # semantic version for use in the URL
     ]
 
-    def __init__(self, logger, token):
+    def __init__(self, logger, version):
         """
         Initializes the worker with the logger and machine-readable
-        token string from the creating instance.
+        version string from the creating instance.
         """
 
         super(_Worker, self).__init__()
 
         self._logger = logger
-        self._token = token
+        self._version = version
 
     def run(self):
         """
@@ -237,7 +235,10 @@ class _Worker(QtCore.QThread):
         """
 
         try:
-            url = _SERVICE_URL % {'token': self._token}
+            url = _SERVICE_URL % {
+                'platform': platform,
+                'version': self._version,
+            }
             self._logger.debug("Downloading update JSON from %s", url)
 
             from urllib2 import urlopen

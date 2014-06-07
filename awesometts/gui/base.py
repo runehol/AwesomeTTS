@@ -112,7 +112,7 @@ class Dialog(QtGui.QDialog):
         title = QtGui.QLabel(self._title)
         title.setFont(self._FONT_TITLE)
 
-        version = QtGui.QLabel("AwesomeTTS\n" + self._addon.version)
+        version = QtGui.QLabel("AwesomeTTS\nv" + self._addon.version)
         version.setFont(self._FONT_INFO)
 
         layout = QtGui.QHBoxLayout()

@@ -53,12 +53,7 @@ from .router import Router
 from .updates import Updates
 
 
-TOKEN = '/'.join([
-    sys.platform,  # returns win32, darwin, linux2, ...
-    '10b12dev',    # or 10b12pre, 10b12, 10b12qfx1, 10b12qfx2, ...
-])
-
-VERSION = "1.0 Beta 12 (develop)"
+VERSION = '1.0.0-dev'
 
 
 # Paths
@@ -189,7 +184,7 @@ router = Router(
 
 updates = Updates(
     logger=logger,
-    token=TOKEN,
+    version=VERSION,
 )
 
 

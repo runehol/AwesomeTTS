@@ -17,6 +17,5 @@ This repository holds two interconnected projects:
 ## Licenses
 
 AwesomeTTS is free and open source software. The add-on code that runs within
-Anki is released under [version 3 of the GNU GPL](addon/LICENSE.txt), and the
-code that drives the AwesomeTTS website and update API web service is released
-under [version 3 of the GNU AGPL v3](web/LICENSE.txt).
+Anki is released under the [GNU GPL v3](addon/LICENSE.txt), and first-party
+web code is released under the [GNU AGPL v3](web/LICENSE.txt).

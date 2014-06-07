@@ -1,0 +1,48 @@
+html {
+    font: 100%/1.5 "Helvetica Neue", Helvetica, Arial, Verdana, sans-serif;
+}
+
+@media screen {
+    html {
+        background: #c0deed;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        background: #fff;
+        color: #333;
+        margin: 0 auto;
+        max-width: 900px;
+        padding: 25px;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        color: #317eac;
+    }
+
+    h1 {
+        font-size: 200%;
+        margin-top: 0;
+    }
+
+    h2 {
+        font-size: 150%;
+    }
+
+    a {
+        color: #08c;
+        text-decoration: none;
+    }
+
+    a:hover {
+        color: #005580;
+        text-decoration: underline;
+    }
+}
+
+@media print {
+    a {
+        color: inherit;
+    }
+}

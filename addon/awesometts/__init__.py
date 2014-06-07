@@ -185,7 +185,7 @@ router = Router(
 )
 
 updates = Updates(
-    endpoint='%s/api/update/%s/%s' % (WEB, sys.platform, VERSION),
+    endpoint='%s/api/update/%s_%s' % (WEB, sys.platform, VERSION),
     logger=logger,
 )
 

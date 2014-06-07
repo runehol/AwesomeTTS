@@ -1,4 +1,8 @@
 *.db
 *.log
 *.py[co]
+
 addon/awesometts/.cache/
+
+web/build/
+web/node_modules/

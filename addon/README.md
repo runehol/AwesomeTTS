@@ -72,4 +72,4 @@ be downloaded from GitHub or pulled in and installed with `git` and a script.
 ## License
 
 AwesomeTTS is free and open source software. The add-on code that runs within
-Anki is released under [version 3 of the GNU GPL](LICENSE.txt).
+Anki is released under the [GNU GPL v3](LICENSE.txt).

@@ -1,0 +1,70 @@
+application: ankiatts
+version: local
+runtime: python27
+api_version: 1
+threadsafe: true
+default_expiration: 12h
+
+handlers:
+- url: /
+  static_files: index.html
+  upload: index\.html
+  mime_type: text/html; charset=utf-8
+  secure: always
+
+- url: /favicon\.ico
+  static_files: favicon.ico
+  upload: favicon\.ico
+  expiration: 35d
+  secure: always
+
+- url: /robots\.txt
+  static_files: robots.txt
+  upload: robots\.txt
+  expiration: 35d
+  secure: always
+
+- url: /style\.css
+  static_files: style.css
+  upload: style\.css
+  secure: always
+
+#- url: /api/update/\w+_1\.0\.0
+#  static_files: api/update/false.json
+#  upload: api/update/false\.json
+#  secure: always
+
+#- url: /api/update/\w+_1\.0\.0-(dev|pre)
+#  static_files: api/update/true.json  # must update contents w/ each release
+#  upload: api/update/true\.json
+#  secure: always
+
+- url: /api/update/\w+_\d+\.\d+\.\d+-dev
+  static_files: api/update/null-dev.json
+  upload: api/update/null-dev\.json
+  secure: always
+
+- url: /api/update/\w+_\d+\.\d+\.\d+-pre
+  static_files: api/update/null-pre.json
+  upload: api/update/null-pre\.json
+  secure: always
+
+- url: /api/update
+  static_files: api/update/info.json
+  upload: api/update/info\.json
+  expiration: 35d
+  secure: always
+
+- url: /api
+  static_files: api/info.json
+  upload: api/info\.json
+  expiration: 35d
+  secure: always
+
+- url: /[aA][pP][iI](/.*)?
+  script: unresolved.api
+  secure: always
+
+- url: .*
+  script: unresolved.other
+  secure: always

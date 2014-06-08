@@ -19,16 +19,17 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Instructions on the AnkiWeb at <https://ankiweb.net/shared/info/301952613>.
-# Problems or comments? Visit <https://github.com/AwesomeTTS/AwesomeTTS>.
 
 """
 Entry point for AwesomeTTS add-on from Anki
 
-Performs any needed migration tasks (e.g. renaming conf.db to config.db,
-removal of old modules and packages, removal of other unneeded files),
-then loads the 'awesometts' package to bootstrap the add-on.
+Performs any migration tasks and then loads the 'awesometts' package.
+Need help or more information? Visit one of these places...
+
+- https://ankiatts.appspot.com                    Documentation
+- https://anki.tenderapp.com/discussions/add-ons  Support Forum
+- https://github.com/AwesomeTTS/AwesomeTTS        Source, Issues, Pulls
+- https://ankiweb.net/shared/info/301952613       User Reviews
 """
 
 __all__ = []

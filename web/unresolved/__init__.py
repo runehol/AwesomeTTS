@@ -22,8 +22,8 @@ debug("Loading responders in %s package" % __package__)
 def api(environ, start_response):
     """
     If a redirect cannot be performed, attempts to guess what went wrong
-    before logging an error to the environment, setting a 400 or 404
-    status code, and returning a JSON error document.
+    before logging an error to the environment, setting a 404 status
+    code, and returning a JSON error document.
     """
 
     path, new_path = get_paths(environ)

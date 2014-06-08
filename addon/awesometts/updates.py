@@ -236,23 +236,21 @@ class _Worker(QtCore.QThread):
 
             from urllib2 import urlopen
             response = urlopen(self._endpoint, timeout=30)
-            if not response:
-                raise IOError("No response returned from system")
-            if response.getcode() != 200:
-                # TODO check for message in JSON.. might need to push down
-                raise IOError("Web service did not return a 200 status")
-            if response.info().gettype() != 'application/json':
-                raise IOError("Web service did not return JSON")
 
-            payload = response.read()
+            if not response or response.getcode() != 200:
+                raise IOError("Cannot communicate with update service")
+            if response.info().gettype() != 'application/json':
+                raise IOError("Update service did not return JSON")
+
+            payload = response.read().strip()
             response.close()
             if not payload:
-                raise IOError("Payload not returned from web service")
+                raise IOError("Payload not returned from update service")
 
             from json import loads
             payload = loads(payload)
             if not isinstance(payload, dict):
-                raise IOError("Web service did not return an object")
+                raise IOError("Update service did not return an object")
 
             update = payload.get('update')
 
@@ -276,7 +274,7 @@ class _Worker(QtCore.QThread):
                 if isinstance(message, basestring) and message.strip():
                     raise EnvironmentError(message)
                 else:
-                    raise IOError("No update state returned in update object")
+                    raise IOError("Update service did not return a status")
 
         except Exception as exception:  # catch all, pylint:disable=W0703
             from traceback import format_exc

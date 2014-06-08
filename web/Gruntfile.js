@@ -31,8 +31,9 @@ module.exports = function (grunt) {
             'cssmin:build',
             'htmlmin:build',
             'json-minify:build',
-            'shell:gitBranch',
-            'shell:gitDirty',
+            'shell:branch',
+            'shell:dirty',
+            'robotless',
             'gae:deploy',
         ]
     );
@@ -50,7 +51,12 @@ module.exports = function (grunt) {
         ]
     );
 
-    grunt.initConfig({
+    var isStable = function () {
+        return grunt.option('branch') === 'stable' &&
+            grunt.option('dirty') === false;
+    };
+
+    grunt.config.init({
         pkg: grunt.file.readJSON('package.json'),
 
         clean: {
@@ -124,7 +130,7 @@ module.exports = function (grunt) {
         },
 
         shell: {
-            gitBranch: {
+            branch: {
                 command: 'git symbolic-ref --short HEAD',
                 options: {
                     callback: function (error, stdout, stderr, next) {
@@ -133,27 +139,31 @@ module.exports = function (grunt) {
                         if (error || !stdout || stderr) {
                             next(false);
                         } else {
-                            grunt.option('git.branch', stdout);
+                            grunt.option('branch', stdout);
                             next();
                         }
                     },
                 },
             },
 
-            gitDirty: {
+            dirty: {
                 command: 'git status --porcelain',
                 options: {
                     callback: function (error, stdout, stderr, next) {
                         if (error || stderr) {
                             next(false);
                         } else {
-                            var isDirty = !(
+                            if (
                                 typeof stdout === 'string' &&
                                 stdout.trim() === ''
-                            );
+                            ) {
+                                grunt.option('dirty', false);
+                                grunt.log.ok("Working tree is clean");
+                            } else {
+                                grunt.option('dirty', true);
+                                grunt.log.error("Working tree is dirty");
+                            }
 
-                            grunt.option('git.dirty', isDirty);
-                            grunt.log.writeln(isDirty ? "dirty" : "clean");
                             next();
                         }
                     },
@@ -169,11 +179,7 @@ module.exports = function (grunt) {
             deploy: {
                 action: 'update',
                 options: {
-                    version: (
-                        grunt.option('git.branch') === 'stable' &&
-                        grunt.option('git.dirty') === false ?
-                        'stable' : 'test'
-                    ),
+                    version: isStable() ? 'stable' : 'test',
                 },
             },
 
@@ -190,4 +196,20 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-gae');
     grunt.loadNpmTasks('grunt-json-minify');
     grunt.loadNpmTasks('grunt-shell');
+
+    grunt.registerTask(
+        'robotless',
+        "For non-stable deployments, set robots file to be exclude-all.",
+        function () {
+            if (isStable()) {
+                grunt.log.ok("Stable deploy; retaining robots.txt");
+            } else {
+                grunt.log.error("Test deploy; zapping robots.txt");
+                grunt.file.write(
+                    'build/robots.txt',
+                    "User-agent: *\nDisallow: /\n"
+                );
+            }
+        }
+    );
 };

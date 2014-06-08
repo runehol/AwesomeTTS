@@ -1,8 +1,9 @@
 /**
  * Gruntfile for AwesomeTTS web
  *
- * Includes tasks for automatically testing minified code (`grunt run`) and
- * deploying up to Google App Engine (`grunt deploy`).
+ * Provides Grunt tasks for building the project, running it locally,
+ * and deploying it to Google App Engine as either a "stable" or "unstable"
+ * package.
  */
 
 /*jslint indent:4*/
@@ -23,41 +24,87 @@ module.exports = function (grunt) {
     );
 
     grunt.registerTask(
-        'deploy',
-        "Minify static files and deploy to GAE w/ a git-derived app version.",
+        'build',
+        "Build the project into the build subdirectory.",
         [
             'clean:build',
             'copy:build',
             'cssmin:build',
             'htmlmin:build',
             'json-minify:build',
-            'shell:branch',
-            'shell:dirty',
-            'robotless',
-            'gae:deploy',
         ]
     );
 
     grunt.registerTask(
-        'run',
-        "Minify static files and run the GAE SDK test server.",
+        'deploy',
+        "Deploys a stable version of the project to Google App Engine.",
         [
-            'clean:build',
-            'copy:build',
-            'cssmin:build',
-            'htmlmin:build',
-            'json-minify:build',
-            'gae:run',
+            'shell:branch',
+            'shell:dirty',
+            'build',
+            'robotstxt:allow',
+            'gae:stable',
         ]
     );
 
-    var isStable = function () {
-        return grunt.option('branch') === 'stable' &&
-            grunt.option('dirty') === false;
-    };
+    grunt.registerTask(
+        'local',
+        "Runs the project locally using Google App Engine SDK test server.",
+        [
+            'build',
+            'robotstxt:allow',
+            'gae:local',
+        ]
+    );
+
+    grunt.registerTask(
+        'remote',
+        "Sends the project to Google App Engine for testing remotely.",
+        [
+            'build',
+            'robotstxt:deny',
+            'gae:test',
+        ]
+    );
 
     grunt.config.init({
         pkg: grunt.file.readJSON('package.json'),
+
+        shell: {
+            branch: {
+                command: 'git symbolic-ref --short HEAD',
+                options: {
+                    callback: function (error, stdout, stderr, next) {
+                        stdout = stdout && stdout.trim && stdout.trim();
+
+                        if (error || !stdout || stderr) {
+                            next(false);
+                        } else if (stdout === 'stable') {
+                            next();
+                        } else {
+                            grunt.log.fail("Not on the stable branch");
+                            next(false);
+                        }
+                    },
+                },
+            },
+
+            dirty: {
+                command: 'git status --porcelain',
+                options: {
+                    callback: function (error, stdout, stderr, next) {
+                        if (error || stderr) {
+                            next(false);
+                        } else if (stdout.trim() === '') {
+                            next();
+                        } else {
+                            grunt.log.fail("Working tree is dirty");
+                            next(false);
+                        }
+                    },
+                },
+            },
+        },
 
         clean: {
             build: 'build/',
@@ -68,7 +115,6 @@ module.exports = function (grunt) {
                 src: [
                     'app.yaml',
                     'favicon.ico',
-                    'robots.txt',
                     'unresolved/*.py',
                     'api/**/*.json'  /* minified inline by json-minify */,
                 ],
@@ -129,45 +175,21 @@ module.exports = function (grunt) {
             },
         },
 
-        shell: {
-            branch: {
-                command: 'git symbolic-ref --short HEAD',
-                options: {
-                    callback: function (error, stdout, stderr, next) {
-                        stdout = stdout && stdout.trim && stdout.trim();
-
-                        if (error || !stdout || stderr) {
-                            next(false);
-                        } else {
-                            grunt.option('branch', stdout);
-                            next();
-                        }
-                    },
-                },
+        robotstxt: {
+            allow: {
+                dest: 'build/',
+                policy: [
+                    {ua: '*', disallow: [
+                        '/api',
+                    ]},
+                ],
             },
 
-            dirty: {
-                command: 'git status --porcelain',
-                options: {
-                    callback: function (error, stdout, stderr, next) {
-                        if (error || stderr) {
-                            next(false);
-                        } else {
-                            if (
-                                typeof stdout === 'string' &&
-                                stdout.trim() === ''
-                            ) {
-                                grunt.option('dirty', false);
-                                grunt.log.ok("Working tree is clean");
-                            } else {
-                                grunt.option('dirty', true);
-                                grunt.log.error("Working tree is dirty");
-                            }
-
-                            next();
-                        }
-                    },
-                },
+            deny: {
+                dest: 'build/',
+                policy: [
+                    {ua: '*', disallow: '/'},
+                ],
             },
         },
 
@@ -176,40 +198,32 @@ module.exports = function (grunt) {
                 path: 'build/',
             },
 
-            deploy: {
+            local: {
+                action: 'run',
+            },
+
+            stable: {
                 action: 'update',
                 options: {
-                    version: isStable() ? 'stable' : 'test',
+                    version: 'stable',
                 },
             },
 
-            run: {
-                action: 'run',
+            test: {
+                action: 'update',
+                options: {
+                    version: 'test',
+                },
             },
         },
     });
 
+    grunt.loadNpmTasks('grunt-shell');
     grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-contrib-cssmin');
     grunt.loadNpmTasks('grunt-contrib-htmlmin');
-    grunt.loadNpmTasks('grunt-gae');
     grunt.loadNpmTasks('grunt-json-minify');
-    grunt.loadNpmTasks('grunt-shell');
-
-    grunt.registerTask(
-        'robotless',
-        "For non-stable deployments, set robots file to be exclude-all.",
-        function () {
-            if (isStable()) {
-                grunt.log.ok("Stable deploy; retaining robots.txt");
-            } else {
-                grunt.log.error("Test deploy; zapping robots.txt");
-                grunt.file.write(
-                    'build/robots.txt',
-                    "User-agent: *\nDisallow: /\n"
-                );
-            }
-        }
-    );
+    grunt.loadNpmTasks('grunt-robots-txt');
+    grunt.loadNpmTasks('grunt-gae');
 };

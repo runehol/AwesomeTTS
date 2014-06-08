@@ -108,16 +108,15 @@ def get_paths(environ):
         new_path = '/' + '/'.join(
             component
             for component in [
-                component.strip('-._')
+                component.strip('-.')
                 for component in
                     get_paths.re_excessive_any.sub('.',
                     get_paths.re_excessive_dashes.sub('-',
                     get_paths.re_excessive_periods.sub('.',
-                    get_paths.re_excessive_underscores.sub('.',
                     get_paths.re_filter_characters.sub('',
                     get_paths.re_filter_encoding.sub('',
                         old_path
-                    )))))).lower().split('/')
+                    ))))).lower().split('/')
             ]
             if component
         )
@@ -127,9 +126,8 @@ def get_paths(environ):
 
     return old_path, None
 
-get_paths.re_excessive_any = re(r'[-._]{2,}')
+get_paths.re_excessive_any = re(r'[-.]{2,}')
 get_paths.re_excessive_dashes = re(r'-{2,}')
 get_paths.re_excessive_periods = re(r'\.{2,}')
-get_paths.re_excessive_underscores = re(r'-{2,}')
-get_paths.re_filter_characters = re(r'[^-._/A-Za-z0-9]')
+get_paths.re_filter_characters = re(r'[^-./A-Za-z0-9]')
 get_paths.re_filter_encoding = re(r'%[0-9A-Fa-f]{2}')

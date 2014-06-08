@@ -25,6 +25,7 @@ Update detection and callback handling
 
 __all__ = ['Updates']
 
+import platform
 from PyQt4 import QtCore, QtGui
 
 
@@ -215,6 +216,15 @@ class _Worker(QtCore.QThread):
         '_logger',        # reference to something w/ logging-like interface
     ]
 
+    _HEADERS = {
+        'User-Agent': '%s/%s (%s)' % (
+            hasattr(platform, 'python_implementation') and
+                platform.python_implementation() or 'Python',
+            platform.python_version() or 'unknown',
+            platform.platform().replace('-', ' ') or 'unknown',
+        ),
+    }
+
     def __init__(self, endpoint, logger):
         """
         Initializes the worker with the logger and update endpoint from
@@ -234,8 +244,14 @@ class _Worker(QtCore.QThread):
         try:
             self._logger.debug("Downloading JSON from %s", self._endpoint)
 
-            from urllib2 import urlopen
-            response = urlopen(self._endpoint, timeout=30)
+            import urllib2
+            response = urllib2.urlopen(
+                urllib2.Request(
+                    url=self._endpoint,
+                    headers=self._HEADERS,
+                ),
+                timeout=30,
+            )
 
             if not response or response.getcode() != 200:
                 raise IOError("Cannot communicate with update service")

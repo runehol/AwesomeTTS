@@ -25,6 +25,7 @@ Updater dialog
 
 __all__ = ['Updater']
 
+from time import time
 from PyQt4 import QtCore, QtGui
 
 from .base import Dialog
@@ -86,18 +87,96 @@ class Updater(Dialog):
             label.setWordWrap(True)
             layout.addWidget(label)
 
-        # available from parent, but should be overridden
-        # layout.addWidget(self._ui_buttons())
+        layout.addWidget(self._ui_buttons())
 
         return layout
 
+    def _ui_buttons(self):
+        """
+        Returns a horizontal row of action buttons. Overrides the one
+        from the superclass.
+        """
+
+        buttons = QtGui.QDialogButtonBox()
+
+        # TODO if certain risky situations are present (e.g. symlinks or
+        # missing Anki interfaces), the now_button should be disabled with an
+        # explanation following
+
+        now_button = QtGui.QPushButton("Update the Add-On Now")  # TODO icon?
+        now_button.setAutoDefault(False)
+        now_button.setDefault(False)
+        now_button.clicked.connect(self._update)
+
+        # TODO in manual mode, the later_{menu,button} should be replaced with
+        # a simpler "no" button
+
+        later_menu = QtGui.QMenu()
+        later_menu.addAction("Remind Me Next Session", self._remind_session)
+        later_menu.addAction("Remind Me Tomorrow", self._remind_tomorrow)
+        later_menu.addAction("Remind Me in a Week", self._remind_week)
+        later_menu.addAction("Skip v%s" % self._version, self._skip_version)
+        later_menu.addAction("Stop Checking for Updates", self._disable)
+
+        later_button = QtGui.QPushButton("Not Now")
+        later_button.setAutoDefault(False)
+        later_button.setDefault(False)
+        later_button.setMenu(later_menu)
+
+        buttons.addButton(now_button, QtGui.QDialogButtonBox.YesRole)
+        buttons.addButton(later_button, QtGui.QDialogButtonBox.NoRole)
+
+        return buttons
+
     # Events #################################################################
 
-    def accept(self):
+    def _update(self):
         """
-        TODO
+        Updates the add-on via the Anki interface.
         """
 
-        # TODO
+        self.accept()
 
-        super(Updater, self).accept()
+        try:
+            pass # TODO via subclassing GetAddons, maybe?
+        except Exception, exception:
+            pass # TODO
+
+    def _remind_session(self):
+        """
+        Closes the dialog; add-on will automatically check next session.
+        """
+
+        self.reject()
+
+    def _remind_tomorrow(self):
+        """
+        Bumps the postpone time by 24 hours before closing dialog.
+        """
+
+        self._addon.config['updates_postpone'] = time() + 86400
+        self.reject()
+
+    def _remind_week(self):
+        """
+        Bumps the postpone time by 7 days before closing dialog.
+        """
+
+        self._addon.config['updates_postpone'] = time() + 604800
+        self.reject()
+
+    def _skip_version(self):
+        """
+        Marks current version as ignored before closing dialog.
+        """
+
+        self._addon.config['updates_ignore'] = self._version
+        self.reject()
+
+    def _disable(self):
+        """
+        Disables the automatic updates flag before closing dialog.
+        """
+
+        self._addon.config['updates_enabled'] = False
+        self.reject()

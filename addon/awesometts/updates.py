@@ -69,7 +69,7 @@ class Updates(QtGui.QWidget):
         - done: called as soon as thread finishes
         - fail: called for exceptions or oddities (exception passed)
         - good: called if add-on is up-to-date
-        - need: called if update available (version, notes passed)
+        - need: called if update available (version, info passed)
         - then: called afterward
 
         The only required callback is 'need', as headless checks are
@@ -164,13 +164,13 @@ class Updates(QtGui.QWidget):
         self._logger.info("No updates are available")
         self._on_signal('good')
 
-    def _on_signal_need(self, version, notes):
+    def _on_signal_need(self, version, info):
         """
         Called when the worker finds information about a new version.
         """
 
         self._logger.warn("Update for %s available" % version)
-        self._on_signal('need', version, notes)
+        self._on_signal('need', version, info)
 
     def _on_finished(self):
         """
@@ -258,15 +258,8 @@ class _Worker(QtCore.QThread):
             update = payload.get('update')
 
             if update == True:
-                version = payload.get('version')
-                if not isinstance(version, basestring) or not version.strip():
-                    raise IOError("No version returned in update object")
-
-                notes = payload.get('notes')
-                if not isinstance(notes, basestring) or not notes.strip():
-                    raise IOError("No notes returned in update object")
-
-                self.emit(_SIGNAL_NEED, version.strip(), notes.strip())
+                info = self._validate_update(payload)
+                self.emit(_SIGNAL_NEED, info['version'], info)
 
             elif update == False:
                 self.emit(_SIGNAL_GOOD)
@@ -282,3 +275,43 @@ class _Worker(QtCore.QThread):
         except Exception as exception:  # catch all, pylint:disable=W0703
             from traceback import format_exc
             self.emit(_SIGNAL_FAIL, exception, format_exc())
+
+    def _validate_update(self, payload):
+        """
+        Since we are going to display this data to the user, we are very
+        careful that it is safe and formatted properly.
+
+        Raises a KeyError or ValueError if anything is amiss.
+        """
+
+        self._logger.debug("Validating update message")
+        info = {}
+
+        for key in ['intro', 'synopsis', 'version']:
+            info[key] = payload.get(key)
+            if info[key]:
+                if not isinstance(info[key], basestring):
+                    raise ValueError(key + " should have been a string")
+                info[key] = info[key].strip()
+
+        if not info['version']:
+            raise KeyError("No version returned in update object")
+
+        info['notes'] = payload.get('notes')
+        if info['notes']:
+            if not isinstance(info['notes'], list):
+                raise ValueError("notes should have been a list")
+
+            if next(
+                (
+                    True
+                    for note in info['notes']
+                    if not isinstance(note, basestring)
+                ),
+                False,
+            ):
+                raise ValueError("notes should only contain strings")
+
+            info['notes'] = [note.strip() for note in info['notes']]
+
+        return info

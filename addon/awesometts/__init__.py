@@ -471,9 +471,17 @@ if (
         'profileLoaded',
         lambda: updates.used() or updates.check(
             callbacks=dict(
-                need=lambda version, description:
+                need=lambda version, info:
                     None if config['updates_ignore'] == version
-                    else None,  # TODO activate something, e.g. gui.Updater
+                    else [
+                        updater.show()
+                        for updater in [gui.Updater(
+                            version=version,
+                            info=info,
+                            addon=addon,
+                            parent=aqt.mw,
+                        )]
+                    ],
             ),
         ),
     )

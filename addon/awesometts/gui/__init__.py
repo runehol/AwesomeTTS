@@ -33,6 +33,7 @@ __all__ = [
     'BrowserGenerator',
     'EditorGenerator',
     'Templater',
+    'Updater',
 
     # headless
     'Reviewer',
@@ -51,5 +52,7 @@ from .generator import (
 )
 
 from .templater import Templater
+
+from .updater import Updater
 
 from .reviewer import Reviewer

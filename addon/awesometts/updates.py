@@ -43,11 +43,8 @@ class Updates(QtGui.QWidget):
     __slots__ = [
         '_endpoint',      # what URL to check for updates
         '_logger',        # reference to something w/ logging-like interface
-        '_callbacks',     # dict lookup of possible callbacks
-        '_got_finished',  # True if the worker is "finished"
-        '_got_signal',    # True if we've actually gotten a signal back
         '_used',          # True if check() has been called this session
-        '_worker',        # reference to the current worker
+        '_worker',        # dict containing info for the active worker, if any
     ]
 
     def __init__(self, endpoint, logger):
@@ -58,14 +55,9 @@ class Updates(QtGui.QWidget):
 
         super(Updates, self).__init__()
 
-        self._used = False
-
         self._endpoint = endpoint
         self._logger = logger
-
-        self._callbacks = None
-        self._got_finished = None
-        self._got_signal = None
+        self._used = False
         self._worker = None
 
     def check(self, callbacks):
@@ -94,17 +86,17 @@ class Updates(QtGui.QWidget):
         if self._worker:
             raise RuntimeError("An update check is already in progress")
 
-        self._used = True
-        self._callbacks = callbacks
-        self._got_finished = False
-        self._got_signal = False
-        self._worker = _Worker(self._endpoint, self._logger)
+        instance = _Worker(self._endpoint, self._logger)
 
-        self.connect(self._worker, _SIGNAL_NEED, self._on_signal_need)
-        self.connect(self._worker, _SIGNAL_GOOD, self._on_signal_good)
-        self.connect(self._worker, _SIGNAL_FAIL, self._on_signal_fail)
-        self._worker.finished.connect(self._on_finished)
-        self._worker.start()
+        self._used = True
+        self._worker = dict(callbacks=callbacks, got_finished=False,
+            got_signal=False, instance=instance)
+
+        self.connect(instance, _SIGNAL_NEED, self._on_signal_need)
+        self.connect(instance, _SIGNAL_GOOD, self._on_signal_good)
+        self.connect(instance, _SIGNAL_FAIL, self._on_signal_fail)
+        instance.finished.connect(self._on_finished)
+        instance.start()
 
         self._logger.debug("Spawned worker to check for updates")
 
@@ -128,17 +120,18 @@ class Updates(QtGui.QWidget):
         those may be passed after the specific signal's key.
         """
 
-        assert self._worker and not self._got_signal, "already got signal"
-        self._got_signal = True
+        worker = self._worker
+        assert worker and not worker['got_signal'], "unwanted result signal"
+        worker['got_signal'] = True
 
-        if 'done' in self._callbacks:
-            self._callbacks['done']()
+        if 'done' in worker['callbacks']:
+            worker['callbacks']['done']()
 
-        if key in self._callbacks:
-            self._callbacks[key](*args, **kwargs)
+        if key in worker['callbacks']:
+            worker['callbacks'][key](*args, **kwargs)
 
-        if 'then' in self._callbacks:
-            self._callbacks['then']()
+        if 'then' in worker['callbacks']:
+            worker['callbacks']['then']()
 
         self._try_reap()
 
@@ -184,8 +177,9 @@ class Updates(QtGui.QWidget):
         signal has not be returned back yet.
         """
 
-        assert self._worker and not self._got_finished, "already finished"
-        self._got_finished = True
+        worker = self._worker
+        assert worker and not worker['got_finished'], "unwanted finish signal"
+        worker['got_finished'] = True
 
         self._try_reap()
 
@@ -196,12 +190,11 @@ class Updates(QtGui.QWidget):
         these happen, which avoids crashes.
         """
 
-        if self._worker and self._got_finished and self._got_signal:
-            self._callbacks = None
-            self._got_finished = None
-            self._got_signal = None
+        if (
+            self._worker and
+            self._worker['got_finished'] and self._worker['got_signal']
+        ):
             self._worker = None
-
             self._logger.debug("Reaped updates worker")
 
 

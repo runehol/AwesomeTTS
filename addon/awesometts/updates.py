@@ -25,7 +25,6 @@ Update detection and callback handling
 
 __all__ = ['Updates']
 
-import platform
 from PyQt4 import QtCore, QtGui
 
 
@@ -41,13 +40,14 @@ class Updates(QtGui.QWidget):
     """
 
     __slots__ = [
+        '_agent',         # which user agent to use
         '_endpoint',      # what URL to check for updates
         '_logger',        # reference to something w/ logging-like interface
         '_used',          # True if check() has been called this session
         '_worker',        # dict containing info for the active worker, if any
     ]
 
-    def __init__(self, endpoint, logger):
+    def __init__(self, agent, endpoint, logger):
         """
         Initializes the update checker with the endpoint to use for the
         update check and a logger.
@@ -55,6 +55,7 @@ class Updates(QtGui.QWidget):
 
         super(Updates, self).__init__()
 
+        self._agent = agent
         self._endpoint = endpoint
         self._logger = logger
         self._used = False
@@ -86,7 +87,7 @@ class Updates(QtGui.QWidget):
         if self._worker:
             raise RuntimeError("An update check is already in progress")
 
-        instance = _Worker(self._endpoint, self._logger)
+        instance = _Worker(self._agent, self._endpoint, self._logger)
 
         self._used = True
         self._worker = dict(callbacks=callbacks, got_finished=False,
@@ -205,20 +206,12 @@ class _Worker(QtCore.QThread):
     """
 
     __slots__ = [
+        '_agent',         # which user agent to use
         '_endpoint',      # what URL to check for updates
         '_logger',        # reference to something w/ logging-like interface
     ]
 
-    _HEADERS = {
-        'User-Agent': '%s/%s (%s)' % (
-            hasattr(platform, 'python_implementation') and
-                platform.python_implementation() or 'Python',
-            platform.python_version() or 'unknown',
-            platform.platform().replace('-', ' ') or 'unknown',
-        ),
-    }
-
-    def __init__(self, endpoint, logger):
+    def __init__(self, agent, endpoint, logger):
         """
         Initializes the worker with the logger and update endpoint from
         the creating instance.
@@ -226,6 +219,7 @@ class _Worker(QtCore.QThread):
 
         super(_Worker, self).__init__()
 
+        self._agent = agent
         self._endpoint = endpoint
         self._logger = logger
 
@@ -241,7 +235,7 @@ class _Worker(QtCore.QThread):
             response = urllib2.urlopen(
                 urllib2.Request(
                     url=self._endpoint,
-                    headers=self._HEADERS,
+                    headers={'User-Agent': self._agent},
                 ),
                 timeout=30,
             )

@@ -30,6 +30,7 @@ __all__ = []
 import json
 import logging
 import os
+import platform
 import re
 import sys
 from time import time
@@ -185,6 +186,10 @@ router = Router(
 )
 
 updates = Updates(
+    agent='AwesomeTTS/%s (Anki %s; %s %s; %s)' % (
+        VERSION, anki.version, platform.python_implementation(),
+        platform.python_version(), platform.platform().replace('-', ' '),
+    ),
     endpoint='%s/api/update/%s-%s' % (WEB, sys.platform, VERSION),
     logger=logger,
 )

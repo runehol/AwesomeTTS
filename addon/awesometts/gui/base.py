@@ -82,7 +82,10 @@ class Dialog(QtGui.QDialog):
             ~QtCore.Qt.WindowContextHelpButtonHint
         )
         self.setWindowIcon(ICON)
-        self.setWindowTitle("AwesomeTTS: " + title)
+        self.setWindowTitle(
+            title if "AwesomeTTS" in title
+            else "AwesomeTTS: " + title
+        )
 
     # UI Construction ########################################################
 
@@ -117,6 +120,7 @@ class Dialog(QtGui.QDialog):
 
         layout = QtGui.QHBoxLayout()
         layout.addWidget(title)
+        layout.addSpacing(self._SPACING)
         layout.addStretch()
         layout.addWidget(version)
 

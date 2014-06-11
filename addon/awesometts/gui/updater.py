@@ -38,8 +38,6 @@ class Updater(Dialog):
     was triggered at start-up.
     """
 
-    _ICON = QtGui.QIcon(':/icons/go-next.png')
-
     __slots__ = [
         '_version',    # latest version string for the add-on
         '_info',       # dict with additional information about the update
@@ -58,7 +56,7 @@ class Updater(Dialog):
         self._is_manual = is_manual
 
         super(Updater, self).__init__(
-            title="Update to v%s" % version,
+            title="AwesomeTTS v%s Available" % version,
             *args, **kwargs
         )
 
@@ -79,9 +77,11 @@ class Updater(Dialog):
             layout.addWidget(label)
 
         if self._info['notes']:
+            list_icon = QtGui.QIcon(':/icons/rating.png')
+
             list_widget = QtGui.QListWidget()
             for note in self._info['notes']:
-                list_widget.addItem(QtGui.QListWidgetItem(self._ICON, note))
+                list_widget.addItem(QtGui.QListWidgetItem(list_icon, note))
             list_widget.setWordWrap(True)
             layout.addWidget(list_widget)
 
@@ -91,6 +91,7 @@ class Updater(Dialog):
             label.setWordWrap(True)
             layout.addWidget(label)
 
+        layout.addSpacing(self._SPACING)
         layout.addWidget(self._ui_buttons())
 
         return layout
@@ -107,13 +108,19 @@ class Updater(Dialog):
         # missing Anki interfaces), the now_button should be disabled with an
         # explanation following
 
-        now_button = QtGui.QPushButton("Update the Add-On Now")  # TODO icon?
+        now_button = QtGui.QPushButton(
+            QtGui.QIcon(':/icons/emblem-favorite.png'),
+            "Update Now",
+        )
         now_button.setAutoDefault(False)
         now_button.setDefault(False)
         now_button.clicked.connect(self._update)
 
         if self._is_manual:
-            later_button = QtGui.QPushButton("Don't Update")
+            later_button = QtGui.QPushButton(
+                QtGui.QIcon(':/icons/fileclose.png'),
+                "Don't Update",
+            )
             later_button.clicked.connect(self.reject)
 
         else:
@@ -124,7 +131,10 @@ class Updater(Dialog):
             menu.addAction("Skip v%s" % self._version, self._skip_version)
             menu.addAction("Stop Checking for Updates", self._disable)
 
-            later_button = QtGui.QPushButton("Not Now")
+            later_button = QtGui.QPushButton(
+                QtGui.QIcon(':/icons/clock16.png'),
+                "Not Now",
+            )
             later_button.setMenu(menu)
 
         later_button.setAutoDefault(False)

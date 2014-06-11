@@ -41,17 +41,21 @@ class Updater(Dialog):
     _ICON = QtGui.QIcon(':/icons/go-next.png')
 
     __slots__ = [
-        '_version',  # latest version string for the add-on
-        '_info',     # dict containing additional information about the update
+        '_version',    # latest version string for the add-on
+        '_info',       # dict with additional information about the update
+        '_is_manual',  # True if the update was triggered manually
     ]
 
-    def __init__(self, version, info, *args, **kwargs):  # TODO is_auto/manual
+    def __init__(self, version, info, is_manual=False, *args, **kwargs):
         """
-        Builds the dialog with the given version and info.
+        Builds the dialog with the given version and info. If the check
+        is flagged as a manual one, the various deferment options are
+        hidden.
         """
 
         self._version = version
         self._info = info
+        self._is_manual = is_manual
 
         super(Updater, self).__init__(
             title="Update to v%s" % version,
@@ -108,20 +112,23 @@ class Updater(Dialog):
         now_button.setDefault(False)
         now_button.clicked.connect(self._update)
 
-        # TODO in manual mode, the later_{menu,button} should be replaced with
-        # a simpler "no" button
+        if self._is_manual:
+            later_button = QtGui.QPushButton("Don't Update")
+            later_button.clicked.connect(self.reject)
 
-        later_menu = QtGui.QMenu()
-        later_menu.addAction("Remind Me Next Session", self._remind_session)
-        later_menu.addAction("Remind Me Tomorrow", self._remind_tomorrow)
-        later_menu.addAction("Remind Me in a Week", self._remind_week)
-        later_menu.addAction("Skip v%s" % self._version, self._skip_version)
-        later_menu.addAction("Stop Checking for Updates", self._disable)
+        else:
+            menu = QtGui.QMenu()
+            menu.addAction("Remind Me Next Session", self._remind_session)
+            menu.addAction("Remind Me Tomorrow", self._remind_tomorrow)
+            menu.addAction("Remind Me in a Week", self._remind_week)
+            menu.addAction("Skip v%s" % self._version, self._skip_version)
+            menu.addAction("Stop Checking for Updates", self._disable)
 
-        later_button = QtGui.QPushButton("Not Now")
+            later_button = QtGui.QPushButton("Not Now")
+            later_button.setMenu(menu)
+
         later_button.setAutoDefault(False)
         later_button.setDefault(False)
-        later_button.setMenu(later_menu)
 
         buttons.addButton(now_button, QtGui.QDialogButtonBox.YesRole)
         buttons.addButton(later_button, QtGui.QDialogButtonBox.NoRole)

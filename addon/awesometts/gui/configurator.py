@@ -413,7 +413,7 @@ class Configurator(Dialog):
 
     def _ui_tabs_advanced_update(self):
         """
-        Returns the "enable updates" checkbox.
+        Returns the "Updates" input group.
         """
 
         updates = QtGui.QCheckBox(
@@ -421,11 +421,32 @@ class Configurator(Dialog):
         )
         updates.setObjectName('updates_enabled')
 
-        layout = QtGui.QVBoxLayout()
-        layout.addWidget(updates)
+        button = QtGui.QPushButton(
+            QtGui.QIcon(':/icons/find.png'),
+            "Check Now",
+        )
+        button.setSizePolicy(
+            QtGui.QSizePolicy.Fixed,
+            QtGui.QSizePolicy.Fixed,
+        )
+        button.setObjectName('updates_button')
+        button.clicked.connect(self._on_update_request)
 
-        group = QtGui.QGroupBox("Automatic Updates")
-        group.setLayout(layout)
+        state = QtGui.QLabel()
+        state.setObjectName('updates_state')
+        state.setTextFormat(QtCore.Qt.PlainText)
+        state.setWordWrap(True)
+
+        horizontal = QtGui.QHBoxLayout()
+        horizontal.addWidget(button)
+        horizontal.addWidget(state)
+
+        vertical = QtGui.QVBoxLayout()
+        vertical.addWidget(updates)
+        vertical.addLayout(horizontal)
+
+        group = QtGui.QGroupBox("Updates")
+        group.setLayout(vertical)
 
         return group
 
@@ -596,6 +617,40 @@ class Configurator(Dialog):
                 "Change Shortcut (now %s)" %
                 self._get_key(button.awesometts_value),
             )
+
+    def _on_update_request(self):
+        """
+        Attempts the update request using the lower level update object.
+        """
+
+        button = self.findChild(QtGui.QPushButton, 'updates_button')
+        state = self.findChild(QtGui.QLabel, 'updates_state')
+
+        button.setEnabled(False)
+        state.setText("Querying update server...")
+
+        from . import Updater
+        self._addon.updates.check(
+            callbacks=dict(
+                done=lambda: button.setEnabled(True),
+                fail=lambda exception: state.setText(exception.message),
+                good=lambda: state.setText("No update needed at this time."),
+                need=lambda version, info: (
+                    state.setText("Update to %s is available" % version),
+                    [
+                        updater.show()
+                        for updater in [Updater(
+                            version=version,
+                            info=info,
+                            is_manual=True,
+                            addon=self._addon,
+                            parent=self if self.isVisible()
+                                else self.parentWidget(),
+                        )]
+                    ],
+                ),
+            ),
+        )
 
     def _on_cache_clear(self, button):
         """

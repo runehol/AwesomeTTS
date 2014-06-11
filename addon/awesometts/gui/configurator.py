@@ -633,7 +633,13 @@ class Configurator(Dialog):
         self._addon.updates.check(
             callbacks=dict(
                 done=lambda: button.setEnabled(True),
-                fail=lambda exception: state.setText(exception.message),
+                fail=lambda exception: state.setText(
+                    "Check unsuccessful: %s" % (
+                        exception.message or
+                        format(exception) or
+                        "Nothing further known"
+                    )
+                ),
                 good=lambda: state.setText("No update needed at this time."),
                 need=lambda version, info: (
                     state.setText("Update to %s is available" % version),

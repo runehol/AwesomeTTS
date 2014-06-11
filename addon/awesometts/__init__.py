@@ -268,6 +268,7 @@ addon = Bundle(
     logger=logger,
     paths=Bundle(
         cache=PATH_CACHE,
+        is_link=os.path.islink(PATH_ADDON),
     ),
     router=router,
     strip=Bundle(

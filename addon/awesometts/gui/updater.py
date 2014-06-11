@@ -91,12 +91,23 @@ class Updater(Dialog):
             label.setWordWrap(True)
             layout.addWidget(label)
 
+        inhibited = self._get_inhibited()
+
+        if inhibited:
+            inhibited = QtGui.QLabel(inhibited)
+            inhibited.setFont(self._FONT_INFO)
+            inhibited.setTextFormat(QtCore.Qt.PlainText)
+            inhibited.setWordWrap(True)
+
+            layout.addSpacing(self._SPACING)
+            layout.addWidget(inhibited)
+
         layout.addSpacing(self._SPACING)
-        layout.addWidget(self._ui_buttons())
+        layout.addWidget(self._ui_buttons(bool(inhibited)))
 
         return layout
 
-    def _ui_buttons(self):
+    def _ui_buttons(self, is_inhibited):
         """
         Returns a horizontal row of action buttons. Overrides the one
         from the superclass.
@@ -115,6 +126,9 @@ class Updater(Dialog):
         now_button.setAutoDefault(False)
         now_button.setDefault(False)
         now_button.clicked.connect(self._update)
+
+        if is_inhibited:
+            now_button.setEnabled(False)
 
         if self._is_manual:
             later_button = QtGui.QPushButton(
@@ -197,3 +211,20 @@ class Updater(Dialog):
 
         self._addon.config['updates_enabled'] = False
         self.reject()
+
+    # Auxiliary ##############################################################
+
+    def _get_inhibited(self):
+        """
+        Returns a human-readable reason why automatic updates are not
+        possible. If everything is fine, then returns None.
+        """
+
+        if self._addon.paths.is_link:
+            return "Because you are using AwesomeTTS via a symlink, we " \
+                "won't update the add-on files from the Anki interface. " \
+                "However, if you are using the symlink to point to a clone " \
+                "of the code repository, you can use the git tool to pull " \
+                "in upstream updates."
+
+        # TODO check Anki update classes and such

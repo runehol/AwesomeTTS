@@ -76,8 +76,6 @@ class Updater(Dialog):
                 "symlink to point to a clone of the code repository, you " \
                 "can use the git tool to pull in upstream updates."
 
-        # TODO check Anki update classes and such
-
     # UI Construction ########################################################
 
     def _ui(self):
@@ -180,16 +178,40 @@ class Updater(Dialog):
 
         self.accept()
 
+        if isinstance(self.parentWidget(), QtGui.QDialog):
+            self.parentWidget().reject()
+
+        dlb = self._addon.downloader
+
         try:
-            pass # TODO via subclassing GetAddons, maybe?
+            class OurGetAddons(dlb.base):  # see base, pylint:disable=R0903
+                """
+                Creates a sort of jerry-rigged version of Anki's add-on
+                downloader dialog (usually GetAddons, but configurable)
+                such that an accept() call on it will download
+                AwesomeTTS specifically.
+                """
+
+                def __init__(self):
+                    dlb.superbase.__init__(  # skip, pylint:disable=W0233
+                        self,
+                        *dlb.args,
+                        **dlb.kwargs
+                    )
+
+                    for name, value in dlb.attrs.items():
+                        setattr(self, name, value)
+
+            addon_dialog = OurGetAddons()
+            addon_dialog.accept()  # see base, pylint:disable=E1101
 
         except Exception as exception:  # catch all, pylint:disable=W0703
-            self._inhibited = "Because a previous attempt to update the " \
-                "add-on failed this session, it is recommended that you " \
-                "restart Anki and update the add-on using the normal " \
-                "manual process."
-
-            # TODO
+            dlb.fail(
+                "Unable to automatically update AwesomeTTS (%s); you may "
+                "want to restart Anki and then update the add-on manually "
+                "from the Tools menu." %
+                (exception.message or format(exception))
+            )
 
     def _remind_session(self):
         """

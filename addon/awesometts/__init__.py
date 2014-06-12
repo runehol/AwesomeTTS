@@ -36,6 +36,7 @@ import sys
 from time import time
 import tempfile
 
+from PyQt4 import QtGui
 from PyQt4.QtCore import Qt
 
 import anki
@@ -265,6 +266,21 @@ SUB_CLOZES_TEMPLATE = lambda text: RE_CLOZE_TEMPLATE.sub(
 
 addon = Bundle(
     config=config,
+    downloader=Bundle(
+        base=aqt.addons.GetAddons,
+        superbase=QtGui.QDialog,
+        args=[aqt.mw],
+        kwargs=dict(),
+        attrs=dict(
+            form=Bundle(
+                code=Bundle(
+                    text=lambda: '301952613',
+                ),
+            ),
+            mw=aqt.mw,
+        ),
+        fail=lambda message: aqt.utils.showCritical(message, aqt.mw),
+    ),
     logger=logger,
     paths=Bundle(
         cache=PATH_CACHE,

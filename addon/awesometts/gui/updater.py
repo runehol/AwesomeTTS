@@ -182,8 +182,14 @@ class Updater(Dialog):
 
         try:
             pass # TODO via subclassing GetAddons, maybe?
-        except Exception, exception:
-            pass # TODO
+
+        except Exception as exception:  # catch all, pylint:disable=W0703
+            self._inhibited = "Because a previous attempt to update the " \
+                "add-on failed this session, it is recommended that you " \
+                "restart Anki and update the add-on using the normal " \
+                "manual process."
+
+            # TODO
 
     def _remind_session(self):
         """

@@ -48,34 +48,29 @@ handlers:
   secure: always
 
 #- url: /api/update/[a-z\d]+-1\.0\.0
-#  static_files: api/update/false.json
-#  upload: api/update/false\.json
+#  static_files: api/update/good-version.json
+#  upload: api/update/good-version\.json
 #  secure: always
 
 #- url: /api/update/[a-z\d]+-1\.0\.0-(dev|pre)
-#  static_files: api/update/true.json  # must update contents w/ each release
-#  upload: api/update/true\.json
+#  static_files: api/update/need-newer.json  # edit details w/ each release
+#  upload: api/update/need-newer\.json
 #  secure: always
 
-- url: /api/update/[a-z\d]+-\d+\.\d+\.\d+-dev
-  static_files: api/update/null-dev.json
-  upload: api/update/null-dev\.json
-  secure: always
-
-- url: /api/update/[a-z\d]+-\d+\.\d+\.\d+-pre
-  static_files: api/update/null-pre.json
-  upload: api/update/null-pre\.json
+- url: /api/update/[a-z\d]+-\d+\.\d+\.\d+-(dev|pre)
+  static_files: api/update/unreleased.json
+  upload: api/update/unreleased\.json
   secure: always
 
 - url: /api/update
-  static_files: api/update/info.json
-  upload: api/update/info\.json
+  static_files: api/update/index.json
+  upload: api/update/index\.json
   expiration: 35d
   secure: always
 
 - url: /api
-  static_files: api/info.json
-  upload: api/info\.json
+  static_files: api/index.json
+  upload: api/index\.json
   expiration: 35d
   secure: always
 

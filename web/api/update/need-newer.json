@@ -1,4 +1,5 @@
 {
+    "auto": true,
     "intro": "This is the first non-beta release of the add-on.",
     "notes": [
         "Automatic update detection",

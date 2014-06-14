@@ -69,7 +69,10 @@ class Updater(Dialog):
         possible based on things present in the environment, if needed.
         """
 
-        if addon.paths.is_link:
+        if not self._info['auto']:
+            self._inhibited = "This update cannot be applied automatically."
+
+        elif addon.paths.is_link:
             self._inhibited = "Because you are using AwesomeTTS via a " \
                 "symlink, you should not update the add-on directly from " \
                 "the Anki user interface. However, if you are using the " \

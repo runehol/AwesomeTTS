@@ -287,6 +287,10 @@ class _Worker(QtCore.QThread):
         self._logger.debug("Validating update message")
         info = {}
 
+        info['auto'] = payload.get('auto', False)
+        if not isinstance(info['auto'], bool):
+            raise ValueError("auto should have been a boolean value")
+
         for key in ['intro', 'synopsis', 'version']:
             info[key] = payload.get(key)
             if info[key]:

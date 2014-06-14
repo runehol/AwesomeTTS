@@ -481,7 +481,7 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
 
 if (
     config['updates_enabled'] and
-    not config['updates_postpone'] or config['updates_postpone'] <= time()
+    (not config['updates_postpone'] or config['updates_postpone'] <= time())
 ):
     anki.hooks.addHook(
         'profileLoaded',

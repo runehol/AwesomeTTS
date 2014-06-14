@@ -19,11 +19,10 @@
  */
 
 /**
- * Gruntfile for AwesomeTTS web
+ * Gruntfile for AwesomeTTS website and update API service
  *
- * Provides Grunt tasks for building the project, running it locally,
- * and deploying it to Google App Engine as either a "stable" or "unstable"
- * package.
+ * Provides Grunt tasks for building the project, running it locally, and
+ * and deploying it to Google App Engine with a git-derived version.
  */
 
 /*jslint indent:4*/
@@ -33,98 +32,34 @@
 module.exports = function (grunt) {
     'use strict';
 
-    grunt.registerTask('default', 'help');
 
-    grunt.registerTask(
-        'help',
-        "Display usage, options, and available tasks.",
-        function () {
-            grunt.help.display();
-        }
-    );
+    // Task Aliases //////////////////////////////////////////////////////////
 
-    grunt.registerTask(
-        'build',
-        "Build the project into the build subdirectory.",
-        [
-            'clean:build',
-            'copy:build',
-            'cssmin:build',
-            'htmlmin:build',
-            'json-minify:build',
-        ]
-    );
+    grunt.task.registerTask('default', 'help');
 
-    grunt.registerTask(
-        'deploy',
-        "Deploys a stable version of the project to Google App Engine.",
-        [
-            'shell:branch',
-            'shell:dirty',
-            'build',
-            'robotstxt:allow',
-            'gae:stable',
-        ]
-    );
+    grunt.task.registerTask('help', "Display usage and tasks.", function() {
+        grunt.help.display();
+    });
 
-    grunt.registerTask(
-        'local',
-        "Runs the project locally using Google App Engine SDK test server.",
-        [
-            'build',
-            'robotstxt:allow',
-            'gae:local',
-        ]
-    );
+    grunt.task.registerTask('build', "Build all into build subdirectory.", [
+        'clean:build', 'copy:build', 'cssmin:build', 'htmlmin:build',
+        'json-minify:build',
+    ]);
 
-    grunt.registerTask(
-        'remote',
-        "Sends the project to Google App Engine for testing remotely.",
-        [
-            'build',
-            'robotstxt:deny',
-            'gae:test',
-        ]
-    );
+    grunt.task.registerTask('run', "Runs project locally using GAE SDK.", [
+        'build', 'gae:run',
+    ]);
+
+    grunt.task.registerTask('deploy', "Pushes new version to GAE platform.", [
+        'build', 'shell:branch', 'shell:tag', 'shell:revision', 'shell:dirty',
+        'options:version', 'gae:update',
+    ]);
+
+
+    // Task Configuration ////////////////////////////////////////////////////
 
     grunt.config.init({
         pkg: grunt.file.readJSON('package.json'),
-
-        shell: {
-            branch: {
-                command: 'git symbolic-ref --short HEAD',
-                options: {
-                    callback: function (error, stdout, stderr, next) {
-                        stdout = stdout && stdout.trim && stdout.trim();
-
-                        if (error || !stdout || stderr) {
-                            next(false);
-                        } else if (stdout === 'stable') {
-                            next();
-                        } else {
-                            grunt.log.fail("Not on the stable branch");
-                            next(false);
-                        }
-                    },
-                },
-            },
-
-            dirty: {
-                command: 'git status --porcelain',
-                options: {
-                    callback: function (error, stdout, stderr, next) {
-                        if (error || stderr) {
-                            next(false);
-                        } else if (stdout.trim() === '') {
-                            next();
-                        } else {
-                            grunt.log.fail("Working tree is dirty");
-                            next(false);
-                        }
-                    },
-                },
-            },
-        },
 
         clean: {
             build: 'build/',
@@ -135,6 +70,7 @@ module.exports = function (grunt) {
                 src: [
                     'app.yaml',
                     'favicon.ico',
+                    'robots.txt',
                     'unresolved/*.py',
                     'api/**/*.json'  /* minified inline by json-minify */,
                 ],
@@ -195,21 +131,125 @@ module.exports = function (grunt) {
             },
         },
 
-        robotstxt: {
-            allow: {
-                dest: 'build/',
-                policy: [
-                    {ua: '*', disallow: [
-                        '/api',
-                    ]},
-                ],
+        shell: {
+            branch: {
+                command: 'git symbolic-ref --short HEAD',
+                options: {
+                    callback: function (error, stdout, stderr, next) {
+                        stdout = stdout && stdout.trim && stdout.trim();
+
+                        if (error || !stdout || stderr) {
+                            if (
+                                stderr && stderr.indexOf &&
+                                stderr.indexOf('HEAD is not a symbolic') > -1
+                            ) {
+                                grunt.option('git.branch', 'detached');
+                                grunt.log.error("In detached HEAD state");
+                                next();
+                            } else {
+                                next(false);
+                            }
+                        } else {
+                            grunt.option('git.branch', stdout);
+                            grunt.log.ok("Current branch is " + stdout);
+                            next();
+                        }
+                    },
+                },
             },
 
-            deny: {
-                dest: 'build/',
-                policy: [
-                    {ua: '*', disallow: '/'},
-                ],
+            tag: {
+                command: 'git describe --candidates=0 --tags',
+                options: {
+                    callback: function (error, stdout, stderr, next) {
+                        stdout = stdout && stdout.trim && stdout.trim();
+
+                        if (error || !stdout || stderr) {
+                            if (
+                                stderr && stderr.indexOf &&
+                                stderr.indexOf('no tag exactly matches') > -1
+                            ) {
+                                grunt.option('git.tag', null);
+                                grunt.log.error("No tag for this revision");
+                                next();
+                            } else {
+                                next(false);
+                            }
+                        } else {
+                            grunt.option('git.tag', stdout);
+                            grunt.log.ok("Current tag is " + stdout);
+                            next();
+                        }
+                    },
+                },
+            },
+
+            revision: {
+                command: 'git rev-parse --short --verify HEAD',
+                options: {
+                    callback: function (error, stdout, stderr, next) {
+                        stdout = stdout && stdout.trim && stdout.trim();
+
+                        if (error || !stdout || stderr) {
+                            next(false);
+                        } else {
+                            grunt.option('git.revision', stdout);
+                            grunt.log.ok("Current revision is " + stdout);
+                            next();
+                        }
+                    },
+                },
+            },
+
+            dirty: {
+                command: 'git status --porcelain',
+                options: {
+                    callback: function (error, stdout, stderr, next) {
+                        if (error || stderr) {
+                            next(false);
+                        } else {
+                            stdout = stdout && stdout.trim && stdout.trim();
+
+                            if (stdout === '') {
+                                grunt.option('git.dirty', false);
+                                grunt.log.ok("Working tree is clean");
+                            } else {
+                                grunt.option('git.dirty', true);
+                                grunt.log.error("Working tree is dirty");
+                            }
+
+                            next();
+                        }
+                    },
+                },
+            },
+        },
+
+        options: {
+            version: function () {
+                this.requires([
+                    'shell:branch',
+                    'shell:tag',
+                    'shell:revision',
+                    'shell:dirty',
+                ]);
+
+                var version = ['git.branch', 'git.tag', 'git.revision'].
+                    map(grunt.option).
+                    filter(Boolean).
+                    map(function (component) {
+                        return component.toString().toLowerCase().
+                            replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                    }).
+                    filter(Boolean).
+                    join('-');
+
+                var DIRTY = '-dirty';
+                var MAX_LEN = 50;
+
+                return grunt.option('git.dirty') ?
+                    version.substr(0, MAX_LEN - DIRTY.length) + DIRTY :
+                    version.substr(0, MAX_LEN);
             },
         },
 
@@ -218,32 +258,31 @@ module.exports = function (grunt) {
                 path: 'build/',
             },
 
-            local: {
+            run: {
                 action: 'run',
             },
 
-            stable: {
+            update: {
                 action: 'update',
                 options: {
-                    version: 'stable',
-                },
-            },
-
-            test: {
-                action: 'update',
-                options: {
-                    version: 'test',
+                    version: '<%= grunt.option("version") || "test" %>',
                 },
             },
         },
     });
 
-    grunt.loadNpmTasks('grunt-shell');
-    grunt.loadNpmTasks('grunt-contrib-clean');
-    grunt.loadNpmTasks('grunt-contrib-copy');
-    grunt.loadNpmTasks('grunt-contrib-cssmin');
-    grunt.loadNpmTasks('grunt-contrib-htmlmin');
-    grunt.loadNpmTasks('grunt-json-minify');
-    grunt.loadNpmTasks('grunt-robots-txt');
-    grunt.loadNpmTasks('grunt-gae');
+
+    // Task Implementations //////////////////////////////////////////////////
+
+    [
+        'grunt-contrib-clean', 'grunt-contrib-copy', 'grunt-contrib-cssmin',
+        'grunt-contrib-htmlmin', 'grunt-json-minify', 'grunt-shell',
+        'grunt-gae',
+    ].forEach(grunt.task.loadNpmTasks);
+
+    grunt.task.registerMultiTask('options', "Set option values.", function() {
+        var value = typeof this.data === 'function' ? this.data() : this.data;
+        grunt.option(this.target, value);
+        grunt.log.ok([this.target, value || "set"].join(" now "));
+    });
 };

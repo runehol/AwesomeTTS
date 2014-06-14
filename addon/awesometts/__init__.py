@@ -30,8 +30,10 @@ __all__ = []
 import json
 import logging
 import os
+import platform
 import re
 import sys
+from time import time
 import tempfile
 
 from PyQt4.QtCore import Qt
@@ -49,9 +51,12 @@ from .bundle import Bundle
 from .config import Config
 from .logger import Logger
 from .router import Router
+from .updates import Updates
 
 
-VERSION = "1.0 Beta 12 (develop)"
+VERSION = '1.0.0-dev'
+
+WEB = 'https://ankiatts.appspot.com'
 
 
 # Paths
@@ -140,6 +145,9 @@ config = Config(
         ('throttle_threshold', 'integer', 10, int, int),
         ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
         ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),
+        ('updates_enabled', 'integer', True, TO_BOOL, int),
+        ('updates_ignore', 'text', '', str, str),
+        ('updates_postpone', 'integer', 0, int, lambda i: int(round(i))),
     ],
     logger=logger,
     events=[
@@ -174,6 +182,15 @@ router = Router(
         ),
     ),
     cache_dir=PATH_CACHE,
+    logger=logger,
+)
+
+updates = Updates(
+    agent='AwesomeTTS/%s (Anki %s; %s %s; %s)' % (
+        VERSION, anki.version, platform.python_implementation(),
+        platform.python_version(), platform.platform().replace('-', ' '),
+    ),
+    endpoint='%s/api/update/%s-%s' % (WEB, sys.platform, VERSION),
     logger=logger,
 )
 
@@ -248,9 +265,25 @@ SUB_CLOZES_TEMPLATE = lambda text: RE_CLOZE_TEMPLATE.sub(
 
 addon = Bundle(
     config=config,
+    downloader=Bundle(
+        base=aqt.addons.GetAddons,
+        superbase=aqt.addons.GetAddons.__bases__[0],
+        args=[aqt.mw],
+        kwargs=dict(),
+        attrs=dict(
+            form=Bundle(
+                code=Bundle(
+                    text=lambda: '301952613',
+                ),
+            ),
+            mw=aqt.mw,
+        ),
+        fail=lambda message: aqt.utils.showCritical(message, aqt.mw),
+    ),
     logger=logger,
     paths=Bundle(
         cache=PATH_CACHE,
+        is_link=os.path.islink(PATH_ADDON),
     ),
     router=router,
     strip=Bundle(
@@ -311,6 +344,7 @@ addon = Bundle(
         # Anki does {{FrontSide}} whereas BrowserGenerator removes old sounds)
         sounds=STRIP_SOUNDS,
     ),
+    updates=updates,
     version=VERSION,
 )
 
@@ -436,3 +470,34 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
     ),
     'after',  # must use 'after' so that 'buttons' attribute is set
 )
+
+
+# Automatic check for new version, if enabled and not postponed/ignored
+
+# By using the profilesLoaded hook, we do not run the update until the user is
+# actually in a profile, which guarantees the main window has been loaded.
+# Without the main window, update components (e.g. aqt.downloader.download,
+# aqt.addons.GetAddons) that depend on it might fail unexpectedly.
+
+if (
+    config['updates_enabled'] and
+    (not config['updates_postpone'] or config['updates_postpone'] <= time())
+):
+    anki.hooks.addHook(
+        'profileLoaded',
+        lambda: updates.used() or updates.check(
+            callbacks=dict(
+                need=lambda version, info:
+                    None if config['updates_ignore'] == version
+                    else [
+                        updater.show()
+                        for updater in [gui.Updater(
+                            version=version,
+                            info=info,
+                            addon=addon,
+                            parent=aqt.mw,
+                        )]
+                    ],
+            ),
+        ),
+    )

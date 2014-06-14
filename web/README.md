@@ -1,0 +1,17 @@
+# AwesomeTTS Web
+
+The website provides documentation and help for current and prospective users
+of AwesomeTTS, in addition to hosting an update mechanism for current
+installations of the add-on.
+
+[Google App Engine](https://developers.google.com/appengine), with its content
+delivery network and Python runtime environment, is the platform for the
+website, running at [ankiatts.appspot.com](https://ankiatts.appspot.com).
+Building and deployment is done with [Grunt](http://gruntjs.com), which is a
+task automation tool that runs under [Node.js](http://nodejs.org).
+
+
+## License
+
+AwesomeTTS is free and open source software. First-party web code is released
+under the [GNU AGPL v3](LICENSE.txt).

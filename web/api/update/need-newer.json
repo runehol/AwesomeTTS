@@ -1,0 +1,13 @@
+{
+    "auto": true,
+    "intro": "This is the first non-beta release of the add-on.",
+    "notes": [
+        "Automatic update detection",
+        "Configurable string substitution and stripping",
+        "Easier single-note generator",
+        "Yandex.Translate"
+    ],
+    "synopsis": "Users will want to update for access to automatic updates.",
+    "update": true,
+    "version": "1.0.0"
+}

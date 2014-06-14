@@ -302,16 +302,15 @@ class _Worker(QtCore.QThread):
             if not isinstance(info['notes'], list):
                 raise ValueError("notes should have been a list")
 
-            if next(
-                (
-                    True
-                    for note in info['notes']
-                    if not isinstance(note, basestring)
-                ),
-                False,
-            ):
-                raise ValueError("notes should only contain strings")
+            count = len(info['notes'])
 
-            info['notes'] = [note.strip() for note in info['notes']]
+            info['notes'] = [
+                note.strip()
+                for note in info['notes']
+                if isinstance(note, basestring) and note.strip()
+            ]
+
+            if count != len(info['notes']):
+                raise ValueError("notes should be only non-empty strings")
 
         return info

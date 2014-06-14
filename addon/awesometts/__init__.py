@@ -36,7 +36,6 @@ import sys
 from time import time
 import tempfile
 
-from PyQt4 import QtGui
 from PyQt4.QtCore import Qt
 
 import anki
@@ -268,7 +267,7 @@ addon = Bundle(
     config=config,
     downloader=Bundle(
         base=aqt.addons.GetAddons,
-        superbase=QtGui.QDialog,
+        superbase=aqt.addons.GetAddons.__bases__[0],
         args=[aqt.mw],
         kwargs=dict(),
         attrs=dict(

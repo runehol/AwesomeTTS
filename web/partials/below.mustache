@@ -19,10 +19,9 @@
   !}}
 
         {{#hasChildren}}
-            <hr>
             <nav><ul>
                 {{#children}}
-                    <li><a href="{{{href}}}">{{title}}</a></li>
+                    <li><a href="{{{href}}}" rel="child">{{title}}</a></li>
                 {{/children}}
             </ul></nav>
         {{/hasChildren}}

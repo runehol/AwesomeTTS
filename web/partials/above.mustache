@@ -26,40 +26,65 @@
         <link rel="stylesheet" href="/style.css" type="text/css">
         <link rel="shortcut icon" href="/favicon.ico" sizes="16x16 32x32"
           type="image/x-icon">
-        {{#prev}}
-            <link rel="prev" href="{{{href}}}" title="{{title}}">
-        {{/prev}}
-        {{#next}}
-            <link rel="next" href="{{{href}}}" title="{{title}}">
-        {{/next}}
 
         <title>
-            {{#self}}
+            {{#title}}
                 {{title}} &mdash; AwesomeTTS for Anki
-            {{/self}}
-            {{^self}}
+            {{/title}}{{^title}}
                 AwesomeTTS: Easily add text-to-speech to your Anki cards
-            {{/self}}
+            {{/title}}
         </title>
     </head>
     <body>
         <h1>
-            {{#self}}
+            {{#title}}
                 {{title}}
-            {{/self}}
-            {{^self}}
+            {{/title}}{{^title}}
                 AwesomeTTS for Anki
-            {{/self}}
+            {{/title}}
         </h1>
 
-        <nav>
-            {{#prev}}
-                &larr; <a href="{{{href}}}">Back to {{title}}</a>
-            {{/prev}}
-            {{#up}}
-                &uarr; <a href="{{{href}}}">Up to {{title}}</a>
-            {{/up}}
-            {{#next}}
-                <a href="{{{href}}}">Onward to {{title}}</a> &rarr;
-            {{/next}}
-        </nav>
+        {{#hasOrientation}}
+            <nav><ul>
+                {{#prev}}
+                    <li>
+                        &larr;
+                        <a href="{{{href}}}" rel="prev">{{title}}</a>
+                    </li>
+                {{/prev}}
+
+                {{#up}}
+                    {{#isUpAlsoHome}}
+                        <li>
+                            &uarr;
+                            <a href="{{{href}}}" rel="home index parent up">
+                                {{title}}
+                            </a>
+                        </li>
+                    {{/isUpAlsoHome}}{{^isUpAlsoHome}}
+                        {{#home}}
+                            <li>
+                                &uarr;
+                                <a href="{{{href}}}" rel="home index">
+                                    {{title}}
+                                </a>
+                            </li>
+                        {{/home}}
+
+                        <li>
+                            &uarr;
+                            <a href="{{{href}}}" rel="parent up">
+                                {{title}}
+                            </a>
+                        </li>
+                    {{/isUpAlsoHome}}
+                {{/up}}
+
+                {{#next}}
+                    <li>
+                        <a href="{{{href}}}" rel="next">{{title}}</a>
+                        &rarr;
+                    </li>
+                {{/next}}
+            </ul></nav>
+        {{/hasOrientation}}

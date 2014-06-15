@@ -140,24 +140,26 @@ module.exports = function (grunt) {
                     {
                         template: 'unresolved/error404.mustache',
                         dest: 'build/unresolved/error404.html',
-                        data: {self: {title: "Not Found"}},
+                        data: {title: "Not Found"},
                     },
                     {
                         template: 'unresolved/redirect.mustache',
                         dest: 'build/unresolved/redirect.html',
-                        data: {self: {title: "Moved Permanently"}},
+                        data: {title: "Moved Permanently"},
                     },
-                ], (function getMustacheRenderFiles(nodes, base, up, upData) {
+                ], (function getMustacheRenderFiles(nodes, base, up, home) {
                     var results = [];
                     var grandchildren = {};  // slugs to their parent's data
-                    var lastData = null;
+                    var last = null;
 
                     if (!up) {
-                        upData = {};
+                        home = up = {
+                            self: {href: '/', title: "Home"},
+                        };
                         results.push({
                             template: 'pages/index.mustache',
                             dest: 'build/pages/index.html',
-                            data: upData,
+                            data: up,
                         });
                     }
 
@@ -166,11 +168,12 @@ module.exports = function (grunt) {
                         var href = base + '/' + slug;
                         var fragment = 'pages' + href;
                         var data = {
+                            title: node.title,
                             self: {href: href, title: node.title},
-                            up: {
-                                href: up ? base : '/',
-                                title: up ? up.title : "Home",
-                            },
+                            up: up.self,
+                            home: home.self,
+                            hasOrientation: true,
+                            isUpAlsoHome: up === home,
                         };
 
                         if (
@@ -191,20 +194,18 @@ module.exports = function (grunt) {
                             });
                         }
 
-                        if (upData) {
-                            if (upData.children) {
-                                upData.children.push(data.self);
-                            } else {
-                                upData.hasChildren = true;
-                                upData.children = [data.self];
-                            }
+                        if (up.children) {
+                            up.children.push(data.self);
+                        } else {
+                            up.hasChildren = true;
+                            up.children = [data.self];
                         }
 
-                        if (lastData) {
-                            data.prev = lastData.self;
-                            lastData.next = data.self;
+                        if (last) {
+                            data.prev = last.self;
+                            last.next = data.self;
                         }
-                        lastData = data;
+                        last = data;
                     });
 
                     return results.concat.apply(
@@ -213,8 +214,8 @@ module.exports = function (grunt) {
                             return getMustacheRenderFiles(
                                 nodes[slug].children,
                                 base + '/' + slug,
-                                nodes[slug],
-                                grandchildren[slug]
+                                grandchildren[slug],
+                                home
                             );
                         })
                     );

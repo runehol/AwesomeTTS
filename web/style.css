@@ -22,6 +22,31 @@ html {
     font: 100%/1.5 "Helvetica Neue", Helvetica, Arial, Verdana, sans-serif;
 }
 
+nav {
+    text-align: center;
+}
+
+nav ul {
+    display: block;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+nav li {
+    border-left: solid 1px #000;
+    display: inline;
+    list-style-type: none;
+    margin: 0 0 0 1em;
+    padding: 0 0 0 1em;
+}
+
+nav li:first-child {
+    border-left: none;
+    margin-left: 0;
+    padding-left: 0;
+}
+
 @media screen {
     html {
         background: #c0deed;

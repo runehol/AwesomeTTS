@@ -6,3 +6,4 @@ addon/awesometts/.cache/
 
 web/build/
 web/node_modules/
+web/.grunt-gae-pid

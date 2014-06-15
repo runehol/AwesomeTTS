@@ -22,7 +22,25 @@
  * Gruntfile for AwesomeTTS website and update API service
  *
  * Provides Grunt tasks for building the project, running it locally, and
- * and deploying it to Google App Engine with a git-derived version.
+ * deploying it to Google App Engine with a git-derived version.
+ *
+ * Examples:
+ *     $ grunt build      # builds project to the build/ subdirectory
+ *
+ *     $ grunt deploy     # builds project and sends new version to GAE
+ *
+ *     $ grunt run        # builds project and then runs the GAE SDK server
+ *                        # with its logging output sent to the console
+ *
+ *     $ grunt watch      # automatically rebuilds the project as needed with
+ *                        # build activity output sent to the console
+ *
+ *     $ grunt run watch  # combines the above two, but the GAE SDK server is
+ *                        # backgrounded, so only watch activity is visible
+ *
+ * The --live-reload flag can be used with build/run (to insert a livereload
+ * script reference in the document) and/or watch (to activate the livereload
+ * server).
  */
 
 /*jslint indent:4*/
@@ -31,6 +49,14 @@
 
 module.exports = function (grunt) {
     'use strict';
+
+    var doDeploy = grunt.cli.tasks.indexOf('deploy') !== -1;
+    var doWatch = grunt.cli.tasks.indexOf('watch') !== -1;
+    var useLiveReload = !!grunt.option('live-reload');
+
+    if (doDeploy && useLiveReload) {
+        grunt.fail.fatal("Do not use --live-reload during deployment");
+    }
 
 
     // Site Structure ////////////////////////////////////////////////////////
@@ -140,7 +166,10 @@ module.exports = function (grunt) {
                     {
                         template: 'unresolved/error404.mustache',
                         dest: 'build/unresolved/error404.html',
-                        data: {title: "Not Found"},
+                        data: {
+                            title: "Not Found",
+                            useLiveReload: useLiveReload,
+                        },
                     },
                     {
                         template: 'unresolved/redirect.mustache',
@@ -155,6 +184,7 @@ module.exports = function (grunt) {
                     if (!up) {
                         home = up = {
                             self: {href: '/', title: "Home"},
+                            useLiveReload: useLiveReload,
                         };
                         results.push({
                             template: 'pages/index.mustache',
@@ -172,6 +202,7 @@ module.exports = function (grunt) {
                             self: {href: href, title: node.title},
                             up: up.self,
                             home: home.self,
+                            useLiveReload: useLiveReload,
                             hasOrientation: true,
                             isUpAlsoHome: up === home,
                         };
@@ -240,7 +271,7 @@ module.exports = function (grunt) {
                 removeComments: true,
                 removeCommentsFromCDATA: true,
                 removeEmptyAttributes: true,
-                removeEmptyElements: true,
+                removeEmptyElements: false /* true strips external scripts */,
                 removeOptionalTags: true,
                 removeRedundantAttributes: true,
                 useShortDoctype: true,
@@ -392,6 +423,7 @@ module.exports = function (grunt) {
 
             run: {
                 action: 'run',
+                options: {async: doWatch},
             },
 
             update: {
@@ -399,6 +431,50 @@ module.exports = function (grunt) {
                 options: {
                     version: '<%= grunt.option("version") || "test" %>',
                 },
+            },
+        },
+
+        watch: {
+            options: {
+                debounceDelay: 1000,
+            },
+
+            grunt: {
+                files: 'Gruntfile.js',
+                tasks: 'build',
+            },
+
+            raw: {
+                files: [
+                    'app.yaml',
+                    'favicon.ico',
+                    'robots.txt',
+                    'unresolved/*.py',
+                ],
+                tasks: 'copy:build',
+            },
+
+            json: {
+                files: 'api/**/*.json',
+                tasks: ['copy:build', 'json-minify:build'],
+            },
+
+            mustache: {
+                files: '{pages,partials,unresolved}/**/*.mustache',
+                tasks: ['mustache_render:build', 'htmlmin:build'],
+            },
+
+            css: {
+                files: 'style.css',
+                tasks: 'cssmin:build',
+            },
+
+            livereload: useLiveReload ? {
+                options: {livereload: true},
+                files: 'build/**/*.{css,html}',
+            } : {
+                files: [],
+                tasks: [],
             },
         },
     });
@@ -409,7 +485,7 @@ module.exports = function (grunt) {
     [
         'grunt-contrib-clean', 'grunt-contrib-copy', 'grunt-contrib-cssmin',
         'grunt-mustache-render', 'grunt-contrib-htmlmin', 'grunt-json-minify',
-        'grunt-shell', 'grunt-gae',
+        'grunt-shell', 'grunt-gae', 'grunt-contrib-watch',
     ].forEach(grunt.task.loadNpmTasks);
 
     grunt.task.registerMultiTask('options', "Set option values.", function() {

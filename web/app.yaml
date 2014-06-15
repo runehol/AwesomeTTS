@@ -25,8 +25,38 @@ default_expiration: 12h
 
 handlers:
 - url: /
-  static_files: index.html
-  upload: index\.html
+  static_files: pages/index.html
+  upload: pages/index\.html
+  mime_type: text/html; charset=utf-8
+  secure: always
+
+- url: /(contribute|install)
+  static_files: pages/\1.html
+  upload: pages/(contribute|install)\.html
+  mime_type: text/html; charset=utf-8
+  secure: always
+
+- url: /(config|services|usage)
+  static_files: pages/\1/index.html
+  upload: pages/(config|services|usage)/index\.html
+  mime_type: text/html; charset=utf-8
+  secure: always
+
+- url: /config/(on-the-fly|text|mp3s|advanced)
+  static_files: pages/config/\1.html
+  upload: pages/config/(on-the-fly|text|mp3s|advanced)\.html
+  mime_type: text/html; charset=utf-8
+  secure: always
+
+- url: /services/(ekho|espeak|festival|google|sapi5|say|yandex)
+  static_files: pages/services/\1.html
+  upload: pages/services/(ekho|espeak|festival|google|sapi5|say|yandex)\.html
+  mime_type: text/html; charset=utf-8
+  secure: always
+
+- url: /usage/(browser|editor|on-the-fly)
+  static_files: pages/usage/\1.html
+  upload: pages/usage/(browser|editor|on-the-fly)\.html
   mime_type: text/html; charset=utf-8
   secure: always
 

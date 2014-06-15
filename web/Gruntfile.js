@@ -118,7 +118,7 @@ module.exports = function (grunt) {
             build: {
                 expand: true,
                 src: [
-                    'index.html',
+                    'pages/**/*.html',
                     'unresolved/*.html',
                 ],
                 dest: 'build/',

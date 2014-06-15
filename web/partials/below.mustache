@@ -18,5 +18,13 @@
   ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
   !}}
 
+        {{#hasChildren}}
+            <hr>
+            <nav><ul>
+                {{#children}}
+                    <li><a href="{{href}}">{{title}}</a></li>
+                {{/children}}
+            </ul></nav>
+        {{/hasChildren}}
     </body>
 </html>

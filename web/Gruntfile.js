@@ -137,19 +137,22 @@ module.exports = function (grunt) {
                 },
 
                 files: Array.prototype.concat([
-                    {
-                        template: 'pages/index.mustache',
-                        dest: 'build/pages/index.html',
-                        data: {},
-                    },
-
                     // TODO error404
 
                     // TODO redirect
-                ], (function getMustacheRenderFiles(nodes, base, up) {
+                ], (function getMustacheRenderFiles(nodes, base, up, upData) {
                     var results = [];
-                    var grandchildren = [];
+                    var grandchildren = {};  // slugs to their parent's data
                     var lastData = null;
+
+                    if (!up) {
+                        upData = {};
+                        results.push({
+                            template: 'pages/index.mustache',
+                            dest: 'build/pages/index.html',
+                            data: upData,
+                        });
+                    }
 
                     Object.keys(nodes).forEach(function (slug) {
                         var node = nodes[slug];
@@ -167,7 +170,7 @@ module.exports = function (grunt) {
                             node.children &&
                             Object.keys(node.children).length
                         ) {
-                            grandchildren.push(slug);
+                            grandchildren[slug] = data;
                             results.push({
                                 template: fragment + '/index.mustache',
                                 dest: 'build/' + fragment + '/index.html',
@@ -181,6 +184,15 @@ module.exports = function (grunt) {
                             });
                         }
 
+                        if (upData) {
+                            if (upData.children) {
+                                upData.children.push(data.self);
+                            } else {
+                                upData.hasChildren = true;
+                                upData.children = [data.self];
+                            }
+                        }
+
                         if (lastData) {
                             data.prev = lastData.self;
                             lastData.next = data.self;
@@ -190,11 +202,12 @@ module.exports = function (grunt) {
 
                     return results.concat.apply(
                         results,
-                        grandchildren.map(function (slug) {
+                        Object.keys(grandchildren).map(function (slug) {
                             return getMustacheRenderFiles(
                                 nodes[slug].children,
                                 base + '/' + slug,
-                                nodes[slug]
+                                nodes[slug],
+                                grandchildren[slug]
                             );
                         })
                     );

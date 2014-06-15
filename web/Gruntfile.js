@@ -137,9 +137,16 @@ module.exports = function (grunt) {
                 },
 
                 files: Array.prototype.concat([
-                    // TODO error404
-
-                    // TODO redirect
+                    {
+                        template: 'unresolved/error404.mustache',
+                        dest: 'build/unresolved/error404.html',
+                        data: {self: {title: "Not Found"}},
+                    },
+                    {
+                        template: 'unresolved/redirect.mustache',
+                        dest: 'build/unresolved/redirect.html',
+                        data: {self: {title: "Moved Permanently"}},
+                    },
                 ], (function getMustacheRenderFiles(nodes, base, up, upData) {
                     var results = [];
                     var grandchildren = {};  // slugs to their parent's data

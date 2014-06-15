@@ -18,13 +18,12 @@
   ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
   !}}
 
-        {{#hasChildren}}
-            <hr>
-            <nav><ul>
-                {{#children}}
-                    <li><a href="{{{href}}}">{{title}}</a></li>
-                {{/children}}
-            </ul></nav>
-        {{/hasChildren}}
-    </body>
-</html>
+{{> above}}
+
+<p>
+    The resource URL requested could not be found. For help, try the
+    <a href="/">home page</a>. If you think this is an error, please open an
+    issue on <a href="https://github.com/AwesomeTTS">GitHub</a>.
+</p>
+
+{{> below}}

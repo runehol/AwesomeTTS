@@ -18,13 +18,12 @@
   ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
   !}}
 
-        {{#hasChildren}}
-            <hr>
-            <nav><ul>
-                {{#children}}
-                    <li><a href="{{{href}}}">{{title}}</a></li>
-                {{/children}}
-            </ul></nav>
-        {{/hasChildren}}
-    </body>
-</html>
+{{> above}}
+
+<p>
+    The resource URL requested does not exist as-is, but might be found at
+    <a href="%(path)s">%(path)s</a> instead. Please update any references to
+    the original URL.
+</p>
+
+{{> below}}

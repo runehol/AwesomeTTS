@@ -33,6 +33,37 @@ module.exports = function (grunt) {
     'use strict';
 
 
+    // Site Structure ////////////////////////////////////////////////////////
+
+    var SITEMAP = {
+        install: {title: "Installation"},
+
+        services: {title: "Services", children: {
+            ekho: {title: "Ekho"},
+            espeak: {title: "eSpeak"},
+            festival: {title: "Festival"},
+            google: {title: "Google"},
+            sapi5: {title: "Microsoft Speech API"},
+            say: {title: "OS X Speech Synthesis"},
+        }},
+
+        usage: {title: "Usage", children: {
+            'on-the-fly': {title: "Playing Audio On-the-Fly"},
+            browser: {title: "Adding Audio via the Card Browser"},
+            editor: {title: "Adding Audio via the Note Editor"},
+        }},
+
+        config: {title: "Configuration", children: {
+            'on-the-fly': {title: "On-the-Fly and Keyboard Shortcuts"},
+            text: {title: "Text Filtering and Cloze Handling"},
+            mp3s: {title: "MP3 Generation and Throttling"},
+            advanced: {title: "Advanced"},
+        }},
+
+        contribute: {title: "Contribute"},
+    };
+
+
     // Task Aliases //////////////////////////////////////////////////////////
 
     grunt.task.registerTask('default', 'help');
@@ -42,8 +73,8 @@ module.exports = function (grunt) {
     });
 
     grunt.task.registerTask('build', "Build all into build subdirectory.", [
-        'clean:build', 'copy:build', 'cssmin:build', 'htmlmin:build',
-        'json-minify:build',
+        'clean:build', 'copy:build', 'cssmin:build', 'mustache_render:build',
+        'htmlmin:build', 'json-minify:build',
     ]);
 
     grunt.task.registerTask('run', "Runs project locally using GAE SDK.", [
@@ -68,7 +99,7 @@ module.exports = function (grunt) {
         copy: {
             build: {
                 src: [
-                    'app.yaml',
+                    'app.yaml',  // TODO break off and generate automatically
                     'favicon.ico',
                     'robots.txt',
                     'unresolved/*.py',
@@ -89,6 +120,85 @@ module.exports = function (grunt) {
                 files: {
                     'build/style.css': 'style.css',
                 },
+            },
+        },
+
+        mustache_render: {
+            options: {
+                clear_cache: false,
+            },
+
+            build: {
+                options: {
+                    directory: 'partials/',
+                    prefix: '',
+                    extension: '.mustache',
+                    partial_finder: null,
+                },
+
+                files: Array.prototype.concat([
+                    {
+                        template: 'pages/index.mustache',
+                        dest: 'build/pages/index.html',
+                        data: {},
+                    },
+
+                    // TODO error404
+
+                    // TODO redirect
+                ], (function getMustacheRenderFiles(nodes, base, up) {
+                    var results = [];
+                    var grandchildren = [];
+                    var lastData = null;
+
+                    Object.keys(nodes).forEach(function (slug) {
+                        var node = nodes[slug];
+                        var href = base + '/' + slug;
+                        var fragment = 'pages' + href;
+                        var data = {
+                            self: {href: href, title: node.title},
+                            up: {
+                                href: up ? base : '/',
+                                title: up ? up.title : "Home",
+                            },
+                        };
+
+                        if (
+                            node.children &&
+                            Object.keys(node.children).length
+                        ) {
+                            grandchildren.push(slug);
+                            results.push({
+                                template: fragment + '/index.mustache',
+                                dest: 'build/' + fragment + '/index.html',
+                                data: data,
+                            });
+                        } else {
+                            results.push({
+                                template: fragment + '.mustache',
+                                dest: 'build/' + fragment + '.html',
+                                data: data,
+                            });
+                        }
+
+                        if (lastData) {
+                            data.prev = lastData.self;
+                            lastData.next = data.self;
+                        }
+                        lastData = data;
+                    });
+
+                    return results.concat.apply(
+                        results,
+                        grandchildren.map(function (slug) {
+                            return getMustacheRenderFiles(
+                                nodes[slug].children,
+                                base + '/' + slug,
+                                nodes[slug]
+                            );
+                        })
+                    );
+                }(SITEMAP, ''))),
             },
         },
 
@@ -117,6 +227,7 @@ module.exports = function (grunt) {
 
             build: {
                 expand: true,
+                cwd: 'build/',
                 src: [
                     'pages/**/*.html',
                     'unresolved/*.html',
@@ -276,8 +387,8 @@ module.exports = function (grunt) {
 
     [
         'grunt-contrib-clean', 'grunt-contrib-copy', 'grunt-contrib-cssmin',
-        'grunt-contrib-htmlmin', 'grunt-json-minify', 'grunt-shell',
-        'grunt-gae',
+        'grunt-mustache-render', 'grunt-contrib-htmlmin', 'grunt-json-minify',
+        'grunt-shell', 'grunt-gae',
     ].forEach(grunt.task.loadNpmTasks);
 
     grunt.task.registerMultiTask('options', "Set option values.", function() {

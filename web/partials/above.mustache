@@ -1,0 +1,65 @@
+{{!
+  ! AwesomeTTS text-to-speech add-on website
+  !
+  ! Copyright (C) 2014       Anki AwesomeTTS Development Team
+  ! Copyright (C) 2014       Dave Shifflett
+  !
+  ! This program is free software: you can redistribute it and/or modify
+  ! it under the terms of the GNU Affero General Public License as
+  ! published by the Free Software Foundation, either version 3 of the
+  ! License, or (at your option) any later version.
+  !
+  ! This program is distributed in the hope that it will be useful,
+  ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ! GNU Affero General Public License for more details.
+  !
+  ! You should have received a copy of the GNU Affero General Public License
+  ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  !}}
+
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8">
+
+        <link rel="stylesheet" href="/style.css" type="text/css">
+        <link rel="shortcut icon" href="/favicon.ico" sizes="16x16 32x32"
+          type="image/x-icon">
+        {{#prev}}
+            <link rel="prev" href="{{{href}}}" title="{{title}}">
+        {{/prev}}
+        {{#next}}
+            <link rel="next" href="{{{href}}}" title="{{title}}">
+        {{/next}}
+
+        <title>
+            {{#self}}
+                {{title}} &mdash; AwesomeTTS for Anki
+            {{/self}}
+            {{^self}}
+                AwesomeTTS: Easily add text-to-speech to your Anki cards
+            {{/self}}
+        </title>
+    </head>
+    <body>
+        <h1>
+            {{#self}}
+                {{title}}
+            {{/self}}
+            {{^self}}
+                AwesomeTTS for Anki
+            {{/self}}
+        </h1>
+
+        <nav>
+            {{#prev}}
+                &larr; <a href="{{{href}}}">Back to {{title}}</a>
+            {{/prev}}
+            {{#up}}
+                &uarr; <a href="{{{href}}}">Up to {{title}}</a>
+            {{/up}}
+            {{#next}}
+                <a href="{{{href}}}">Onward to {{title}}</a> &rarr;
+            {{/next}}
+        </nav>

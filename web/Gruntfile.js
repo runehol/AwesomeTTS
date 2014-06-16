@@ -71,6 +71,7 @@ module.exports = function (grunt) {
             google: {title: "Google"},
             sapi5: {title: "Microsoft Speech API"},
             say: {title: "OS X Speech Synthesis"},
+            yandex: {title: "Yandex.Translate"},
         }},
 
         usage: {title: "Usage", children: {

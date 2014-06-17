@@ -58,46 +58,20 @@ module.exports = function (grunt) {
         grunt.fail.fatal("Do not use --live-reload during deployment");
     }
 
-
-    // Helpful Constants /////////////////////////////////////////////////////
-
-    var MIME_HTML = 'text/html; charset=utf-8';
-
-
-    // Site Structure ////////////////////////////////////////////////////////
-
     var SITEMAP = grunt.file.readJSON('sitemap.json');
 
-    var APP_INDICES = ['/(', ')'].join((function getIndexPaths(nodes) {
-        return Object.keys(nodes).
-            filter(function (slug) { return nodes[slug].children; }).
-            map(function (slug) {
-                var result = getIndexPaths(nodes[slug].children);
-                return result ? [slug, '(/(', result, '))?'].join('') : slug;
-            }).join('|');
-    }(SITEMAP)));
-
-    var APP_LEAVES = ['/(', ')'].join((function getLeafPaths(nodes) {
-        return Object.keys(nodes).map(function (slug) {
-            var children = nodes[slug].children;
-            return children ?
-                [slug, ['(', ')'].join(getLeafPaths(children))].join('/') :
-                slug;
-        }).join('|');
-    }(SITEMAP)));
+    var config = {pkg: 'package.json'};
+    grunt.config.init(config);
 
 
     // Task Aliases //////////////////////////////////////////////////////////
 
     grunt.task.registerTask('default', 'help');
-
-    grunt.task.registerTask('help', "Display usage and tasks.", function() {
-        grunt.help.display();
-    });
+    grunt.task.registerTask('help', "Display usage.", grunt.help.display);
 
     grunt.task.registerTask('build', "Build all into build subdirectory.", [
-        'clean:build', 'appyaml:build', 'copy:build', 'cssmin:build',
-        'mustache_render:build', 'htmlmin:build', 'json-minify:build',
+        'clean', 'copy', 'json-minify', 'cssmin', 'mustache_render',
+        'htmlmin', 'appyaml',
     ]);
 
     grunt.task.registerTask('run', "Runs project locally using GAE SDK.", [
@@ -105,444 +79,231 @@ module.exports = function (grunt) {
     ]);
 
     grunt.task.registerTask('deploy', "Pushes new version to GAE platform.", [
-        'build', 'shell:branch', 'shell:tag', 'shell:revision', 'shell:dirty',
-        'options:version', 'gae:update',
+        'build', 'shell', 'version', 'gae:update',
     ]);
 
 
-    // Task Configuration ////////////////////////////////////////////////////
+    // Clean-Up (clean) //////////////////////////////////////////////////////
 
-    grunt.config.init({
-        pkg: grunt.file.readJSON('package.json'),
+    grunt.task.loadNpmTasks('grunt-contrib-clean');
+    config.clean = {build: 'build/'};
 
-        clean: {
-            build: 'build/',
-        },
 
-        appyaml: {
-            build: {
-                basics: {application: 'ankiatts', version: 'local',
-                  runtime: 'python27', api_version: '1', threadsafe: true,
-                  default_expiration: '12h'},
+    // File Copy (copy) //////////////////////////////////////////////////////
 
-                dest: 'build/app.yaml',
+    grunt.task.loadNpmTasks('grunt-contrib-copy');
+    config.copy = {
+        api: {src: 'api/**/*.json', dest: 'build/'},  // minify later in-place
+        favicon: {src: 'favicon.ico', dest: 'build/'},
+        robots: {src: 'robots.txt', dest: 'build/'},
+        unresolvedPy: {src: 'unresolved/__init__.py', dest: 'build/'},
+    };
 
-                handlers: [
-                    {url: '/', static_files: 'pages/index.html',
-                      upload: 'pages/index\\.html', mime_type: MIME_HTML},
-                    {url: APP_INDICES, static_files: 'pages/\\1/index.html',
-                      upload: ['pages', APP_INDICES, '/index\\.html'].join(''),
-                      mime_type: MIME_HTML},
-                    {url: APP_LEAVES, static_files: 'pages/\\1.html',
-                      upload: ['pages', APP_LEAVES, '\\.html'].join(''),
-                      mime_type: MIME_HTML},
 
-                    {url: '/style\\.css', static_files: 'style.css',
-                      upload: 'style\\.css'},
-                    {url: '/favicon\\.ico', static_files: 'favicon.ico',
-                      upload: 'favicon\\.ico', expiration: '35d'},
-                    {url: '/robots\\.txt', static_files: 'robots.txt',
-                      upload: 'robots\\.txt', expiration: '35d'},
+    // JSON Minification In-Place (json-minify) //////////////////////////////
+    // n.b. unlike other minfication plug-ins, this one only works in-place //
+    
+    grunt.task.loadNpmTasks('grunt-json-minify');
+    config['json-minify'] = {api: {files: 'build/api/**/*.json'}};
 
-                    // TODO always-changing /api/update/xxx URLs...
-                    // /api/update/abc123-1.0.0     => good-version.json
-                    // /api/update/abc123-1.0.0-dev => need-newer.json
-                    // /api/update/abc123-1.0.0-pre => need-newer.json
 
-                    {url: '/api/update/[a-z\\d]+-\\d+\\.\\d+\\.\\d+-(dev|pre)',
-                      static_files: 'api/update/unreleased.json',
-                      upload: 'api/update/unreleased\\.json'},
-                    {url: '/api/update', static_files: 'api/update/index.json',
-                      upload: 'api/update/index\\.json', expiration: '35d'},
-                    {url: '/api', static_files: 'api/index.json',
-                      upload: 'api/index\\.json', expiration: '35d'},
-                    {url: '/[aA][pP][iI](/.*)?', script: 'unresolved.api'},
-                    {url: '.*', script: 'unresolved.other'},
-                ],
+    // Stylesheet Copy and Minification (cssmin) /////////////////////////////
 
-                defaults: {secure: 'always'},
-            },
-        },
+    grunt.task.loadNpmTasks('grunt-contrib-cssmin');
+    config.cssmin = {
+        options: {banner: null, keepSpecialComments: 0, report: 'min'},
+        style: {files: {'build/style.css': 'style.css'}},
+    };
 
-        copy: {
-            build: {
-                src: [
-                    'favicon.ico',
-                    'robots.txt',
-                    'unresolved/*.py',
-                    'api/**/*.json'  /* minified inline by json-minify */,
-                ],
-                dest: 'build/',
-            },
-        },
 
-        cssmin: {
-            options: {
-                banner: null,
-                keepSpecialComments: 0,
-                report: 'min',
-            },
+    // HTML Generation from Mustache Templates (mustache_render) /////////////
 
-            build: {
-                files: {
-                    'build/style.css': 'style.css',
-                },
-            },
-        },
+    grunt.task.loadNpmTasks('grunt-mustache-render');
+    config.mustache_render = {
+        options: {directory: 'partials/'},
 
-        mustache_render: {
-            options: {
-                clear_cache: false,
-            },
+        pages: {files: (function getMustachePages(nodes, base, up, home) {
+            var results = [];
+            var grandchildren = {};  // slugs to their parent's data
+            var last = null;
 
-            build: {
-                options: {
-                    directory: 'partials/',
-                    prefix: '',
-                    extension: '.mustache',
-                    partial_finder: null,
-                },
+            if (!up) {
+                home = up = {
+                    self: {href: '/', title: "Home"},
+                    useLiveReload: useLiveReload,
+                };
+                results.push({
+                    template: 'pages/index.mustache',
+                    dest: 'build/pages/index.html',
+                    data: up,
+                });
+            }
 
-                files: Array.prototype.concat([
-                    {
-                        template: 'unresolved/error404.mustache',
-                        dest: 'build/unresolved/error404.html',
-                        data: {
-                            title: "Not Found",
-                            useLiveReload: useLiveReload,
-                        },
-                    },
-                    {
-                        template: 'unresolved/redirect.mustache',
-                        dest: 'build/unresolved/redirect.html',
-                        data: {title: "Moved Permanently"},
-                    },
-                ], (function getMustacheRenderFiles(nodes, base, up, home) {
-                    var results = [];
-                    var grandchildren = {};  // slugs to their parent's data
-                    var last = null;
+            Object.keys(nodes).forEach(function (slug) {
+                var node = nodes[slug];
+                var href = base + '/' + slug;
+                var fragment = 'pages' + href;
+                var data = {
+                    title: node.title,
+                    self: {href: href, title: node.title},
+                    up: up.self,
+                    home: home.self,
+                    useLiveReload: useLiveReload,
+                    hasOrientation: true,
+                    isUpAlsoHome: up === home,
+                };
 
-                    if (!up) {
-                        home = up = {
-                            self: {href: '/', title: "Home"},
-                            useLiveReload: useLiveReload,
-                        };
-                        results.push({
-                            template: 'pages/index.mustache',
-                            dest: 'build/pages/index.html',
-                            data: up,
-                        });
-                    }
-
-                    Object.keys(nodes).forEach(function (slug) {
-                        var node = nodes[slug];
-                        var href = base + '/' + slug;
-                        var fragment = 'pages' + href;
-                        var data = {
-                            title: node.title,
-                            self: {href: href, title: node.title},
-                            up: up.self,
-                            home: home.self,
-                            useLiveReload: useLiveReload,
-                            hasOrientation: true,
-                            isUpAlsoHome: up === home,
-                        };
-
-                        if (node.children) {
-                            grandchildren[slug] = data;
-                            results.push({
-                                template: fragment + '/index.mustache',
-                                dest: 'build/' + fragment + '/index.html',
-                                data: data,
-                            });
-                        } else {
-                            results.push({
-                                template: fragment + '.mustache',
-                                dest: 'build/' + fragment + '.html',
-                                data: data,
-                            });
-                        }
-
-                        if (up.children) {
-                            up.children.push(data.self);
-                        } else {
-                            up.hasChildren = true;
-                            up.children = [data.self];
-                        }
-
-                        if (last) {
-                            data.prev = last.self;
-                            last.next = data.self;
-                        }
-                        last = data;
+                if (node.children) {
+                    grandchildren[slug] = data;
+                    results.push({
+                        template: fragment + '/index.mustache',
+                        dest: 'build/' + fragment + '/index.html',
+                        data: data,
                     });
+                } else {
+                    results.push({
+                        template: fragment + '.mustache',
+                        dest: 'build/' + fragment + '.html',
+                        data: data,
+                    });
+                }
 
-                    return results.concat.apply(
-                        results,
-                        Object.keys(grandchildren).map(function (slug) {
-                            return getMustacheRenderFiles(
-                                nodes[slug].children,
-                                base + '/' + slug,
-                                grandchildren[slug],
-                                home
-                            );
-                        })
-                    );
-                }(SITEMAP, ''))),
-            },
-        },
+                if (up.children) {
+                    up.children.push(data.self);
+                } else {
+                    up.hasChildren = true;
+                    up.children = [data.self];
+                }
 
-        htmlmin: {
-            options: {
-                caseSensitive: false,
-                collapseBooleanAttributes: true,
-                collapseWhitespace: true,
-                conservativeCollapse: false,
-                // ignoreCustomComments: [],
-                keepClosingSlash: false,
-                // lint: false,
-                minifyCSS: true,
-                minifyJS: true,
-                // processScripts: [],
-                removeAttributeQuotes: true,
-                removeCDATASectionsFromCDATA: true,
-                removeComments: true,
-                removeCommentsFromCDATA: true,
-                removeEmptyAttributes: true,
-                removeEmptyElements: false /* true strips external scripts */,
-                removeOptionalTags: true,
-                removeRedundantAttributes: true,
-                useShortDoctype: true,
-            },
+                if (last) {
+                    data.prev = last.self;
+                    last.next = data.self;
+                }
+                last = data;
+            });
 
-            build: {
-                expand: true,
-                cwd: 'build/',
-                src: [
-                    'pages/**/*.html',
-                    'unresolved/*.html',
-                ],
-                dest: 'build/',
-            },
-        },
+            return results.concat.apply(
+                results,
+                Object.keys(grandchildren).map(function (slug) {
+                    return getMustachePages(nodes[slug].children,
+                      base + '/' + slug, grandchildren[slug], home);
+                })
+            );
+        }(SITEMAP, ''))},
 
-        'json-minify': {
-            build: {
-                files: 'build/api/**/*.json',
-            },
-        },
+        unresolvedError404: {files: [{
+            template: 'unresolved/error404.mustache',
+            dest: 'build/unresolved/error404.html',
+            data: {title: "Not Found", useLiveReload: useLiveReload},
+        }]},
 
-        shell: {
-            branch: {
-                command: 'git symbolic-ref --short HEAD',
-                options: {
-                    callback: function (error, stdout, stderr, next) {
-                        stdout = stdout && stdout.trim && stdout.trim();
-
-                        if (error || !stdout || stderr) {
-                            if (
-                                stderr && stderr.indexOf &&
-                                stderr.indexOf('HEAD is not a symbolic') > -1
-                            ) {
-                                grunt.option('git.branch', 'detached');
-                                grunt.log.error("In detached HEAD state");
-                                next();
-                            } else {
-                                next(false);
-                            }
-                        } else {
-                            grunt.option('git.branch', stdout);
-                            grunt.log.ok("Current branch is " + stdout);
-                            next();
-                        }
-                    },
-                },
-            },
-
-            tag: {
-                command: 'git describe --candidates=0 --tags',
-                options: {
-                    callback: function (error, stdout, stderr, next) {
-                        stdout = stdout && stdout.trim && stdout.trim();
-
-                        if (error || !stdout || stderr) {
-                            if (
-                                stderr && stderr.indexOf &&
-                                stderr.indexOf('no tag exactly matches') > -1
-                            ) {
-                                grunt.option('git.tag', null);
-                                grunt.log.error("No tag for this revision");
-                                next();
-                            } else {
-                                next(false);
-                            }
-                        } else {
-                            grunt.option('git.tag', stdout);
-                            grunt.log.ok("Current tag is " + stdout);
-                            next();
-                        }
-                    },
-                },
-            },
-
-            revision: {
-                command: 'git rev-parse --short --verify HEAD',
-                options: {
-                    callback: function (error, stdout, stderr, next) {
-                        stdout = stdout && stdout.trim && stdout.trim();
-
-                        if (error || !stdout || stderr) {
-                            next(false);
-                        } else {
-                            grunt.option('git.revision', stdout);
-                            grunt.log.ok("Current revision is " + stdout);
-                            next();
-                        }
-                    },
-                },
-            },
-
-            dirty: {
-                command: 'git status --porcelain',
-                options: {
-                    callback: function (error, stdout, stderr, next) {
-                        if (error || stderr) {
-                            next(false);
-                        } else {
-                            stdout = stdout && stdout.trim && stdout.trim();
-
-                            if (stdout === '') {
-                                grunt.option('git.dirty', false);
-                                grunt.log.ok("Working tree is clean");
-                            } else {
-                                grunt.option('git.dirty', true);
-                                grunt.log.error("Working tree is dirty");
-                            }
-
-                            next();
-                        }
-                    },
-                },
-            },
-        },
-
-        options: {
-            version: function () {
-                this.requires([
-                    'shell:branch',
-                    'shell:tag',
-                    'shell:revision',
-                    'shell:dirty',
-                ]);
-
-                var version = ['git.branch', 'git.tag', 'git.revision'].
-                    map(grunt.option).
-                    filter(Boolean).
-                    map(function (component) {
-                        return component.toString().toLowerCase().
-                            replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-                    }).
-                    filter(Boolean).
-                    join('-');
-
-                var DIRTY = '-dirty';
-                var MAX_LEN = 50;
-
-                return grunt.option('git.dirty') ?
-                    version.substr(0, MAX_LEN - DIRTY.length) + DIRTY :
-                    version.substr(0, MAX_LEN);
-            },
-        },
-
-        gae: {
-            options: {
-                path: 'build/',
-            },
-
-            run: {
-                action: 'run',
-                options: {async: doWatch},
-            },
-
-            update: {
-                action: 'update',
-                options: {
-                    version: '<%= grunt.option("version") || "test" %>',
-                },
-            },
-        },
-
-        watch: {
-            options: {
-                debounceDelay: 1000,
-            },
-
-            grunt: {
-                files: 'Gruntfile.js',
-                tasks: 'build',
-            },
-
-            raw: {
-                files: [
-                    'app.yaml',
-                    'favicon.ico',
-                    'robots.txt',
-                    'unresolved/*.py',
-                ],
-                tasks: 'copy:build',
-            },
-
-            json: {
-                files: 'api/**/*.json',
-                tasks: ['copy:build', 'json-minify:build'],
-            },
-
-            mustache: {
-                files: '{pages,partials,unresolved}/**/*.mustache',
-                tasks: ['mustache_render:build', 'htmlmin:build'],
-            },
-
-            css: {
-                files: 'style.css',
-                tasks: 'cssmin:build',
-            },
-
-            livereload: useLiveReload ? {
-                options: {livereload: true},
-                files: 'build/**/*.{css,html}',
-            } : {
-                files: [],
-                tasks: [],
-            },
-        },
-    });
+        unresolvedRedirect: {files: [{
+            template: 'unresolved/redirect.mustache',
+            dest: 'build/unresolved/redirect.html',
+            data: {title: "Moved Permanently"},
+        }]},
+    };
 
 
-    // Task Implementations //////////////////////////////////////////////////
+    // HTML Minification In-Place (htmlmin) //////////////////////////////////
+    // n.b. we run this one in-place in order to operate on mustache output //
 
-    [
-        'grunt-contrib-clean', 'grunt-contrib-copy', 'grunt-contrib-cssmin',
-        'grunt-mustache-render', 'grunt-contrib-htmlmin', 'grunt-json-minify',
-        'grunt-shell', 'grunt-gae', 'grunt-contrib-watch',
-    ].forEach(grunt.task.loadNpmTasks);
+    grunt.task.loadNpmTasks('grunt-contrib-htmlmin');
+    config.htmlmin = {
+        options: {caseSensitive: false, collapseBooleanAttributes: true,
+          collapseWhitespace: true, conservativeCollapse: false,
+          keepClosingSlash: false, minifyCSS: true, minifyJS: true,
+          removeAttributeQuotes: true, removeCDATASectionsFromCDATA: true,
+          removeComments: true, removeCommentsFromCDATA: true,
+          removeEmptyAttributes: true, removeEmptyElements: !useLiveReload,
+          removeOptionalTags: true, removeRedundantAttributes: true,
+          useShortDoctype: true},
 
-    grunt.task.registerMultiTask('appyaml', "Write app.yaml.", function () {
-        var data = this.data;
+        pages: {expand: true, cwd: 'build/', src: 'pages/**/*.html',
+          dest: 'build/'},
+        unresolvedError404: {expand: true, cwd: 'build/',
+          src: 'unresolved/error404.html', dest: 'build/'},
+        unresolvedRedirect: {expand: true, cwd: 'build/',
+          src: 'unresolved/redirect.html', dest: 'build/'},
+    };
+
+
+    // app.yaml Builder Task (appyaml) ///////////////////////////////////////
+
+    grunt.task.registerTask('appyaml', "Build app.yaml config.", function () {
+        var MIME_HTML = 'text/html; charset=utf-8';
+
+        var BASICS = {application: 'ankiatts', version: 'local',
+          runtime: 'python27', api_version: '1', threadsafe: true,
+          default_expiration: '12h'};
+
+        var INDICES = ['/(', ')'].join((function getIndices(nodes) {
+            return Object.keys(nodes).
+                filter(function (slug) { return nodes[slug].children; }).
+                map(function (slug) {
+                    var opt = getIndices(nodes[slug].children);
+                    return opt ? [slug, '(/(', opt, '))?'].join('') : slug;
+                }).join('|');
+        }(SITEMAP)));
+
+        var LEAVES = ['/(', ')'].join((function getLeaves(nodes) {
+            return Object.keys(nodes).map(function (slug) {
+                var children = nodes[slug].children;
+                return children ?
+                    [slug, ['(', ')'].join(getLeaves(children))].join('/') :
+                    slug;
+            }).join('|');
+        }(SITEMAP)));
+
+        var HANDLERS = [
+            {url: '/', static_files: 'pages/index.html',
+              upload: 'pages/index\\.html', mime_type: MIME_HTML},
+            {url: INDICES, static_files: 'pages/\\1/index.html',
+              upload: ['pages', INDICES, '/index\\.html'].join(''),
+              mime_type: MIME_HTML},
+            {url: LEAVES, static_files: 'pages/\\1.html',
+              upload: ['pages', LEAVES, '\\.html'].join(''),
+              mime_type: MIME_HTML},
+
+            {url: '/style\\.css', static_files: 'style.css',
+              upload: 'style\\.css'},
+            {url: '/favicon\\.ico', static_files: 'favicon.ico',
+              upload: 'favicon\\.ico', expiration: '35d'},
+            {url: '/robots\\.txt', static_files: 'robots.txt',
+              upload: 'robots\\.txt', expiration: '35d'},
+
+            // TODO always-changing /api/update/xxx URLs; initially...
+            //      /api/update/abc123-1.0.0     => good-version.json
+            //      /api/update/abc123-1.0.0-dev => need-newer.json
+            //      /api/update/abc123-1.0.0-pre => need-newer.json
+
+            {url: '/api/update/[a-z\\d]+-\\d+\\.\\d+\\.\\d+-(dev|pre)',
+              static_files: 'api/update/unreleased.json',
+              upload: 'api/update/unreleased\\.json'},
+
+            {url: '/api/update', static_files: 'api/update/index.json',
+              upload: 'api/update/index\\.json', expiration: '35d'},
+            {url: '/api', static_files: 'api/index.json',
+              upload: 'api/index\\.json', expiration: '35d'},
+
+            {url: '/[aA][pP][iI](/.*)?', script: 'unresolved.api'},
+            {url: '.*', script: 'unresolved.other'},
+        ];
+
+        var FORCE = {secure: 'always'};
 
         grunt.file.write(
-            data.dest,
+            'build/app.yaml',
 
             Array.prototype.concat(
-                Object.keys(data.basics).map(function (key) {
-                    return [key, data.basics[key]].join(': ');
+                Object.keys(BASICS).map(function (key) {
+                    return [key, BASICS[key]].join(': ');
                 }),
                 '',
                 'handlers:',
-                data.handlers.map(function (properties) {
-                    Object.keys(data.defaults).forEach(function (key) {
-                        if (properties[key] === undefined) {
-                            properties[key] = data.defaults[key];
-                        }
+                HANDLERS.map(function (properties) {
+                    Object.keys(FORCE).forEach(function (key) {
+                        properties[key] = FORCE[key];
                     });
 
                     return ['- ', '\n'].join(
@@ -555,9 +316,187 @@ module.exports = function (grunt) {
         );
     });
 
-    grunt.task.registerMultiTask('options', "Set grunt.option.", function () {
-        var value = typeof this.data === 'function' ? this.data() : this.data;
-        grunt.option(this.target, value);
-        grunt.log.ok([this.target, value || "set"].join(" now "));
+
+    // Git Environment Queries (shell) ///////////////////////////////////////
+
+    grunt.task.loadNpmTasks('grunt-shell');
+    config.shell = {
+        branch: {
+            command: 'git symbolic-ref --short HEAD',
+            options: {
+                callback: function (error, stdout, stderr, next) {
+                    stdout = stdout && stdout.trim && stdout.trim();
+
+                    if (error || !stdout || stderr) {
+                        if (
+                            stderr && stderr.indexOf &&
+                            stderr.indexOf('HEAD is not a symbolic') > -1
+                        ) {
+                            grunt.option('git.branch', 'detached');
+                            grunt.log.error("In detached HEAD state");
+                            next();
+                        } else {
+                            next(false);
+                        }
+                    } else {
+                        grunt.option('git.branch', stdout);
+                        grunt.log.ok("Current branch is " + stdout);
+                        next();
+                    }
+                },
+            },
+        },
+
+        tag: {
+            command: 'git describe --candidates=0 --tags',
+            options: {
+                callback: function (error, stdout, stderr, next) {
+                    stdout = stdout && stdout.trim && stdout.trim();
+
+                    if (error || !stdout || stderr) {
+                        if (
+                            stderr && stderr.indexOf &&
+                            stderr.indexOf('no tag exactly matches') > -1
+                        ) {
+                            grunt.option('git.tag', null);
+                            grunt.log.error("No tag for this revision");
+                            next();
+                        } else {
+                            next(false);
+                        }
+                    } else {
+                        grunt.option('git.tag', stdout);
+                        grunt.log.ok("Current tag is " + stdout);
+                        next();
+                    }
+                },
+            },
+        },
+
+        revision: {
+            command: 'git rev-parse --short --verify HEAD',
+            options: {
+                callback: function (error, stdout, stderr, next) {
+                    stdout = stdout && stdout.trim && stdout.trim();
+
+                    if (error || !stdout || stderr) {
+                        next(false);
+                    } else {
+                        grunt.option('git.revision', stdout);
+                        grunt.log.ok("Current revision is " + stdout);
+                        next();
+                    }
+                },
+            },
+        },
+
+        dirty: {
+            command: 'git status --porcelain',
+            options: {
+                callback: function (error, stdout, stderr, next) {
+                    if (error || stderr) {
+                        next(false);
+                    } else {
+                        stdout = stdout && stdout.trim && stdout.trim();
+
+                        if (stdout === '') {
+                            grunt.option('git.dirty', false);
+                            grunt.log.ok("Working tree is clean");
+                        } else {
+                            grunt.option('git.dirty', true);
+                            grunt.log.error("Working tree is dirty");
+                        }
+
+                        next();
+                    }
+                },
+            },
+        },
+    };
+
+
+    // Set Deployment Version (version) //////////////////////////////////////
+
+    grunt.task.registerTask('version', "Set GAE version.", function () {
+        this.requires('shell');
+
+        var version = ['git.branch', 'git.tag', 'git.revision'].
+            map(grunt.option).
+            filter(Boolean).
+            map(function (component) {
+                return component.toString().toLowerCase().
+                    replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            }).
+            filter(Boolean).
+            join('-');
+
+        var DIRTY = '-dirty';
+        var MAX_LEN = 50;
+        version = grunt.option('git.dirty') ?
+            version.substr(0, MAX_LEN - DIRTY.length) + DIRTY :
+            version.substr(0, MAX_LEN);
+
+        grunt.option('version', version);
+        grunt.log.ok("GAE deployment version is " + version);
     });
+
+
+    // Google App Engine (gae) Runner and Updater ////////////////////////////
+
+    grunt.task.loadNpmTasks('grunt-gae');
+    config.gae = {
+        options: {path: 'build/'},
+        run: {action: 'run', options: {async: doWatch}},
+        update: {
+            action: 'update',
+            options: { version: '<%= grunt.option("version") || "test" %>', },
+        },
+    };
+
+
+    // Watcher (watch) ///////////////////////////////////////////////////////
+
+    grunt.task.loadNpmTasks('grunt-contrib-watch');
+    config.watch = {
+        grunt: {files: ['Gruntfile.js', 'sitemap.json'], tasks: 'build',
+          reload: true},
+
+        favicon: {files: 'favicon.ico', tasks: 'copy:favicon'},
+        robots: {files: 'robots.txt', tasks: 'copy:robots'},
+        unresolvedPy: {files: 'unresolved/__init__.py',
+          tasks: 'copy:unresolvedPy'},
+
+        api: {files: 'api/**/*.json', tasks: ['copy:api', 'json-minify:api']},
+
+        style: {files: 'style.css', tasks: ['cssmin:style']},
+
+        pages: {files: 'pages/**/*.mustache',
+          tasks: ['mustache_render:pages', 'htmlmin:pages']},
+        partials: {files: 'partials/*.mustache',
+          tasks: ['mustache_render:pages', 'htmlmin:pages']},
+
+        // these two re-copy the "unresolved" module to clear its cache
+        unresolvedError404: {files: 'unresolved/error404.mustache',
+          tasks: [
+            'mustache_render:unresolvedError404',
+            'htmlmin:unresolvedError404',
+            'copy:unresolvedPy',
+          ]},
+        unresolvedRedirect: {files: 'unresolved/redirect.mustache',
+          tasks: [
+            'mustache_render:unresolvedRedirect',
+            'htmlmin:unresolvedRedirect',
+            'copy:unresolvedPy',
+          ]},
+    };
+
+    // TODO watch:pages and watch:api need a special handler to process the
+    // exact file that changed
+
+    if (useLiveReload) {
+        config.watch.liveReload = {
+            options: {livereload: true},
+            files: 'build/**/*.{css,html,py}',
+        };
+    }
 };

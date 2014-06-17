@@ -66,34 +66,7 @@ module.exports = function (grunt) {
 
     // Site Structure ////////////////////////////////////////////////////////
 
-    var SITEMAP = {
-        install: {title: "Installation"},
-
-        services: {title: "Services", children: {
-            ekho: {title: "Ekho"},
-            espeak: {title: "eSpeak"},
-            festival: {title: "Festival"},
-            google: {title: "Google"},
-            sapi5: {title: "Microsoft Speech API"},
-            say: {title: "OS X Speech Synthesis"},
-            yandex: {title: "Yandex.Translate"},
-        }},
-
-        usage: {title: "Usage", children: {
-            'on-the-fly': {title: "Playing Audio On-the-Fly"},
-            browser: {title: "Adding Audio via the Card Browser"},
-            editor: {title: "Adding Audio via the Note Editor"},
-        }},
-
-        config: {title: "Configuration", children: {
-            'on-the-fly': {title: "On-the-Fly and Keyboard Shortcuts"},
-            text: {title: "Text Filtering and Cloze Handling"},
-            mp3s: {title: "MP3 Generation and Throttling"},
-            advanced: {title: "Advanced"},
-        }},
-
-        contribute: {title: "Contribute"},
-    };
+    var SITEMAP = grunt.file.readJSON('sitemap.json');
 
     var APP_INDICES = ['/(', ')'].join((function getIndexPaths(nodes) {
         return Object.keys(nodes).

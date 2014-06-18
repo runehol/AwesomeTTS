@@ -446,7 +446,7 @@ module.exports = function (grunt) {
         options: {spawn: false},  // required for grunt.event.on logic to work
 
         grunt: {files: ['Gruntfile.js', 'sitemap.json'], tasks: 'build',
-          reload: true},
+          options: {reload: true}},
 
         favicon: {files: 'favicon.ico', tasks: 'copy:favicon'},
         robots: {files: 'robots.txt', tasks: 'copy:robots'},

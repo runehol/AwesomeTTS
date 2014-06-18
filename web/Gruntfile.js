@@ -70,16 +70,17 @@ module.exports = function (grunt) {
     grunt.task.registerTask('help', "Display usage.", grunt.help.display);
 
     grunt.task.registerTask('build', "Build all into build subdirectory.", [
-        'clean', 'copy', 'json-minify', 'cssmin', 'mustache_render',
-        'htmlmin', 'appyaml',
+        // n.b. clean isn't here so that watch:grunt doesn't break GAE server
+        'copy', 'json-minify', 'cssmin', 'mustache_render', 'htmlmin',
+        'appyaml',
     ]);
 
     grunt.task.registerTask('run', "Runs project locally using GAE SDK.", [
-        'build', 'gae:run',
+        'clean', 'build', 'gae:run',
     ]);
 
     grunt.task.registerTask('deploy', "Pushes new version to GAE platform.", [
-        'build', 'shell', 'version', 'gae:update',
+        'clean', 'build', 'shell', 'version', 'gae:update',
     ]);
 
 
@@ -120,7 +121,7 @@ module.exports = function (grunt) {
 
     grunt.task.loadNpmTasks('grunt-mustache-render');
     config.mustache_render = {
-        options: {directory: 'partials/'},
+        options: {clear_cache: doWatch, directory: 'partials/'},
 
         pages: {files: (function getMustachePages(nodes, base, up, home) {
             var results = [];
@@ -458,6 +459,8 @@ module.exports = function (grunt) {
 
     grunt.task.loadNpmTasks('grunt-contrib-watch');
     config.watch = {
+        options: {spawn: false},  // required for grunt.event.on logic to work
+
         grunt: {files: ['Gruntfile.js', 'sitemap.json'], tasks: 'build',
           reload: true},
 
@@ -475,7 +478,7 @@ module.exports = function (grunt) {
         partials: {files: 'partials/*.mustache',
           tasks: ['mustache_render:pages', 'htmlmin:pages']},
 
-        // these two re-copy the "unresolved" module to clear its cache
+        // these two re-copy the "unresolved" module to clear its cached HTML
         unresolvedError404: {files: 'unresolved/error404.mustache',
           tasks: [
             'mustache_render:unresolvedError404',
@@ -490,8 +493,49 @@ module.exports = function (grunt) {
           ]},
     };
 
-    // TODO watch:pages and watch:api need a special handler to process the
-    // exact file that changed
+    (function () {
+        var OLD_VALUES = {};
+        ['copy.api.src', 'json-minify.api.files',
+          'mustache_render.pages.files', 'htmlmin.pages.src'].
+            forEach(function (key) { OLD_VALUES[key] = grunt.config(key); });
+
+        grunt.event.on('watch', function (action, path, target) {
+            // n.b. doing a reset here preps any task that has had its
+            // configuration clobbered by a related task (e.g. watch:pages
+            // clobbers the mustache_render.pages.files list, but if
+            // watch:partials kicks off, then that full list needs to be
+            // in-place to rebuild all pages).
+            Object.keys(OLD_VALUES).forEach(function (key) {
+                grunt.config(key, OLD_VALUES[key]);
+            });
+
+            if (action === 'changed' || action === 'added') {
+                switch (target) {
+                    case 'api':
+                        grunt.config('copy.api.src', path);
+                        grunt.config('json-minify.api.files', 'build/' + path);
+                        break;
+
+                    case 'pages':
+                        grunt.config(
+                            'mustache_render.pages.files',
+                            OLD_VALUES['mustache_render.pages.files'].
+                                filter(function (file) {
+                                    return file.template === path;
+                                })
+                        );
+                        grunt.config(
+                            'htmlmin.pages.src',
+                            path.replace(/\.mustache$/, '.html')
+                        );
+                        break;
+                }
+            } else {
+                grunt.fail.fatal(action + " not supported; please reload");
+                process.exit();
+            }
+        });
+    }());
 
     if (useLiveReload) {
         config.watch.liveReload = {

@@ -32,15 +32,11 @@
  *     $ grunt run        # builds project and then runs the GAE SDK server
  *                        # with its logging output sent to the console
  *
- *     $ grunt watch      # automatically rebuilds the project as needed with
- *                        # build activity output sent to the console
+ *     $ grunt watch      # monitors file system to automatically rebuild the
+ *                        # project as needed (but does NOT do initial build)
  *
  *     $ grunt run watch  # combines the above two, but the GAE SDK server is
  *                        # backgrounded, so only watch activity is visible
- *
- * The --live-reload flag can be used with build/run (to insert a livereload
- * script reference in the document) and/or watch (to activate the livereload
- * server).
  */
 
 /*jslint indent:4*/
@@ -50,13 +46,7 @@
 module.exports = function (grunt) {
     'use strict';
 
-    var doDeploy = grunt.cli.tasks.indexOf('deploy') !== -1;
     var doWatch = grunt.cli.tasks.indexOf('watch') !== -1;
-    var useLiveReload = !!grunt.option('live-reload');
-
-    if (doDeploy && useLiveReload) {
-        grunt.fail.fatal("Do not use --live-reload during deployment");
-    }
 
     var SITEMAP = grunt.file.readJSON('sitemap.json');
 
@@ -129,10 +119,7 @@ module.exports = function (grunt) {
             var last = null;
 
             if (!up) {
-                home = up = {
-                    self: {href: '/', title: "Home"},
-                    useLiveReload: useLiveReload,
-                };
+                home = up = {self: {href: '/', title: "Home"}};
                 results.push({
                     template: 'pages/index.mustache',
                     dest: 'build/pages/index.html',
@@ -149,7 +136,6 @@ module.exports = function (grunt) {
                     self: {href: href, title: node.title},
                     up: up.self,
                     home: home.self,
-                    useLiveReload: useLiveReload,
                     hasOrientation: true,
                     isUpAlsoHome: up === home,
                 };
@@ -195,7 +181,7 @@ module.exports = function (grunt) {
         unresolvedError404: {files: [{
             template: 'unresolved/error404.mustache',
             dest: 'build/unresolved/error404.html',
-            data: {title: "Not Found", useLiveReload: useLiveReload},
+            data: {title: "Not Found"},
         }]},
 
         unresolvedRedirect: {files: [{
@@ -216,7 +202,7 @@ module.exports = function (grunt) {
           keepClosingSlash: false, minifyCSS: true, minifyJS: true,
           removeAttributeQuotes: true, removeCDATASectionsFromCDATA: true,
           removeComments: true, removeCommentsFromCDATA: true,
-          removeEmptyAttributes: true, removeEmptyElements: !useLiveReload,
+          removeEmptyAttributes: true, removeEmptyElements: true,
           removeOptionalTags: true, removeRedundantAttributes: true,
           useShortDoctype: true},
 
@@ -536,11 +522,4 @@ module.exports = function (grunt) {
             }
         });
     }());
-
-    if (useLiveReload) {
-        config.watch.liveReload = {
-            options: {livereload: true},
-            files: 'build/**/*.{css,html,py}',
-        };
-    }
 };

@@ -28,23 +28,23 @@
           type="image/x-icon">
 
         <title>
-            {{#title}}
-                {{title}} &mdash; AwesomeTTS for Anki
-            {{/title}}{{^title}}
+            {{#isHome}}
                 AwesomeTTS: Easily add text-to-speech to your Anki cards
-            {{/title}}
+            {{/isHome}}{{^isHome}}
+                {{self.title}} &mdash; AwesomeTTS for Anki
+            {{/isHome}}
         </title>
     </head>
     <body>
         <h1>
-            {{#title}}
-                {{title}}
-            {{/title}}{{^title}}
+            {{#isHome}}
                 AwesomeTTS for Anki
-            {{/title}}
+            {{/isHome}}{{^isHome}}
+                {{self.title}}
+            {{/isHome}}
         </h1>
 
-        {{#hasOrientation}}
+        {{#isPage}}
             <nav><ul>
                 {{#prev}}
                     <li>
@@ -54,14 +54,14 @@
                 {{/prev}}
 
                 {{#up}}
-                    {{#isUpAlsoHome}}
+                    {{#upEqHome}}
                         <li>
                             &uarr;
                             <a href="{{{href}}}" rel="home index parent up">
                                 {{title}}
                             </a>
                         </li>
-                    {{/isUpAlsoHome}}{{^isUpAlsoHome}}
+                    {{/upEqHome}}{{^upEqHome}}
                         {{#home}}
                             <li>
                                 &uarr;
@@ -77,7 +77,7 @@
                                 {{title}}
                             </a>
                         </li>
-                    {{/isUpAlsoHome}}
+                    {{/upEqHome}}
                 {{/up}}
 
                 {{#next}}
@@ -87,4 +87,4 @@
                     </li>
                 {{/next}}
             </ul></nav>
-        {{/hasOrientation}}
+        {{/isPage}}

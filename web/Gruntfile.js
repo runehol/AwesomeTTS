@@ -118,7 +118,7 @@ module.exports = function (grunt) {
             var last = null;
 
             if (!up) {
-                home = up = {self: {href: '/', title: "Home"}};
+                home = up = {self: {href: '/', title: "Home"}, isHome: true};
                 results.push({
                     template: 'pages/index.mustache',
                     dest: 'build/pages/index.html',
@@ -131,12 +131,11 @@ module.exports = function (grunt) {
                 var href = base + '/' + slug;
                 var fragment = 'pages' + href;
                 var data = {
-                    title: node.title,
                     self: {href: href, title: node.title},
                     up: up.self,
                     home: home.self,
-                    hasOrientation: true,
-                    isUpAlsoHome: up === home,
+                    upEqHome: up === home,
+                    isPage: true,
                 };
 
                 if (node.children) {
@@ -157,7 +156,7 @@ module.exports = function (grunt) {
                 if (up.children) {
                     up.children.push(data.self);
                 } else {
-                    up.hasChildren = true;
+                    up.isParent = true;
                     up.children = [data.self];
                 }
 
@@ -180,13 +179,13 @@ module.exports = function (grunt) {
         unresolvedError404: {files: [{
             template: 'unresolved/error404.mustache',
             dest: 'build/unresolved/error404.html',
-            data: {title: "Not Found"},
+            data: {self: {title: "Not Found"}, isDynamic: true},
         }]},
 
         unresolvedRedirect: {files: [{
             template: 'unresolved/redirect.mustache',
             dest: 'build/unresolved/redirect.html',
-            data: {title: "Moved Permanently"},
+            data: {self: {title: "Moved Permanently"}, isDynamic: true},
         }]},
     };
 

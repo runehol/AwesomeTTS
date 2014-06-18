@@ -60,24 +60,23 @@ module.exports = function (grunt) {
     grunt.task.registerTask('help', "Display usage.", grunt.help.display);
 
     grunt.task.registerTask('build', "Build all into build subdirectory.", [
-        // n.b. clean isn't here so that watch:grunt doesn't break GAE server
-        'copy', 'json-minify', 'cssmin', 'mustache_render', 'htmlmin',
-        'appyaml',
+        'clean', 'copy', 'json-minify', 'cssmin', 'mustache_render',
+        'htmlmin', 'appyaml',
     ]);
 
     grunt.task.registerTask('run', "Runs project locally using GAE SDK.", [
-        'clean', 'build', 'gae:run',
+        'build', 'gae:run',
     ]);
 
     grunt.task.registerTask('deploy', "Pushes new version to GAE platform.", [
-        'clean', 'build', 'shell', 'version', 'gae:update',
+        'build', 'shell', 'version', 'gae:update',
     ]);
 
 
     // Clean-Up (clean) //////////////////////////////////////////////////////
 
     grunt.task.loadNpmTasks('grunt-contrib-clean');
-    config.clean = {build: 'build/'};
+    config.clean = {build: 'build/*'};
 
 
     // File Copy (copy) //////////////////////////////////////////////////////

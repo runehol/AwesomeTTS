@@ -459,10 +459,18 @@ module.exports = function (grunt) {
 
         pages: {files: 'pages/**/*.mustache',
           tasks: ['mustache_render:pages', 'htmlmin:pages']},
-        partials: {files: 'partials/*.mustache',
-          tasks: ['mustache_render:pages', 'htmlmin:pages']},
 
-        // these two re-copy the "unresolved" module to clear its cached HTML
+        // these re-copy the "unresolved" module so its cached HTML is cleared
+        partials: {files: 'partials/*.mustache',
+          tasks: [
+            'mustache_render:pages',
+            'mustache_render:unresolvedError404',
+            'mustache_render:unresolvedRedirect',
+            'htmlmin:pages',
+            'htmlmin:unresolvedError404',
+            'htmlmin:unresolvedRedirect',
+            'copy:unresolvedPy',
+          ]},
         unresolvedError404: {files: 'unresolved/error404.mustache',
           tasks: [
             'mustache_render:unresolvedError404',

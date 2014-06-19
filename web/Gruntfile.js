@@ -37,6 +37,8 @@
  *
  *     $ grunt run watch  # combines the above two, but the GAE SDK server is
  *                        # backgrounded, so only watch activity is visible
+ *
+ *     $ grunt clean      # removes the contents of build/ subdirectory
  */
 
 /*jslint indent:4*/
@@ -101,7 +103,7 @@ module.exports = function (grunt) {
 
     grunt.task.loadNpmTasks('grunt-contrib-cssmin');
     config.cssmin = {
-        options: {banner: null, keepSpecialComments: 0, report: 'min'},
+        options: {keepSpecialComments: 0},
         style: {files: {'build/style.css': 'style.css'}},
     };
 
@@ -114,7 +116,7 @@ module.exports = function (grunt) {
 
         pages: {files: (function getMustachePages(nodes, base, up, home) {
             var results = [];
-            var grandchildren = {};  // slugs to their parent's data
+            var grandchildren = {};  // map of slugs to Mustache data object
             var last = null;
 
             if (!up) {
@@ -195,14 +197,12 @@ module.exports = function (grunt) {
 
     grunt.task.loadNpmTasks('grunt-contrib-htmlmin');
     config.htmlmin = {
-        options: {caseSensitive: false, collapseBooleanAttributes: true,
-          collapseWhitespace: true, conservativeCollapse: false,
-          keepClosingSlash: false, minifyCSS: true, minifyJS: true,
-          removeAttributeQuotes: true, removeCDATASectionsFromCDATA: true,
-          removeComments: true, removeCommentsFromCDATA: true,
-          removeEmptyAttributes: true, removeEmptyElements: true,
-          removeOptionalTags: true, removeRedundantAttributes: true,
-          useShortDoctype: true},
+        options: {collapseBooleanAttributes: true, collapseWhitespace: true,
+          minifyCSS: true, minifyJS: true, removeAttributeQuotes: true,
+          removeCDATASectionsFromCDATA: true, removeComments: true,
+          removeCommentsFromCDATA: true, removeEmptyAttributes: true,
+          removeEmptyElements: true, removeOptionalTags: true,
+          removeRedundantAttributes: true, useShortDoctype: true},
 
         pages: {expand: true, cwd: 'build/', src: 'pages/**/*.html',
           dest: 'build/'},

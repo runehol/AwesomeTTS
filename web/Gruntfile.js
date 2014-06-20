@@ -50,7 +50,45 @@ module.exports = function (grunt) {
 
     var doWatch = grunt.cli.tasks.indexOf('watch') !== -1;
 
-    var SITEMAP = grunt.file.readJSON('sitemap.json');
+    var SITEMAP = (function getSubtree(nodes, urlBase, parent) {
+        var prev;
+
+        return Object.keys(nodes).map(function (slug) {
+            var node = nodes[slug];
+            var href = [urlBase, slug].join('/');
+            var isObject = typeof node === 'object';
+            var result = {
+                me: {
+                    title: String(isObject ? node.title : node),
+                    href: href,
+                    slug: slug,
+                },
+                isDynamic: false,
+                isHome: false,
+                isInterior: true,
+            };
+
+            if (parent) {
+                result.parent = parent.me;
+            }
+
+            if (isObject && typeof node.children === 'object' &&
+              Object.keys(node.children).length > 0) {
+                result.isParent = true;
+                result.children = getSubtree(node.children, href, result);
+            } else {
+                result.isParent = false;
+            }
+
+            if (prev) {
+                result.prev = prev.me;
+                prev.next = result.me;
+            }
+
+            prev = result;
+            return result;
+        });
+    }(grunt.file.readJSON('sitemap.json'), ''));
 
     var config = {pkg: 'package.json'};
     grunt.config.init(config);
@@ -111,65 +149,126 @@ module.exports = function (grunt) {
     // HTML Generation from Mustache Templates (mustache_render) /////////////
 
     grunt.task.loadNpmTasks('grunt-mustache-render');
-    config.mustache_render = {
-        options: {clear_cache: doWatch, directory: 'partials/'},
+    (function () {
+        var homeHelper = function (page) {
+            return ['<a href="/" rel="', '">Home</a>'].join(
+                page.isHome && 'home index me' ||
+                (page.parent || page.isDynamic) && 'home index' ||
+                'home index parent'
+            );
+        };
 
-        pages: {files: (function getMustachePages(nodes, base, up, home) {
-            var results = [];
-            if (!home) {
-                home = up;
-                results.push({data: home, template: 'pages/index.mustache',
-                  dest: 'build/pages/index.html'});
+        var linkHelper = function (ctx, page) {
+            var rels = '';
+            var me = ctx.me || ctx;
+
+            if (page.isHome) {
+                if (!ctx.parent) {
+                    rels = ' rel="child"';
+                }
+            } else if (page.me) {
+                rels = me.href === page.me.href && 'me' ||
+                    page.parent && me.href === page.parent.href && 'parent' ||
+                    page.prev && me.href === page.prev.href && 'prev' ||
+                    page.next && me.href === page.next.href && 'next' ||
+                    ctx.parent && ctx.parent.href === page.me.href && 'child';
+
+                rels = rels ? [' rel="', '"'].join(rels) : '';
             }
 
-            var last = null;
-            Object.keys(nodes).forEach(function (slug) {
-                var node = nodes[slug];
-                var href = [base, slug].join('/');
-                var fragment = 'pages' + href;
-                var data = {self: {href: href, title: node.title}, up: up.self,
-                  home: home.self, upEqHome: up === home, isPage: true};
+            return [
+                '<a href="', me.href, '"', rels, '>',
+                me.title,
+                '</a>',
+            ].join('');
+        };
 
-                if (node.children) {
-                    results = results.concat(
-                        {template: fragment + '/index.mustache', data: data,
-                          dest: 'build/' + fragment + '/index.html'},
-                        getMustachePages(node.children, href, data, home)
-                    );
-                } else {
-                    results.push({data: data, template: fragment + '.mustache',
-                      dest: 'build/' + fragment + '.html'});
-                }
+        var data = function (node) {
+            var result = {
+                helpers: {
+                    home: function () { return homeHelper(node); },
+                    link: function () { return linkHelper(this, node); },
+                },
 
-                if (up.children) {
-                    up.children.push(data.self);
-                } else {
-                    up.isParent = true;
-                    up.children = [data.self];
-                }
+                sitemap: SITEMAP,
+            };
 
-                if (last) {
-                    data.prev = last.self;
-                    last.next = data.self;
-                }
-                last = data;
+            Object.keys(node).forEach(function (key) {
+                result[key] = node[key];
             });
 
-            return results;
-        }(SITEMAP, '', {self: {href: '/', title: "Home"}, isHome: true}))},
+            return result;
+        };
 
-        unresolvedError404: {files: [{
-            data: {self: {title: "Not Found"}, isDynamic: true},
-            template: 'unresolved/error404.mustache',
-            dest: 'build/unresolved/error404.html',
-        }]},
+        var getMustacheRenderPages = function(nodes) {
+            return Array.prototype.concat.apply(
+                [],
+                nodes.map(function (node) {
+                    var fragment = 'pages' + node.me.href;
 
-        unresolvedRedirect: {files: [{
-            data: {self: {title: "Moved Permanently"}, isDynamic: true},
-            template: 'unresolved/redirect.mustache',
-            dest: 'build/unresolved/redirect.html',
-        }]},
-    };
+                    if (node.children) {
+                        return Array.prototype.concat(
+                            {
+                                data: data(node),
+                                template: fragment + '/index.mustache',
+                                dest: 'build/' + fragment + '/index.html',
+                            },
+                            getMustacheRenderPages(node.children)
+                        );
+                    }
+
+                    return {
+                        data: data(node),
+                        template: fragment + '.mustache',
+                        dest: 'build/' + fragment + '.html',
+                    };
+                })
+            );
+        };
+
+        config.mustache_render = {
+            options: {clear_cache: doWatch, directory: 'partials/'},
+
+            pages: {files: Array.prototype.concat(
+                {
+                    data: data({
+                        children: SITEMAP,
+                        isDynamic: false,
+                        isHome: true,
+                        isInterior: false,
+                        isParent: SITEMAP.length > 0,
+                    }),
+                    template: 'pages/index.mustache',
+                    dest: 'build/pages/index.html',
+                },
+                getMustacheRenderPages(SITEMAP)
+            )},
+
+            unresolvedError404: {files: [{
+                data: data({
+                    me: {title: "Not Found"},
+                    isDynamic: true,
+                    isHome: false,
+                    isInterior: false,
+                    isParent: false,
+                }),
+                template: 'unresolved/error404.mustache',
+                dest: 'build/unresolved/error404.html',
+            }]},
+
+            unresolvedRedirect: {files: [{
+                data: data({
+                    me: {title: "Moved Permanently"},
+                    isDynamic: true,
+                    isHome: false,
+                    isInterior: false,
+                    isParent: false,
+                }),
+                template: 'unresolved/redirect.mustache',
+                dest: 'build/unresolved/redirect.html',
+            }]},
+        };
+    }());
 
 
     // HTML Minification In-Place (htmlmin) //////////////////////////////////
@@ -203,21 +302,24 @@ module.exports = function (grunt) {
           default_expiration: '12h'};
 
         var INDICES = ['/(', ')'].join((function getIndices(nodes) {
-            return Object.keys(nodes).
-                filter(function (slug) { return nodes[slug].children; }).
-                map(function (slug) {
-                    var opt = getIndices(nodes[slug].children);
+            return nodes.
+                filter(function (node) { return node.children; }).
+                map(function (node) {
+                    var opt = getIndices(node.children);
+                    var slug = node.me.slug;
                     return opt ? [slug, '(/(', opt, '))?'].join('') : slug;
                 }).join('|');
         }(SITEMAP)));
 
         var LEAVES = ['/(', ')'].join((function getLeaves(nodes) {
-            return Object.keys(nodes).map(function (slug) {
-                var children = nodes[slug].children;
-                return children ?
-                    [slug, ['(', ')'].join(getLeaves(children))].join('/') :
-                    slug;
-            }).join('|');
+            return nodes.
+                map(function (node) {
+                    var children = node.children;
+                    var slug = node.me.slug;
+                    return children ?
+                        [slug, ['(', ')'].join(getLeaves(children))].join('/') :
+                        slug;
+                }).join('|');
         }(SITEMAP)));
 
         var HANDLERS = [

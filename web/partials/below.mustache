@@ -18,12 +18,13 @@
   ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
   !}}
 
-        {{#isParent}}
-            <nav><ul>
-                {{#children}}
-                    <li><a href="{{{href}}}" rel="child">{{title}}</a></li>
-                {{/children}}
-            </ul></nav>
-        {{/isParent}}
+            {{#isParent}}
+                <nav><ul>
+                    {{#children}}
+                        <li>{{{helpers.link}}}</li>
+                    {{/children}}
+                </ul></nav>
+            {{/isParent}}
+        </main>
     </body>
 </html>

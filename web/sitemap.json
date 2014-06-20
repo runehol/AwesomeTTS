@@ -1,40 +1,37 @@
 {
-    "install": {"title": "Installation"},
+    "install": "Installation",
 
     "services": {
         "title": "Services",
-
         "children": {
-            "ekho": {"title": "Ekho"},
-            "espeak": {"title": "eSpeak"},
-            "festival": {"title": "Festival"},
-            "google": {"title": "Google"},
-            "sapi5": {"title": "Microsoft Speech API"},
-            "say": {"title": "OS X Speech Synthesis"},
-            "yandex": {"title": "Yandex.Translate"}
+            "ekho": "Ekho",
+            "espeak": "eSpeak",
+            "festival": "Festival",
+            "google": "Google",
+            "sapi5": "Microsoft Speech API",
+            "say": "OS X Speech Synthesis",
+            "yandex": "Yandex.Translate"
         }
     },
 
     "usage": {
         "title": "Usage",
-
         "children": {
-            "on-the-fly": {"title": "Playing Audio On-the-Fly"},
-            "browser": {"title": "Adding Audio via the Card Browser"},
-            "editor": {"title": "Adding Audio via the Note Editor"}
+            "on-the-fly": "Playing Audio On-the-Fly",
+            "browser": "Adding Audio via the Card Browser",
+            "editor": "Adding Audio via the Note Editor"
         }
     },
 
     "config": {
         "title": "Configuration",
-
         "children": {
-            "on-the-fly": {"title": "On-the-Fly and Keyboard Shortcuts"},
-            "text": {"title": "Text Filtering and Cloze Handling"},
-            "mp3s": {"title": "MP3 Generation and Throttling"},
-            "advanced": {"title": "Advanced"}
+            "on-the-fly": "On-the-Fly and Keyboard Shortcuts",
+            "text": "Text Filtering and Cloze Handling",
+            "mp3s": "MP3 Generation and Throttling",
+            "advanced": "Advanced"
         }
     },
 
-    "contribute": {"title": "Contribute"}
+    "contribute": "Contribute"
 }

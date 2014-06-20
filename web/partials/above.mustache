@@ -31,60 +31,47 @@
             {{#isHome}}
                 AwesomeTTS: Easily add text-to-speech to your Anki cards
             {{/isHome}}{{^isHome}}
-                {{self.title}} &mdash; AwesomeTTS for Anki
+                {{me.title}} &mdash; AwesomeTTS for Anki
             {{/isHome}}
         </title>
     </head>
     <body>
-        <h1>
-            {{#isHome}}
-                AwesomeTTS for Anki
-            {{/isHome}}{{^isHome}}
-                {{self.title}}
-            {{/isHome}}
-        </h1>
+        <nav><ul>
+            <li>{{{helpers.home}}}</li>
 
-        {{#isPage}}
-            <nav><ul>
-                {{#prev}}
-                    <li>
-                        &larr;
-                        <a href="{{{href}}}" rel="prev">{{title}}</a>
-                    </li>
-                {{/prev}}
+            {{#sitemap}}
+                <li>
+                    {{{helpers.link}}}
 
-                {{#up}}
-                    {{#upEqHome}}
-                        <li>
-                            &uarr;
-                            <a href="{{{href}}}" rel="home index parent up">
-                                {{title}}
-                            </a>
-                        </li>
-                    {{/upEqHome}}{{^upEqHome}}
-                        {{#home}}
-                            <li>
-                                &uarr;
-                                <a href="{{{href}}}" rel="home index">
-                                    {{title}}
-                                </a>
-                            </li>
-                        {{/home}}
+                    {{#isParent}}
+                        <ul>
+                            {{#children}}
+                                <li>{{{helpers.link}}}</li>
+                            {{/children}}
+                        </ul>
+                    {{/isParent}}
+                </li>
+            {{/sitemap}}
+        </ul></nav>
 
-                        <li>
-                            &uarr;
-                            <a href="{{{href}}}" rel="parent up">
-                                {{title}}
-                            </a>
-                        </li>
-                    {{/upEqHome}}
-                {{/up}}
+        <main>
+            <h1>
+                {{#isHome}}
+                    AwesomeTTS for Anki
+                {{/isHome}}{{^isHome}}
+                    {{me.title}}
+                {{/isHome}}
+            </h1>
 
-                {{#next}}
-                    <li>
-                        <a href="{{{href}}}" rel="next">{{title}}</a>
-                        &rarr;
-                    </li>
-                {{/next}}
-            </ul></nav>
-        {{/isPage}}
+            {{#isDynamic}}
+                <nav>{{{helpers.home}}}</nav>
+            {{/isDynamic}}
+
+            {{#isInterior}}
+                <nav><ul>
+                    {{#prev}}<li>&larr; {{{helpers.link}}}</li>{{/prev}}
+                    <li>&uarr; {{{helpers.home}}}</li>
+                    {{#parent}}<li>&uarr; {{{helpers.link}}}</li>{{/parent}}
+                    {{#next}}<li>{{{helpers.link}}} &rarr;</li>{{/next}}
+                </ul></nav>
+            {{/isInterior}}

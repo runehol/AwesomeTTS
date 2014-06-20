@@ -116,43 +116,29 @@ module.exports = function (grunt) {
 
         pages: {files: (function getMustachePages(nodes, base, up, home) {
             var results = [];
-            var grandchildren = {};  // map of slugs to Mustache data object
-            var last = null;
-
-            if (!up) {
-                home = up = {self: {href: '/', title: "Home"}, isHome: true};
-                results.push({
-                    template: 'pages/index.mustache',
-                    dest: 'build/pages/index.html',
-                    data: up,
-                });
+            if (!home) {
+                home = up;
+                results.push({data: home, template: 'pages/index.mustache',
+                  dest: 'build/pages/index.html'});
             }
 
+            var last = null;
             Object.keys(nodes).forEach(function (slug) {
                 var node = nodes[slug];
-                var href = base + '/' + slug;
+                var href = [base, slug].join('/');
                 var fragment = 'pages' + href;
-                var data = {
-                    self: {href: href, title: node.title},
-                    up: up.self,
-                    home: home.self,
-                    upEqHome: up === home,
-                    isPage: true,
-                };
+                var data = {self: {href: href, title: node.title}, up: up.self,
+                  home: home.self, upEqHome: up === home, isPage: true};
 
                 if (node.children) {
-                    grandchildren[slug] = data;
-                    results.push({
-                        template: fragment + '/index.mustache',
-                        dest: 'build/' + fragment + '/index.html',
-                        data: data,
-                    });
+                    results = results.concat(
+                        {template: fragment + '/index.mustache', data: data,
+                          dest: 'build/' + fragment + '/index.html'},
+                        getMustachePages(node.children, href, data, home)
+                    );
                 } else {
-                    results.push({
-                        template: fragment + '.mustache',
-                        dest: 'build/' + fragment + '.html',
-                        data: data,
-                    });
+                    results.push({data: data, template: fragment + '.mustache',
+                      dest: 'build/' + fragment + '.html'});
                 }
 
                 if (up.children) {
@@ -169,25 +155,19 @@ module.exports = function (grunt) {
                 last = data;
             });
 
-            return results.concat.apply(
-                results,
-                Object.keys(grandchildren).map(function (slug) {
-                    return getMustachePages(nodes[slug].children,
-                      base + '/' + slug, grandchildren[slug], home);
-                })
-            );
-        }(SITEMAP, ''))},
+            return results;
+        }(SITEMAP, '', {self: {href: '/', title: "Home"}, isHome: true}))},
 
         unresolvedError404: {files: [{
+            data: {self: {title: "Not Found"}, isDynamic: true},
             template: 'unresolved/error404.mustache',
             dest: 'build/unresolved/error404.html',
-            data: {self: {title: "Not Found"}, isDynamic: true},
         }]},
 
         unresolvedRedirect: {files: [{
+            data: {self: {title: "Moved Permanently"}, isDynamic: true},
             template: 'unresolved/redirect.mustache',
             dest: 'build/unresolved/redirect.html',
-            data: {self: {title: "Moved Permanently"}, isDynamic: true},
         }]},
     };
 
@@ -434,7 +414,7 @@ module.exports = function (grunt) {
         run: {action: 'run', options: {async: doWatch}},
         update: {
             action: 'update',
-            options: { version: '<%= grunt.option("version") || "test" %>', },
+            options: {version: '<%= grunt.option("version") || "test" %>'},
         },
     };
 

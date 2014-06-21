@@ -150,12 +150,16 @@ module.exports = function (grunt) {
 
     grunt.task.loadNpmTasks('grunt-mustache-render');
     (function () {
-        var homeHelper = function (page) {
-            return ['<a href="/" rel="', '">Home</a>'].join(
-                page.isHome && 'home index me' ||
-                (page.parent || page.isDynamic) && 'home index' ||
-                'home index parent'
-            );
+        var homeHelper = function (page, masthead) {
+            return [
+                '<a href="/" rel="',
+                     page.isHome && 'home index me' ||
+                    (page.parent || page.isDynamic) && 'home index' ||
+                    'home index parent',
+                '">',
+                    masthead ? 'AwesomeTTS for Anki' : 'AwesomeTTS Home',
+                '</a>'
+            ].join('');
         };
 
         var linkHelper = function (ctx, page) {
@@ -186,8 +190,15 @@ module.exports = function (grunt) {
         var data = function (node) {
             var result = {
                 helpers: {
-                    home: function () { return homeHelper(node); },
-                    link: function () { return linkHelper(this, node); },
+                    home: function () {
+                        return homeHelper(node);
+                    },
+                    link: function () {
+                        return linkHelper(this, node);
+                    },
+                    masthead: function () {
+                        return homeHelper(this, node, true);
+                    },
                 },
 
                 sitemap: SITEMAP,

@@ -8,27 +8,27 @@
             "espeak": "eSpeak",
             "festival": "Festival",
             "google": "Google",
-            "sapi5": "Microsoft Speech API",
-            "say": "OS X Speech Synthesis",
-            "yandex": "Yandex.Translate"
+            "say": "OS X",
+            "sapi5": "SAPI",
+            "yandex": "Yandex"
         }
     },
 
     "usage": {
         "title": "Usage",
         "children": {
-            "on-the-fly": "Playing Audio On-the-Fly",
-            "browser": "Adding Audio via the Card Browser",
-            "editor": "Adding Audio via the Note Editor"
+            "on-the-fly": "On-the-Fly",
+            "browser": "Card Browser",
+            "editor": "Note Editor"
         }
     },
 
     "config": {
         "title": "Configuration",
         "children": {
-            "on-the-fly": "On-the-Fly and Keyboard Shortcuts",
-            "text": "Text Filtering and Cloze Handling",
-            "mp3s": "MP3 Generation and Throttling",
+            "on-the-fly": "On-the-Fly",
+            "text": "Text",
+            "mp3s": "MP3s",
             "advanced": "Advanced"
         }
     },

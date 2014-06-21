@@ -165,7 +165,7 @@ module.exports = function (grunt) {
                     (page.parent || page.isDynamic) && 'home index' ||
                     'home index parent',
                 '">',
-                    masthead ? 'AwesomeTTS for Anki' : 'AwesomeTTS Home',
+                    masthead ? 'AwesomeTTS for Anki' : 'Home',
                 '</a>'
             ].join('');
         };

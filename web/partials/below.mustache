@@ -21,15 +21,7 @@
         </article>
 
         {{#isParent}}
-            <nav>
-                <strong>
-                    {{#isHome}}
-                        Learn about AwesomeTTS
-                    {{/isHome}}{{^isHome}}
-                        {{me.title}}
-                    {{/isHome}}
-                </strong>
-
+            <nav id="dive">
                 <ul>
                     {{#children}}
                         <li>{{{helpers.link}}}</li>
@@ -39,7 +31,7 @@
         {{/isParent}}
     </main>
 
-    <nav>
+    <nav id="plat">
         <h1>Sitemap</h1>
 
         <ul>

@@ -43,15 +43,13 @@
 
     <main>
         {{#isDynamic}}
-            <nav>
-                <strong>Back</strong>
+            <nav id="turf">
                 {{{helpers.home}}}
             </nav>
         {{/isDynamic}}
 
         {{#isInterior}}
-            <nav>
-                <strong>Navigate</strong>
+            <nav id="turf">
                 <ul>
                     {{#parent}}<li>{{{helpers.link}}}</li>{{/parent}}
                     {{#prev}}<li>{{{helpers.link}}}</li>{{/prev}}

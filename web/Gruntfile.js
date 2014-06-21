@@ -100,7 +100,7 @@ module.exports = function (grunt) {
     grunt.task.registerTask('help', "Display usage.", grunt.help.display);
 
     grunt.task.registerTask('build', "Build all into build subdirectory.", [
-        'clean', 'copy', 'json-minify', 'cssmin', 'mustache_render',
+        'clean', 'copy', 'json-minify', 'sass', 'cssmin', 'mustache_render',
         'htmlmin', 'appyaml',
     ]);
 
@@ -137,12 +137,20 @@ module.exports = function (grunt) {
     config['json-minify'] = {api: {files: 'build/api/**/*.json'}};
 
 
-    // Stylesheet Copy and Minification (cssmin) /////////////////////////////
+    // Stylesheet Compilation (sass) /////////////////////////////////////////
+
+    grunt.task.loadNpmTasks('grunt-sass');
+    config.sass = {
+        style: {files: {'build/style.css': 'style.scss'}},
+    };
+
+
+    // Stylesheet Minification In-Place (cssmin) /////////////////////////////
 
     grunt.task.loadNpmTasks('grunt-contrib-cssmin');
     config.cssmin = {
         options: {keepSpecialComments: 0},
-        style: {files: {'build/style.css': 'style.css'}},
+        style: {files: {'build/style.css': 'build/style.css'}},
     };
 
 
@@ -548,7 +556,7 @@ module.exports = function (grunt) {
 
         api: {files: 'api/**/*.json', tasks: ['copy:api', 'json-minify:api']},
 
-        style: {files: 'style.css', tasks: ['cssmin:style']},
+        style: {files: 'style.scss', tasks: ['sass:style', 'cssmin:style']},
 
         pages: {files: 'pages/**/*.mustache',
           tasks: ['mustache_render:pages', 'htmlmin:pages']},

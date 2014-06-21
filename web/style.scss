@@ -1,0 +1,183 @@
+/*
+ * AwesomeTTS text-to-speech add-on website
+ *
+ * Copyright (C) 2014       Anki AwesomeTTS Development Team
+ * Copyright (C) 2014       Dave Shifflett
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+html { font: 100%/1.5 "Helvetica Neue", Helvetica, Arial, Verdana, sans-serif }
+
+header, main, nav, article, footer { display: block }
+
+header p, #turf, article, #plat { font-size: 87.5% }
+h1 { font-size: 200% }
+h2 { font-size: 150% }
+
+footer { font-size: 75% }
+
+main, footer {
+    a[rel~=external]:before { content: '\21d7\00a0' }
+}
+#plat a[rel~=external]:after { content: '\00a0\21d7' }
+
+main {
+    a[rel~=parent]:before { content: '\21e7\00a0' }
+    a[rel~=home]:before { content: '\2302\00a0' }
+    a[rel~=child]:before { content: '\2301\00a0' }
+    a[rel~=prev]:before { content: '\21e6\00a0' }
+    a[rel~=next]:after { content: '  \21e8\00a0' }
+}
+
+@media screen {
+    $blue: #08c;
+    $gray: #333;
+    $ocean: #005580;
+    $sky: #c0deed;
+    $white: #fff;
+
+    $xPadding: 20px;
+    $yPadding: 10px;
+
+    html {
+        background: $sky;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        background: $white;
+        color: $gray;
+        margin: 0 auto;
+        max-width: 1150px;
+        padding: 0;
+
+        :first-child { margin-top: 0 }
+        :last-child { margin-bottom: 0 }
+    }
+
+    nav * {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    a {
+        color: $blue;
+        text-decoration: none;
+        &:hover { color: $ocean }
+    }
+
+    header, main, footer {
+        padding: $yPadding $xPadding;
+    }
+
+    header, footer {
+        background: $gray;
+
+        &, & a, & a:hover { color: $white }
+    }
+
+    header {
+        line-height: 1.0;
+        text-align: center;
+
+        * { margin: 0 }
+    }
+
+    #turf {
+        text-align: center;
+
+        li {
+            border-left: solid 1px;
+            display: inline;
+
+            &:before { content: ' ' }
+            &:after { content: '\00a0' }
+            &:first-child {
+                border-left: none;
+                &:before { content: none }
+            }
+            &:last-child:after { content: none }
+        }
+
+        a { white-space: nowrap }
+    }
+
+    article {
+        * { margin-top: 0 }
+        h1, h2 { margin-bottom: 0 }
+    }
+
+    #dive {
+        border-top: solid 1px;
+        margin: $yPadding*2 0 0;
+        padding: $yPadding*2 0 0;
+        text-align: center;
+
+        li { display: block }
+    }
+
+    #plat { display: none }
+
+    footer a {
+        text-decoration: underline;
+    }
+
+    @media (min-width: 800px) {
+        header, #dive { text-align: left }
+
+        main {
+            float: right;
+            width: 70%;
+        }
+
+        #turf { text-align: right }
+
+        main { padding-left: 0 }
+
+        #dive {
+            column-count: 2;
+            -moz-column-count: 2;
+            -webkit-column-count: 2;
+        }
+
+        #plat {
+            display: block;
+            float: left;
+            line-height: 1.1;
+            padding: $yPadding 0;
+            width: 25%;
+
+            li, a { display: block }
+
+            a[rel~=me] { background: #005580; color: #fff }
+
+            h1 { display: none }
+            h2 { margin-top: $yPadding }
+            h2, a { padding: $yPadding/5 $xPadding }
+
+            ul ul { padding-left: $xPadding }
+        }
+
+        footer { clear: both }
+    }
+}
+
+@media print {
+    a { color: inherit }
+
+    nav { display: none }
+}

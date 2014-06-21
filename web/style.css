@@ -18,80 +18,79 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-html {
-    font: 100%/1.5 "Helvetica Neue", Helvetica, Arial, Verdana, sans-serif;
-}
+html { font: 100%/1.5 "Helvetica Neue",Helvetica,Arial,Verdana,sans-serif }
 
-a[rel~=me] {
-    font-weight: bold;
-}
+main, nav, article, header, footer { display: block }
 
-main nav {
-    text-align: center;
-}
+nav, footer { font-size: 75% }
 
-main nav ul {
-    display: block;
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-}
+body > nav h1, body > nav h2 { font-size: 100% }
+body > nav a[rel~=external]:after { content: '\00a0\2197' }
 
-main nav li {
-    border-left: solid 1px #000;
-    display: inline;
-    list-style-type: none;
-    margin: 0 0 0 1em;
-    padding: 0 0 0 1em;
-}
+main a[rel~=external], footer a[rel~=external]:before { content: '\2197\00a0' }
 
-main nav li:first-child {
-    border-left: none;
-    margin-left: 0;
-    padding-left: 0;
-}
+main nav a { white-space: nowrap }
+main nav a[rel~=home]:before { content: '\2302\00a0' }
+main nav a[rel~=parent]:before { content: '\21e7\00a0' }
+main nav a[rel~=prev]:before { content: '\21e6\00a0' }
+main nav a[rel~=next]:after { content: '  \21e8\00a0' }
+
+main nav ul, main nav li { display: inline; margin: 0; padding: 0 }
+main nav li { list-style-type: none; margin: 0 0 0 1em }
+main nav li:after { content: ' ' }
+main nav li:last-child:after { content: none }
+
+article h1 { font-size: 200% }
+article h2 { font-size: 150% }
 
 @media screen {
-    html {
-        background: #c0deed;
-        margin: 0;
-        padding: 0;
-    }
+    html { background: #c0deed; margin: 0; padding: 0 }
+    body { background: #fff; color: #333; margin: 0 auto; max-width: 1200px;
+      padding: 0 }
 
-    body {
-        background: #fff;
-        color: #333;
-        margin: 0 auto;
-        max-width: 900px;
-        padding: 25px;
-    }
+    a { color: #08c; text-decoration: none }
+    a:hover { color: #005580 }
 
-    h1, h2, h3, h4, h5, h6 {
-        color: #317eac;
-    }
+    body > header, footer { background: #333 }
+    body > header, body > header a, body > header a:hover, footer, footer a,
+      footer a:hover { color: #fff }
 
-    h1 {
-        font-size: 200%;
-        margin-top: 0;
-    }
+    body > header { background: #333; padding: 1em; margin: 0 0 1em }
+    body > header, body > header a, body > header a:hover { color: #fff }
+    body > header * { margin: 0 }
 
-    h2 {
-        font-size: 150%;
-    }
+    main { padding-bottom: 2em }
 
-    a {
-        color: #08c;
-        text-decoration: none;
-    }
+    body > nav { display: none }
 
-    a:hover {
-        color: #005580;
-        text-decoration: underline;
-    }
+    main nav:first-child { padding: 0.25em 1em; text-align: right }
+    main nav:first-child strong:after { content: ':' }
+    main nav:last-child { padding: 2em 0 0 0; text-align: center }
+    main nav:last-child strong { display: block; font-size: 125% }
+
+    article { padding: 0 1em 0 }
+    article h1 { margin: 0 }
+
+    footer { padding: 1em }
+    footer a { text-decoration: underline }
+}
+
+@media screen and (min-width : 800px) {
+    body > nav { display: block; float: left; padding-bottom: 2em; width: 25% }
+    body > nav * { display: block; list-style-type: none; margin: 0;
+      padding: 0 }
+    body > nav a, body > nav h2 { padding: 0.25em 1em }
+    body > nav h1 { display: none }
+    body > nav h2 { margin-top: 1em }
+    body > nav ul ul { padding-left: 2em }
+    body > nav a[rel~=me] { background: #005580; color: #fff }
+
+    main { float: right; width: 70% }
+    footer { clear: both }
 }
 
 @media print {
-    a {
-        color: inherit;
-    }
+    a { color: inherit }
+
+    nav { display: none }
 }

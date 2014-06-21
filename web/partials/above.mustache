@@ -20,58 +20,50 @@
 
 <!DOCTYPE html>
 <html lang="en-US">
-    <head>
-        <meta charset="utf-8">
+<head>
+    <meta charset="utf-8">
 
-        <link rel="stylesheet" href="/style.css" type="text/css">
-        <link rel="shortcut icon" href="/favicon.ico" sizes="16x16 32x32"
-          type="image/x-icon">
+    <link rel="stylesheet" href="/style.css" type="text/css">
+    <link rel="shortcut icon" href="/favicon.ico" sizes="16x16 32x32"
+      type="image/x-icon">
 
-        <title>
+    <title>
+        {{#isHome}}
+            AwesomeTTS: Easily add text-to-speech to your Anki cards
+        {{/isHome}}{{^isHome}}
+            {{me.title}} &mdash; AwesomeTTS for Anki
+        {{/isHome}}
+    </title>
+</head>
+<body>
+    <header>
+        <h1>{{{helpers.masthead}}}</h1>
+        <p>Easily add text-to-speech to your Anki cards</p>
+    </header>
+
+    <main>
+        {{#isDynamic}}
+            <nav>
+                <strong>Back</strong>
+                {{{helpers.home}}}
+            </nav>
+        {{/isDynamic}}
+
+        {{#isInterior}}
+            <nav>
+                <strong>Navigate</strong>
+                <ul>
+                    {{#parent}}<li>{{{helpers.link}}}</li>{{/parent}}
+                    {{#prev}}<li>{{{helpers.link}}}</li>{{/prev}}
+                    {{#next}}<li>{{{helpers.link}}}</li>{{/next}}
+                    <li>{{{helpers.home}}}</li>
+                </ul>
+            </nav>
+        {{/isInterior}}
+
+        <article>
             {{#isHome}}
-                AwesomeTTS: Easily add text-to-speech to your Anki cards
+                <h1>About AwesomeTTS</h1>
             {{/isHome}}{{^isHome}}
-                {{me.title}} &mdash; AwesomeTTS for Anki
+                <h1>{{me.title}}</h1>
             {{/isHome}}
-        </title>
-    </head>
-    <body>
-        <nav><ul>
-            <li>{{{helpers.home}}}</li>
-
-            {{#sitemap}}
-                <li>
-                    {{{helpers.link}}}
-
-                    {{#isParent}}
-                        <ul>
-                            {{#children}}
-                                <li>{{{helpers.link}}}</li>
-                            {{/children}}
-                        </ul>
-                    {{/isParent}}
-                </li>
-            {{/sitemap}}
-        </ul></nav>
-
-        <main>
-            <h1>
-                {{#isHome}}
-                    AwesomeTTS for Anki
-                {{/isHome}}{{^isHome}}
-                    {{me.title}}
-                {{/isHome}}
-            </h1>
-
-            {{#isDynamic}}
-                <nav>{{{helpers.home}}}</nav>
-            {{/isDynamic}}
-
-            {{#isInterior}}
-                <nav><ul>
-                    {{#prev}}<li>&larr; {{{helpers.link}}}</li>{{/prev}}
-                    <li>&uarr; {{{helpers.home}}}</li>
-                    {{#parent}}<li>&uarr; {{{helpers.link}}}</li>{{/parent}}
-                    {{#next}}<li>{{{helpers.link}}} &rarr;</li>{{/next}}
-                </ul></nav>
-            {{/isInterior}}

@@ -18,13 +18,77 @@
   ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
   !}}
 
-            {{#isParent}}
-                <nav><ul>
+        </article>
+
+        {{#isParent}}
+            <nav>
+                <strong>
+                    {{#isHome}}
+                        Learn about AwesomeTTS
+                    {{/isHome}}{{^isHome}}
+                        {{me.title}}
+                    {{/isHome}}
+                </strong>
+
+                <ul>
                     {{#children}}
                         <li>{{{helpers.link}}}</li>
                     {{/children}}
-                </ul></nav>
-            {{/isParent}}
-        </main>
-    </body>
+                </ul>
+            </nav>
+        {{/isParent}}
+    </main>
+
+    <nav>
+        <h1>Sitemap</h1>
+
+        <ul>
+            {{#sitemap}}
+                <li>
+                    {{{helpers.link}}}
+
+                    {{#isParent}}
+                        <ul>
+                            {{#children}}
+                                <li>{{{helpers.link}}}</li>
+                            {{/children}}
+                        </ul>
+                    {{/isParent}}
+                </li>
+            {{/sitemap}}
+        </ul>
+
+        <h2>Additional Links</h2>
+
+        <ul>
+            <li><a href="//ankiweb.net/shared/info/301952613"
+              rel="external">AwesomeTTS on AnkiWeb</a></li>
+
+            <li><a href="//github.com/AwesomeTTS/AwesomeTTS"
+              rel="external">AwesomeTTS on GitHub</a></li>
+        </ul>
+
+        <h2>Need Help?</h2>
+
+        <ul>
+            <li><a href="//anki.tenderapp.com/discussions/add-ons"
+              rel="discussion external">Anki Add-On Support Forum</a></li>
+
+            <li><a href="//github.com/AwesomeTTS/AwesomeTTS/issues"
+              rel="external issues">Issue Tracker for AwesomeTTS</a></li>
+        </ul>
+    </ul></nav>
+
+    <footer>
+        <p>AwesomeTTS is free and open source software. The add-on code that
+          runs within Anki is released under the <a rel="external"
+          href="//www.gnu.org/licenses/gpl-3.0">GNU GPL v3</a>, and
+          first-party web code is released under the <a rel="external"
+          href="//www.gnu.org/licenses/agpl-3.0">GNU AGPL v3</a>.</p>
+
+        <p>For more or to obtain source code, visit the <a rel="external"
+          href="//github.com/AwesomeTTS/AwesomeTTS">AwesomeTTS GitHub
+          Repository</a>.</p>
+    </footer>
+</body>
 </html>

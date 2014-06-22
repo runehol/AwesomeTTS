@@ -68,20 +68,11 @@ main {
         :last-child { margin-bottom: 0 }
     }
 
-    nav * {
-        list-style-type: none;
-        margin: 0;
-        padding: 0;
-    }
-
     a {
         color: $blue;
         text-decoration: none;
-        &:hover { color: $ocean }
-    }
 
-    header, main, footer {
-        padding: $yPadding $xPadding;
+        &:hover { color: $ocean }
     }
 
     header, footer {
@@ -92,39 +83,48 @@ main {
 
     header {
         line-height: 1.0;
+        padding: $yPadding 0;
         text-align: center;
 
         * { margin: 0 }
     }
 
+    nav * {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    #turf, article h1, #plat { line-height: 1.1 }
+
     #turf {
+        padding: $yPadding 0 0;
         text-align: center;
 
         li {
-            border-left: solid 1px;
             display: inline;
 
             &:before { content: ' ' }
-            &:after { content: '\00a0' }
-            &:first-child {
-                border-left: none;
-                &:before { content: none }
-            }
-            &:last-child:after { content: none }
+            &:first-child:before { content: none }
         }
 
-        a { white-space: nowrap }
+        a {
+            padding: 0 $xPadding/5;
+            white-space: nowrap;
+        }
     }
 
     article {
+        padding: $yPadding $xPadding;
+
         * { margin-top: 0 }
         h1, h2 { margin-bottom: 0 }
     }
 
     #dive {
-        border-top: solid 1px;
-        margin: $yPadding*2 0 0;
-        padding: $yPadding*2 0 0;
+        border-top: dotted 1px;
+        margin: 0 $xPadding;
+        padding: $yPadding 0;
         text-align: center;
 
         li { display: block }
@@ -132,32 +132,40 @@ main {
 
     #plat { display: none }
 
-    footer a {
-        text-decoration: underline;
+    footer {
+        padding: $yPadding $xPadding;
+
+        a { text-decoration: underline }
     }
 
     @media (min-width: 800px) {
         header, #dive { text-align: left }
+
+        header { padding-left: $xPadding }
 
         main {
             float: right;
             width: 75%;
         }
 
-        #turf { text-align: right }
+        #turf {
+            text-align: right;
 
-        main { padding-left: 0 }
+            a { padding: 0 $xPadding }
+        }
+
+        article { padding-left: 0 }
 
         #dive {
             column-count: 2;
             -moz-column-count: 2;
             -webkit-column-count: 2;
+            margin-left: 0;
         }
 
         #plat {
             display: block;
             float: left;
-            line-height: 1.1;
             padding: $yPadding 0;
             width: 20%;
 

@@ -52,17 +52,17 @@
         {{#isInterior}}
             <nav id="turf">
                 <ul>
+                    <li>{{{helpers.home}}}</li>
                     {{#parent}}<li>{{{helpers.link}}}</li>{{/parent}}
                     {{#prev}}<li>{{{helpers.link}}}</li>{{/prev}}
                     {{#next}}<li>{{{helpers.link}}}</li>{{/next}}
-                    <li>{{{helpers.home}}}</li>
                 </ul>
             </nav>
         {{/isInterior}}
 
         <article>
             {{#isHome}}
-                <h1>About AwesomeTTS</h1>
+                <h1>About</h1>
             {{/isHome}}{{^isHome}}
                 <h1>{{me.title}}</h1>
             {{/isHome}}

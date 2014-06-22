@@ -123,16 +123,16 @@ module.exports = function (grunt) {
 
     grunt.task.loadNpmTasks('grunt-contrib-copy');
     config.copy = {
-        api: {src: 'api/**/*.json', dest: 'build/'},  // minify later in-place
         favicon: {src: 'favicon.ico', dest: 'build/'},
         robots: {src: 'robots.txt', dest: 'build/'},
         unresolvedPy: {src: 'unresolved/__init__.py', dest: 'build/'},
+        api: {src: 'api/**/*.json', dest: 'build/'},  // minify in-place next
     };
 
 
     // JSON Minification In-Place (json-minify) //////////////////////////////
     // n.b. unlike other minfication plug-ins, this one only works in-place //
-    
+
     grunt.task.loadNpmTasks('grunt-json-minify');
     config['json-minify'] = {api: {files: 'build/api/**/*.json'}};
 

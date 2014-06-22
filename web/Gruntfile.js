@@ -316,6 +316,10 @@ module.exports = function (grunt) {
     grunt.task.registerTask('appyaml', "Build app.yaml config.", function () {
         var MIME_HTML = 'text/html; charset=utf-8';
 
+        var HEADERS_HTML = {
+            'X-UA-Compatible': 'IE=edge',
+        };
+
         var BASICS = {application: 'ankiatts', version: 'local',
           runtime: 'python27', api_version: '1', threadsafe: true,
           default_expiration: '12h'};
@@ -343,13 +347,14 @@ module.exports = function (grunt) {
 
         var HANDLERS = [
             {url: '/', static_files: 'pages/index.html',
-              upload: 'pages/index\\.html', mime_type: MIME_HTML},
+              upload: 'pages/index\\.html', mime_type: MIME_HTML,
+              http_headers: HEADERS_HTML},
             {url: INDICES, static_files: 'pages/\\1/index.html',
               upload: ['pages', INDICES, '/index\\.html'].join(''),
-              mime_type: MIME_HTML},
+              mime_type: MIME_HTML, http_headers: HEADERS_HTML},
             {url: LEAVES, static_files: 'pages/\\1.html',
               upload: ['pages', LEAVES, '\\.html'].join(''),
-              mime_type: MIME_HTML},
+              mime_type: MIME_HTML, http_headers: HEADERS_HTML},
 
             {url: '/style\\.css', static_files: 'style.css',
               upload: 'style\\.css'},
@@ -394,7 +399,19 @@ module.exports = function (grunt) {
 
                     return ['- ', '\n'].join(
                         Object.keys(properties).map(function (key) {
-                            return [key, properties[key]].join(': ');
+                            return [
+                                key,
+                                typeof properties[key] === 'object' ?
+                                '\n    ' + Object.keys(properties[key]).map(
+                                    function (subkey) {
+                                        return [
+                                            subkey,
+                                            properties[key][subkey],
+                                        ].join(': ');
+                                    }
+                                ).join('\n    ') :
+                                String(properties[key])
+                            ].join(': ');
                         }).join('\n  ')
                     );
                 })

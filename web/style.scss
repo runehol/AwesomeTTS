@@ -41,16 +41,17 @@ main {
     a[rel~=next]:after { content: '  \21e8\00a0' }
 }
 
+
+$blue: #08c;
+$gray: #333;
+$ocean: #005580;
+$sky: #c0deed;
+$white: #fff;
+
+$xPadding: 20px;
+$yPadding: 10px;
+
 @media screen {
-    $blue: #08c;
-    $gray: #333;
-    $ocean: #005580;
-    $sky: #c0deed;
-    $white: #fff;
-
-    $xPadding: 20px;
-    $yPadding: 10px;
-
     html {
         background: $sky;
         margin: 0;
@@ -137,52 +138,53 @@ main {
 
         a { text-decoration: underline }
     }
-
-    @media (min-width: 800px) {
-        header, #dive { text-align: left }
-
-        header { padding-left: $xPadding }
-
-        main {
-            float: right;
-            width: 75%;
-        }
-
-        #turf {
-            text-align: right;
-
-            a { padding: 0 $xPadding }
-        }
-
-        article { padding-left: 0 }
-
-        #dive {
-            column-count: 2;
-            -moz-column-count: 2;
-            -webkit-column-count: 2;
-            margin-left: 0;
-        }
-
-        #plat {
-            display: block;
-            float: left;
-            padding: $yPadding 0;
-            width: 20%;
-
-            li, a { display: block }
-
-            a[rel~=me] { background: #005580; color: #fff }
-
-            h1 { display: none }
-            h2 { margin-top: $yPadding }
-            h2, a { padding: $yPadding/5 $xPadding }
-
-            ul ul { padding-left: $xPadding }
-        }
-
-        footer { clear: both }
-    }
 }
+
+@media screen and (min-width: 800px) {
+    header, #dive { text-align: left }
+
+    header { padding-left: $xPadding }
+
+    main {
+        float: right;
+        width: 75%;
+    }
+
+    #turf {
+        text-align: right;
+
+        a { padding: 0 $xPadding }
+    }
+
+    article { padding-left: 0 }
+
+    #dive {
+        column-count: 2;
+        -moz-column-count: 2;
+        -webkit-column-count: 2;
+        margin-left: 0;
+    }
+
+    #plat {
+        display: block;
+        float: left;
+        padding: $yPadding 0;
+        width: 20%;
+
+        li, a { display: block }
+
+        a[rel~=me] { background: #005580; color: #fff }
+
+        h1 { display: none }
+        h2 { margin-top: $yPadding }
+        h2, a { padding: $yPadding/5 $xPadding }
+
+        ul ul { padding-left: $xPadding }
+    }
+
+    footer { clear: both }
+}
+
 
 @media print {
     a { color: inherit }

@@ -35,8 +35,8 @@ main, footer {
 
 main {
     a[rel~=parent]:before { content: '\21e7\00a0' }
-    a[rel~=home]:before { content: '\2302\00a0' }
-    a[rel~=child]:before { content: '\2301\00a0' }
+    a[rel~=home]:before { content: '\2605\00a0' }
+    a[rel~=child]:before { content: '\00a7\00a0' }
     a[rel~=prev]:before { content: '\21e6\00a0' }
     a[rel~=next]:after { content: '  \21e8\00a0' }
 }

@@ -20,7 +20,7 @@
 
 html { font: 100%/1.5 "Helvetica Neue", Helvetica, Arial, Verdana, sans-serif }
 
-header, main, nav, article, footer { display: block }
+header, main, nav, article, figure, figcaption, footer { display: block }
 
 header p, #turf, article, #plat { font-size: 87.5% }
 h1 { font-size: 200% }
@@ -62,7 +62,7 @@ $yPadding: 10px;
         background: $white;
         color: $gray;
         margin: 0 auto;
-        max-width: 1150px;
+        max-width: 1400px;
         padding: 0;
 
         :first-child { margin-top: 0 }
@@ -79,7 +79,7 @@ $yPadding: 10px;
     header, footer {
         background: $gray;
 
-        &, & a, & a:hover { color: $white }
+        &, a, a:hover { color: $white }
     }
 
     header {
@@ -120,6 +120,39 @@ $yPadding: 10px;
 
         * { margin-top: 0 }
         h1, h2 { margin-bottom: 0 }
+    }
+
+    figure {
+        border-radius: 4px;
+        border: solid 5px $blue;
+        float: right;
+        margin: 0 0 2em 2em;
+        max-width: 50%;
+
+        img {
+            display: block;
+            height: auto;
+            max-width: 100%;
+            outline: solid 2px $white;
+        }
+    }
+
+    figcaption {
+        background: $blue;
+        font-style: italic;
+        line-height: 1.1;
+        padding: $yPadding + 2px $xPadding - 5px $yPadding - 5px;
+        text-align: justify;
+
+        &, a, a:hover { color: $white }
+
+        a { text-decoration: underline }
+    }
+
+    article:after {
+        clear: both;
+        content: '';
+        display: block;
     }
 
     #dive {

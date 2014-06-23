@@ -124,6 +124,7 @@ module.exports = function (grunt) {
     grunt.task.loadNpmTasks('grunt-contrib-copy');
     config.copy = {
         favicon: {src: 'favicon.ico', dest: 'build/'},
+        images: {src: 'images/*.png', dest: 'build/'},
         robots: {src: 'robots.txt', dest: 'build/'},
         unresolvedPy: {src: 'unresolved/__init__.py', dest: 'build/'},
         api: {src: 'api/**/*.json', dest: 'build/'},  // minify in-place next
@@ -345,6 +346,14 @@ module.exports = function (grunt) {
                 }).join('|');
         }(SITEMAP)));
 
+        var IMAGES = ['/(', ')'].join(
+            grunt.file.expand('images/*.png').map(function (path) {
+                return path.
+                    replace(/^images\/|\.png$/g, '').
+                    replace(/\./g, '\\.');
+            }).join('|')
+        );
+
         var HANDLERS = [
             {url: '/', static_files: 'pages/index.html',
               upload: 'pages/index\\.html', mime_type: MIME_HTML,
@@ -355,6 +364,8 @@ module.exports = function (grunt) {
             {url: LEAVES, static_files: 'pages/\\1.html',
               upload: ['pages', LEAVES, '\\.html'].join(''),
               mime_type: MIME_HTML, http_headers: HEADERS_HTML},
+            {url: IMAGES + '\\.png', static_files: 'images/\\1.png',
+              upload: 'images/.+\\.png'},
 
             {url: '/style\\.css', static_files: 'style.css',
               upload: 'style\\.css'},
@@ -567,6 +578,7 @@ module.exports = function (grunt) {
           options: {reload: true}},
 
         favicon: {files: 'favicon.ico', tasks: 'copy:favicon'},
+        images: {files: 'images/*.png', tasks: 'copy:images'},
         robots: {files: 'robots.txt', tasks: 'copy:robots'},
         unresolvedPy: {files: 'unresolved/__init__.py',
           tasks: 'copy:unresolvedPy'},
@@ -605,7 +617,7 @@ module.exports = function (grunt) {
 
     (function () {
         var OLD_VALUES = {};
-        ['copy.api.src', 'json-minify.api.files',
+        ['copy.images.src', 'copy.api.src', 'json-minify.api.files',
           'mustache_render.pages.files', 'htmlmin.pages.src'].
             forEach(function (key) { OLD_VALUES[key] = grunt.config(key); });
 
@@ -621,6 +633,10 @@ module.exports = function (grunt) {
 
             if (action === 'changed' || action === 'added') {
                 switch (target) {
+                    case 'images':
+                        grunt.config('copy.images.src', path);
+                        break;
+
                     case 'api':
                         grunt.config('copy.api.src', path);
                         grunt.config('json-minify.api.files', 'build/' + path);

@@ -141,20 +141,32 @@ class Dialog(QtGui.QDialog):
 
     def _ui_buttons(self):
         """
-        Returns a horizontal row of cancel/OK buttons.
+        Returns a horizontal row of standard dialog buttons, with "OK"
+        and "Cancel". If the subclass implements helpRequest(), a "Help"
+        button will also be shown.
 
         Subclasses must call this method explicitly, at a location of
-        their choice. Once called, the 'accept' and 'reject' signals
-        become available.
+        their choice. Once called, accept(), reject(), and optionally
+        helpRequest(), become wired to the appropriate signals.
         """
 
         buttons = QtGui.QDialogButtonBox()
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        buttons.setStandardButtons(
-            QtGui.QDialogButtonBox.Cancel |
-            QtGui.QDialogButtonBox.Ok
-        )
+
+        if hasattr(self, 'helpRequest'):
+            buttons.helpRequested.connect(self.helpRequest)
+            buttons.setStandardButtons(
+                QtGui.QDialogButtonBox.Help |
+                QtGui.QDialogButtonBox.Cancel |
+                QtGui.QDialogButtonBox.Ok
+            )
+
+        else:
+            buttons.setStandardButtons(
+                QtGui.QDialogButtonBox.Cancel |
+                QtGui.QDialogButtonBox.Ok
+            )
 
         for btn in buttons.buttons():
             if buttons.buttonRole(btn) == QtGui.QDialogButtonBox.AcceptRole:
@@ -173,6 +185,17 @@ class Dialog(QtGui.QDialog):
 
         self._addon.logger.debug("Showing '%s' dialog", self.windowTitle())
         super(Dialog, self).show(*args, **kwargs)
+
+    # Auxiliary ##############################################################
+
+    def _launch_link(self, path):
+        """
+        Opens a URL on the AwesomeTTS website with the given path.
+        """
+
+        url = '/'.join([self._addon.web, path])
+        self._addon.logger.debug("Launching %s", url)
+        QtGui.QDesktopServices.openUrl(QtCore.QUrl(url))
 
 
 class ServiceDialog(Dialog):

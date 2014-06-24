@@ -38,6 +38,10 @@ class Templater(ServiceDialog):
     layout editor.
     """
 
+    HELP_USAGE_DESC = "Inserting on-the-fly playback tags into templates"
+
+    HELP_USAGE_SLUG = 'on-the-fly'
+
     __slots__ = [
         '_card_layout',  # reference to the card layout window
         '_is_cloze',     # True if the model attached

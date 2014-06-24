@@ -581,7 +581,7 @@ class Configurator(Dialog):
 
         super(Configurator, self).accept()
 
-    def helpRequest(self):
+    def help_request(self):
         """
         Launch the web browser with the URL to the documentation for the
         user's current tab.

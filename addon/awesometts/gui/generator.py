@@ -37,6 +37,10 @@ class BrowserGenerator(ServiceDialog):
     from the card browser.
     """
 
+    HELP_USAGE_DESC = "Adding audio to multiple notes"
+
+    HELP_USAGE_SLUG = 'browser'
+
     INTRO = (
         "AwesomeTTS will scan the %d note%s selected in the Browser, "
         "determine %s both fields, store the audio in your collection, and "
@@ -626,6 +630,10 @@ class EditorGenerator(ServiceDialog):
     """
     Provides a dialog for adding single media files from the editors.
     """
+
+    HELP_USAGE_DESC = "Adding audio to a single note"
+
+    HELP_USAGE_SLUG = 'editor'
 
     __slots__ = [
         '_editor',  # reference to one of the editors in the Anki GUI

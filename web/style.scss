@@ -135,10 +135,8 @@ $yPadding: 10px;
     figure {
         border-radius: 4px;
         border: solid 5px $blue;
-        clear: right;
-        float: right;
-        margin: 0 0 2em 2em;
-        max-width: 50%;
+        margin: $yPadding auto;
+        max-width: 90%;
 
         img {
             display: block;
@@ -158,6 +156,12 @@ $yPadding: 10px;
         &, a, a:hover { color: $white }
 
         a { text-decoration: underline }
+    }
+
+    div.grid {
+        padding: 0 0 $yPadding;
+
+        figure { margin: $yPadding auto 0 }
     }
 
     article:after {
@@ -208,6 +212,33 @@ $yPadding: 10px;
         padding-left: 0;
 
         ul.cols { @include columns(3) }
+    }
+
+    figure {
+        clear: right;
+        float: right;
+        margin: 0 0 1em 1em;
+        max-width: 50%;
+    }
+
+    div.grid {
+        float: left;
+        width: 100%;
+
+        figure {
+            margin: $yPadding 0 0;
+            max-width: 45%;
+
+            &:nth-child(odd) {
+                clear: left;
+                float: left;
+            }
+
+            &:nth-child(even) {
+                clear: right;
+                float: right;
+            }
+        }
     }
 
     #dive { margin-left: 0 }

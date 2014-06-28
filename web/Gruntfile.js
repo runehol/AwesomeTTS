@@ -437,127 +437,70 @@ module.exports = function (grunt) {
     });
 
 
-    // Git Environment Queries (shell) ///////////////////////////////////////
-
-    grunt.task.loadNpmTasks('grunt-shell');
-    config.shell = {
-        branch: {
-            command: 'git symbolic-ref --short HEAD',
-            options: {
-                callback: function (error, stdout, stderr, next) {
-                    stdout = stdout && stdout.trim && stdout.trim();
-
-                    if (error || !stdout || stderr) {
-                        if (
-                            stderr && stderr.indexOf &&
-                            stderr.indexOf('HEAD is not a symbolic') > -1
-                        ) {
-                            grunt.option('git.branch', 'detached');
-                            grunt.log.error("In detached HEAD state");
-                            next();
-                        } else {
-                            next(false);
-                        }
-                    } else {
-                        grunt.option('git.branch', stdout);
-                        grunt.log.ok("Current branch is " + stdout);
-                        next();
-                    }
-                },
-            },
-        },
-
-        tag: {
-            command: 'git describe --candidates=0 --tags',
-            options: {
-                callback: function (error, stdout, stderr, next) {
-                    stdout = stdout && stdout.trim && stdout.trim();
-
-                    if (error || !stdout || stderr) {
-                        if (
-                            stderr && stderr.indexOf &&
-                            stderr.indexOf('no tag exactly matches') > -1
-                        ) {
-                            grunt.option('git.tag', null);
-                            grunt.log.error("No tag for this revision");
-                            next();
-                        } else {
-                            next(false);
-                        }
-                    } else {
-                        grunt.option('git.tag', stdout);
-                        grunt.log.ok("Current tag is " + stdout);
-                        next();
-                    }
-                },
-            },
-        },
-
-        revision: {
-            command: 'git rev-parse --short --verify HEAD',
-            options: {
-                callback: function (error, stdout, stderr, next) {
-                    stdout = stdout && stdout.trim && stdout.trim();
-
-                    if (error || !stdout || stderr) {
-                        next(false);
-                    } else {
-                        grunt.option('git.revision', stdout);
-                        grunt.log.ok("Current revision is " + stdout);
-                        next();
-                    }
-                },
-            },
-        },
-
-        dirty: {
-            command: 'git status --porcelain',
-            options: {
-                callback: function (error, stdout, stderr, next) {
-                    if (error || stderr) {
-                        next(false);
-                    } else {
-                        stdout = stdout && stdout.trim && stdout.trim();
-
-                        if (stdout === '') {
-                            grunt.option('git.dirty', false);
-                            grunt.log.ok("Working tree is clean");
-                        } else {
-                            grunt.option('git.dirty', true);
-                            grunt.log.error("Working tree is dirty");
-                        }
-
-                        next();
-                    }
-                },
-            },
-        },
-    };
-
-
     // Set Deployment Version (version) //////////////////////////////////////
 
-    grunt.task.registerTask('version', "Set GAE version.", function () {
-        this.requires('shell');
+    grunt.task.registerTask('version', "Set version from git.", function () {
+        var done = this.async();
+        var exec = require('child_process').exec;
 
-        var version = ['git.branch', 'git.tag', 'git.revision'].
-            map(grunt.option).
-            filter(Boolean).
-            map(function (component) {
-                return component.toString().toLowerCase().
-                    replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-            }).
-            filter(Boolean).
-            join('-');
+        var commands = {
+            branch: 'git symbolic-ref --short HEAD',  // errors if detached
+            tag: 'git describe --candidates=0 --tags',  // errors if untagged
+            revision: 'git rev-parse --short --verify HEAD',
+            dirty: 'git status --porcelain',
+        };
 
-        var DIRTY = '-dirty';
-        var MAX_LEN = 50;
-        version = grunt.option('git.dirty') ?
-            version.substr(0, MAX_LEN - DIRTY.length) + DIRTY :
-            version.substr(0, MAX_LEN);
+        var keys = Object.keys(commands);
 
-        grunt.option('version', version);
-        grunt.log.ok("GAE deployment version is " + version);
+        var results = {};
+
+        var finish = function () {
+            if (['revision', 'dirty'].some(function (key) {
+                return results[key].error || results[key].stderr;
+            })) {
+                done(false);
+                return;
+            }
+
+            var version = [
+                results.branch.stdout || 'detached',
+                results.tag.stdout,
+                results.revision.stdout,
+            ].
+                filter(Boolean).
+                map(function (component) {
+                    return component.toString().toLowerCase().
+                        replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                }).
+                filter(Boolean).
+                join('-');
+
+            var DIRTY = '-dirty';
+            var MAX_LEN = 50;
+
+            version = results.dirty.stdout.trim() === '' ?
+                version.substr(0, MAX_LEN) :
+                version.substr(0, MAX_LEN - DIRTY.length) + DIRTY;
+
+            grunt.option('version', version);
+            grunt.log.ok("Our version is " + version);
+            done();
+        };
+
+        keys.forEach(function (key) {
+            exec(
+                commands[key],
+                {timeout: 5000},
+                function (error, stdout, stderr) {
+                    results[key] = {error: error, stdout: stdout,
+                      stderr: stderr};
+
+                    if (keys.every(function (key) { return results[key]; })) {
+                        finish();
+                    }
+                }
+            );
+        });
     });
 
 

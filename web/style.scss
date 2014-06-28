@@ -218,7 +218,7 @@ $yPadding: 10px;
         clear: right;
         float: right;
         margin: 0 0 1em 1em;
-        max-width: 50%;
+        max-width: 70%;
     }
 
     div.grid {
@@ -227,7 +227,7 @@ $yPadding: 10px;
 
         figure {
             margin: $yPadding 0 0;
-            max-width: 45%;
+            max-width: 48%;
 
             &:nth-child(odd) {
                 clear: left;

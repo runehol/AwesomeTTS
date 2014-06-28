@@ -62,7 +62,7 @@
             },
             "editor": {
                 "terse": "Note Editor",
-                "title": "Adding Audio Files One-by-One via the Note Editor",
+                "title": "Adding Audio Files in the Note Editor",
                 "what": "Generate audio as you add or edit a note, files stored with collection"
             }
         }

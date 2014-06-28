@@ -1,37 +1,104 @@
 {
-    "install": "Installation",
+    "install": {
+        "terse": "Install",
+        "title": "Installation",
+        "what": "Prerequisites, how to download, keeping up-to-date, alternate versions and methods"
+    },
 
     "services": {
-        "title": "Services",
+        "terse": "Services",
+        "title": "Available Services",
+        "what": "How to best take advantage of local software and services over the Internet",
         "children": {
-            "ekho": "Ekho",
-            "espeak": "eSpeak",
-            "festival": "Festival",
-            "google": "Google",
-            "say": "OS X",
-            "sapi5": "SAPI",
-            "yandex": "Yandex"
+            "ekho": {
+                "title": "Ekho",
+                "what": "Korean and several dialects of Chinese, Windows and Linux"
+            },
+            "espeak": {
+                "title": "eSpeak",
+                "what": "Bundled with many built-in languages, Windows and Linux"
+            },
+            "festival": {
+                "title": "Festival",
+                "what": "Bundled with English, other languages installable separately, Linux only"
+            },
+            "google": {
+                "terse": "Google",
+                "title": "Google Translate",
+                "what": "Many high-quality languages, available over the Internet"
+            },
+            "say": {
+                "terse": "OS X",
+                "title": "OS X Speech Synthesis Manager",
+                "what": "Many languages installable through System Preferences, built into Mac OS X"
+            },
+            "sapi5": {
+                "terse": "SAPI",
+                "title": "Microsoft Speech API (SAPI)",
+                "what": "Interface for desktop software to enable TTS playback, built into Windows"
+            },
+            "yandex": {
+                "terse": "Yandex",
+                "title": "Yandex.Translate",
+                "what": "Russian and many European languages, available over the Internet"
+            }
         }
     },
 
     "usage": {
-        "title": "Usage",
+        "terse": "Usage",
+        "title": "Using the Add-on",
+        "what": "Enable on-the-fly playback, mass generate audio files, or add as you go",
         "children": {
-            "on-the-fly": "On-the-Fly",
-            "browser": "Card Browser",
-            "editor": "Note Editor"
+            "on-the-fly": {
+                "terse": "On-the-Fly",
+                "title": "Templated On-the-Fly Playback",
+                "what": "Quickly enable audio via your card templates, with no file synchronization"
+            },
+            "browser": {
+                "terse": "Card Browser",
+                "title": "Adding Audio in the Card Browser",
+                "what": "Mass generate audio for many cards at once, files stored with collection"
+            },
+            "editor": {
+                "terse": "Note Editor",
+                "title": "Adding Audio Files One-by-One via the Note Editor",
+                "what": "Generate audio as you add or edit a note, files stored with collection"
+            }
         }
     },
 
     "config": {
-        "title": "Configuration",
+        "terse": "Config",
+        "title": "Configuration and Tweaking",
+        "what": "Set automatic playback, shortcut keys, text handling, MP3 generation, and more",
         "children": {
-            "on-the-fly": "On-the-Fly",
-            "text": "Text",
-            "mp3s": "MP3s",
-            "advanced": "Advanced"
+            "on-the-fly": {
+                "terse": "On-the-Fly",
+                "title": "On-the-Fly Configuration",
+                "what": "Set shortcut keys, enable or disable automatic playback"
+            },
+            "text": {
+                "terse": "Text",
+                "title": "Text and Cloze Deletion Configuration",
+                "what": "Ignore certain text in playback or recording, tweak cloze deletion handling"
+            },
+            "mp3s": {
+                "terse": "MP3s",
+                "title": "MP3 Generation Configuration",
+                "what": "Tune how the LAME transcoder gets called, control download rate limiting"
+            },
+            "advanced": {
+                "terse": "Advanced",
+                "title": "Advanced Configuration",
+                "what": "Check for updates, enable debugging, clear your cache"
+            }
         }
     },
 
-    "contribute": "Contribute"
+    "contribute": {
+        "terse": "Contribute",
+        "title": "Contributing to Development",
+        "what": "Report bugs, suggest features, submit code, test unreleased versions, rate us"
+    }
 }

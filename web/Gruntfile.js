@@ -59,9 +59,11 @@ module.exports = function (grunt) {
             var isObject = typeof node === 'object';
             var result = {
                 me: {
-                    title: String(isObject ? node.title : node),
                     href: href,
                     slug: slug,
+                    terse: String(isObject ? node.terse || node.title : node),
+                    title: String(isObject ? node.title : node),
+                    what: isObject && node.what && String(node.what) || "",
                 },
                 isDynamic: false,
                 isHome: false,
@@ -171,7 +173,7 @@ module.exports = function (grunt) {
             ].join('');
         };
 
-        var linkHelper = function (ctx, page) {
+        var linkHelper = function (ctx, page, verbose) {
             var rels = '';
             var me = ctx.me || ctx;
 
@@ -191,14 +193,18 @@ module.exports = function (grunt) {
 
             return [
                 '<a href="', me.href, '"', rels, '>',
-                me.title,
-                '</a>',
+                verbose ? me.title : me.terse,
+                '</a> ',
+                verbose ? '<br>' + me.what : "",
             ].join('');
         };
 
         var data = function (node) {
             var result = {
                 helpers: {
+                    child: function () {
+                        return linkHelper(this, node, true);
+                    },
                     home: function () {
                         return homeHelper(node);
                     },

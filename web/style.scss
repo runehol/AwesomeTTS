@@ -127,7 +127,7 @@ $yPadding: 10px;
 
         * { margin-top: 0 }
 
-        h1, h2, h3 { margin-bottom: 0 }
+        h2, h3 { margin-bottom: 0 }
 
         ul.cols { @include columns(2) }
     }
@@ -168,13 +168,13 @@ $yPadding: 10px;
 
     #dive {
         border-top: dotted 1px;
+        line-height: 1.4;
         margin: 0 $xPadding;
-        padding: $yPadding/2 0 $yPadding;
-        text-align: center;
+        padding: 0 0 $yPadding;
 
         li {
             display: block;
-            padding: $yPadding/2 0 0;
+            padding: $yPadding 0 0;
         }
     }
 
@@ -188,9 +188,10 @@ $yPadding: 10px;
 }
 
 @media screen and (min-width: 800px) {
-    header, #dive { text-align: left }
-
-    header { padding-left: $xPadding }
+    header {
+        padding-left: $xPadding;
+        text-align: left;
+    }
 
     main {
         float: right;

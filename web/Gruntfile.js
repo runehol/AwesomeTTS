@@ -111,7 +111,7 @@ module.exports = function (grunt) {
     ]);
 
     grunt.task.registerTask('deploy', "Pushes new version to GAE platform.", [
-        'build', 'shell', 'version', 'gae:update',
+        'build', 'version', 'gae:update',
     ]);
 
 

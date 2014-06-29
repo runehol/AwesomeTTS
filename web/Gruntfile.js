@@ -103,7 +103,7 @@ module.exports = function (grunt) {
 
     grunt.task.registerTask('build', "Build all into build subdirectory.", [
         'clean', 'copy', 'json-minify', 'sass', 'cssmin', 'mustache_render',
-        'htmlmin', 'appyaml',
+        'replace', 'htmlmin', 'appyaml',
     ]);
 
     grunt.task.registerTask('run', "Runs project locally using GAE SDK.", [
@@ -295,6 +295,39 @@ module.exports = function (grunt) {
             }]},
         };
     }());
+
+
+    // HTML Path Simplification In-Place (replace) ///////////////////////////
+
+    grunt.task.loadNpmTasks('grunt-replace');
+    config.replace = {
+        toplevels: {
+            files: [{expand: true, cwd: 'build/',
+              src: ['pages/*.html', 'pages/*/index.html'], dest: 'build/'}],
+            options: {patterns: [{
+                match: /(href|src)="\/(\w[^"]*)"/g,
+                replacement: function (match, attr, url) {
+                    return [attr, '="', url, '"'].join('');
+                },
+            }]},
+        },
+
+        secondaries: {
+            files: [{expand: true, cwd: 'build/',
+              src: ['pages/*/*.html', '!pages/*/index.html'], dest: 'build/'}],
+            options: {patterns: [{
+                match: /(href|src)="\/(\w[^"]*)"/g,
+                replacement: function (match, attr, url, offset, html, path) {
+                    url = url.split('/');
+                    path = path.split('/');
+
+                    return url[0] === path[2] && url[1] ?
+                        [attr, '="', url.slice(1).join('/'), '"'].join('') :
+                        match;
+                },
+            }]},
+        },
+    };
 
 
     // HTML Minification In-Place (htmlmin) //////////////////////////////////
@@ -536,8 +569,10 @@ module.exports = function (grunt) {
 
         style: {files: 'style.scss', tasks: ['sass:style', 'cssmin:style']},
 
-        pages: {files: 'pages/**/*.mustache',
-          tasks: ['mustache_render:pages', 'htmlmin:pages']},
+        toplevels: {files: ['pages/*.mustache', 'pages/*/index.mustache'],
+          tasks: ['mustache_render:pages', 'replace:toplevels', 'htmlmin:pages']},
+        secondaries: {files: ['pages/*/*.mustache', '!pages/*/index.mustache'],
+          tasks: ['mustache_render:pages', 'replace:secondaries', 'htmlmin:pages']},
 
         // these re-copy the "unresolved" module so its cached HTML is cleared
         partials: {files: 'partials/*.mustache',
@@ -567,7 +602,8 @@ module.exports = function (grunt) {
     (function () {
         var OLD_VALUES = {};
         ['copy.images.src', 'copy.api.src', 'json-minify.api.files',
-          'mustache_render.pages.files', 'htmlmin.pages.src'].
+          'mustache_render.pages.files', 'replace.toplevels.files.0.src',
+          'replace.secondaries.files.0.src', 'htmlmin.pages.src'].
             forEach(function (key) { OLD_VALUES[key] = grunt.config(key); });
 
         grunt.event.on('watch', function (action, path, target) {
@@ -591,13 +627,18 @@ module.exports = function (grunt) {
                         grunt.config('json-minify.api.files', 'build/' + path);
                         break;
 
-                    case 'pages':
+                    case 'toplevels':
+                    case 'secondaries':
                         grunt.config(
                             'mustache_render.pages.files',
                             OLD_VALUES['mustache_render.pages.files'].
                                 filter(function (file) {
                                     return file.template === path;
                                 })
+                        );
+                        grunt.config(
+                            ['replace.', '.files.0.src'].join(target),
+                            path.replace(/\.mustache$/, '.html')
                         );
                         grunt.config(
                             'htmlmin.pages.src',

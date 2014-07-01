@@ -157,6 +157,25 @@ $yPadding: 10px;
         a { text-decoration: underline }
     }
 
+    table {
+        background: $gray;
+        border-collapse: collapse;
+        margin: 0 0 1em;
+        width: 100%;
+
+        &, a { color: $white }
+
+        tr {
+            border-top: solid 1px;
+
+            &:first-child { border-top: none }
+        }
+
+        td { padding: $yPadding/2 $xPadding/2 }
+
+        kbd, samp { white-space: nowrap }
+    }
+
     div.grid {
         padding: 0 0 $yPadding;
 

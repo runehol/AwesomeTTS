@@ -88,7 +88,7 @@ class Say(Service):
 
     def options(self):
         """
-        Provides access to voice only.
+        Provides access to voice and speed.
         """
 
         voice_lookup = {

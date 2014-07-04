@@ -30,4 +30,35 @@
 <p>The &ldquo;Advanced&rdquo; tab allows the user to manage add-on updates,
   control debugging, and clear cached media.</p>
 
+<h2>Updates</h2>
+
+<p><strong>As of the v1.0.0 release,</strong> by default, AwesomeTTS
+  automatically checks for updates when you open a user profile for the first
+  time in an Anki session.</p>
+
+<p>From this section, you can disable the update checker from running
+  automatically and you can also manually do a one-time check for updates.</p>
+
+<h2>Debugging Output</h2>
+
+<p>AwesomeTTS can write debugging output either to <code>stdout</code> or to
+  an <code>addon.log</code> file in the <code>Anki/addons/awesometts</code>
+  directory.</p>
+
+<p>The output of this can be helpful for troubleshooting issues with the
+  add-on or simply if you&rsquo;re curious how it works.</p>
+
+<h2>Media Cache</h2>
+
+<p>Whenever AwesomeTTS records or plays audio, it caches the resulting MP3
+  locally in your user profile. The cache improves the speed and performance
+  of successive playback of the same audio, particularly when using the
+  <a href="/usage/on-the-fly">on-the-fly mode</a> of the add-on.</p>
+
+<p>AwesomeTTS will only cache one MP3 file for a given combination of service,
+  input text, and service options. The MP3 files are relatively small.</p>
+
+<p>By going to <code>Anki/addons/awesometts/.cache</code> on your file system,
+  you can see the raw cache.</p>
+
 {{> below}}

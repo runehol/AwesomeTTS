@@ -29,12 +29,10 @@ __all__ = []
 
 import json
 import logging
-import os
 import platform
 import re
 import sys
 from time import time
-import tempfile
 
 from PyQt4.QtCore import Qt
 
@@ -44,6 +42,7 @@ import aqt.clayout
 
 from . import (
     gui,
+    paths,
     service,
 )
 
@@ -57,25 +56,6 @@ from .updates import Updates
 VERSION = '1.0.0-dev'
 
 WEB = 'https://ankiatts.appspot.com'
-
-
-# Paths
-#
-# n.b. When determining the code directory, abspath() is needed since
-# the __file__ constant is not a full path by itself.
-
-PATH_ADDON = os.path.dirname(os.path.abspath(__file__)) \
-    .decode(sys.getfilesystemencoding())  # sqlite (and others?) needs unicode
-
-PATH_CACHE = os.path.join(PATH_ADDON, '.cache')
-if not os.path.isdir(PATH_CACHE):
-    os.mkdir(PATH_CACHE)
-
-PATH_CONFIG = os.path.join(PATH_ADDON, 'config.db')
-
-PATH_LOG = os.path.join(PATH_ADDON, 'addon.log')
-
-PATH_TEMP = tempfile.gettempdir()
 
 
 # Conversions and transformations
@@ -98,7 +78,7 @@ logger = Logger(
     name='AwesomeTTS',
     handlers=dict(
         debug_file=logging.FileHandler(
-            PATH_LOG,
+            paths.LOG,
             encoding='utf-8',
             delay=True,
         ),
@@ -113,7 +93,7 @@ logger = Logger(
 
 config = Config(
     db=Bundle(
-        path=PATH_CONFIG,
+        path=paths.CONFIG,
         table='general',
         normalize=TO_NORMALIZED,
     ),
@@ -175,13 +155,13 @@ router = Router(
         normalize=TO_NORMALIZED,
         args=(),
         kwargs=dict(
-            temp_dir=PATH_TEMP,
+            temp_dir=paths.TEMP,
             lame_flags=lambda: config['lame_flags'],
             normalize=TO_NORMALIZED,
             logger=logger,
         ),
     ),
-    cache_dir=PATH_CACHE,
+    cache_dir=paths.CACHE,
     logger=logger,
 )
 
@@ -282,8 +262,8 @@ addon = Bundle(
     ),
     logger=logger,
     paths=Bundle(
-        cache=PATH_CACHE,
-        is_link=os.path.islink(PATH_ADDON),
+        cache=paths.CACHE,
+        is_link=paths.ADDON_IS_LINKED,
     ),
     router=router,
     strip=Bundle(

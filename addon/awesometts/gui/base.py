@@ -141,26 +141,48 @@ class Dialog(QtGui.QDialog):
 
     def _ui_buttons(self):
         """
-        Returns a horizontal row of cancel/OK buttons.
+        Returns a horizontal row of standard dialog buttons, with "OK"
+        and "Cancel". If the subclass implements help_request() or
+        help_menu(), a "Help" button will also be shown.
 
         Subclasses must call this method explicitly, at a location of
-        their choice. Once called, the 'accept' and 'reject' signals
-        become available.
+        their choice. Once called, accept(), reject(), and optionally
+        help_request() become wired to the appropriate signals.
         """
 
         buttons = QtGui.QDialogButtonBox()
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        buttons.setStandardButtons(
-            QtGui.QDialogButtonBox.Cancel |
-            QtGui.QDialogButtonBox.Ok
-        )
+
+        has_help_menu = callable(getattr(self, 'help_menu', None))
+        has_help_request = callable(getattr(self, 'help_request', None))
+
+        if has_help_menu or has_help_request:
+            if has_help_request:
+                buttons.helpRequested.connect(self.help_request)
+
+            buttons.setStandardButtons(
+                QtGui.QDialogButtonBox.Help |
+                QtGui.QDialogButtonBox.Cancel |
+                QtGui.QDialogButtonBox.Ok
+            )
+
+        else:
+            buttons.setStandardButtons(
+                QtGui.QDialogButtonBox.Cancel |
+                QtGui.QDialogButtonBox.Ok
+            )
 
         for btn in buttons.buttons():
             if buttons.buttonRole(btn) == QtGui.QDialogButtonBox.AcceptRole:
                 btn.setObjectName('okay')
             elif buttons.buttonRole(btn) == QtGui.QDialogButtonBox.RejectRole:
                 btn.setObjectName('cancel')
+            elif (
+                buttons.buttonRole(btn) == QtGui.QDialogButtonBox.HelpRole and
+                has_help_menu
+            ):
+                btn.setMenu(self.help_menu(btn))
 
         return buttons
 
@@ -173,6 +195,17 @@ class Dialog(QtGui.QDialog):
 
         self._addon.logger.debug("Showing '%s' dialog", self.windowTitle())
         super(Dialog, self).show(*args, **kwargs)
+
+    # Auxiliary ##############################################################
+
+    def _launch_link(self, path):
+        """
+        Opens a URL on the AwesomeTTS website with the given path.
+        """
+
+        url = '/'.join([self._addon.web, path])
+        self._addon.logger.debug("Launching %s", url)
+        QtGui.QDesktopServices.openUrl(QtCore.QUrl(url))
 
 
 class ServiceDialog(Dialog):
@@ -191,6 +224,7 @@ class ServiceDialog(Dialog):
         '_panel_built',  # dict, svc_id to True if panel has been constructed
         '_panel_set',    # dict, svc_id to True if panel values have been set
         '_playback',     # API to playback audio with Anki
+        '_svc_id',       # active service ID
     ]
 
     def __init__(self, playback, alerts, *args, **kwargs):
@@ -331,6 +365,29 @@ class ServiceDialog(Dialog):
 
         super(ServiceDialog, self).show(*args, **kwargs)
 
+    def help_menu(self, owner):
+        """
+        Returns a menu that can be attached to the Help button.
+        """
+
+        menu = QtGui.QMenu(owner)
+
+        help_svc = QtGui.QAction(menu)
+        help_svc.triggered \
+            .connect(lambda: self._launch_link('services/' + self._svc_id))
+        help_svc.setObjectName('help_svc')
+
+        menu.addAction(
+            self.HELP_USAGE_DESC,
+            lambda: self._launch_link('usage/' + self.HELP_USAGE_SLUG),
+        )
+        menu.addAction(help_svc)
+        menu.addAction(
+            "Enabling other TTS services",
+            lambda: self._launch_link('services'),
+        )
+        return menu
+
     def _on_service_activated(self, idx, initial=False):
         """
         Construct the target widget if it has not already been built,
@@ -338,7 +395,8 @@ class ServiceDialog(Dialog):
         stack to it.
         """
 
-        svc_id = self.findChild(QtGui.QComboBox, 'service').itemData(idx)
+        combo = self.findChild(QtGui.QComboBox, 'service')
+        svc_id = combo.itemData(idx)
         stack = self.findChild(QtGui.QStackedWidget, 'panels')
 
         panel_unbuilt = svc_id not in self._panel_built
@@ -360,6 +418,10 @@ class ServiceDialog(Dialog):
 
         if panel_unbuilt and not initial:
             self.adjustSize()
+
+        self._svc_id = svc_id
+        self.findChild(QtGui.QAction, 'help_svc') \
+            .setText("Using the %s service" % combo.currentText())
 
     def _on_service_activated_build(self, svc_id, widget, options):
         """

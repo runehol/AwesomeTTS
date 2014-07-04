@@ -1,0 +1,102 @@
+{{!
+  ! AwesomeTTS text-to-speech add-on website
+  !
+  ! Copyright (C) 2014       Anki AwesomeTTS Development Team
+  ! Copyright (C) 2014       Dave Shifflett
+  !
+  ! This program is free software: you can redistribute it and/or modify
+  ! it under the terms of the GNU Affero General Public License as
+  ! published by the Free Software Foundation, either version 3 of the
+  ! License, or (at your option) any later version.
+  !
+  ! This program is distributed in the hope that it will be useful,
+  ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ! GNU Affero General Public License for more details.
+  !
+  ! You should have received a copy of the GNU Affero General Public License
+  ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  !}}
+
+{{> above}}
+
+<p>The easiest way to add TTS to your cards is to edit the template(s) they
+  use to wrap a <kbd>&lt;tts&gt;</kbd> HTML tag around the text you want
+  spoken. You can use the normal Anki template placeholders within these tags.
+  Additionally, you may opt to hide all or individual <kbd>&lt;tts&gt;</kbd>
+  tags if you want to display something else or nothing at all (e.g. for
+  listening comprehension cards).</p>
+
+<p>This option is best for users who only need TTS playback while using the
+  desktop version of Anki. Users who use Anki on mobile devices (e.g. with
+  AnkiDroid) may want to use one of the <a href="/usage">other methods</a>
+  available.</p>
+
+<h2>Instructions</h2>
+
+<ol>
+    <li>From the note editor (or the card browser with a card selected), click
+      the &ldquo;Cards&rdquo; button.</li>
+    <li>Review your existing card template, and then click the &ldquo;Add
+      TTS&rdquo; button.</li>
+    <li>Select your desired service and configure any options.</li>
+    <li>Type a sample phrase and then click &ldquo;Preview&rdquo; to confirm
+      that your audio is as you would like it to sound.</li>
+    <li>If you have a specific note field you would like AwesomeTTS to read
+      from, select it from the field dropdown.</li>
+    <li>
+        If you would like to hide the inside of the TTS tag (e.g. because you
+        have a listening comprehension card and you do not want to see the
+        text displayed), change the visibility dropdown to either:
+
+        <ul>
+            <li><em>Hide just this tag with inline CSS</em> to insert the tag
+              with additional styling that creates a local rule on just the
+              new tag to not be shown</li>
+            <li><em>Add rule to hide any TTS tag for this note type</em> to
+              add a styling rule to all of the cards for this note so that no
+              <samp>&lt;tts&gt;</samp> tag used anywhere in any card will be
+              visible</li>
+        </ul>
+    </li>
+    <li>Select on which side of the template you want AwesomeTTS to play the
+      audio.</li>
+    <li>Click the &ldquo;Insert&rdquo; button.</li>
+    <li>Clean up any duplicate or unwanted text in your template.</li>
+</ol>
+
+<p>To toggle automatic playback of the <kbd>&lt;tts&gt;</kbd> tags or to
+  change the shortcut keys, go to the <a href="/config/on-the-fly">On-the-Fly
+  tab of the configuration screen</a>.</p>
+
+<div class="grid">
+    <figure style="width: 644px">
+        <img src="/usage.on-the-fly.button.png" width="644" height="440"
+          alt="Mouse hovers the &ldquo;Cards&rdquo; button">
+
+        <figcaption>Note editor &ldquo;Cards&rdquo; button</figcaption>
+    </figure>
+
+    <figure style="width: 644px">
+        <img src="/usage.on-the-fly.initial.png" width="644" height="440"
+          alt="Mouse hovers the &ldquo;Add TTS&rdquo; button">
+
+        <figcaption>Card templates view</figcaption>
+    </figure>
+
+    <figure style="width: 644px">
+        <img src="/usage.on-the-fly.screen.png" width="644" height="440"
+          alt="Mouse hovers the &ldquo;Insert&rdquo; button">
+
+        <figcaption>Template helper dialog</figcaption>
+    </figure>
+
+    <figure style="width: 644px">
+        <img src="/usage.on-the-fly.yield.png" width="644" height="440"
+          alt="&lt;tts&gt; tag seen in the front template panel">
+
+        <figcaption>Card template afterward</figcaption>
+    </figure>
+</div>
+
+{{> below}}

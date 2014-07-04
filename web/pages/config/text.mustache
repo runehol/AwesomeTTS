@@ -1,0 +1,132 @@
+{{!
+  ! AwesomeTTS text-to-speech add-on website
+  !
+  ! Copyright (C) 2014       Anki AwesomeTTS Development Team
+  ! Copyright (C) 2014       Dave Shifflett
+  !
+  ! This program is free software: you can redistribute it and/or modify
+  ! it under the terms of the GNU Affero General Public License as
+  ! published by the Free Software Foundation, either version 3 of the
+  ! License, or (at your option) any later version.
+  !
+  ! This program is distributed in the hope that it will be useful,
+  ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ! GNU Affero General Public License for more details.
+  !
+  ! You should have received a copy of the GNU Affero General Public License
+  ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  !}}
+
+{{> above}}
+
+<figure style="width: 485px">
+    <img src="/config.text.png" width="485" height="541"
+      alt="AwesomeTTS configuration dialog with the Text tab selected">
+
+    <figcaption>&ldquo;Text&rdquo; configuration tab</figcaption>
+</figure>
+
+<p>The &ldquo;Text&rdquo; tab allows the user to control how playback and
+  recording occur when the add-on encounters cloze deletions and text within
+  parentheses, brackets, and braces.</p>
+
+<p>Cloze deletions can be used within Anki for chopping out a bit of text
+  inside of a larger note that the studier must recall. For more about cloze
+  deletion or how Anki implements it within cards, see the <a rel="external"
+  href="http://ankisrs.net/docs/manual.html#cloze-deletion">cloze deletion
+  topic in the manual</a>.</p>
+
+<p>Beyond letting users who study with cloze deletions control how those cloze
+  deletion placeholders are handled by AwesomeTTS, these options can be
+  helpful for users who keep snippets of text within their note fields that
+  they want visually on-screen but may not want played back or recorded.</p>
+
+<p>Advanced users who do keep non-audible snippets of information in separate
+  note fields from the actual spoken language words may not need these
+  features.</p>
+
+<h2>Handling Template Text</h2>
+
+<p>These options are used whenever AwesomeTTS parses content that came from a
+  template (e.g. on-the-fly <code>&lt;tts&gt;</code> tags). These options are
+  applied after Anki has already done any needed template substitutions or
+  cloze deletions (i.e. after the values from your note fields have already
+  been injected into your template and after any cloze deletion patterns have
+  been turned into what you see on-screen while studying).</p>
+
+<h2>Handling Text from a Note Field</h2>
+
+<p>These options are used whenever AwesomeTTS parses content that came from a
+  note field (e.g. when <a href="/usage/browser">mass generating audio files
+  in the browser editor</a>, or for prepopulating the input text field from
+  the note&rsquo;s active field when <a href="/usage/editor">adding audio
+  files in the note editor</a>).</p>
+
+<h2 style="clear: both">How Cloze Deletion Handling Works</h2>
+
+{{=<%disable mustache%>=}}
+
+<table><tr>
+    <td>if your note field had&hellip;</td>
+    <td><kbd>Hello {{c1::world}}!</kbd></td>
+    <td><kbd>Hello {{c1::world::place}}!</kbd></td>
+</tr><tr>
+    <td>then Anki would render&hellip;</td>
+    <td><samp>Hello <strong>[...]</strong>!</samp></td>
+    <td><samp>Hello <strong>[place]<strong>!</samp></td>
+</tr><tr>
+    <td>and with &ldquo;read however Anki displayed them&rdquo; or<br>
+      &ldquo;like Anki would display them&rdquo;, AwesomeTTS would
+      read&hellip;</td>
+    <td><samp>Hello ... !</samp></td>
+    <td><samp>Hello place!</samp></td>
+</tr><tr>
+    <td>or with &ldquo;read w/ hints wrapped in ellipses&rdquo;, AwesomeTTS
+      would read&hellip;</td>
+    <td><samp>Hello ... !</samp></td>
+    <td><samp>Hello ... place ... !</samp></td>
+</tr><tr>
+    <td>or with &ldquo;read as an ellipsis, ignoring hints&rdquo;, AwesomeTTS
+      would read&hellip;</td>
+    <td><samp>Hello ... !</samp></td>
+    <td><samp>Hello ... !</samp></td>
+</tr><tr>
+    <td>or with &ldquo;removed entirely&rdquo;, AwesomeTTS would
+      read&hellip;</td>
+    <td><samp>Hello !</samp></td>
+    <td><samp>Hello !</samp></td>
+</tr></table>
+
+<%disable={{ }}=mustache%>
+
+<p>After processing any cloze deletion placeholders, the three
+  <strong>remove</strong> options will be applied.</p>
+
+<h2>Other Notes</h2>
+
+<ul>
+    <li>AwesomeTTS will always remove <code>[sound]</code> tags and HTML from
+      either kind of input source.</li>
+    <li>Bracketed text is treated separately from cloze deletion placeholder
+      text, and the two options can be used together without conflicting, even
+      though the cloze deletion placeholders will render visually with
+      brackets.</li>
+    <li>When handling text from the clipboard (e.g. for prepopulating the
+      input text field when <a href="/usage/editor">adding audio files in the
+      note editor</a>), options from both sections will be applied.</li>
+    <li>For text entered directly by the user, only minimal normalization will
+      be done (e.g. removing excess whitespace, periods).</li>
+    <li>Text is removed in a &ldquo;non-greedy&rdquo; fashion so multiple bits
+      of text only remove up to the first closing symbol; e.g. <kbd>Hello
+      (greeting) world (place)!</kbd> would yield <samp>Hello world !</samp>
+      if  removal of parentheses is enabled.</li>
+    <li>If you opt to remove text within multiple different symbol types
+      <em>and</em> you use overlapping symbols in your input, you may get
+      unusual results. For such cases, AwesomeTTS will remove parentheses
+      first, followed by brackets, then braces; e.g. <kbd>Hello world!
+      (English {somewhat) informal}</kbd> would yield <samp>Hello world!
+      informal}</samp> once the parentheses are removed.</li>
+</ul>
+
+{{> below}}

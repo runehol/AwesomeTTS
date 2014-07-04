@@ -581,6 +581,18 @@ class Configurator(Dialog):
 
         super(Configurator, self).accept()
 
+    def help_request(self):
+        """
+        Launch the web browser with the URL to the documentation for the
+        user's current tab.
+        """
+
+        tabs = self.findChild(QtGui.QTabWidget)
+        self._launch_link(
+            'config/' +
+            tabs.tabText(tabs.currentIndex()).lower()
+        )
+
     def keyPressEvent(self, key_event):  # from PyQt4, pylint:disable=C0103
         """
         If we have a shortcut button awaiting a key event to change its

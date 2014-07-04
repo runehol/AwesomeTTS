@@ -1,0 +1,95 @@
+{{!
+  ! AwesomeTTS text-to-speech add-on website
+  !
+  ! Copyright (C) 2014       Anki AwesomeTTS Development Team
+  ! Copyright (C) 2014       Dave Shifflett
+  !
+  ! This program is free software: you can redistribute it and/or modify
+  ! it under the terms of the GNU Affero General Public License as
+  ! published by the Free Software Foundation, either version 3 of the
+  ! License, or (at your option) any later version.
+  !
+  ! This program is distributed in the hope that it will be useful,
+  ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ! GNU Affero General Public License for more details.
+  !
+  ! You should have received a copy of the GNU Affero General Public License
+  ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  !}}
+
+{{> above}}
+
+<figure style="width: 485px">
+    <img src="/config.on-the-fly.png" width="485" height="541"
+      alt="AwesomeTTS configuration dialog with the On-the-Fly tab selected">
+
+    <figcaption>&ldquo;On-the-Fly&rdquo; configuration tab</figcaption>
+</figure>
+
+<p>These options are of interest to those who <a href="/usage/on-the-fly">use
+  the On-the-Fly mode</a> and want to control automatic playback or customize
+  the keyboard shortcuts that can activate the playback.</p>
+
+<h2>Questions / Fronts of Cards</h2>
+
+<ul>
+    <li><strong>Automatically recite <code>&lt;tts&gt;</code> tags:</strong>
+      If checked, AwesomeTTS will playback any <code>&lt;tts&gt;</code> tag
+      found on the front side of your card&rsquo;s template when initially
+      displaying the card.</li>
+
+    <li><strong>Change Shortcut:</strong> Clicking this and then striking a
+      single key will change the shortcut key that AwesomeTTS listens for to
+      playback any <code>&lt;tts&gt;</code> tag found on the front side of
+      your card&rsquo;s template. This shortcut key is always available when a
+      card is displayed that has a front <code>&lt;tts&gt;</code> tag.</li>
+</ul>
+
+<h2>Answers / Backs of Cards</h2>
+
+<ul>
+    <li><strong>Automatically recite <code>&lt;tts&gt;</code> tags:</strong>
+      If checked, AwesomeTTS will playback any <code>&lt;tts&gt;</code> tag
+      found on the back side of your card&rsquo;s template once you reveal the
+      answer to the card.</li>
+
+    <li><strong>Change Shortcut:</strong> Clicking this and then striking a
+      single key will change the shortcut key that AwesomeTTS listens for to
+      playback any <code>&lt;tts&gt;</code> tag found on the back side of your
+      card&rsquo;s template. This shortcut key is only available once the
+      answer to a card has been revealed and that answer template has a
+      <code>&lt;tts&gt;</code> tag.</li>
+</ul>
+
+{{=<%disable mustache%>=}}
+
+<p>Note that when Anki reveals the answer for a card, it renders both sides of
+  the card. For the purposes of differentiating the two sides of the cards,
+  AwesomeTTS looks for either the same text that appeared on the question side
+  (i.e. via the use of the <code>{{FrontSide}}</code> tag) or use of the card
+  divider (i.e. the default <code>&lt;hr id=answer&gt;</code> that Anki
+  includes by default for new note types).</p>
+
+<%disable={{ }}=mustache%>
+
+<h2>Additional Tips</h2>
+
+<ul>
+    <li>If you want to customize how AwesomeTTS handles cloze deletions or
+      text wrapped in parentheses, brackets, or braces, go to the
+      <a rel="next" href="/config/text">Text tab</a> for those settings.</li>
+    <li>To unset a shortcut altogether, you can click its button and then
+      strike either <kbd>Esc</kbd> or <kbd>Del</kbd>.</li>
+    <li>You may set both shortcut keys to the same keystroke, in which case
+      AwesomeTTS will read <code>&lt;tts&gt;</code> tags from <em>both</em>
+      sides of the card, if they exist.</li>
+    <li>You may set both or either shortcut keys to <kbd>R</kbd> or
+      <kbd>F5</kbd>, which are keys Anki uses for its own playback. AwesomeTTS
+      will have Anki play any embedded sounds before playback of any
+      <code>&lt;tts&gt;</code> tags.</li>
+    <li>To set both shortcuts at the same time to the same key, you can click
+      both buttons and strike your desired key once.</li>
+</ul>
+
+{{> below}}

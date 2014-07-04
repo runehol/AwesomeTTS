@@ -346,6 +346,7 @@ addon = Bundle(
     ),
     updates=updates,
     version=VERSION,
+    web=WEB,
 )
 
 reviewer = gui.Reviewer(

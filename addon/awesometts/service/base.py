@@ -83,6 +83,21 @@ class Service(object):
     # will be set to True if user is running Windows
     IS_WINDOWS = False
 
+    SPLIT_PRIORITY = [
+        ['.'],
+        [',', ';', ':'],
+        ['-'],
+        [' '],
+    ]
+
+    SPLIT_CHARACTERS = ''.join(
+        symbol
+        for symbols in SPLIT_PRIORITY
+        for symbol in symbols
+    )
+
+    SPLIT_MINIMUM = 5
+
     # abstract; to be overridden by the concrete classes
     # e.g. NAME = "ABC Service API"
     NAME = None
@@ -509,6 +524,51 @@ class Service(object):
         with wr.ConnectRegistry(None, wr.HKEY_LOCAL_MACHINE) as hklm:
             with wr.OpenKey(hklm, key) as subkey:
                 return wr.QueryValueEx(subkey, name)[0]
+
+    def util_split(self, text, limit):
+        """
+        Intelligently split a string into smaller bits based on the
+        passed limit. This utility function can be helpful for services
+        that have character limits. Returns a list of strings.
+        """
+
+        bits = []
+
+        while len(text) > limit:
+            for symbols in self.SPLIT_PRIORITY:
+                offsets = [
+                    offset
+                    for offset in [
+                        text.rfind(symbol, 0, limit)
+                        for symbol in symbols
+                    ]
+                    if offset > self.SPLIT_MINIMUM
+                ]
+
+                if offsets:
+                    offset = sorted(offsets).pop()
+                    bits.append(text[:offset + 1].rstrip())
+                    text = text[offset + 1:]
+                    break
+
+            else:  # force a mid-word break
+                bits.append(text[:limit])
+                text = text[limit:]
+
+            text = text.lstrip(self.SPLIT_CHARACTERS)
+
+        bits.append(text)
+
+        self._logger.debug(
+            "Input phrase split using %d-character limit:\n%s",
+            limit,
+            "\n".join(
+                '    #%d: "%s"' % (number, bit)
+                for number, bit in enumerate(bits, 1)
+            ),
+        )
+
+        return bits
 
     @classmethod
     def _flatten(cls, iterable):

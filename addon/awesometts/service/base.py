@@ -246,7 +246,6 @@ class Service(object):
                     break
                 except (LookupError, UnicodeError):
                     self._logger.warn("CLI decoding failed w/ %s", encoding)
-                    pass
             else:
                 self._logger.error("All CLI decodings failed; forcing ASCII")
                 returned = returned.decode('ascii', errors='ignore')

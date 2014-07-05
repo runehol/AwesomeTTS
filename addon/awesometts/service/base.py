@@ -84,7 +84,7 @@ class Service(object):
     IS_WINDOWS = False
 
     SPLIT_PRIORITY = [
-        ['.'],
+        ['.', '?'],
         [',', ';', ':'],
         ['-'],
         [' '],

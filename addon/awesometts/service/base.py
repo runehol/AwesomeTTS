@@ -369,7 +369,8 @@ class Service(object):
                     key,
                     quote(
                         value.encode('utf-8') if isinstance(value, unicode)
-                        else value,
+                        else value if isinstance(value, str)
+                        else str(value),
                         safe='',
                     ),
                 ])

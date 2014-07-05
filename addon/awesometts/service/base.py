@@ -363,12 +363,19 @@ class Service(object):
 
         return callee(args, startupinfo=self.CLI_SI)
 
-    def net_download(self, path, addr, query=None, require=None):
+    def net_download(self, path, targets, require=None):
         """
-        Downloads a file to the given from the specified address and
-        optional query string. Additionally, a require dict may be
-        passed to enforce a status code (key 'status') and/or
-        Content-Type (key 'mime').
+        Downloads a file to the given path from the specified target(s).
+        If multiple targets are specified, their resulting payloads are
+        glued together.
+
+        Each "target" is a tuple containing an address and a dict for
+        what to tack onto the query string.
+
+        Finally, a require dict may be passed to enforce a Content-Type
+        using key 'mime' and/or a minimum payload size using key 'size'.
+        If using multiple targets, these requirements apply to each
+        response.
 
         The underlying library here already understands how to search
         the environment for proxy settings (e.g. HTTP_PROXY), so we do
@@ -377,68 +384,70 @@ class Service(object):
 
         from urllib2 import urlopen, Request, quote
 
-        url = addr if not query else '?'.join([
-            addr,
-            '&'.join([
-                '='.join([
-                    key,
-                    quote(
-                        value.encode('utf-8') if isinstance(value, unicode)
-                        else value if isinstance(value, str)
-                        else str(value),
-                        safe='',
-                    ),
-                ])
-                for key, value in query.items()
+        targets = targets if isinstance(targets, list) else [targets]
+        targets = [
+            '?'.join([
+                url,
+                '&'.join(
+                    '='.join([
+                        key,
+                        quote(
+                            val.encode('utf-8') if isinstance(val, unicode)
+                            else val if isinstance(val, str)
+                            else str(val),
+                            safe='',
+                        ),
+                    ])
+                    for key, val in query.items()
+                ),
             ])
-        ])
+            for url, query in targets
+        ]
 
-        self._logger.debug("Fetching %s from the web", url)
+        require = require or {}
 
-        response = urlopen(
-            Request(url=url, headers={'User-Agent': 'Mozilla/5.0'}),
-            timeout=15,
-        )
+        payloads = []
 
-        if not response:
-            raise IOError("No response from web request")
+        for number, url in enumerate(targets, 1):
+            desc = "web request" if len(targets) == 1 \
+                else "web request (%d of %d)" % (number, len(targets))
 
-        if require:
-            if (
-                'status' in require and
-                require['status'] != response.getcode()
-            ):
-                raise ValueError(
-                    "Web request returned %d status code; wanted %d" % (
-                        response.getcode(),
-                        require['status'],
-                    )
-                )
+            self._logger.debug("Fetching %s for %s", url, desc)
 
-            if (
-                'mime' in require and
-                require['mime'] != response.info().gettype()
-            ):
-                raise ValueError(
-                    "Web request returned %s Content-Type; wanted %s" % (
-                        response.info().gettype(),
-                        require['mime'],
-                    )
-                )
-
-        payload = response.read()
-        response.close()
-
-        if require and 'size' in require and len(payload) < require['size']:
-            raise ValueError(
-                "Web request returned a %d-byte stream; wanted %d+ bytes" % (
-                    len(payload),
-                    require['size'],
-                )
+            response = urlopen(
+                Request(url=url, headers={'User-Agent': 'Mozilla/5.0'}),
+                timeout=15,
             )
 
+            if not response:
+                raise IOError("No response for %s" % desc)
+
+            if response.getcode() != 200:
+                raise ValueError(
+                    "Got %d status for %s" %
+                    (response.getcode(), desc)
+                )
+
+            if 'mime' in require and \
+                    require['mime'] != response.info().gettype():
+                raise ValueError(
+                    "Request got %s Content-Type for %s; wanted %s" %
+                    (response.info().gettype(), desc, require['mime'])
+                )
+
+            payload = response.read()
+            response.close()
+
+            if 'size' in require and len(payload) < require['size']:
+                raise ValueError(
+                    "Request got %d-byte stream for %s; wanted %d+ bytes" %
+                    (len(payload), desc, require['size'])
+                )
+
+            payloads.append(payload)
+
         with open(path, 'wb') as response_output:
-            response_output.write(payload)
+            response_output.write(''.join(payloads))
 
     def path_temp(self, extension):
         """

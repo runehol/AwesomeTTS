@@ -169,14 +169,12 @@ class Google(Service):
         """
 
         self.net_download(
-            path=path,
-            addr='http://translate.google.com/translate_tts',
-            query=dict(
+            path,
+            ('http://translate.google.com/translate_tts', dict(
                 tl=options['voice'],
                 q=text,
-            ),
+            )),
             require=dict(
-                status=200,
                 mime='audio/mpeg',
                 size=1024,
             ),

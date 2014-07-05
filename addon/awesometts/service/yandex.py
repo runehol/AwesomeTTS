@@ -143,16 +143,14 @@ class Yandex(Service):
         """
 
         self.net_download(
-            path=path,
-            addr='http://tts.voicetech.yandex.net/tts',
-            query=dict(
+            path,
+            ('http://tts.voicetech.yandex.net/tts', dict(
                 format='mp3',
                 quality=options['quality'],
                 lang=options['voice'],
                 text=text,
-            ),
+            )),
             require=dict(
-                status=200,
                 mime='audio/mpeg',
                 size=1024,
             ),

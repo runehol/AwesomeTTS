@@ -34,7 +34,7 @@ import re
 import sys
 from time import time
 
-from PyQt4.QtCore import Qt
+from PyQt4.QtCore import PYQT_VERSION_STR, Qt
 
 import anki
 import aqt
@@ -166,9 +166,10 @@ router = Router(
 )
 
 updates = Updates(
-    agent='AwesomeTTS/%s (Anki %s; %s %s; %s)' % (
-        VERSION, anki.version, platform.python_implementation(),
-        platform.python_version(), platform.platform().replace('-', ' '),
+    agent='AwesomeTTS/%s (Anki %s; PyQt %s; %s %s; %s)' % (
+        VERSION, anki.version, PYQT_VERSION_STR,
+        platform.python_implementation(), platform.python_version(),
+        platform.platform().replace('-', ' '),
     ),
     endpoint='%s/api/update/%s-%s' % (WEB, sys.platform, VERSION),
     logger=logger,

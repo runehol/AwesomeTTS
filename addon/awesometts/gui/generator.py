@@ -413,10 +413,10 @@ class BrowserGenerator(ServiceDialog):
         )
 
         if self._process['throttling']:
-            def miss():
+            def miss(count):
                 """Count the cache miss."""
 
-                self._process['throttling']['calls'] += 1
+                self._process['throttling']['calls'] += count
 
             callbacks['miss'] = miss
 

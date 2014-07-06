@@ -49,11 +49,18 @@
   want to <a href="advanced" rel="next">clear your cache</a> for the flags to
   take full effect.</p>
 
-<h2>Download Throttling</h2>
+<h2>Download Throttling during Batch Processing</h2>
 
 <p>When downloading from the Internet, AwesomeTTS is <em>very</em>
   conservative by default about how many requests it will send to a particular
   service. If you wish to speed up the <a href="/usage/browser">Browser-based
   mass generation</a> of MP3s, you can tweak the throttling settings here.</p>
+
+<p>Note that a single input phrase might actually result in several downloads
+  being requested against a service, even though AwesomeTTS assembles a single
+  MP3 afterward. Each of these downloads counts individually for the purposes
+  of evaluating throttling during batch processing. For example, a service
+  with a <strong>100-character limit</strong> might require <strong>3
+  downloads</strong> for a <strong>250-character</strong> input phrase.</p>
 
 {{> below}}

@@ -568,14 +568,15 @@ class Service(object):
 
         bits.append(text)
 
-        self._logger.debug(
-            "Input phrase split using %d-character limit:\n%s",
-            limit,
-            "\n".join(
-                '    #%d: "%s"' % (number, bit)
-                for number, bit in enumerate(bits, 1)
-            ),
-        )
+        if len(bits) > 1:
+            self._logger.debug(
+                "Input phrase split using %d-character limit:\n%s",
+                limit,
+                "\n".join(
+                    '    #%d: "%s"' % (number, bit)
+                    for number, bit in enumerate(bits, 1)
+                ),
+            )
 
         return bits
 

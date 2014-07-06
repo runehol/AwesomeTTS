@@ -160,40 +160,22 @@ class Google(Service):
         """
         Downloads from Google directly to an MP3.
 
-        Because the MP3 get from Google is already so very tiny, LAME is
-        not used for transcoding.
+        Because the MP3 we get from Google is already so very tiny, LAME
+        is not used for transcoding.
         """
 
-        textlen = len(text)
-        url = 'http://translate.google.com/translate_tts'
-        require = dict(mime='audio/mpeg', size=1024)
-
-        if textlen > 100:
-            texts = self.util_split(text, 100)
-            self.net_download(
-                path,
-                [
-                    (url, dict(
-                        q=text,
-                        tl=options['voice'],
-                        total=len(texts),
-                        idx=idx,
-                        textlen=len(text),
-                    ))
-                    for idx, text in enumerate(texts)
-                ],
-                require=require,
-            )
-
-        else:
-            self.net_download(
-                path,
-                (url, dict(
+        texts = self.util_split(text, 100)
+        self.net_download(
+            path,
+            [
+                ('http://translate.google.com/translate_tts', dict(
                     q=text,
                     tl=options['voice'],
-                    total=1,
-                    idx=0,
-                    textlen=textlen,
-                )),
-                require=require,
-            )
+                    total=len(texts),
+                    idx=idx,
+                    textlen=len(text),
+                ))
+                for idx, text in enumerate(texts)
+            ],
+            require=dict(mime='audio/mpeg', size=1024),
+        )

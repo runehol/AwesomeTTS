@@ -138,26 +138,19 @@ class Yandex(Service):
         Downloads from Yandex directly to an MP3.
         """
 
-        url = 'http://tts.voicetech.yandex.net/tts'
-        require = dict(mime='audio/mpeg', size=1024)
-
         self.net_download(
             path,
             [
-                (url, dict(
+                ('http://tts.voicetech.yandex.net/tts', dict(
                     format='mp3',
                     quality=options['quality'],
                     lang=options['voice'],
                     text=text,
                 ))
-                for text in (
-                    # n.b. the limit seems to be much higher than 750, but
-                    # this is a safe place to start; the web UI limits the
-                    # user to even less (100 characters)
 
-                    self.util_split(text, 750) if len(text) > 750
-                    else [text]
-                )
+                # n.b. the limit seems to be much higher than 750, but this is
+                # a safe place to start (the web UI limits the user to 100)
+                for text in self.util_split(text, 750)
             ],
-            require=require,
+            require=dict(mime='audio/mpeg', size=1024),
         )

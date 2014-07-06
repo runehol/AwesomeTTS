@@ -84,10 +84,10 @@ class Service(object):
     IS_WINDOWS = False
 
     SPLIT_PRIORITY = [
-        ['.', '?'],
-        [',', ';', ':'],
-        ['-'],
-        [' '],
+        ['.', '?', '!', u'\u3002'],
+        [',', ';', ':', u'\u3001'],
+        [' ', u'\u3000'],
+        ['-', u'\u2027', u'\u30fb'],
     ]
 
     SPLIT_CHARACTERS = ''.join(

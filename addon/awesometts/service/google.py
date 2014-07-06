@@ -36,10 +36,6 @@ class Google(Service):
     Provides a Service-compliant implementation for Google Translate.
     """
 
-    # FIXME. This and Yandex currently only support short phrases.
-    # See https://github.com/AwesomeTTS/AwesomeTTS/issues/21
-    # Once fixed, the text returned by desc() should be updated.
-
     __slots__ = [
     ]
 
@@ -77,7 +73,7 @@ class Google(Service):
         """
 
         return "Google Translate text-to-speech web API " \
-            "(%d voices, short phrases only)" % len(self._VOICE_CODES)
+            "(%d voices)" % len(self._VOICE_CODES)
 
     def options(self):
         """
@@ -164,20 +160,22 @@ class Google(Service):
         """
         Downloads from Google directly to an MP3.
 
-        Because the MP3 get from Google is already so very tiny, LAME is
-        not used for transcoding.
+        Because the MP3 we get from Google is already so very tiny, LAME
+        is not used for transcoding.
         """
 
+        texts = self.util_split(text, 100)
         self.net_download(
-            path=path,
-            addr='http://translate.google.com/translate_tts',
-            query=dict(
-                tl=options['voice'],
-                q=text,
-            ),
-            require=dict(
-                status=200,
-                mime='audio/mpeg',
-                size=1024,
-            ),
+            path,
+            [
+                ('http://translate.google.com/translate_tts', dict(
+                    q=text,
+                    tl=options['voice'],
+                    total=len(texts),
+                    idx=idx,
+                    textlen=len(text),
+                ))
+                for idx, text in enumerate(texts)
+            ],
+            require=dict(mime='audio/mpeg', size=1024),
         )

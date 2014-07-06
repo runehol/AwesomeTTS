@@ -188,7 +188,8 @@ class Router(object):
         The callbacks parameter is a dict and contains the following:
 
             - 'done' (optional): called before the okay/fail callback
-            - 'miss' (optional): called before the service on cache miss
+            - 'miss' (optional): called after done with a download count
+               if a cache miss occurred running the service
             - 'okay' (required): called with a path to the media file
             - 'fail' (required): called with an exception for validation
                errors or failed service calls occurs
@@ -247,15 +248,16 @@ class Router(object):
                 callbacks['then']()
 
         else:
-            if 'miss' in callbacks:
-                callbacks['miss']()
-
+            service['instance'].net_download_reset()
             self._busy.append(path)
             self._pool.spawn(
                 task=lambda: service['instance'].run(text, options, path),
                 callback=lambda exception: (
                     self._busy.remove(path),
                     'done' in callbacks and callbacks['done'](),
+                    'miss' in callbacks and callbacks['miss'](
+                        service['instance'].net_download_count()
+                    ),
                     callbacks['fail'](exception) if exception
                         else callbacks['okay'](path) if os.path.exists(path)
                         else callbacks['fail'](RuntimeError(

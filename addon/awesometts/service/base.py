@@ -59,6 +59,7 @@ class Service(object):
     __metaclass__ = abc.ABCMeta
 
     __slots__ = [
+        '_downloads',   # number of downloads required by the last run
         '_lame_flags',  # callable to get flag string for LAME transcoder
         '_logger',      # logging interface with debug(), info(), etc.
         'normalize',    # callable for standardizing string values
@@ -82,6 +83,21 @@ class Service(object):
 
     # will be set to True if user is running Windows
     IS_WINDOWS = False
+
+    SPLIT_PRIORITY = [
+        ['.', '?', '!', u'\u3002'],
+        [',', ';', ':', u'\u3001'],
+        [' ', u'\u3000'],
+        ['-', u'\u2027', u'\u30fb'],
+    ]
+
+    SPLIT_CHARACTERS = ''.join(
+        symbol
+        for symbols in SPLIT_PRIORITY
+        for symbol in symbols
+    )
+
+    SPLIT_MINIMUM = 5
 
     # abstract; to be overridden by the concrete classes
     # e.g. NAME = "ABC Service API"
@@ -118,6 +134,7 @@ class Service(object):
         assert self.NAME, "Please specify a NAME for the service"
         assert self.TRAITS, "Please specify a TRAITS list for the service"
 
+        self._downloads = None
         self._lame_flags = lame_flags
         self._logger = logger
         self.normalize = normalize
@@ -347,12 +364,19 @@ class Service(object):
 
         return callee(args, startupinfo=self.CLI_SI)
 
-    def net_download(self, path, addr, query=None, require=None):
+    def net_download(self, path, targets, require=None):
         """
-        Downloads a file to the given from the specified address and
-        optional query string. Additionally, a require dict may be
-        passed to enforce a status code (key 'status') and/or
-        Content-Type (key 'mime').
+        Downloads a file to the given path from the specified target(s).
+        If multiple targets are specified, their resulting payloads are
+        glued together.
+
+        Each "target" is a tuple containing an address and a dict for
+        what to tack onto the query string.
+
+        Finally, a require dict may be passed to enforce a Content-Type
+        using key 'mime' and/or a minimum payload size using key 'size'.
+        If using multiple targets, these requirements apply to each
+        response.
 
         The underlying library here already understands how to search
         the environment for proxy settings (e.g. HTTP_PROXY), so we do
@@ -361,67 +385,87 @@ class Service(object):
 
         from urllib2 import urlopen, Request, quote
 
-        url = addr if not query else '?'.join([
-            addr,
-            '&'.join([
-                '='.join([
-                    key,
-                    quote(
-                        value.encode('utf-8') if isinstance(value, unicode)
-                        else value,
-                        safe='',
-                    ),
-                ])
-                for key, value in query.items()
+        targets = targets if isinstance(targets, list) else [targets]
+        targets = [
+            '?'.join([
+                url,
+                '&'.join(
+                    '='.join([
+                        key,
+                        quote(
+                            val.encode('utf-8') if isinstance(val, unicode)
+                            else val if isinstance(val, str)
+                            else str(val),
+                            safe='',
+                        ),
+                    ])
+                    for key, val in query.items()
+                ),
             ])
-        ])
+            for url, query in targets
+        ]
 
-        self._logger.debug("Fetching %s from the web", url)
+        require = require or {}
 
-        response = urlopen(
-            Request(url=url, headers={'User-Agent': 'Mozilla/5.0'}),
-            timeout=15,
-        )
+        payloads = []
 
-        if not response:
-            raise IOError("No response from web request")
+        for number, url in enumerate(targets, 1):
+            desc = "web request" if len(targets) == 1 \
+                else "web request (%d of %d)" % (number, len(targets))
 
-        if require:
-            if (
-                'status' in require and
-                require['status'] != response.getcode()
-            ):
-                raise ValueError(
-                    "Web request returned %d status code; wanted %d" % (
-                        response.getcode(),
-                        require['status'],
-                    )
-                )
+            self._logger.debug("Fetching %s for %s", url, desc)
 
-            if (
-                'mime' in require and
-                require['mime'] != response.info().gettype()
-            ):
-                raise ValueError(
-                    "Web request returned %s Content-Type; wanted %s" % (
-                        response.info().gettype(),
-                        require['mime'],
-                    )
-                )
-
-        payload = response.read()
-        response.close()
-
-        if require and 'size' in require and len(payload) < require['size']:
-            raise ValueError(
-                "Web request returned a %d-byte stream; wanted %d+ bytes" % (
-                    len(payload),
-                    require['size'],
-                )
+            self._downloads += 1
+            response = urlopen(
+                Request(url=url, headers={'User-Agent': 'Mozilla/5.0'}),
+                timeout=15,
             )
 
+            if not response:
+                raise IOError("No response for %s" % desc)
+
+            if response.getcode() != 200:
+                raise ValueError(
+                    "Got %d status for %s" %
+                    (response.getcode(), desc)
+                )
+
+            if 'mime' in require and \
+                    require['mime'] != response.info().gettype():
+                raise ValueError(
+                    "Request got %s Content-Type for %s; wanted %s" %
+                    (response.info().gettype(), desc, require['mime'])
+                )
+
+            payload = response.read()
+            response.close()
+
+            if 'size' in require and len(payload) < require['size']:
+                raise ValueError(
+                    "Request got %d-byte stream for %s; wanted %d+ bytes" %
+                    (len(payload), desc, require['size'])
+                )
+
+            payloads.append(payload)
+
         with open(path, 'wb') as response_output:
-            response_output.write(payload)
+            response_output.write(''.join(payloads))
+
+    def net_download_count(self):
+        """
+        Returns the number of downloads the last run required. Intended
+        for use by the router to query after a run.
+        """
+
+        return self._downloads
+
+    def net_download_reset(self):
+        """
+        Resets the download count back to zero. Intended for use by the
+        router before a run.
+        """
+
+        self._downloads = 0
 
     def path_temp(self, extension):
         """
@@ -507,6 +551,52 @@ class Service(object):
         with wr.ConnectRegistry(None, wr.HKEY_LOCAL_MACHINE) as hklm:
             with wr.OpenKey(hklm, key) as subkey:
                 return wr.QueryValueEx(subkey, name)[0]
+
+    def util_split(self, text, limit):
+        """
+        Intelligently split a string into smaller bits based on the
+        passed limit. This utility function can be helpful for services
+        that have character limits. Returns a list of strings.
+        """
+
+        bits = []
+
+        while len(text) > limit:
+            for symbols in self.SPLIT_PRIORITY:
+                offsets = [
+                    offset
+                    for offset in [
+                        text.rfind(symbol, 0, limit)
+                        for symbol in symbols
+                    ]
+                    if offset > self.SPLIT_MINIMUM
+                ]
+
+                if offsets:
+                    offset = sorted(offsets).pop()
+                    bits.append(text[:offset + 1].rstrip())
+                    text = text[offset + 1:]
+                    break
+
+            else:  # force a mid-word break
+                bits.append(text[:limit])
+                text = text[limit:]
+
+            text = text.lstrip(self.SPLIT_CHARACTERS)
+
+        bits.append(text)
+
+        if len(bits) > 1:
+            self._logger.debug(
+                "Input phrase split using %d-character limit:\n%s",
+                limit,
+                "\n".join(
+                    '    #%d: "%s"' % (number, bit)
+                    for number, bit in enumerate(bits, 1)
+                ),
+            )
+
+        return bits
 
     @classmethod
     def _flatten(cls, iterable):

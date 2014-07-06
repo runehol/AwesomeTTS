@@ -34,10 +34,6 @@ class Yandex(Service):
     Provides a Service-compliant implementation for Yandex.Translate.
     """
 
-    # FIXME. This and Google currently only support short phrases.
-    # See https://github.com/AwesomeTTS/AwesomeTTS/issues/21
-    # Once fixed, the text returned by desc() should be updated.
-
     __slots__ = [
     ]
 
@@ -67,7 +63,7 @@ class Yandex(Service):
         """
 
         return "Yandex.Translate text-to-speech web API " \
-            "(%d voices, short phrases only)" % len(self._VOICE_CODES)
+            "(%d voices)" % len(self._VOICE_CODES)
 
     def options(self):
         """
@@ -142,16 +138,26 @@ class Yandex(Service):
         Downloads from Yandex directly to an MP3.
         """
 
+        url = 'http://tts.voicetech.yandex.net/tts'
+        require = dict(mime='audio/mpeg', size=1024)
+
         self.net_download(
             path,
-            ('http://tts.voicetech.yandex.net/tts', dict(
-                format='mp3',
-                quality=options['quality'],
-                lang=options['voice'],
-                text=text,
-            )),
-            require=dict(
-                mime='audio/mpeg',
-                size=1024,
-            ),
+            [
+                (url, dict(
+                    format='mp3',
+                    quality=options['quality'],
+                    lang=options['voice'],
+                    text=text,
+                ))
+                for text in (
+                    # n.b. the limit seems to be much higher than 750, but
+                    # this is a safe place to start; the web UI limits the
+                    # user to even less (100 characters)
+
+                    self.util_split(text, 750) if len(text) > 750
+                    else [text]
+                )
+            ],
+            require=require,
         )

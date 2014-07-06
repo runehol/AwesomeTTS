@@ -542,7 +542,7 @@ module.exports = function (grunt) {
     grunt.task.loadNpmTasks('grunt-gae');
     config.gae = {
         options: {path: 'build/'},
-        run: {action: 'run', options: {async: doWatch}},
+        run: {action: 'run', options: {async: doWatch, asyncOutput: true}},
         update: {
             action: 'update',
             options: {version: '<%= grunt.option("version") || "test" %>'},

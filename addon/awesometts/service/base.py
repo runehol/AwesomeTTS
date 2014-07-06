@@ -59,6 +59,7 @@ class Service(object):
     __metaclass__ = abc.ABCMeta
 
     __slots__ = [
+        '_downloads',   # number of downloads required by the last run
         '_lame_flags',  # callable to get flag string for LAME transcoder
         '_logger',      # logging interface with debug(), info(), etc.
         'normalize',    # callable for standardizing string values
@@ -133,6 +134,7 @@ class Service(object):
         assert self.NAME, "Please specify a NAME for the service"
         assert self.TRAITS, "Please specify a TRAITS list for the service"
 
+        self._downloads = None
         self._lame_flags = lame_flags
         self._logger = logger
         self.normalize = normalize
@@ -414,6 +416,7 @@ class Service(object):
 
             self._logger.debug("Fetching %s for %s", url, desc)
 
+            self._downloads += 1
             response = urlopen(
                 Request(url=url, headers={'User-Agent': 'Mozilla/5.0'}),
                 timeout=15,
@@ -448,6 +451,22 @@ class Service(object):
 
         with open(path, 'wb') as response_output:
             response_output.write(''.join(payloads))
+
+    def net_download_count(self):
+        """
+        Returns the number of downloads the last run required. Intended
+        for use by the router to query after a run.
+        """
+
+        return self._downloads
+
+    def net_download_reset(self):
+        """
+        Resets the download count back to zero. Intended for use by the
+        router before a run.
+        """
+
+        self._downloads = 0
 
     def path_temp(self, extension):
         """

@@ -346,7 +346,7 @@ class Configurator(Dialog):
 
         notes = QtGui.QLabel(
             "Tweak how often AwesomeTTS takes a break when downloading files "
-            "from online services."
+            "from online services in a batch (e.g. from the card browser)."
         )
         notes.setWordWrap(True)
 
@@ -386,7 +386,7 @@ class Configurator(Dialog):
         vertical.addLayout(horizontal)
         vertical.addWidget(addl)
 
-        group = QtGui.QGroupBox("Download Throttling")
+        group = QtGui.QGroupBox("Download Throttling during Batch Processing")
         group.setLayout(vertical)
 
         return group

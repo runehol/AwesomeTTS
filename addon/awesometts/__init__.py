@@ -186,52 +186,6 @@ updates = Updates(
 # n.b. be careful wrapping methods that have return values (see anki.hooks);
 #      in general, only the 'before' mode absolves us of responsibility
 
-PLAY_ANKI = anki.sound.play
-
-PLAY_BLANK = lambda seconds, reason, path: \
-    logger.debug("Ignoring %d-second delay (%s): %s", seconds, reason, path) \
-    if anki.sound.mplayerQueue \
-    else (
-        logger.debug("Need %d-second delay (%s): %s", seconds, reason, path),
-        [PLAY_ANKI(paths.BLANK) for i in range(seconds)],
-    )
-
-PLAY_PREVIEW = lambda path: (
-    PLAY_BLANK(0, "preview mode", path),
-    PLAY_ANKI(path),
-)
-
-PLAY_ONTHEFLY_QUESTION = lambda path: (
-    PLAY_BLANK(
-        config['delay_questions_onthefly'],
-        "on-the-fly automatic question",
-        path,
-    ),
-    PLAY_ANKI(path),
-)
-
-PLAY_ONTHEFLY_ANSWER = lambda path: (
-    PLAY_BLANK(
-        config['delay_answers_onthefly'],
-        "on-the-fly automatic answer",
-        path,
-    ),
-    PLAY_ANKI(path),
-)
-
-PLAY_ONTHEFLY_SHORTCUT = lambda path: (
-    PLAY_BLANK(0, "on-the-fly shortcut mode", path),
-    PLAY_ANKI(path),
-)
-
-PLAY_WRAPPED = lambda path: (
-    PLAY_BLANK(0, "wrapped mode", path),  # TODO
-    PLAY_ANKI(path),
-)
-
-anki.sound.play = PLAY_WRAPPED
-
-
 RE_CLOZE_NOTE = re.compile(anki.template.template.clozeReg % r'\d+')
 RE_CLOZE_TEMPLATE = re.compile(
     # see anki.template.template.clozeText; n.b. the presence of the brackets
@@ -295,6 +249,89 @@ SUB_CLOZES_TEMPLATE = lambda text: RE_CLOZE_TEMPLATE.sub(
         else match.group(1),
     text,
 )
+
+
+PLAY_ANKI = anki.sound.play
+
+PLAY_BLANK = lambda seconds, reason, path: \
+    logger.debug("Ignoring %d-second delay (%s): %s", seconds, reason, path) \
+    if anki.sound.mplayerQueue \
+    else (
+        logger.debug("Need %d-second delay (%s): %s", seconds, reason, path),
+        [PLAY_ANKI(paths.BLANK) for i in range(seconds)],
+    )
+
+PLAY_PREVIEW = lambda path: (
+    PLAY_BLANK(0, "preview mode", path),
+    PLAY_ANKI(path),
+)
+
+PLAY_ONTHEFLY_QUESTION = lambda path: (
+    PLAY_BLANK(
+        config['delay_questions_onthefly'],
+        "on-the-fly automatic question",
+        path,
+    ),
+    PLAY_ANKI(path),
+)
+
+PLAY_ONTHEFLY_ANSWER = lambda path: (
+    PLAY_BLANK(
+        config['delay_answers_onthefly'],
+        "on-the-fly automatic answer",
+        path,
+    ),
+    PLAY_ANKI(path),
+)
+
+PLAY_ONTHEFLY_SHORTCUT = lambda path: (
+    PLAY_BLANK(0, "on-the-fly shortcut mode", path),
+    PLAY_ANKI(path),
+)
+
+PLAY_WRAPPED = lambda path: (
+    # FIXME I believe the RE_FILENAMES regex fails for "xxx (1).mp3" filenames
+    # that could occur under some circumstances, since we currently do not
+    # forcibly overwrite them in the collections directory... could either fix
+    # the regex or see if we can begin forcing overwrites when going into that
+    # directory, since our filenames are unique
+
+    # FIXME This incorrectly delays the "play the sound on insert" thing Anki
+    # does if you open the add or edit note window in the middle of a review.
+
+    PLAY_BLANK(0, "wrapped, non-review", path) if aqt.mw.state != 'review'
+    else PLAY_BLANK(0, "wrapped, shortcut", path) if False  # TODO check stack
+    else (
+        PLAY_BLANK(
+            config['delay_questions_stored_ours'],
+            "wrapped, AwesomeTTS sound on question side",
+            path,
+        ) if RE_FILENAMES.search(path)
+        else PLAY_BLANK(
+            config['delay_questions_stored_theirs'],
+            "wrapped, non-AwesomeTTS sound on question side",
+            path,
+        )
+    ) if aqt.mw.reviewer.state == 'question'
+    else (
+        PLAY_BLANK(
+            config['delay_answers_stored_ours'],
+            "wrapped, AwesomeTTS sound on answer side",
+            path,
+        ) if RE_FILENAMES.search(path)
+        else PLAY_BLANK(
+            config['delay_answers_stored_theirs'],
+            "wrapped, non-AwesomeTTS sound on answer side",
+            path,
+        )
+    ) if aqt.mw.reviewer.state == 'answer'
+    else PLAY_BLANK(0, "wrapped, unknown review state", path),
+
+    PLAY_ANKI(path),
+)
+
+anki.sound.play = PLAY_WRAPPED
+
 
 addon = Bundle(
     config=config,

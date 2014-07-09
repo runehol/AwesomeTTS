@@ -90,8 +90,8 @@ class Configurator(Dialog):
 
     def _ui_tabs(self):
         """
-        Returns a tab widget populated with three tabs: On-the-Fly,
-        Text, MP3s, and Advanced.
+        Returns a tab widget populated with four tabs: Playback, Text,
+        MP3s, and Advanced.
         """
 
         tabs = QtGui.QTabWidget()
@@ -101,7 +101,7 @@ class Configurator(Dialog):
         use_icons = not platform.startswith('darwin')
 
         for content, icon, label in [
-            (self._ui_tabs_onthefly, 'text-xml', "On-the-Fly"),
+            (self._ui_tabs_playback, 'player-time', "Playback"),
             (self._ui_tabs_text, 'editclear', "Text"),
             (self._ui_tabs_mp3gen, 'document-new', "MP3s"),
             (self._ui_tabs_advanced, 'configure', "Advanced"),
@@ -122,29 +122,25 @@ class Configurator(Dialog):
 
         return tabs
 
-    def _ui_tabs_onthefly(self):
+    def _ui_tabs_playback(self):
         """
-        Returns the "On-the-Fly" tab.
+        Returns the "Playback" tab.
         """
 
-        intro = QtGui.QLabel("Control how <tts> template tags are played.")
+        intro = QtGui.QLabel("Control how playback is handled.")
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(intro)
         layout.addSpacing(self._SPACING)
-        layout.addWidget(self._ui_tabs_onthefly_group(
+        layout.addWidget(self._ui_tabs_playback_group(
             'automatic_questions',
             'tts_key_q',
             "Questions / Fronts of Cards",
         ))
-        layout.addWidget(self._ui_tabs_onthefly_group(
+        layout.addWidget(self._ui_tabs_playback_group(
             'automatic_answers',
             'tts_key_a',
             "Answers / Backs of Cards",
-            addl="When reading answers, AwesomeTTS will attempt to find and "
-                 "exclude the fronts of cards from playback. You can help by "
-                 "using {{FrontSide}} and/or including an <hr id=answer> tag "
-                 "in your Back Template(s)."
         ))
         layout.addStretch()
 
@@ -153,25 +149,26 @@ class Configurator(Dialog):
 
         return tab
 
-    def _ui_tabs_onthefly_group(
+    def _ui_tabs_playback_group(
         self,
-        automatic_key, shortcut_key, label, addl=None,
+        automatic_key, shortcut_key, label
     ):
         """
         Returns the "Questions / Fronts of Cards" and "Answers / Backs
         of Cards" input groups.
         """
 
-        automatic = QtGui.QCheckBox("Automatically recite <tts> tags")
+        automatic = QtGui.QCheckBox("Automatically recite on-the-fly "
+          "playback from <tts> tags")
         automatic.setObjectName(automatic_key)
 
-        shortcut = QtGui.QPushButton("Change Shortcut")
+        shortcut = QtGui.QPushButton("Change the On-the-Fly Shortcut")
         shortcut.setObjectName(shortcut_key)
         shortcut.setCheckable(True)
         shortcut.toggled.connect(
             lambda is_down: shortcut.setText(
                 "press any key" if is_down
-                else "Change Shortcut (left as %s)" %
+                else "Change the On-the-Fly Shortcut (left as %s)" %
                     self._get_key(shortcut.awesometts_value)
             )
         )
@@ -179,12 +176,6 @@ class Configurator(Dialog):
         layout = QtGui.QVBoxLayout()
         layout.addWidget(automatic)
         layout.addWidget(shortcut)
-
-        if addl:
-            addl = QtGui.QLabel(addl)
-            addl.setTextFormat(QtCore.Qt.PlainText)
-            addl.setWordWrap(True)
-            layout.addWidget(addl)
 
         group = QtGui.QGroupBox(label)
         group.setLayout(layout)
@@ -518,7 +509,7 @@ class Configurator(Dialog):
             elif isinstance(widget, QtGui.QPushButton):
                 widget.awesometts_value = value
                 widget.setText(
-                    "Change Shortcut (currently %s)" %
+                    "Change the On-the-Fly Shortcut (currently %s)" %
                     self._get_key(widget.awesometts_value),
                 )
 
@@ -626,7 +617,7 @@ class Configurator(Dialog):
             button.awesometts_value = new_value
             button.setChecked(False)
             button.setText(
-                "Change Shortcut (now %s)" %
+                "Change the On-the-Fly Shortcut (now %s)" %
                 self._get_key(button.awesometts_value),
             )
 

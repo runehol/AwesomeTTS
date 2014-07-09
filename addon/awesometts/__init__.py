@@ -186,6 +186,52 @@ updates = Updates(
 # n.b. be careful wrapping methods that have return values (see anki.hooks);
 #      in general, only the 'before' mode absolves us of responsibility
 
+PLAY_ANKI = anki.sound.play
+
+PLAY_BLANK = lambda seconds, reason, path: \
+    logger.debug("Ignoring %d-second delay (%s): %s", seconds, reason, path) \
+    if anki.sound.mplayerQueue \
+    else (
+        logger.debug("Need %d-second delay (%s): %s", seconds, reason, path),
+        [PLAY_ANKI(paths.BLANK) for i in range(seconds)],
+    )
+
+PLAY_PREVIEW = lambda path: (
+    PLAY_BLANK(0, "preview mode", path),
+    PLAY_ANKI(path),
+)
+
+PLAY_ONTHEFLY_QUESTION = lambda path: (
+    PLAY_BLANK(
+        config['delay_questions_onthefly'],
+        "on-the-fly automatic question",
+        path,
+    ),
+    PLAY_ANKI(path),
+)
+
+PLAY_ONTHEFLY_ANSWER = lambda path: (
+    PLAY_BLANK(
+        config['delay_answers_onthefly'],
+        "on-the-fly automatic answer",
+        path,
+    ),
+    PLAY_ANKI(path),
+)
+
+PLAY_ONTHEFLY_SHORTCUT = lambda path: (
+    PLAY_BLANK(0, "on-the-fly shortcut mode", path),
+    PLAY_ANKI(path),
+)
+
+PLAY_WRAPPED = lambda path: (
+    PLAY_BLANK(0, "wrapped mode", path),  # TODO
+    PLAY_ANKI(path),
+)
+
+anki.sound.play = PLAY_WRAPPED
+
+
 RE_CLOZE_NOTE = re.compile(anki.template.template.clozeReg % r'\d+')
 RE_CLOZE_TEMPLATE = re.compile(
     # see anki.template.template.clozeText; n.b. the presence of the brackets
@@ -338,7 +384,11 @@ addon = Bundle(
 
 reviewer = gui.Reviewer(
     addon=addon,
-    playback=anki.sound.play,
+    playback=Bundle(
+        auto_question=PLAY_ONTHEFLY_QUESTION,
+        auto_answer=PLAY_ONTHEFLY_ANSWER,
+        shortcut=PLAY_ONTHEFLY_SHORTCUT,
+    ),
     alerts=aqt.utils.showWarning,
     parent=aqt.mw,
 )
@@ -380,7 +430,7 @@ anki.hooks.addHook(
             kwargs=dict(
                 browser=browser,
                 addon=addon,
-                playback=anki.sound.play,
+                playback=PLAY_PREVIEW,
                 alerts=aqt.utils.showWarning,
                 parent=browser,
             ),
@@ -408,7 +458,7 @@ anki.hooks.addHook(
                 kwargs=dict(
                     editor=editor,
                     addon=addon,
-                    playback=anki.sound.play,
+                    playback=PLAY_PREVIEW,
                     alerts=aqt.utils.showWarning,
                     parent=editor.parentWindow,
                 ),
@@ -449,7 +499,7 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
                 kwargs=dict(
                     card_layout=card_layout,
                     addon=addon,
-                    playback=anki.sound.play,
+                    playback=PLAY_PREVIEW,
                     alerts=aqt.utils.showWarning,
                     parent=card_layout,
                 ),

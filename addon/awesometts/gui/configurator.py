@@ -41,8 +41,11 @@ class Configurator(Dialog):
 
     _PROPERTY_KEYS = [
         'automatic_answers', 'automatic_questions', 'debug_file',
-        'debug_stdout', 'lame_flags', 'strip_note_braces',
-        'strip_note_brackets', 'strip_note_parens', 'strip_template_braces',
+        'debug_stdout', 'delay_answers_onthefly', 'delay_answers_stored_ours',
+        'delay_answers_stored_theirs', 'delay_questions_onthefly',
+        'delay_questions_stored_ours', 'delay_questions_stored_theirs',
+        'lame_flags', 'strip_note_braces', 'strip_note_brackets',
+        'strip_note_parens', 'strip_template_braces',
         'strip_template_brackets', 'strip_template_parens', 'sub_note_cloze',
         'sub_template_cloze', 'throttle_sleep', 'throttle_threshold',
         'tts_key_a', 'tts_key_q', 'updates_enabled',
@@ -129,19 +132,29 @@ class Configurator(Dialog):
 
         intro = QtGui.QLabel("Control how playback is handled.")
 
+        notes = QtGui.QLabel("For [sound] tags, whether or not automatic "
+          "playback is enabled is controlled on a per-deck basis, and can be "
+          "played on-demand by striking R or F5.")
+        notes.setTextFormat(QtCore.Qt.PlainText)
+        notes.setWordWrap(True)
+
         layout = QtGui.QVBoxLayout()
         layout.addWidget(intro)
         layout.addSpacing(self._SPACING)
         layout.addWidget(self._ui_tabs_playback_group(
             'automatic_questions',
             'tts_key_q',
+            'delay_questions_',
             "Questions / Fronts of Cards",
         ))
         layout.addWidget(self._ui_tabs_playback_group(
             'automatic_answers',
             'tts_key_a',
+            'delay_answers_',
             "Answers / Backs of Cards",
         ))
+        layout.addSpacing(self._SPACING)
+        layout.addWidget(notes)
         layout.addStretch()
 
         tab = QtGui.QWidget()
@@ -151,31 +164,61 @@ class Configurator(Dialog):
 
     def _ui_tabs_playback_group(
         self,
-        automatic_key, shortcut_key, label
+        automatic_key, shortcut_key, delay_key_prefix, label
     ):
         """
         Returns the "Questions / Fronts of Cards" and "Answers / Backs
         of Cards" input groups.
         """
 
-        automatic = QtGui.QCheckBox("Automatically recite on-the-fly "
-          "playback from <tts> tags")
+        automatic = QtGui.QCheckBox("Automatically play on-the-fly <tts> tags")
         automatic.setObjectName(automatic_key)
 
-        shortcut = QtGui.QPushButton("Change the On-the-Fly Shortcut")
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(automatic)
+
+        wait_widgets = {}
+
+        for subkey, description in [
+            ('onthefly', "on-the-fly <tts> tags"),
+            ('stored_ours', "AwesomeTTS [sound] tags"),
+            ('stored_theirs', "other [sound] tags"),
+        ]:
+            spinner = QtGui.QSpinBox()
+            spinner.setObjectName(delay_key_prefix + subkey)
+            spinner.setRange(0, 30)
+            spinner.setSingleStep(1)
+            spinner.setSuffix(" seconds")
+            wait_widgets[subkey] = spinner
+
+            horizontal = QtGui.QHBoxLayout()
+            horizontal.addWidget(QtGui.QLabel("Wait"))
+            horizontal.addWidget(spinner)
+            horizontal.addWidget(QtGui.QLabel("before automatically "
+                "playing " + description))
+            horizontal.addStretch()
+
+            layout.addLayout(horizontal)
+
+        automatic.stateChanged.connect(wait_widgets['onthefly'].setEnabled)
+
+        shortcut = QtGui.QPushButton()
         shortcut.setObjectName(shortcut_key)
         shortcut.setCheckable(True)
         shortcut.toggled.connect(
             lambda is_down: shortcut.setText(
-                "press any key" if is_down
-                else "Change the On-the-Fly Shortcut (left as %s)" %
-                    self._get_key(shortcut.awesometts_value)
+                "press new key" if is_down
+                else self._get_key(shortcut.awesometts_value)
             )
         )
 
-        layout = QtGui.QVBoxLayout()
-        layout.addWidget(automatic)
-        layout.addWidget(shortcut)
+        horizontal = QtGui.QHBoxLayout()
+        horizontal.addWidget(QtGui.QLabel("To manually play on-the-fly <tts> "
+          "tags, strike"))
+        horizontal.addWidget(shortcut)
+        horizontal.addStretch()
+
+        layout.addLayout(horizontal)
 
         group = QtGui.QGroupBox(label)
         group.setLayout(layout)
@@ -502,16 +545,14 @@ class Configurator(Dialog):
         ]:
             if isinstance(widget, QtGui.QCheckBox):
                 widget.setChecked(value)
+                widget.stateChanged.emit(value)
 
             elif isinstance(widget, QtGui.QLineEdit):
                 widget.setText(value)
 
             elif isinstance(widget, QtGui.QPushButton):
                 widget.awesometts_value = value
-                widget.setText(
-                    "Change the On-the-Fly Shortcut (currently %s)" %
-                    self._get_key(widget.awesometts_value),
-                )
+                widget.setText(self._get_key(widget.awesometts_value))
 
             elif isinstance(widget, QtGui.QComboBox):
                 widget.setCurrentIndex(max(widget.findData(value), 0))
@@ -616,10 +657,7 @@ class Configurator(Dialog):
         for button in buttons:
             button.awesometts_value = new_value
             button.setChecked(False)
-            button.setText(
-                "Change the On-the-Fly Shortcut (now %s)" %
-                self._get_key(button.awesometts_value),
-            )
+            button.setText(self._get_key(button.awesometts_value))
 
     def _on_update_request(self):
         """

@@ -27,6 +27,7 @@ Add-on package initialization
 
 __all__ = []
 
+import inspect
 import json
 import logging
 import platform
@@ -296,11 +297,18 @@ PLAY_WRAPPED = lambda path: (
     # the regex or see if we can begin forcing overwrites when going into that
     # directory, since our filenames are unique
 
-    # FIXME This incorrectly delays the "play the sound on insert" thing Anki
-    # does if you open the add or edit note window in the middle of a review.
-
     PLAY_BLANK(0, "wrapped, non-review", path) if aqt.mw.state != 'review'
-    else PLAY_BLANK(0, "wrapped, shortcut", path) if False  # TODO check stack
+    else PLAY_BLANK(0, "wrapped, blacklisted caller", path) if next(
+        (
+            True
+            for frame in inspect.stack()
+            if frame[3] in [
+                'addMedia',     # if the user adds media in review
+                'replayAudio',  # if the user strikes R or F5
+            ]
+        ),
+        False,
+    )
     else (
         PLAY_BLANK(
             config['delay_questions_stored_ours'],

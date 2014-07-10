@@ -195,7 +195,7 @@ RE_CLOZE_TEMPLATE = re.compile(
     r'<span class=.?cloze.?>\[(.+?)\]</span>'
 )
 RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
-RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}\.mp3')  # see Router
+RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}( \(\d+\))?\.mp3')
 RE_TEXT_IN_BRACES = re.compile(r'\{.+?\}')
 RE_TEXT_IN_BRACKETS = re.compile(r'\[.+?\]')
 RE_TEXT_IN_PARENS = re.compile(r'\(.+?\)')
@@ -291,12 +291,6 @@ PLAY_ONTHEFLY_SHORTCUT = lambda path: (
 )
 
 PLAY_WRAPPED = lambda path: (
-    # FIXME I believe the RE_FILENAMES regex fails for "xxx (1).mp3" filenames
-    # that could occur under some circumstances, since we currently do not
-    # forcibly overwrite them in the collections directory... could either fix
-    # the regex or see if we can begin forcing overwrites when going into that
-    # directory, since our filenames are unique
-
     PLAY_BLANK(0, "wrapped, non-review", path) if aqt.mw.state != 'review'
     else PLAY_BLANK(0, "wrapped, blacklisted caller", path) if next(
         (

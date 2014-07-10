@@ -127,6 +127,7 @@ module.exports = function (grunt) {
     config.copy = {
         favicon: {src: 'favicon.ico', dest: 'build/'},
         images: {src: 'images/*.png', dest: 'build/'},
+        redirects: {src: 'redirects.json', dest: 'build/'},
         robots: {src: 'robots.txt', dest: 'build/'},
         unresolvedPy: {src: 'unresolved/__init__.py', dest: 'build/'},
         api: {src: 'api/**/*.json', dest: 'build/'},  // minify in-place next
@@ -585,6 +586,8 @@ module.exports = function (grunt) {
             'htmlmin:unresolvedRedirect',
             'copy:unresolvedPy',
           ]},
+        redirects: {files: 'redirects.json', tasks: ['copy:redirects',
+          'copy:unresolvedPy']},
         unresolvedError404: {files: 'unresolved/error404.mustache',
           tasks: [
             'mustache_render:unresolvedError404',

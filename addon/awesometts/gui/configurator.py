@@ -206,10 +206,11 @@ class Configurator(Dialog):
         shortcut.setObjectName(shortcut_key)
         shortcut.setCheckable(True)
         shortcut.toggled.connect(
-            lambda is_down: shortcut.setText(
-                "press new key" if is_down
-                else self._get_key(shortcut.awesometts_value)
-            )
+            lambda is_down: (
+                shortcut.setText("press new key"),
+                shortcut.setFocus(),  # needed for OS X if text inputs present
+            ) if is_down
+            else shortcut.setText(self._get_key(shortcut.awesometts_value))
         )
 
         horizontal = QtGui.QHBoxLayout()

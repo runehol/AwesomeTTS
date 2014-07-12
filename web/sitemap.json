@@ -73,10 +73,10 @@
         "title": "Configuration and Tweaking",
         "what": "Set automatic playback, shortcut keys, text handling, MP3 generation, and more",
         "children": {
-            "on-the-fly": {
-                "terse": "On-the-Fly",
-                "title": "On-the-Fly Configuration",
-                "what": "Set shortcut keys, enable or disable automatic playback"
+            "playback": {
+                "terse": "Playback",
+                "title": "Playback Configuration",
+                "what": "Set shortcut keys, enable or disable automatic playback, set automatic playback delays"
             },
             "text": {
                 "terse": "Text",

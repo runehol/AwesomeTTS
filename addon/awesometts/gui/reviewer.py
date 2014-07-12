@@ -102,10 +102,10 @@ class Reviewer(object):
         """
 
         if state == 'question' and self._addon.config['automatic_questions']:
-            self._play_html(card.q())
+            self._play_html(card.q(), self._playback.auto_question)
 
         elif state == 'answer' and self._addon.config['automatic_answers']:
-            self._play_html(self._get_answer(card))
+            self._play_html(self._get_answer(card), self._playback.auto_answer)
 
     def key_handler(self, key_event, state, card, propagate):
         """
@@ -132,11 +132,11 @@ class Reviewer(object):
             passthru = False
 
         if code == self._addon.config['tts_key_q']:
-            self._play_html(card.q())
+            self._play_html(card.q(), self._playback.shortcut)
             passthru = False
 
         if state == 'answer' and code == self._addon.config['tts_key_a']:
-            self._play_html(self._get_answer(card))
+            self._play_html(self._get_answer(card), self._playback.shortcut)
             passthru = False
 
         if passthru:
@@ -171,7 +171,7 @@ class Reviewer(object):
 
         return answer_html
 
-    def _play_html(self, html):
+    def _play_html(self, html, playback):
         """
         Read in the passed HTML, attempt to discover <tts> tags in it,
         and pass them to the router for processing.
@@ -206,7 +206,7 @@ class Reviewer(object):
                 text=text,
                 options=attr,
                 callbacks=dict(
-                    okay=self._playback,
+                    okay=playback,
                     fail=lambda exception:
                         # we can safely ignore "service busy" errors in review
                         isinstance(exception, self._addon.router.BusyError) or
@@ -268,7 +268,7 @@ class Reviewer(object):
                 text=text,
                 options={'voice': voice},
                 callbacks=dict(
-                    okay=self._playback,
+                    okay=playback,
                     fail=lambda exception:
                         isinstance(exception, self._addon.router.BusyError) or
                         bad_legacy_tag(legacy, exception.message),

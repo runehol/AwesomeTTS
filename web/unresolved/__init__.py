@@ -33,7 +33,7 @@ what error to send the user and how to log to the environment.
 
 __all__ = ['api', 'other']
 
-from json import dumps as json
+import json
 from logging import debug, warn, error
 from re import compile as re
 
@@ -70,7 +70,7 @@ def api(environ, start_response):
 
 api.headers = [('Content-Type', 'application/json')]
 
-api.json = lambda message: [json(
+api.json = lambda message: [json.dumps(
     dict(message=message),
     separators=(',', ':'),
     sort_keys=True,
@@ -90,7 +90,9 @@ def other(environ, start_response):
     static error document.
     """
 
-    new_path = get_paths(environ)[1]
+    old_path, new_path = get_paths(environ)
+    if not new_path and old_path in other.redirects:
+        new_path = other.redirects[old_path]
 
     if new_path:
         start_response(
@@ -106,6 +108,12 @@ def other(environ, start_response):
         return other.response404
 
 other.headers = [('Content-Type', 'text/html; charset=utf-8')]
+
+with open('redirects.json', 'r') as _source:
+    other.redirects = {
+        str(_old): str(_new)
+        for _old, _new in json.load(_source).items()
+    }
 
 with open(__package__ + '/error404.html', 'r') as _source:
     other.response404 = [_source.read()]

@@ -46,6 +46,8 @@ ADDON = os.path.dirname(os.path.abspath(__file__)) \
 
 ADDON_IS_LINKED = os.path.islink(ADDON)
 
+BLANK = os.path.join(ADDON, 'blank.mp3')
+
 CACHE = os.path.join(ADDON, '.cache')
 if not os.path.isdir(CACHE):
     os.mkdir(CACHE)

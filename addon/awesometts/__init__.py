@@ -27,6 +27,7 @@ Add-on package initialization
 
 __all__ = []
 
+import inspect
 import json
 import logging
 import platform
@@ -102,6 +103,12 @@ config = Config(
         ('automaticQuestions', 'integer', True, TO_BOOL, int),
         ('debug_file', 'integer', False, TO_BOOL, int),
         ('debug_stdout', 'integer', False, TO_BOOL, int),
+        ('delay_answers_onthefly', 'integer', 0, int, int),
+        ('delay_answers_stored_ours', 'integer', 0, int, int),
+        ('delay_answers_stored_theirs', 'integer', 0, int, int),
+        ('delay_questions_onthefly', 'integer', 0, int, int),
+        ('delay_questions_stored_ours', 'integer', 0, int, int),
+        ('delay_questions_stored_theirs', 'integer', 0, int, int),
         ('lame_flags', 'text', '--quiet -q 2', str, str),
         ('last_mass_append', 'integer', True, TO_BOOL, int),
         ('last_mass_behavior', 'integer', True, TO_BOOL, int),
@@ -188,7 +195,7 @@ RE_CLOZE_TEMPLATE = re.compile(
     r'<span class=.?cloze.?>\[(.+?)\]</span>'
 )
 RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
-RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}\.mp3')  # see Router
+RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}( \(\d+\))?\.mp3')
 RE_TEXT_IN_BRACES = re.compile(r'\{.+?\}')
 RE_TEXT_IN_BRACKETS = re.compile(r'\[.+?\]')
 RE_TEXT_IN_PARENS = re.compile(r'\(.+?\)')
@@ -243,6 +250,90 @@ SUB_CLOZES_TEMPLATE = lambda text: RE_CLOZE_TEMPLATE.sub(
         else match.group(1),
     text,
 )
+
+
+PLAY_ANKI = anki.sound.play
+
+PLAY_BLANK = lambda seconds, reason, path: \
+    logger.debug("Ignoring %d-second delay (%s): %s", seconds, reason, path) \
+    if anki.sound.mplayerQueue \
+    else (
+        logger.debug("Need %d-second delay (%s): %s", seconds, reason, path),
+        [PLAY_ANKI(paths.BLANK) for i in range(seconds)],
+    )
+
+PLAY_PREVIEW = lambda path: (
+    PLAY_BLANK(0, "preview mode", path),
+    PLAY_ANKI(path),
+)
+
+PLAY_ONTHEFLY_QUESTION = lambda path: (
+    PLAY_BLANK(
+        config['delay_questions_onthefly'],
+        "on-the-fly automatic question",
+        path,
+    ),
+    PLAY_ANKI(path),
+)
+
+PLAY_ONTHEFLY_ANSWER = lambda path: (
+    PLAY_BLANK(
+        config['delay_answers_onthefly'],
+        "on-the-fly automatic answer",
+        path,
+    ),
+    PLAY_ANKI(path),
+)
+
+PLAY_ONTHEFLY_SHORTCUT = lambda path: (
+    PLAY_BLANK(0, "on-the-fly shortcut mode", path),
+    PLAY_ANKI(path),
+)
+
+PLAY_WRAPPED = lambda path: (
+    PLAY_BLANK(0, "wrapped, non-review", path) if aqt.mw.state != 'review'
+    else PLAY_BLANK(0, "wrapped, blacklisted caller", path) if next(
+        (
+            True
+            for frame in inspect.stack()
+            if frame[3] in [
+                'addMedia',     # if the user adds media in review
+                'replayAudio',  # if the user strikes R or F5
+            ]
+        ),
+        False,
+    )
+    else (
+        PLAY_BLANK(
+            config['delay_questions_stored_ours'],
+            "wrapped, AwesomeTTS sound on question side",
+            path,
+        ) if RE_FILENAMES.search(path)
+        else PLAY_BLANK(
+            config['delay_questions_stored_theirs'],
+            "wrapped, non-AwesomeTTS sound on question side",
+            path,
+        )
+    ) if aqt.mw.reviewer.state == 'question'
+    else (
+        PLAY_BLANK(
+            config['delay_answers_stored_ours'],
+            "wrapped, AwesomeTTS sound on answer side",
+            path,
+        ) if RE_FILENAMES.search(path)
+        else PLAY_BLANK(
+            config['delay_answers_stored_theirs'],
+            "wrapped, non-AwesomeTTS sound on answer side",
+            path,
+        )
+    ) if aqt.mw.reviewer.state == 'answer'
+    else PLAY_BLANK(0, "wrapped, unknown review state", path),
+
+    PLAY_ANKI(path),
+)
+
+anki.sound.play = PLAY_WRAPPED
+
 
 addon = Bundle(
     config=config,
@@ -332,7 +423,11 @@ addon = Bundle(
 
 reviewer = gui.Reviewer(
     addon=addon,
-    playback=anki.sound.play,
+    playback=Bundle(
+        auto_question=PLAY_ONTHEFLY_QUESTION,
+        auto_answer=PLAY_ONTHEFLY_ANSWER,
+        shortcut=PLAY_ONTHEFLY_SHORTCUT,
+    ),
     alerts=aqt.utils.showWarning,
     parent=aqt.mw,
 )
@@ -374,7 +469,7 @@ anki.hooks.addHook(
             kwargs=dict(
                 browser=browser,
                 addon=addon,
-                playback=anki.sound.play,
+                playback=PLAY_PREVIEW,
                 alerts=aqt.utils.showWarning,
                 parent=browser,
             ),
@@ -402,7 +497,7 @@ anki.hooks.addHook(
                 kwargs=dict(
                     editor=editor,
                     addon=addon,
-                    playback=anki.sound.play,
+                    playback=PLAY_PREVIEW,
                     alerts=aqt.utils.showWarning,
                     parent=editor.parentWindow,
                 ),
@@ -443,7 +538,7 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
                 kwargs=dict(
                     card_layout=card_layout,
                     addon=addon,
-                    playback=anki.sound.play,
+                    playback=PLAY_PREVIEW,
                     alerts=aqt.utils.showWarning,
                     parent=card_layout,
                 ),

@@ -35,7 +35,7 @@ import re
 import sys
 from time import time
 
-from PyQt4.QtCore import PYQT_VERSION_STR, Qt
+from PyQt4.QtCore import PYQT_VERSION_STR, Qt, QEvent
 
 import anki
 import aqt
@@ -439,16 +439,21 @@ anki.hooks.addHook(
     'showAnswer',
     lambda: reviewer.card_handler('answer', aqt.mw.reviewer.card),
 )
-aqt.mw.reviewer._keyHandler = anki.hooks.wrap(
-    aqt.mw.reviewer._keyHandler,
-    lambda key_event, _old: reviewer.key_handler(
-        key_event=key_event,
+
+reviewer_filter = gui.Filter(
+    relay=lambda event: reviewer.key_handler(
+        key_event=event,
         state=aqt.mw.reviewer.state,
         card=aqt.mw.reviewer.card,
-        propagate=_old,
+        replay_audio=aqt.mw.reviewer.replayAudio,
     ),
-    'around',  # setting 'around' allows me to block call to original function
+    when=lambda event:
+        aqt.mw.state == 'review' and
+        event.type() == QEvent.KeyPress and
+        not event.isAutoRepeat() and
+        not event.spontaneous(),
 )
+aqt.mw.installEventFilter(reviewer_filter)
 
 gui.Action(
     target=Bundle(

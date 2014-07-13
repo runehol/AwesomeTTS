@@ -107,10 +107,10 @@ class Reviewer(object):
         elif state == 'answer' and self._addon.config['automatic_answers']:
             self._play_html(self._get_answer(card), self._playback.auto_answer)
 
-    def key_handler(self, key_event, state, card, propagate):
+    def key_handler(self, key_event, state, card, replay_audio):
         """
         Examines the key event to see if the user has triggered one of
-        thei shortcut options.
+        the shortcut options.
 
         If we do not handle the key here, then it is passed through to
         the normal Anki Reviewer implementation.
@@ -121,26 +121,24 @@ class Reviewer(object):
         """
 
         if state not in ['answer', 'question']:
-            propagate(key_event)
-            return
+            return False
 
         code = key_event.key()
-        passthru = True
+        handled = False
 
         if code in [Qt.Key_R, Qt.Key_F5]:
-            propagate(key_event)
-            passthru = False
+            replay_audio()
+            handled = True
 
         if code == self._addon.config['tts_key_q']:
             self._play_html(card.q(), self._playback.shortcut)
-            passthru = False
+            handled = True
 
         if state == 'answer' and code == self._addon.config['tts_key_a']:
             self._play_html(self._get_answer(card), self._playback.shortcut)
-            passthru = False
+            handled = True
 
-        if passthru:
-            propagate(key_event)
+        return handled
 
     def _get_answer(self, card):
         """

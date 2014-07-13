@@ -106,7 +106,7 @@ class SAPI5(Service):
         Returns a short, static description.
         """
 
-        return "SAPI 5.0 via Visual Basic (%d voices)" % len(self._voice_list)
+        return "SAPI 5.0 via JScript (%d voices)" % len(self._voice_list)
 
     def options(self):
         """

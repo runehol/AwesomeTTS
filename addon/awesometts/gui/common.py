@@ -29,7 +29,7 @@ As everything done from the add-on code has to do with AwesomeTTS, these
 all carry a speaker icon (if supported by the desktop environment).
 """
 
-__all__ = ['ICON', 'Action', 'Button']
+__all__ = ['ICON', 'Action', 'Button', 'Filter']
 
 from PyQt4 import QtCore, QtGui
 
@@ -136,3 +136,28 @@ class Button(QtGui.QPushButton, _Connector):
 
         if style:
             self.setStyle(style)
+
+
+class Filter(QtCore.QObject):
+    """
+    Once instantiated, serves as an installEventFilter-compatible object
+    instance that supports filtering events with a condition.
+    """
+
+    def __init__(self, relay, when, *args, **kwargs):
+        """
+        Make a filter that will "relay" onto a callable "when" a certain
+        condition is met (both callables accepting an event argument).
+        """
+
+        super(Filter, self).__init__(*args, **kwargs)
+        self._relay = relay
+        self._when = when
+
+    def eventFilter(self, _, event):  # pylint: disable=invalid-name
+        """
+        Qt eventFilter method. Returns True if the event has been
+        handled and should be filtered out.
+        """
+
+        return self._when(event) and self._relay(event)

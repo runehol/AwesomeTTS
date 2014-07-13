@@ -27,6 +27,7 @@ __all__ = [
     # common
     'Action',
     'Button',
+    'Filter',
 
     # dialog windows
     'Configurator',
@@ -42,6 +43,7 @@ __all__ = [
 from .common import (
     Action,
     Button,
+    Filter,
 )
 
 from .configurator import Configurator

@@ -46,7 +46,7 @@ if __name__ == "__main__":
     exit(1)
 
 
-# Begin temporary migration code from Beta 10 and older
+# Begin temporary migration code from Beta 10 and older (unless noted)
 
 import os
 
@@ -66,17 +66,20 @@ for _filename in [
 ]:
     os_call(os.unlink, os.path.join(_PKG, _filename))
 
-for _directory, _filenames in [
-    ('designer', [
+for _directory, _rmdir, _filenames in [
+    ('designer', True, [
         'configurator.ui', 'filegenerator.ui', 'massgenerator.ui',
     ]),
-    ('forms', [
+    ('forms', True, [
         'configurator.py', 'configurator.pyc', 'configurator.pyo',
         'filegenerator.py', 'filegenerator.pyc', 'filegenerator.pyo',
         'massgenerator.py', 'massgenerator.pyc', 'massgenerator.pyo',
         '__init__.py', '__init__.pyc', '__init__.pyo',
     ]),
-    ('services', [
+    ('service', False, [
+        'sapi5.vbs',  # for Beta 11 and older
+    ]),
+    ('services', True, [
         'ekho.py', 'ekho.pyc', 'ekho.pyo',
         'espeak.py', 'espeak.pyc', 'espeak.pyo',
         'Google.py', 'Google.pyc', 'Google.pyo',
@@ -84,14 +87,15 @@ for _directory, _filenames in [
         'say.py', 'say.pyc', 'say.pyo',
         '__init__.py', '__init__.pyc', '__init__.pyo',
     ]),
-    ('tools', [
+    ('tools', True, [
         'build_ui.sh',
     ]),
 ]:
     for _filename in _filenames:
         os_call(os.unlink, os.path.join(_PKG, _directory, _filename))
 
-    os_call(os.rmdir, os.path.join(_PKG, _directory))
+    if _rmdir:
+        os_call(os.rmdir, os.path.join(_PKG, _directory))
 
 os_call(
     os.rename,

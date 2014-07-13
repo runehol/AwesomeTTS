@@ -23,8 +23,8 @@
 """
 Service implementation for SAPI 5 on the Windows platform
 
-This module functions with the help of a Visual Basic script. See also
-the sapi5.vbs file in this directory.
+This module functions with the help of a JScript gateway script. See
+also the sapi5.js file in this directory.
 """
 
 __all__ = 'SAPI5'
@@ -52,13 +52,13 @@ class SAPI5(Service):
 
     _SCRIPT = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
-        'sapi5.vbs',
+        'sapi5.js',
     )
 
     def __init__(self, *args, **kwargs):
         """
         Attempts to locate the cscript binary and read the list of
-        voices from the `cscript.exe sapi5.vbs -vl` output.
+        voices from the `cscript.exe sapi5.js voice-list` output.
 
         However, if not running on Windows, no environment inspection is
         attempted and an exception is immediately raised.
@@ -83,27 +83,34 @@ class SAPI5(Service):
             if os.path.exists(fullpath)
         )
 
-        output = self.cli_output(self._binary, self._SCRIPT, '-vl')
+        output = [
+            line.strip()
+            for line in self.cli_output(
+                self._binary,
+                self._SCRIPT,
+                'voice-list',
+            )
+        ]
 
         self._voice_list = sorted({
             (voice.strip(), voice.strip())
-            for voice in output[output.index('--Voice List--') + 1:]
+            for voice in output[output.index('__AWESOMETTS_VOICE_LIST__') + 1:]
             if voice.strip()
         }, key=lambda voice: voice[1].lower())
 
         if not self._voice_list:
-            raise EnvironmentError("No usable output from `sapi5.vbs -vl`")
+            raise EnvironmentError("No voices in `sapi5.js voice-list`")
 
     def desc(self):
         """
         Returns a short, static description.
         """
 
-        return "SAPI 5.0 via Visual Basic (%d voices)" % len(self._voice_list)
+        return "SAPI 5.0 via JScript (%d voices)" % len(self._voice_list)
 
     def options(self):
         """
-        Provides access to voice only.
+        Provides access to voice, speed, and volume.
         """
 
         voice_lookup = {
@@ -122,11 +129,29 @@ class SAPI5(Service):
             )
 
         return [
+            # See also sapi5.js when adjusting any of these
+
             dict(
                 key='voice',
                 label="Voice",
                 values=self._voice_list,
                 transform=transform_voice,
+            ),
+
+            dict(
+                key='speed',
+                label="Speed",
+                values=(-10, 10),
+                transform=int,
+                default=0,
+            ),
+
+            dict(
+                key='volume',
+                label="Volume",
+                values=(1, 100, "%"),
+                transform=int,
+                default=100,
             ),
         ]
 
@@ -142,9 +167,13 @@ class SAPI5(Service):
 
         try:
             self.cli_call(
-                self._binary, self._SCRIPT, '-hex',
-                '-voice', hexstr(options['voice']),
-                '-o', output_wav,
+                self._binary,
+                self._SCRIPT,
+                'speech-output',
+                output_wav,
+                options['speed'],
+                options['volume'],
+                hexstr(options['voice']),
                 hexstr(text),  # double dash unnecessary due to hex encoding
             )
 

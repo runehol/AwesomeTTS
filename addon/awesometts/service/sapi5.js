@@ -45,7 +45,6 @@ if (typeof argc !== 'number' || argc < 1) {
 var command = argv.item(0);
 var options = {};
 
-
 if (command === 'voice-list') {
     if (argc > 1) {
         throw new Error("Unexpected extra arguments for voice-list");
@@ -92,9 +91,10 @@ if (command === 'voice-list') {
         return String.fromCharCode.apply('', unicode);
     };
 
+    // See also sapi5.py when adjusting any of these
     options.file = getWavePath(argv.item(1));
     options.rate = getInteger(argv.item(2), -10, 10, "rate");
-    options.volume = getInteger(argv.item(3), 0, 100, "volume");
+    options.volume = getInteger(argv.item(3), 1, 100, "volume");
     options.voice = getUnicodeFromHex(argv.item(4), "voice");
     options.phrase = getUnicodeFromHex(argv.item(5), "phrase");
 } else {

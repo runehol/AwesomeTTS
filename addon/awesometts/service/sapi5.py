@@ -129,6 +129,8 @@ class SAPI5(Service):
             )
 
         return [
+            # See also sapi5.js when adjusting any of these
+
             dict(
                 key='voice',
                 label="Voice",

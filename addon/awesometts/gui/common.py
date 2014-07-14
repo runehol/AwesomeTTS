@@ -158,6 +158,10 @@ class Filter(QtCore.QObject):
         """
         Qt eventFilter method. Returns True if the event has been
         handled and should be filtered out.
+
+        The result of and'ing the return values from the `when` and
+        `relay` callable is forced to a boolean if it is not already (as
+        Qt blows up quite spectacularly if it is not).
         """
 
-        return self._when(event) and self._relay(event)
+        return bool(self._when(event) and self._relay(event))

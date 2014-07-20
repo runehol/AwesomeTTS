@@ -555,6 +555,14 @@ class BrowserGenerator(ServiceDialog):
         else:
             messages.append("there were no errors.")
 
+        if self._process['aborted']:
+            messages.append("\n\n")
+            messages.append(
+                "You aborted processing. If you want to rollback the changes "
+                "to the notes that were already processed, use the Undo "
+                "option from the Edit menu."
+            )
+
         self._addon.config.update(self._process['all'])
         self._disable_inputs(False)
         self._notes = None

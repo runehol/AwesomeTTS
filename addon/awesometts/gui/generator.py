@@ -47,14 +47,6 @@ class BrowserGenerator(ServiceDialog):
         "update the destination with either a [sound] tag or filename."
     )
 
-    # TODO. It would be nice if the progress dialog shown during generation
-    # offered a cancel button (labeled "Stop"). This would work just by having
-    # an additional 'cancelled' flag on the _process object that we check for
-    # at the beginning of _accept_next(), possibly in the same conditional as
-    # the "not self._process['queue']" check. Additionally, a cancelled=True
-    # flag should be passed to _accept_done() that causes the user's service
-    # and handling/behavior preferences to NOT be persisted to the database.
-
     __slots__ = [
         '_browser',       # reference to the current Anki browser window
         '_notes',         # list of Note objects selected when window opened
@@ -283,11 +275,21 @@ class BrowserGenerator(ServiceDialog):
             )
             return
 
+        self._disable_inputs()
+
         svc_id = now['last_service']
         options = now['last_options'][now['last_service']]
 
         self._process = {
             'all': now,
+            'aborted': False,
+            'progress': _Progress(
+                maximum=len(eligible_notes),
+                on_cancel=self._accept_abort,
+                title="Generating MP3s",
+                addon=self._addon,
+                parent=self,
+            ),
             'service': {
                 'id': svc_id,
                 'options': options,
@@ -318,24 +320,23 @@ class BrowserGenerator(ServiceDialog):
                 self._addon.router.Trait.INTERNET) else False,
         }
 
-        self._disable_inputs()
-
         self._browser.mw.checkpoint(
             "AwesomeTTS Batch Update (%d note%s)" % (
                 self._process['counts']['elig'],
                 "s" if self._process['counts']['elig'] != 1 else "",
             )
         )
-        self._browser.mw.progress.start(
-            min=0,
-            max=self._process['counts']['elig'],
-            label="Generating MP3 files...",
-            parent=self,
-            immediate=True,
-        )
+        self._process['progress'].show()
         self._browser.model.beginReset()
 
         self._accept_next()
+
+    def _accept_abort(self):
+        """
+        Flags that the user has requested that processing stops.
+        """
+
+        self._process['aborted'] = True
 
     def _accept_next(self):
         """
@@ -344,7 +345,7 @@ class BrowserGenerator(ServiceDialog):
 
         self._accept_update()
 
-        if not self._process['queue']:
+        if self._process['aborted'] or not self._process['queue']:
             self._accept_done()
             return
 
@@ -408,7 +409,7 @@ class BrowserGenerator(ServiceDialog):
             # The call to _accept_next() is done via a single-shot QTimer for
             # a few reasons: keep the UI responsive, avoid a "maximum
             # recursion depth exceeded" exception if we hit a string of cached
-            # files, and allow time to respond to a "cancel" (TODO beta 12).
+            # files, and allow time to respond to a "cancel".
             then=lambda: QtCore.QTimer.singleShot(0, self._accept_next),
         )
 
@@ -434,6 +435,10 @@ class BrowserGenerator(ServiceDialog):
         Called for every "timeout" of the timer during a throttling.
         """
 
+        if self._process['aborted']:
+            self._accept_done()
+            return
+
         self._process['throttling']['countdown'] -= 1
         self._accept_update()
 
@@ -449,7 +454,7 @@ class BrowserGenerator(ServiceDialog):
         Update the progress bar and message.
         """
 
-        self._browser.mw.progress.update(
+        self._process['progress'].update(
             label="finished %d of %d%s\n"
                   "%d successful, %d failed\n"
                   "\n"
@@ -485,7 +490,7 @@ class BrowserGenerator(ServiceDialog):
         """
 
         self._browser.model.endReset()
-        self._browser.mw.progress.finish()
+        self._process['progress'].accept()
 
         messages = [
             "The %d note%s you selected %s been processed. " % (
@@ -580,7 +585,6 @@ class BrowserGenerator(ServiceDialog):
                 ('last_mass_source', source),
             ]
         )
-
 
     def _get_field_values(self):
         """

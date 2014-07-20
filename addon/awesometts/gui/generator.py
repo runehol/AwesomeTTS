@@ -199,11 +199,6 @@ class BrowserGenerator(ServiceDialog):
         window.
         """
 
-        # FIXME. For a very large selectedNotes() set, doing this might be too
-        # slow. An alternative might be to load the form UI, disable all the
-        # input controls, display a message, load the notes in another thread,
-        # then re-enable the input controls.
-
         self._notes = [
             self._browser.mw.col.getNote(note_id)
             for note_id in self._browser.selectedNotes()

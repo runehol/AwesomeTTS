@@ -320,12 +320,7 @@ class BrowserGenerator(ServiceDialog):
                 self._addon.router.Trait.INTERNET) else False,
         }
 
-        self._browser.mw.checkpoint(
-            "AwesomeTTS Batch Update (%d note%s)" % (
-                self._process['counts']['elig'],
-                "s" if self._process['counts']['elig'] != 1 else "",
-            )
-        )
+        self._browser.mw.checkpoint("AwesomeTTS Batch Update")
         self._process['progress'].show()
         self._browser.model.beginReset()
 
@@ -560,7 +555,7 @@ class BrowserGenerator(ServiceDialog):
             messages.append(
                 "You aborted processing. If you want to rollback the changes "
                 "to the notes that were already processed, use the Undo "
-                "option from the Edit menu."
+                "AwesomeTTS Batch Update option from the Edit menu."
             )
 
         self._addon.config.update(self._process['all'])

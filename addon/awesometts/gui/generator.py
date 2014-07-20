@@ -28,7 +28,7 @@ __all__ = ['BrowserGenerator', 'EditorGenerator']
 
 from PyQt4 import QtCore, QtGui
 
-from .base import ServiceDialog
+from .base import Dialog, ServiceDialog
 
 
 class BrowserGenerator(ServiceDialog):
@@ -767,3 +767,81 @@ class EditorGenerator(ServiceDialog):
                 ),
             ),
         )
+
+
+class _Progress(Dialog):
+    """
+    Provides a dialog that can be displayed while processing.
+    """
+
+    __slots__ = [
+        '_maximum'    # the value we are counting up to
+        '_on_cancel'  # callable to invoke if the user hits cancel
+    ]
+
+    def __init__(self, maximum, on_cancel, *args, **kwargs):
+        """
+        Configures our bar's maximum and registers a cancel callback.
+        """
+
+        self._maximum = maximum
+        self._on_cancel = on_cancel
+        super(_Progress, self).__init__(*args, **kwargs)
+
+    # UI Construction ########################################################
+
+    def _ui(self):
+        """
+        Builds the interface with a status label and progress bar.
+        """
+
+        status = QtGui.QLabel("Please wait...")
+        status.setAlignment(QtCore.Qt.AlignCenter)
+        status.setObjectName('status')
+        status.setTextFormat(QtCore.Qt.PlainText)
+        status.setWordWrap(True)
+
+        progress_bar = QtGui.QProgressBar()
+        progress_bar.setMaximum(self._maximum)
+        progress_bar.setObjectName('bar')
+
+        layout = super(_Progress, self)._ui()
+        layout.addStretch()
+        layout.addWidget(status)
+        layout.addStretch()
+        layout.addWidget(progress_bar)
+        layout.addStretch()
+        layout.addWidget(self._ui_buttons())
+
+        return layout
+
+    def _ui_buttons(self):
+        """
+        Overrides the default behavior to only have a cancel button.
+        """
+
+        buttons = QtGui.QDialogButtonBox()
+        buttons.setObjectName('buttons')
+        buttons.rejected.connect(self.reject)
+        buttons.setStandardButtons(QtGui.QDialogButtonBox.Cancel)
+        buttons.button(QtGui.QDialogButtonBox.Cancel).setAutoDefault(False)
+
+        return buttons
+
+    # Events #################################################################
+
+    def reject(self):
+        """
+        On cancel, disable the button and call our registered callback.
+        """
+
+        self.findChild(QtGui.QDialogButtonBox, 'buttons').setDisabled(True)
+        self._on_cancel()
+
+    def update(self, label, value):
+        """
+        Update the status text and bar.
+        """
+
+        self.findChild(QtGui.QLabel, 'status').setText(label)
+        self.findChild(QtGui.QProgressBar, 'bar').setValue(value)

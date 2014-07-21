@@ -164,18 +164,18 @@ class Google(Service):
         is not used for transcoding.
         """
 
-        texts = self.util_split(text, 100)
+        subtexts = self.util_split(text, 100)
         self.net_download(
             path,
             [
                 ('http://translate.google.com/translate_tts', dict(
-                    q=text,
+                    q=subtext,
                     tl=options['voice'],
-                    total=len(texts),
+                    total=len(subtexts),
                     idx=idx,
-                    textlen=len(text),
+                    textlen=len(subtext),
                 ))
-                for idx, text in enumerate(texts)
+                for idx, subtext in enumerate(subtexts)
             ],
             require=dict(mime='audio/mpeg', size=1024),
         )

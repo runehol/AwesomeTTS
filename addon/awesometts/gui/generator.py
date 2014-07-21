@@ -26,6 +26,7 @@ File generation dialogs
 
 __all__ = ['BrowserGenerator', 'EditorGenerator']
 
+from re import compile as re
 from PyQt4 import QtCore, QtGui
 
 from .base import ServiceDialog
@@ -46,6 +47,8 @@ class BrowserGenerator(ServiceDialog):
         "determine %s both fields, store the audio in your collection, and "
         "update the destination with either a [sound] tag or filename."
     )
+
+    _RE_WHITESPACE = re(r'\s+')
 
     # TODO. It would be nice if the progress dialog shown during generation
     # offered a cancel button (labeled "Stop"). This would work just by having
@@ -392,6 +395,9 @@ class BrowserGenerator(ServiceDialog):
             self._process['counts']['fail'] += 1
 
             message = exception.message
+            if isinstance(message, basestring):
+                message = self._RE_WHITESPACE.sub(' ', message).strip()
+
             try:
                 self._process['exceptions'][message] += 1
             except KeyError:

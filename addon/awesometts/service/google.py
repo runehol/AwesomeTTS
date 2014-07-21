@@ -165,17 +165,32 @@ class Google(Service):
         """
 
         subtexts = self.util_split(text, 100)
-        self.net_download(
-            path,
-            [
-                ('http://translate.google.com/translate_tts', dict(
-                    q=subtext,
-                    tl=options['voice'],
-                    total=len(subtexts),
-                    idx=idx,
-                    textlen=len(subtext),
-                ))
-                for idx, subtext in enumerate(subtexts)
-            ],
-            require=dict(mime='audio/mpeg', size=1024),
-        )
+
+        try:
+            self.net_download(
+                path,
+                [
+                    ('http://translate.google.com/translate_tts', dict(
+                        q=subtext,
+                        tl=options['voice'],
+                        total=len(subtexts),
+                        idx=idx,
+                        textlen=len(subtext),
+                    ))
+                    for idx, subtext in enumerate(subtexts)
+                ],
+                require=dict(mime='audio/mpeg', size=1024),
+            )
+
+        except IOError as io_error:
+            raise IOError(
+                "Google Translate returned an HTTP 503 (Service Unavailable) "
+                "error. Unless Google Translate is down, this might indicate "
+                "that too many TTS requests have recently come from your IP "
+                "address. If so, try again after 24 hours.\n"
+                "\n"
+                "Depending on your specific situation, you might be able to "
+                "switch to a different service offering " +
+                self._VOICE_CODES[options['voice']].split(',').pop(0) + "."
+            ) if hasattr(io_error, 'code') and io_error.code == 503 \
+                else io_error

@@ -802,6 +802,8 @@ class _Progress(Dialog):
         Builds the interface with a status label and progress bar.
         """
 
+        self.setMinimumWidth(500)
+
         status = QtGui.QLabel("Please wait...")
         status.setAlignment(QtCore.Qt.AlignCenter)
         status.setObjectName('status')
@@ -812,11 +814,22 @@ class _Progress(Dialog):
         progress_bar.setMaximum(self._maximum)
         progress_bar.setObjectName('bar')
 
+        detail = QtGui.QLabel("")
+        detail.setAlignment(QtCore.Qt.AlignCenter)
+        detail.setFixedHeight(100)
+        detail.setFont(self._FONT_INFO)
+        detail.setObjectName('detail')
+        detail.setScaledContents(True)
+        detail.setTextFormat(QtCore.Qt.PlainText)
+        detail.setWordWrap(True)
+
         layout = super(_Progress, self)._ui()
         layout.addStretch()
         layout.addWidget(status)
         layout.addStretch()
         layout.addWidget(progress_bar)
+        layout.addStretch()
+        layout.addWidget(detail)
         layout.addStretch()
         layout.addWidget(self._ui_buttons())
 
@@ -845,10 +858,12 @@ class _Progress(Dialog):
         self.findChild(QtGui.QDialogButtonBox, 'buttons').setDisabled(True)
         self._on_cancel()
 
-    def update(self, label, value):
+    def update(self, label, value, detail=None):
         """
         Update the status text and bar.
         """
 
         self.findChild(QtGui.QLabel, 'status').setText(label)
         self.findChild(QtGui.QProgressBar, 'bar').setValue(value)
+        if detail:
+            self.findChild(QtGui.QLabel, 'detail').setText(detail)

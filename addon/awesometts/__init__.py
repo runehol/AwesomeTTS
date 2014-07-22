@@ -54,7 +54,7 @@ from .router import Router
 from .updates import Updates
 
 
-VERSION = '1.0.0-dev'
+VERSION = '1.1.0-dev'
 
 WEB = 'https://ankiatts.appspot.com'
 

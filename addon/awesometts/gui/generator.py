@@ -361,6 +361,9 @@ class BrowserGenerator(ServiceDialog):
             return
 
         note = self._process['queue'].pop(0)
+        phrase = note[self._process['fields']['source']]
+        phrase = self._addon.strip.from_note(phrase)
+        self._accept_update(phrase)
 
         def done():
             """Count the processed note."""
@@ -418,9 +421,7 @@ class BrowserGenerator(ServiceDialog):
 
         self._addon.router(
             svc_id=self._process['service']['id'],
-            text=self._addon.strip.from_note(
-                note[self._process['fields']['source']]
-            ),
+            text=phrase,
             options=self._process['service']['options'],
             callbacks=callbacks,
         )
@@ -444,7 +445,7 @@ class BrowserGenerator(ServiceDialog):
             self._process['throttling']['calls'] = 0
             self._accept_next()
 
-    def _accept_update(self):
+    def _accept_update(self, detail=None):
         """
         Update the progress bar and message.
         """
@@ -477,6 +478,7 @@ class BrowserGenerator(ServiceDialog):
                       else " "
                   ),
             value=self._process['counts']['done'],
+            detail=detail,
         )
 
     def _accept_done(self):

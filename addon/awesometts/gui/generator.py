@@ -29,7 +29,7 @@ __all__ = ['BrowserGenerator', 'EditorGenerator']
 from re import compile as re
 from PyQt4 import QtCore, QtGui
 
-from .base import ServiceDialog
+from .base import Dialog, ServiceDialog
 
 
 class BrowserGenerator(ServiceDialog):
@@ -49,14 +49,6 @@ class BrowserGenerator(ServiceDialog):
     )
 
     _RE_WHITESPACE = re(r'\s+')
-
-    # TODO. It would be nice if the progress dialog shown during generation
-    # offered a cancel button (labeled "Stop"). This would work just by having
-    # an additional 'cancelled' flag on the _process object that we check for
-    # at the beginning of _accept_next(), possibly in the same conditional as
-    # the "not self._process['queue']" check. Additionally, a cancelled=True
-    # flag should be passed to _accept_done() that causes the user's service
-    # and handling/behavior preferences to NOT be persisted to the database.
 
     __slots__ = [
         '_browser',       # reference to the current Anki browser window
@@ -281,11 +273,21 @@ class BrowserGenerator(ServiceDialog):
             )
             return
 
+        self._disable_inputs()
+
         svc_id = now['last_service']
         options = now['last_options'][now['last_service']]
 
         self._process = {
             'all': now,
+            'aborted': False,
+            'progress': _Progress(
+                maximum=len(eligible_notes),
+                on_cancel=self._accept_abort,
+                title="Generating MP3s",
+                addon=self._addon,
+                parent=self,
+            ),
             'service': {
                 'id': svc_id,
                 'options': options,
@@ -316,24 +318,18 @@ class BrowserGenerator(ServiceDialog):
                 self._addon.router.Trait.INTERNET) else False,
         }
 
-        self._disable_inputs()
-
-        self._browser.mw.checkpoint(
-            "AwesomeTTS Batch Update (%d note%s)" % (
-                self._process['counts']['elig'],
-                "s" if self._process['counts']['elig'] != 1 else "",
-            )
-        )
-        self._browser.mw.progress.start(
-            min=0,
-            max=self._process['counts']['elig'],
-            label="Generating MP3 files...",
-            parent=self,
-            immediate=True,
-        )
+        self._browser.mw.checkpoint("AwesomeTTS Batch Update")
+        self._process['progress'].show()
         self._browser.model.beginReset()
 
         self._accept_next()
+
+    def _accept_abort(self):
+        """
+        Flags that the user has requested that processing stops.
+        """
+
+        self._process['aborted'] = True
 
     def _accept_next(self):
         """
@@ -342,7 +338,7 @@ class BrowserGenerator(ServiceDialog):
 
         self._accept_update()
 
-        if not self._process['queue']:
+        if self._process['aborted'] or not self._process['queue']:
             self._accept_done()
             return
 
@@ -363,6 +359,9 @@ class BrowserGenerator(ServiceDialog):
             return
 
         note = self._process['queue'].pop(0)
+        phrase = note[self._process['fields']['source']]
+        phrase = self._addon.strip.from_note(phrase)
+        self._accept_update(phrase)
 
         def done():
             """Count the processed note."""
@@ -409,7 +408,7 @@ class BrowserGenerator(ServiceDialog):
             # The call to _accept_next() is done via a single-shot QTimer for
             # a few reasons: keep the UI responsive, avoid a "maximum
             # recursion depth exceeded" exception if we hit a string of cached
-            # files, and allow time to respond to a "cancel" (TODO beta 12).
+            # files, and allow time to respond to a "cancel".
             then=lambda: QtCore.QTimer.singleShot(0, self._accept_next),
         )
 
@@ -423,9 +422,7 @@ class BrowserGenerator(ServiceDialog):
 
         self._addon.router(
             svc_id=self._process['service']['id'],
-            text=self._addon.strip.from_note(
-                note[self._process['fields']['source']]
-            ),
+            text=phrase,
             options=self._process['service']['options'],
             callbacks=callbacks,
         )
@@ -434,6 +431,10 @@ class BrowserGenerator(ServiceDialog):
         """
         Called for every "timeout" of the timer during a throttling.
         """
+
+        if self._process['aborted']:
+            self._accept_done()
+            return
 
         self._process['throttling']['countdown'] -= 1
         self._accept_update()
@@ -445,12 +446,12 @@ class BrowserGenerator(ServiceDialog):
             self._process['throttling']['calls'] = 0
             self._accept_next()
 
-    def _accept_update(self):
+    def _accept_update(self, detail=None):
         """
         Update the progress bar and message.
         """
 
-        self._browser.mw.progress.update(
+        self._process['progress'].update(
             label="finished %d of %d%s\n"
                   "%d successful, %d failed\n"
                   "\n"
@@ -478,6 +479,7 @@ class BrowserGenerator(ServiceDialog):
                       else " "
                   ),
             value=self._process['counts']['done'],
+            detail=detail,
         )
 
     def _accept_done(self):
@@ -486,7 +488,7 @@ class BrowserGenerator(ServiceDialog):
         """
 
         self._browser.model.endReset()
-        self._browser.mw.progress.finish()
+        self._process['progress'].accept()
 
         messages = [
             "The %d note%s you selected %s been processed. " % (
@@ -551,6 +553,14 @@ class BrowserGenerator(ServiceDialog):
         else:
             messages.append("there were no errors.")
 
+        if self._process['aborted']:
+            messages.append("\n\n")
+            messages.append(
+                "You aborted processing. If you want to rollback the changes "
+                "to the notes that were already processed, use the Undo "
+                "AwesomeTTS Batch Update option from the Edit menu."
+            )
+
         self._addon.config.update(self._process['all'])
         self._disable_inputs(False)
         self._notes = None
@@ -581,7 +591,6 @@ class BrowserGenerator(ServiceDialog):
                 ('last_mass_source', source),
             ]
         )
-
 
     def _get_field_values(self):
         """
@@ -768,3 +777,96 @@ class EditorGenerator(ServiceDialog):
                 ),
             ),
         )
+
+
+class _Progress(Dialog):
+    """
+    Provides a dialog that can be displayed while processing.
+    """
+
+    __slots__ = [
+        '_maximum'    # the value we are counting up to
+        '_on_cancel'  # callable to invoke if the user hits cancel
+    ]
+
+    def __init__(self, maximum, on_cancel, *args, **kwargs):
+        """
+        Configures our bar's maximum and registers a cancel callback.
+        """
+
+        self._maximum = maximum
+        self._on_cancel = on_cancel
+        super(_Progress, self).__init__(*args, **kwargs)
+
+    # UI Construction ########################################################
+
+    def _ui(self):
+        """
+        Builds the interface with a status label and progress bar.
+        """
+
+        self.setMinimumWidth(500)
+
+        status = QtGui.QLabel("Please wait...")
+        status.setAlignment(QtCore.Qt.AlignCenter)
+        status.setObjectName('status')
+        status.setTextFormat(QtCore.Qt.PlainText)
+        status.setWordWrap(True)
+
+        progress_bar = QtGui.QProgressBar()
+        progress_bar.setMaximum(self._maximum)
+        progress_bar.setObjectName('bar')
+
+        detail = QtGui.QLabel("")
+        detail.setAlignment(QtCore.Qt.AlignCenter)
+        detail.setFixedHeight(100)
+        detail.setFont(self._FONT_INFO)
+        detail.setObjectName('detail')
+        detail.setScaledContents(True)
+        detail.setTextFormat(QtCore.Qt.PlainText)
+        detail.setWordWrap(True)
+
+        layout = super(_Progress, self)._ui()
+        layout.addStretch()
+        layout.addWidget(status)
+        layout.addStretch()
+        layout.addWidget(progress_bar)
+        layout.addStretch()
+        layout.addWidget(detail)
+        layout.addStretch()
+        layout.addWidget(self._ui_buttons())
+
+        return layout
+
+    def _ui_buttons(self):
+        """
+        Overrides the default behavior to only have a cancel button.
+        """
+
+        buttons = QtGui.QDialogButtonBox()
+        buttons.setObjectName('buttons')
+        buttons.rejected.connect(self.reject)
+        buttons.setStandardButtons(QtGui.QDialogButtonBox.Cancel)
+        buttons.button(QtGui.QDialogButtonBox.Cancel).setAutoDefault(False)
+
+        return buttons
+
+    # Events #################################################################
+
+    def reject(self):
+        """
+        On cancel, disable the button and call our registered callback.
+        """
+
+        self.findChild(QtGui.QDialogButtonBox, 'buttons').setDisabled(True)
+        self._on_cancel()
+
+    def update(self, label, value, detail=None):
+        """
+        Update the status text and bar.
+        """
+
+        self.findChild(QtGui.QLabel, 'status').setText(label)
+        self.findChild(QtGui.QProgressBar, 'bar').setValue(value)
+        if detail:
+            self.findChild(QtGui.QLabel, 'detail').setText(detail)

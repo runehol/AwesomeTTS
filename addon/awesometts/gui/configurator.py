@@ -45,10 +45,11 @@ class Configurator(Dialog):
         'delay_answers_stored_theirs', 'delay_questions_onthefly',
         'delay_questions_stored_ours', 'delay_questions_stored_theirs',
         'lame_flags', 'strip_note_braces', 'strip_note_brackets',
-        'strip_note_parens', 'strip_template_braces',
-        'strip_template_brackets', 'strip_template_parens', 'sub_note_cloze',
-        'sub_template_cloze', 'throttle_sleep', 'throttle_threshold',
-        'tts_key_a', 'tts_key_q', 'updates_enabled',
+        'strip_note_parens', 'strip_note_specific', 'strip_template_braces',
+        'strip_template_brackets', 'strip_template_parens',
+        'strip_template_specific', 'sub_note_cloze', 'sub_template_cloze',
+        'throttle_sleep', 'throttle_threshold', 'tts_key_a', 'tts_key_q',
+        'updates_enabled',
     ]
 
     _PROPERTY_WIDGETS = (
@@ -309,10 +310,46 @@ class Configurator(Dialog):
             checkbox.setObjectName(infix.join(['strip', option_subkey]))
             layout.addWidget(checkbox)
 
+        layout.addLayout(self._ui_tabs_text_mode_specific(infix))
+
         group = QtGui.QGroupBox(label)
         group.setLayout(layout)
 
         return group
+
+    def _ui_tabs_text_mode_specific(self, infix):
+        """Returns a horizontal layout for character stripping."""
+
+        specific = QtGui.QLineEdit()
+        specific.setObjectName(infix.join(['strip', 'specific']))
+        specific.setValidator(self._ui_tabs_text_mode_specific.ucsv)
+
+        horizontal = QtGui.QHBoxLayout()
+        horizontal.addWidget(QtGui.QLabel("Also strip out any of the "
+                                          "following characters:"))
+        horizontal.addWidget(specific)
+        horizontal.addWidget(QtGui.QLabel("e.g. #*_"))
+
+        return horizontal
+
+    class _UniqueCharacterStringValidator(QtGui.QValidator):
+        """
+        Provides a QValidator-compliant class that returns a string of
+        unique, sorted characters containing no whitespace.
+        """
+
+        def fixup(self, original):
+            """Returns unique characters from original, sorted."""
+
+            return ''.join(sorted({c for c in original if not c.isspace()}))
+
+        def validate(self, original, offset):  # pylint:disable=W0613
+            """Fixes original text and resets cursor to end of line."""
+
+            filtered = self.fixup(original)
+            return QtGui.QValidator.Acceptable, filtered, len(filtered)
+
+    _ui_tabs_text_mode_specific.ucsv = _UniqueCharacterStringValidator()
 
     def _ui_tabs_mp3gen(self):
         """

@@ -119,9 +119,11 @@ config = Config(
         ('strip_note_braces', 'integer', False, TO_BOOL, int),
         ('strip_note_brackets', 'integer', False, TO_BOOL, int),
         ('strip_note_parens', 'integer', False, TO_BOOL, int),
+        ('strip_note_specific', 'text', '', unicode, unicode),
         ('strip_template_braces', 'integer', False, TO_BOOL, int),
         ('strip_template_brackets', 'integer', False, TO_BOOL, int),
         ('strip_template_parens', 'integer', False, TO_BOOL, int),
+        ('strip_template_specific', 'text', '', unicode, unicode),
         ('sub_note_cloze', 'text', 'anki', str, str),
         ('sub_template_cloze', 'text', 'anki', str, str),
         ('templater_cloze', 'integer', True, TO_BOOL, int),
@@ -224,6 +226,14 @@ STRIP_CONDITIONALLY_TEMPLATE = lambda text: \
     STRIP_CONDITIONALLY(RE_TEXT_IN_PARENS, 'strip_template_parens',
         text
     )))
+
+STRIP_SPEC = lambda key, text: \
+    ''.join(c for c in text if c not in config[key]) if config[key] \
+    else text
+
+STRIP_SPEC_NOTE = lambda text: STRIP_SPEC('strip_note_specific', text)
+
+STRIP_SPEC_TEMPLATE = lambda text: STRIP_SPEC('strip_template_specific', text)
 
 SUB_CLOZES_NOTE = lambda text: RE_CLOZE_NOTE.sub(
     lambda match:
@@ -370,31 +380,35 @@ addon = Bundle(
         from_note=lambda text:
             COLLAPSE_WHITESPACE(
             COLLAPSE_ELLIPSES(
+            STRIP_SPEC_NOTE(
             STRIP_CONDITIONALLY_NOTE(
             STRIP_FILENAMES(
             STRIP_SOUNDS(
             STRIP_HTML(
             SUB_CLOZES_NOTE(
                 text
-            ))))))),
+            )))))))),
 
         # for cleaning up already-processed HTML templates (e.g. on-the-fly,
         # where cloze is marked with <span class=cloze></span> tags)
         from_template=lambda text:
             COLLAPSE_WHITESPACE(
             COLLAPSE_ELLIPSES(
+            STRIP_SPEC_TEMPLATE(
             STRIP_CONDITIONALLY_TEMPLATE(
             STRIP_FILENAMES(
             STRIP_SOUNDS(
             STRIP_HTML(
             SUB_CLOZES_TEMPLATE(
                 text
-            ))))))),
+            )))))))),
 
         # for cleaning up text from unknown sources (e.g. system clipboard)
         from_unknown=lambda text:
             COLLAPSE_WHITESPACE(
             COLLAPSE_ELLIPSES(
+            STRIP_SPEC_TEMPLATE(
+            STRIP_SPEC_NOTE(
             STRIP_CONDITIONALLY_TEMPLATE(
             STRIP_CONDITIONALLY_NOTE(
             STRIP_FILENAMES(
@@ -403,7 +417,7 @@ addon = Bundle(
             SUB_CLOZES_TEMPLATE(
             SUB_CLOZES_NOTE(
                 text
-            ))))))))),
+            ))))))))))),
 
         # for direct user input (e.g. previews, EditorGenerator insertion)
         from_user=lambda text:

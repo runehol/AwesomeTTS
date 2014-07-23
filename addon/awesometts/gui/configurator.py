@@ -246,11 +246,12 @@ class Configurator(Dialog):
         layout.addWidget(self._ui_tabs_text_mode(
             '_template_',
             "Handling Template Text (e.g. On-the-Fly)",
+            "For a front-side rendered cloze,",
             [
-                ('anki', "read however Anki displayed them"),
-                ('wrap', "read w/ hints wrapped in ellipses"),
-                ('ellipsize', "read as an ellipsis, ignoring hints"),
-                ('remove', "removed entirely"),
+                ('anki', "read however Anki displayed it"),
+                ('wrap', "read w/ hint wrapped in ellipses"),
+                ('ellipsize', "read as an ellipsis, ignoring hint"),
+                ('remove', "remove entirely"),
             ],
             [
                 ('parens', "parenthetical text, e.g. (generally formal)"),
@@ -261,11 +262,13 @@ class Configurator(Dialog):
         layout.addWidget(self._ui_tabs_text_mode(
             '_note_',
             "Handling Text from a Note Field (e.g. Browser Generator)",
+            "For a braced cloze marker,",
             [
-                ('anki', "read like Anki would display them"),
-                ('wrap', "read w/ hints wrapped in ellipses"),
-                ('ellipsize', "read as an ellipsis, ignoring hints"),
-                ('remove', "removed entirely"),
+                ('anki', "read as Anki would display on a card front"),
+                ('wrap', "replace w/ hint wrapped in ellipses"),
+                ('deleted', "replace w/ deleted text"),
+                ('ellipsize', "replace w/ ellipsis, ignoring both"),
+                ('remove', "remove entirely"),
             ],
             [
                 ('parens', "parenthetical text, e.g. (casual only)"),
@@ -282,7 +285,8 @@ class Configurator(Dialog):
 
         return tab
 
-    def _ui_tabs_text_mode(self, infix, label, cloze_options, strip_options):
+    def _ui_tabs_text_mode(self, infix, label, cloze_description,
+                           cloze_options, strip_options):
         """
         Returns the given checkbox options for controlling whether to
         strip from certain parenthetical text. Optionally, additional
@@ -290,15 +294,13 @@ class Configurator(Dialog):
         passing the optional parameters.
         """
 
-        when = QtGui.QLabel("Cloze placeholders should be")
-
         select = QtGui.QComboBox()
         for option_value, option_text in cloze_options:
             select.addItem(option_text, option_value)
         select.setObjectName(infix.join(['sub', 'cloze']))
 
         horizontal = QtGui.QHBoxLayout()
-        horizontal.addWidget(when)
+        horizontal.addWidget(QtGui.QLabel(cloze_description))
         horizontal.addWidget(select)
         horizontal.addStretch()
 

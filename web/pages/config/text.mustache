@@ -72,28 +72,37 @@
     <td><kbd>Hello {{c1::world}}!</kbd></td>
     <td><kbd>Hello {{c1::world::place}}!</kbd></td>
 </tr><tr>
-    <td>then Anki would render&hellip;</td>
+    <td>then on a card front, Anki would render&hellip;</td>
     <td><samp>Hello <strong>[...]</strong>!</samp></td>
     <td><samp>Hello <strong>[place]<strong>!</samp></td>
 </tr><tr>
-    <td>and with &ldquo;read however Anki displayed them&rdquo; or<br>
-      &ldquo;like Anki would display them&rdquo;, AwesomeTTS would
-      read&hellip;</td>
+    <td>then with &ldquo;read however Anki displayed it&rdquo; /<br>
+      &nbsp; &nbsp; &ldquo;read as Anki would display on a card
+      front&rdquo;,<br>
+      AwesomeTTS would read&hellip;</td>
     <td><samp>Hello ... !</samp></td>
     <td><samp>Hello place!</samp></td>
 </tr><tr>
-    <td>or with &ldquo;read w/ hints wrapped in ellipses&rdquo;, AwesomeTTS
-      would read&hellip;</td>
+    <td>or with &ldquo;read w/ hint wrapped in ellipses&rdquo; /<br>
+      &nbsp; &nbsp; &ldquo;replace w/ hint wrapped in ellipses&rdquo;,<br>
+      AwesomeTTS would read&hellip;</td>
     <td><samp>Hello ... !</samp></td>
     <td><samp>Hello ... place ... !</samp></td>
 </tr><tr>
-    <td>or with &ldquo;read as an ellipsis, ignoring hints&rdquo;, AwesomeTTS
-      would read&hellip;</td>
+    <td>or with &ldquo;replace w/ deleted text&rdquo; <em>(notes
+      only)</em>,<br>
+      AwesomeTTS would read&hellip;</td>
+    <td><samp>Hello world!</samp></td>
+    <td><samp>Hello world!</samp></td>
+</tr><tr>
+    <td>or with &ldquo;read as an ellipsis, ignoring hint&rdquo; /<br>
+      &nbsp; &nbsp; &ldquo;replace w/ ellipsis, ignoring both&rdquo;,<br>
+      AwesomeTTS would read&hellip;</td>
     <td><samp>Hello ... !</samp></td>
     <td><samp>Hello ... !</samp></td>
 </tr><tr>
-    <td>or with &ldquo;removed entirely&rdquo;, AwesomeTTS would
-      read&hellip;</td>
+    <td>or with &ldquo;remove entirely&rdquo;,<br>
+      AwesomeTTS would read&hellip;</td>
     <td><samp>Hello !</samp></td>
     <td><samp>Hello !</samp></td>
 </tr></table>

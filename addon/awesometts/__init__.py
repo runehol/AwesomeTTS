@@ -245,6 +245,10 @@ SUB_CLOZES_NOTE = lambda text: RE_CLOZE_NOTE.sub(
                 match.group(3).strip('.')
             else '...'
         ) if config['sub_note_cloze'] == 'wrap'
+        else (
+            match.group(1) if match.group(1)
+            else '...'
+        ) if config['sub_note_cloze'] == 'deleted'
         else match.group(3) if match.group(3)
         else '...',
     text,

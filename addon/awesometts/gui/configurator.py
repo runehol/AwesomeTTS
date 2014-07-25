@@ -44,12 +44,14 @@ class Configurator(Dialog):
         'debug_stdout', 'delay_answers_onthefly', 'delay_answers_stored_ours',
         'delay_answers_stored_theirs', 'delay_questions_onthefly',
         'delay_questions_stored_ours', 'delay_questions_stored_theirs',
-        'lame_flags', 'strip_note_braces', 'strip_note_brackets',
-        'strip_note_parens', 'strip_note_specific', 'strip_template_braces',
-        'strip_template_brackets', 'strip_template_parens',
-        'strip_template_specific', 'sub_note_cloze', 'sub_template_cloze',
-        'throttle_sleep', 'throttle_threshold', 'tts_key_a', 'tts_key_q',
-        'updates_enabled',
+        'lame_flags', 'spec_note_strip', 'spec_note_ellipsize',
+        'spec_template_ellipsize', 'spec_note_count', 'spec_note_count_wrap',
+        'spec_template_count', 'spec_template_count_wrap',
+        'spec_template_strip', 'strip_note_braces', 'strip_note_brackets',
+        'strip_note_parens', 'strip_template_braces',
+        'strip_template_brackets', 'strip_template_parens', 'sub_note_cloze',
+        'sub_template_cloze', 'throttle_sleep', 'throttle_threshold',
+        'tts_key_a', 'tts_key_q', 'updates_enabled',
     ]
 
     _PROPERTY_WIDGETS = (
@@ -131,8 +133,6 @@ class Configurator(Dialog):
         Returns the "Playback" tab.
         """
 
-        intro = QtGui.QLabel("Control how playback is handled.")
-
         notes = QtGui.QLabel("For [sound] tags, whether or not automatic "
           "playback is enabled is controlled on a per-deck basis, and can be "
           "played on-demand by striking R or F5.")
@@ -140,8 +140,6 @@ class Configurator(Dialog):
         notes.setWordWrap(True)
 
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(intro)
-        layout.addSpacing(self._SPACING)
         layout.addWidget(self._ui_tabs_playback_group(
             'automatic_questions',
             'tts_key_q',
@@ -232,17 +230,7 @@ class Configurator(Dialog):
         Returns the "Text" tab.
         """
 
-        intro = QtGui.QLabel("Configure how AwesomeTTS processes text.")
-
-        notes = QtGui.QLabel(
-            "AwesomeTTS will always automatically strip [sound] tags and "
-            "HTML from both template text and note fields."
-        )
-        notes.setWordWrap(True)
-
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(intro)
-        layout.addSpacing(self._SPACING)
         layout.addWidget(self._ui_tabs_text_mode(
             '_template_',
             "Handling Template Text (e.g. On-the-Fly)",
@@ -276,8 +264,6 @@ class Configurator(Dialog):
                 ('braces', "curly-braced text, e.g. {usually plural}"),
             ],
         ))
-        layout.addSpacing(self._SPACING)
-        layout.addWidget(notes)
         layout.addStretch()
 
         tab = QtGui.QWidget()
@@ -312,25 +298,47 @@ class Configurator(Dialog):
             checkbox.setObjectName(infix.join(['strip', option_subkey]))
             layout.addWidget(checkbox)
 
-        layout.addLayout(self._ui_tabs_text_mode_specific(infix))
+        layout.addLayout(self._ui_tabs_text_mode_specific(
+            infix,
+            'strip',
+            ("Remove all", "characters from the input"),
+        ))
+        layout.addLayout(self._ui_tabs_text_mode_specific(
+            infix,
+            'count',
+            ("Count adjacent", "characters"),
+            True,
+        ))
+        layout.addLayout(self._ui_tabs_text_mode_specific(
+            infix,
+            'ellipsize',
+            ("Replace", "characters with an ellipsis"),
+        ))
 
         group = QtGui.QGroupBox(label)
         group.setLayout(layout)
 
         return group
 
-    def _ui_tabs_text_mode_specific(self, infix):
-        """Returns a horizontal layout for character stripping."""
+    def _ui_tabs_text_mode_specific(self, infix, suffix, labels, wrap=False):
+        """Returns a layout for specific character handling."""
 
-        specific = QtGui.QLineEdit()
-        specific.setObjectName(infix.join(['strip', 'specific']))
-        specific.setValidator(self._ui_tabs_text_mode_specific.ucsv)
+        line_edit = QtGui.QLineEdit()
+        line_edit.setObjectName(infix.join(['spec', suffix]))
+        line_edit.setValidator(self._ui_tabs_text_mode_specific.ucsv)
+        line_edit.setFixedWidth(50)
 
         horizontal = QtGui.QHBoxLayout()
-        horizontal.addWidget(QtGui.QLabel("Also strip out any of the "
-                                          "following characters:"))
-        horizontal.addWidget(specific)
-        horizontal.addWidget(QtGui.QLabel("e.g. #*_"))
+        horizontal.addWidget(QtGui.QLabel(labels[0]))
+        horizontal.addWidget(line_edit)
+        horizontal.addWidget(QtGui.QLabel(labels[1]))
+
+        if wrap:
+            checkbox = QtGui.QCheckBox("wrap in ellipses")
+            checkbox.setObjectName(''.join(['spec', infix, suffix, '_wrap']))
+            horizontal.addWidget(checkbox)
+
+        horizontal.addStretch()
 
         return horizontal
 
@@ -358,8 +366,6 @@ class Configurator(Dialog):
         Returns the "MP3s" tab.
         """
 
-        intro = QtGui.QLabel("Control how MP3s are generated.")
-
         notes = QtGui.QLabel(
             "As of Beta 11, AwesomeTTS will no longer generate filenames "
             "directly from input phrases. Instead, filenames will be based "
@@ -369,7 +375,6 @@ class Configurator(Dialog):
         notes.setWordWrap(True)
 
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(intro)
         layout.addWidget(notes)
         layout.addSpacing(self._SPACING)
         layout.addWidget(self._ui_tabs_mp3gen_lame())
@@ -470,11 +475,7 @@ class Configurator(Dialog):
         Returns the "Advanced" tab.
         """
 
-        intro = QtGui.QLabel("Set advanced options or clear the media cache.")
-
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(intro)
-        layout.addSpacing(self._SPACING)
         layout.addWidget(self._ui_tabs_advanced_update())
         layout.addWidget(self._ui_tabs_advanced_debug())
         layout.addWidget(self._ui_tabs_advanced_cache())

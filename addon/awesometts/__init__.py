@@ -114,16 +114,22 @@ config = Config(
         ('last_mass_behavior', 'integer', True, TO_BOOL, int),
         ('last_mass_dest', 'text', 'Back', unicode, unicode),
         ('last_mass_source', 'text', 'Front', unicode, unicode),
-        ('last_service', 'text', 'google', str, str),
         ('last_options', 'text', {}, TO_JSON_DICT, json.dumps),
+        ('last_service', 'text', 'google', str, str),
+        ('spec_note_count', 'text', '', unicode, unicode),
+        ('spec_note_count_wrap', 'integer', True, TO_BOOL, int),
+        ('spec_note_ellipsize', 'text', '', unicode, unicode),
+        ('spec_note_strip', 'text', '', unicode, unicode),
+        ('spec_template_count', 'text', '', unicode, unicode),
+        ('spec_template_count_wrap', 'integer', True, TO_BOOL, int),
+        ('spec_template_ellipsize', 'text', '', unicode, unicode),
+        ('spec_template_strip', 'text', '', unicode, unicode),
         ('strip_note_braces', 'integer', False, TO_BOOL, int),
         ('strip_note_brackets', 'integer', False, TO_BOOL, int),
         ('strip_note_parens', 'integer', False, TO_BOOL, int),
-        ('strip_note_specific', 'text', '', unicode, unicode),
         ('strip_template_braces', 'integer', False, TO_BOOL, int),
         ('strip_template_brackets', 'integer', False, TO_BOOL, int),
         ('strip_template_parens', 'integer', False, TO_BOOL, int),
-        ('strip_template_specific', 'text', '', unicode, unicode),
         ('sub_note_cloze', 'text', 'anki', str, str),
         ('sub_template_cloze', 'text', 'anki', str, str),
         ('templater_cloze', 'integer', True, TO_BOOL, int),
@@ -206,6 +212,35 @@ RE_WHITESPACE = re.compile(r'[\0\s]+')
 COLLAPSE_ELLIPSES = lambda text: RE_ELLIPSES.sub(' ... ', text)
 COLLAPSE_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
 
+SPEC_COUNT = lambda key, wrap_key, text: \
+    re.sub(
+        r'[' + re.escape(config[key]) + ']+',
+        lambda match: str(len(match.group(0))).join(
+            [' ... ', ' ... '] if config[wrap_key]
+            else [' ', ' ']
+        ),
+        text,
+    ) if config[key] \
+    else text
+SPEC_COUNT_NOTE = lambda text: SPEC_COUNT('spec_note_count',
+                                          'spec_note_count_wrap',
+                                          text)
+SPEC_COUNT_TEMPLATE = lambda text: SPEC_COUNT('spec_template_count',
+                                              'spec_template_count_wrap',
+                                              text)
+
+SPEC_STRIP = lambda key, text: \
+    ''.join(c for c in text if c not in config[key]) if config[key] \
+    else text
+SPEC_STRIP_NOTE = lambda text: SPEC_STRIP('spec_note_strip', text)
+SPEC_STRIP_TEMPLATE = lambda text: SPEC_STRIP('spec_template_strip', text)
+
+SPEC_ELLIP = lambda key, text: \
+    ''.join(('...' if c in config[key] else c) for c in text) if config[key] \
+    else text
+SPEC_ELLIP_NOTE = lambda text: SPEC_ELLIP('spec_note_ellipsize', text)
+SPEC_ELLIP_TEMPLATE = lambda text: SPEC_ELLIP('spec_template_ellipsize', text)
+
 STRIP_FILENAMES = lambda text: RE_FILENAMES.sub('', text)
 STRIP_HTML = anki.utils.stripHTML  # this also converts character entities
 STRIP_SOUNDS = anki.sound.stripSounds
@@ -226,14 +261,6 @@ STRIP_CONDITIONALLY_TEMPLATE = lambda text: \
     STRIP_CONDITIONALLY(RE_TEXT_IN_PARENS, 'strip_template_parens',
         text
     )))
-
-STRIP_SPEC = lambda key, text: \
-    ''.join(c for c in text if c not in config[key]) if config[key] \
-    else text
-
-STRIP_SPEC_NOTE = lambda text: STRIP_SPEC('strip_note_specific', text)
-
-STRIP_SPEC_TEMPLATE = lambda text: STRIP_SPEC('strip_template_specific', text)
 
 SUB_CLOZES_NOTE = lambda text: RE_CLOZE_NOTE.sub(
     lambda match:
@@ -384,35 +411,43 @@ addon = Bundle(
         from_note=lambda text:
             COLLAPSE_WHITESPACE(
             COLLAPSE_ELLIPSES(
-            STRIP_SPEC_NOTE(
+            SPEC_ELLIP_NOTE(
+            SPEC_COUNT_NOTE(
+            SPEC_STRIP_NOTE(
             STRIP_CONDITIONALLY_NOTE(
             STRIP_FILENAMES(
             STRIP_SOUNDS(
             STRIP_HTML(
             SUB_CLOZES_NOTE(
                 text
-            )))))))),
+            )))))))))),
 
         # for cleaning up already-processed HTML templates (e.g. on-the-fly,
         # where cloze is marked with <span class=cloze></span> tags)
         from_template=lambda text:
             COLLAPSE_WHITESPACE(
             COLLAPSE_ELLIPSES(
-            STRIP_SPEC_TEMPLATE(
+            SPEC_ELLIP_TEMPLATE(
+            SPEC_COUNT_TEMPLATE(
+            SPEC_STRIP_TEMPLATE(
             STRIP_CONDITIONALLY_TEMPLATE(
             STRIP_FILENAMES(
             STRIP_SOUNDS(
             STRIP_HTML(
             SUB_CLOZES_TEMPLATE(
                 text
-            )))))))),
+            )))))))))),
 
         # for cleaning up text from unknown sources (e.g. system clipboard)
         from_unknown=lambda text:
             COLLAPSE_WHITESPACE(
             COLLAPSE_ELLIPSES(
-            STRIP_SPEC_TEMPLATE(
-            STRIP_SPEC_NOTE(
+            SPEC_ELLIP_TEMPLATE(
+            SPEC_ELLIP_NOTE(
+            SPEC_COUNT_TEMPLATE(
+            SPEC_COUNT_NOTE(
+            SPEC_STRIP_TEMPLATE(
+            SPEC_STRIP_NOTE(
             STRIP_CONDITIONALLY_TEMPLATE(
             STRIP_CONDITIONALLY_NOTE(
             STRIP_FILENAMES(
@@ -421,7 +456,7 @@ addon = Bundle(
             SUB_CLOZES_TEMPLATE(
             SUB_CLOZES_NOTE(
                 text
-            ))))))))))),
+            ))))))))))))))),
 
         # for direct user input (e.g. previews, EditorGenerator insertion)
         from_user=lambda text:

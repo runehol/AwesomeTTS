@@ -21,7 +21,7 @@
 {{> above}}
 
 <figure style="width: 528px">
-    <img src="/config.text.png" width="528" height="619"
+    <img src="/config.text.png" width="528" height="642"
       alt="AwesomeTTS configuration dialog with the Text tab selected">
 
     <figcaption>&ldquo;Text&rdquo; configuration tab</figcaption>
@@ -109,9 +109,26 @@
 
 <%disable={{ }}=mustache%>
 
+<h2>Counting Adjacent Characters</h2>
+
+<p>If you use some character in your notes to denote a blank to be filled in,
+  and you want AwesomeTTS to tell you how many characters that blank was, you
+  can activate this feature.</p>
+
+<p>For example, if your note said <kbd>The grass is always _______ on the
+  other ____</kbd>, and you entered an underscore into &ldquo;count adjacent
+  characters&rdquo; with &ldquo;wrap in ellipses&rdquo; checked, AwesomeTTS
+  will read <samp>The grass is always ... 7 ... on the other ... 4 ...</samp>
+  as the phrase.</p>
+
 <h2>Other Notes</h2>
 
 <ul>
+    <li>Usually&mdash;but not always&mdash;TTS services will interpret an
+      ellipsis as a pause in speech, so wrapping cloze deletions and other
+      similar elements can sometimes be used to offset such items from their
+      surrounding context.  Your mileage will vary depending on sentence
+      structure, service used, and options selected.</li>
     <li>AwesomeTTS will always remove <code>[sound]</code> tags and HTML from
       either kind of input source.</li>
     <li>Bracketed text is treated separately from cloze deletion placeholder
@@ -154,10 +171,14 @@
               user</strong></li>
             <li>removal of any curly-braced text, <strong>if enabled by the
               user</strong></li>
-            <li>removal of any specifically-blacklisted characters, <strong>as
+            <li>removal of any specifically-targeted characters, <strong>as
               directed by the user</strong></li>
-            <li>collapse of any excess ellipses (e.g. from adjacent cloze
-              deletion template substitutions), <strong>always</strong></li>
+            <li>counting of any specifically-targeted characters, <strong>as
+              directed by the user</strong></li>
+            <li>substitution of any specifically-targeted characters with
+              ellipses, <strong>as directed by the user</strong></li>
+            <li>collapse of any excess ellipses (e.g. from preceding options),
+              <strong>always</strong></li>
             <li>collapse of any contiguous whitespace to a single space,
               <strong>always</strong></li>
             <li>removal of leading or trailing whitespace,

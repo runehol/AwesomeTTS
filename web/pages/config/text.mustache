@@ -144,10 +144,8 @@
       of text only remove up to the first closing symbol; e.g. <kbd>Hello
       (greeting) world (place)!</kbd> would yield <samp>Hello world !</samp>
       if removal of parentheses is enabled.</li>
-    <li>If you opt to remove text within multiple different symbol types
-      <em>and</em> you use overlapping symbols in your input, you may get
-      unusual results. For such cases, AwesomeTTS will remove parentheses
-      first, followed by brackets, then braces; e.g. <kbd>Hello world!
+    <li>Neither nested nor overlapping symbols are supported, and you may get
+      unexpected results with such input. For example, <kbd>Hello world!
       (English {somewhat) informal}</kbd> would yield <samp>Hello world!
       informal}</samp> once the parentheses are removed.</li>
     <li>

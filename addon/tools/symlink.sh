@@ -20,7 +20,7 @@
 
 if [ -z "$1" ]
 then
-    echo "Please specify your Anki addons directory." 1>&2
+    echo 'Please specify your Anki addons directory.' 1>&2
     echo 1>&2
     echo "    Usage: $0 <target>" 1>&2
     echo "     e.g.: $0 ~/Anki/addons" 1>&2
@@ -54,19 +54,19 @@ fi
 
 if [ -f "$target/awesometts/config.db" ]
 then
-    echo "Saving configuration.."
+    echo 'Saving configuration...'
     saveConf=$(mktemp /tmp/config.db.XXXXXXXXXX)
     cp -v "$target/awesometts/config.db" "$saveConf"
 fi
 
-echo "Cleaning up.."
+echo 'Cleaning up...'
 rm -fv "$target/AwesomeTTS.py"*
 rm -rfv "$target/awesometts"
 
 oldPwd=$PWD
 cd "$(dirname "$0")/.."
 
-echo "Linking.."
+echo 'Linking...'
 ln -sv "$PWD/AwesomeTTS.py" "$target"
 ln -sv "$PWD/awesometts" "$target"
 
@@ -74,6 +74,6 @@ cd "$oldPwd"
 
 if [ -n "$saveConf" ]
 then
-    echo "Restoring configuration.."
+    echo 'Restoring configuration...'
     mv -v "$saveConf" "$target/awesometts/config.db"
 fi

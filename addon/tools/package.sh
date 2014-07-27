@@ -20,7 +20,7 @@
 
 if [ -z "$1" ]
 then
-    echo "Please specify where you want to save the package." 1>&2
+    echo 'Please specify where you want to save the package.' 1>&2
     echo 1>&2
     echo "    Usage: $0 <target>" 1>&2
     echo "     e.g.: $0 ~/AwesomeTTS.zip" 1>&2
@@ -48,14 +48,14 @@ esac
 
 if [ -e "$target" ]
 then
-    echo "Removing old package.."
+    echo 'Removing old package...'
     rm -fv "$target"
 fi
 
 oldPwd=$PWD
 cd "$(dirname "$0")/.."
 
-echo "Packing zip file.."
+echo 'Packing zip file...'
 zip -9R "$target" awesometts/LICENSE.txt \*.js \*.mp3 \*.py
 
 cd "$oldPwd"

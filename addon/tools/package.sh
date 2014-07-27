@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if [ "$1" != *".zip" ]
+if [ -z "$1" ]
 then
     echo "Please specify where you want to save the package." 1>&2
     echo 1>&2
@@ -28,6 +28,15 @@ then
 fi
 
 target=$1
+
+case $target in
+    *.zip)
+        ;;
+
+    *)
+        echo 'Expected target path to end in a ".zip" extension.' 1>&2
+        exit 1
+esac
 
 case $target in
     /*)

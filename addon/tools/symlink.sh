@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if [[ -z "$1" ]]
+if [ -z "$1" ]
 then
     echo "Please specify your Anki addons directory." 1>&2
     echo 1>&2
@@ -28,24 +28,24 @@ then
 fi
 
 target=$1
-if [[ "$target" != "/"* ]]
+if [ "$target" != "/"* ]
 then
 	target=$PWD/$target
 fi
 
-if [[ "$target" != *"/addons"* ]]
+if [ "$target" != *"/addons"* ]
 then
     echo "$target does not include '/addons', which should be present." 1>&2
     exit 1
 fi
 
-if [[ ! -d "$target" ]]
+if [ ! -d "$target" ]
 then
     echo "$target is not a directory." 1>&2
     exit 1
 fi
 
-if [[ -f "$target/awesometts/config.db" ]]
+if [ -f "$target/awesometts/config.db" ]
 then
     echo "Saving configuration.."
     saveConf=$(mktemp /tmp/config.db.XXXXXXXXXX)
@@ -53,7 +53,7 @@ then
 fi
 
 echo "Cleaning up.."
-rm -fv "$target/AwesomeTTS.py"{,c,o}
+rm -fv "$target/AwesomeTTS.py"*
 rm -rfv "$target/awesometts"
 
 oldPwd=$PWD
@@ -65,7 +65,7 @@ ln -sv "$PWD/awesometts" "$target"
 
 cd "$oldPwd"
 
-if [[ -n "$saveConf" ]]
+if [ -n "$saveConf" ]
 then
     echo "Restoring configuration.."
     mv -v "$saveConf" "$target/awesometts/config.db"

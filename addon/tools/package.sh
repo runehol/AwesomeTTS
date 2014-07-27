@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if [[ "$1" != *".zip" ]]
+if [ "$1" != *".zip" ]
 then
     echo "Please specify where you want to save the package." 1>&2
     echo 1>&2
@@ -28,12 +28,12 @@ then
 fi
 
 target=$1
-if [[ "$target" != "/"* ]]
+if [ "$target" != "/"* ]
 then
 	target=$PWD/$target
 fi
 
-if [[ -e "$target" ]]
+if [ -e "$target" ]
 then
     echo "Removing old package.."
     rm -fv "$target"

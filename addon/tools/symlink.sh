@@ -28,6 +28,16 @@ then
 fi
 
 target=$1
+
+case $target in
+    */addons*)
+        ;;
+
+    *)
+        echo 'Expected "/addons" to appear somewhere in target path.' 1>&2
+        exit 1
+esac
+
 case $target in
     /*)
         ;;
@@ -35,12 +45,6 @@ case $target in
     *)
         target=$PWD/$target
 esac
-
-if [ "$target" != *"/addons"* ]
-then
-    echo "$target does not include '/addons', which should be present." 1>&2
-    exit 1
-fi
 
 if [ ! -d "$target" ]
 then

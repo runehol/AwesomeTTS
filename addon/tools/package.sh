@@ -28,6 +28,7 @@ then
 fi
 
 target=$1
+
 case $target in
     /*)
         ;;

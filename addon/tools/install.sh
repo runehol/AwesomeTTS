@@ -63,11 +63,11 @@ echo "Installing.."
 cp -v AwesomeTTS.py "$target/AwesomeTTS.py"
 mkdir -v "$target/awesometts"
 cp -v awesometts/LICENSE.txt "$target/awesometts"
-cp -v awesometts/*.py "$target/awesometts"
+cp -v awesometts/*.mp3 awesometts/*.py "$target/awesometts"
 mkdir -v "$target/awesometts/gui"
 cp -v awesometts/gui/*.py "$target/awesometts/gui"
 mkdir -v "$target/awesometts/service"
-cp -v awesometts/service/*.py awesometts/service/*.js "$target/awesometts/service"
+cp -v awesometts/service/*.js awesometts/service/*.py "$target/awesometts/service"
 
 cd "$oldPwd"
 

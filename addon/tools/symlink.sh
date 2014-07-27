@@ -28,10 +28,13 @@ then
 fi
 
 target=$1
-if [ "$target" != "/"* ]
-then
-	target=$PWD/$target
-fi
+case $target in
+    /*)
+        ;;
+
+    *)
+        target=$PWD/$target
+esac
 
 if [ "$target" != *"/addons"* ]
 then

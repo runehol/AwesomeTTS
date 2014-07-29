@@ -1,0 +1,876 @@
+# -*- coding: utf-8 -*-
+# pylint:disable=bad-continuation
+
+# AwesomeTTS text-to-speech add-on for Anki
+#
+# Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2012  Arthur Helfstein Fragoso
+# Copyright (C) 2013-2014  Dave Shifflett
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+File generation dialogs
+"""
+
+__all__ = ['BrowserGenerator', 'EditorGenerator']
+
+from re import compile as re
+from PyQt4 import QtCore, QtGui
+
+from .base import Dialog, ServiceDialog
+
+
+class BrowserGenerator(ServiceDialog):
+    """
+    Provides a dialog for generating many media files to multiple cards
+    from the card browser.
+    """
+
+    HELP_USAGE_DESC = "Adding audio to multiple notes"
+
+    HELP_USAGE_SLUG = 'browser'
+
+    INTRO = (
+        "AwesomeTTS will scan the %d note%s selected in the Browser, "
+        "determine %s both fields, store the audio in your collection, and "
+        "update the destination with either a [sound] tag or filename."
+    )
+
+    _RE_WHITESPACE = re(r'\s+')
+
+    __slots__ = [
+        '_browser',       # reference to the current Anki browser window
+        '_notes',         # list of Note objects selected when window opened
+        '_process',       # state during processing; see accept() method below
+    ]
+
+    def __init__(self, browser, *args, **kwargs):
+        """
+        Sets our title.
+        """
+
+        self._browser = browser
+        self._notes = None  # set in show()
+        self._process = None  # set in accept()
+
+        super(BrowserGenerator, self).__init__(
+            title="Add TTS Audio to Selected Notes",
+            *args, **kwargs
+        )
+
+    # UI Construction ########################################################
+
+    def _ui_control(self):
+        """
+        Returns the superclass's text and preview buttons, adding our
+        inputs to control the mass generation process, and then the base
+        class's cancel/OK buttons.
+        """
+
+        header = QtGui.QLabel("Fields and Handling")
+        header.setFont(self._FONT_HEADER)
+
+        intro = QtGui.QLabel(self.INTRO)
+        intro.setObjectName('intro')
+        intro.setWordWrap(True)
+
+        note = QtGui.QLabel(
+            "To adjust handling of cloze or parenthetical text, go to Tools "
+            "> AwesomeTTS > Text from the main window."
+        )
+        note.setTextFormat(QtCore.Qt.PlainText)
+        note.setWordWrap(True)
+
+        warning = QtGui.QLabel()
+        warning.setMinimumHeight(60)  # despite adjustSize(), OS X misbehaves
+        warning.setObjectName('warning')
+        warning.setWordWrap(True)
+
+        layout = super(BrowserGenerator, self)._ui_control()
+        layout.addWidget(header)
+        layout.addWidget(intro)
+        layout.addWidget(note)
+        layout.addLayout(self._ui_control_fields())
+        layout.addWidget(self._ui_control_handling())
+        layout.addWidget(warning)
+        layout.addWidget(self._ui_buttons())
+
+        return layout
+
+    def _ui_control_fields(self):
+        """
+        Returns a grid layout with the source and destination fields.
+
+        Note that populating the field dropdowns is deferred to the
+        show() event handler because the available fields might change
+        from call to call.
+        """
+
+        source_label = QtGui.QLabel("Source Field:")
+        source_label.setFont(self._FONT_LABEL)
+
+        source_dropdown = QtGui.QComboBox()
+        source_dropdown.setObjectName('source')
+
+        dest_label = QtGui.QLabel("Destination Field:")
+        dest_label.setFont(self._FONT_LABEL)
+
+        dest_dropdown = QtGui.QComboBox()
+        dest_dropdown.setObjectName('dest')
+
+        layout = QtGui.QGridLayout()
+        layout.addWidget(source_label, 0, 0)
+        layout.addWidget(source_dropdown, 0, 1)
+        layout.addWidget(dest_label, 1, 0)
+        layout.addWidget(dest_dropdown, 1, 1)
+
+        return layout
+
+    def _ui_control_handling(self):
+        """
+        Return the append/overwrite radio buttons and behavior checkbox.
+        """
+
+        append = QtGui.QRadioButton(
+            "&Append [sound:xxx] Tag onto Destination Field"
+        )
+        append.setObjectName('append')
+        append.toggled.connect(self._on_handling_toggled)
+
+        overwrite = QtGui.QRadioButton(
+            "Over&write the Destination Field w/ Media Filename"
+        )
+        overwrite.setObjectName('overwrite')
+        overwrite.toggled.connect(self._on_handling_toggled)
+
+        behavior = QtGui.QCheckBox()
+        behavior.setObjectName('behavior')
+        behavior.stateChanged.connect(
+            lambda status: self._on_handling_or_behavior_changed(),
+        )
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(append)
+        layout.addWidget(overwrite)
+        layout.addSpacing(self._SPACING)
+        layout.addWidget(behavior)
+
+        widget = QtGui.QWidget()
+        widget.setLayout(layout)
+
+        return widget
+
+    def _ui_buttons(self):
+        """
+        Adjust title of the OK button.
+        """
+
+        buttons = super(BrowserGenerator, self)._ui_buttons()
+        buttons.findChild(QtGui.QAbstractButton, 'okay').setText("&Generate")
+
+        return buttons
+
+    # Events #################################################################
+
+    def show(self, *args, **kwargs):
+        """
+        Populate the source and destination dropdowns, recall the
+        handling and behavior inputs, and focus the source dropdown.
+
+        Note that the fields are dumped and repopulated each time,
+        because the list of fields might change between displays of the
+        window.
+        """
+
+        self._notes = [
+            self._browser.mw.col.getNote(note_id)
+            for note_id in self._browser.selectedNotes()
+        ]
+
+        self.findChild(QtGui.QLabel, 'intro').setText(
+            self.INTRO % (
+                len(self._notes),
+                "s" if len(self._notes) != 1 else "",
+                "which have" if len(self._notes) != 1 else "if it has",
+            )
+        )
+
+        fields = sorted({
+            field
+            for note in self._notes
+            for field in note.keys()
+        })
+
+        config = self._addon.config
+
+        source = self.findChild(QtGui.QComboBox, 'source')
+        source.clear()
+        for field in fields:
+            source.addItem(field, field)
+        source.setCurrentIndex(
+            max(source.findData(config['last_mass_source']), 0)
+        )
+
+        dest = self.findChild(QtGui.QComboBox, 'dest')
+        dest.clear()
+        for field in fields:
+            dest.addItem(field, field)
+        dest.setCurrentIndex(
+            max(dest.findData(config['last_mass_dest']), 0)
+        )
+
+        self.findChild(
+            QtGui.QRadioButton,
+            'append' if self._addon.config['last_mass_append']
+            else 'overwrite',
+        ).setChecked(True)
+
+        self.findChild(QtGui.QCheckBox, 'behavior') \
+            .setChecked(self._addon.config['last_mass_behavior'])
+
+        super(BrowserGenerator, self).show(*args, **kwargs)
+
+        source.setFocus()
+
+    def accept(self):
+        """
+        Check to make sure that we have at least one note, pull the
+        service options, and kick off the processing.
+        """
+
+        now = self._get_all()
+        source = now['last_mass_source']
+        dest = now['last_mass_dest']
+        append = now['last_mass_append']
+        behavior = now['last_mass_behavior']
+
+        eligible_notes = [
+            note
+            for note in self._notes
+            if source in note.keys() and dest in note.keys()
+        ]
+
+        if not eligible_notes:
+            self._alerts(
+                "Of the %d notes selected in the browser, none have both "
+                "'%s' and '%s' fields." % (len(self._notes), source, dest)
+                if len(self._notes) > 1
+                else "The selected note does not have both '%s' and '%s'"
+                    "fields." % (source, dest),
+                self,
+            )
+            return
+
+        self._disable_inputs()
+
+        svc_id = now['last_service']
+        options = now['last_options'][now['last_service']]
+
+        self._process = {
+            'all': now,
+            'aborted': False,
+            'progress': _Progress(
+                maximum=len(eligible_notes),
+                on_cancel=self._accept_abort,
+                title="Generating MP3s",
+                addon=self._addon,
+                parent=self,
+            ),
+            'service': {
+                'id': svc_id,
+                'options': options,
+            },
+            'fields': {
+                'source': source,
+                'dest': dest,
+            },
+            'handling': {
+                'append': append,
+                'behavior': behavior,
+            },
+            'queue': eligible_notes,
+            'counts': {
+                'total': len(self._notes),
+                'elig': len(eligible_notes),
+                'skip': len(self._notes) - len(eligible_notes),
+                'done': 0,  # all notes processed
+                'okay': 0,  # calls which resulted in a successful MP3
+                'fail': 0,  # calls which resulted in an exception
+            },
+            'exceptions': {},
+            'throttling': {
+                'calls': 0,  # number of cache misses in this batch
+                'sleep': self._addon.config['throttle_sleep'],
+                'threshold': self._addon.config['throttle_threshold'],
+            } if self._addon.router.has_trait(svc_id,
+                self._addon.router.Trait.INTERNET) else False,
+        }
+
+        self._browser.mw.checkpoint("AwesomeTTS Batch Update")
+        self._process['progress'].show()
+        self._browser.model.beginReset()
+
+        self._accept_next()
+
+    def _accept_abort(self):
+        """
+        Flags that the user has requested that processing stops.
+        """
+
+        self._process['aborted'] = True
+
+    def _accept_next(self):
+        """
+        Pop the next note off the queue, if not throttled, and process.
+        """
+
+        self._accept_update()
+
+        if self._process['aborted'] or not self._process['queue']:
+            self._accept_done()
+            return
+
+        if (
+            self._process['throttling'] and
+            self._process['throttling']['calls'] >=
+            self._process['throttling']['threshold']
+        ):
+            self._process['throttling']['countdown'] = \
+                self._process['throttling']['sleep']
+
+            timer = QtCore.QTimer()
+            self._process['throttling']['timer'] = timer
+
+            timer.timeout.connect(self._accept_throttled)
+            timer.setInterval(1000)
+            timer.start()
+            return
+
+        note = self._process['queue'].pop(0)
+        phrase = note[self._process['fields']['source']]
+        phrase = self._addon.strip.from_note(phrase)
+        self._accept_update(phrase)
+
+        def done():
+            """Count the processed note."""
+
+            self._process['counts']['done'] += 1
+
+        def okay(path):
+            """Count the success and update the note."""
+
+            filename = self._browser.mw.col.media.addFile(path)
+            dest = self._process['fields']['dest']
+
+            if self._process['handling']['append']:
+                if self._process['handling']['behavior']:
+                    note[dest] = (
+                        self._addon.strip.sounds(note[dest]).strip() +
+                        ' [sound:%s]' % filename
+                    )
+                elif filename not in note[dest]:
+                    note[dest] += ' [sound:%s]' % filename
+
+            else:
+                if self._process['handling']['behavior']:
+                    note[dest] = '[sound:%s]' % filename
+                else:
+                    note[dest] = filename
+
+            self._process['counts']['okay'] += 1
+            note.flush()
+
+        def fail(exception):
+            """Count the failure and the unique message."""
+
+            self._process['counts']['fail'] += 1
+
+            message = exception.message
+            if isinstance(message, basestring):
+                message = self._RE_WHITESPACE.sub(' ', message).strip()
+
+            try:
+                self._process['exceptions'][message] += 1
+            except KeyError:
+                self._process['exceptions'][message] = 1
+
+        callbacks = dict(
+            done=done, okay=okay, fail=fail,
+
+            # The call to _accept_next() is done via a single-shot QTimer for
+            # a few reasons: keep the UI responsive, avoid a "maximum
+            # recursion depth exceeded" exception if we hit a string of cached
+            # files, and allow time to respond to a "cancel".
+            then=lambda: QtCore.QTimer.singleShot(0, self._accept_next),
+        )
+
+        if self._process['throttling']:
+            def miss(count):
+                """Count the cache miss."""
+
+                self._process['throttling']['calls'] += count
+
+            callbacks['miss'] = miss
+
+        self._addon.router(
+            svc_id=self._process['service']['id'],
+            text=phrase,
+            options=self._process['service']['options'],
+            callbacks=callbacks,
+        )
+
+    def _accept_throttled(self):
+        """
+        Called for every "timeout" of the timer during a throttling.
+        """
+
+        if self._process['aborted']:
+            self._accept_done()
+            return
+
+        self._process['throttling']['countdown'] -= 1
+        self._accept_update()
+
+        if self._process['throttling']['countdown'] <= 0:
+            self._process['throttling']['timer'].stop()
+            del self._process['throttling']['countdown']
+            del self._process['throttling']['timer']
+            self._process['throttling']['calls'] = 0
+            self._accept_next()
+
+    def _accept_update(self, detail=None):
+        """
+        Update the progress bar and message.
+        """
+
+        self._process['progress'].update(
+            label="finished %d of %d%s\n"
+                  "%d successful, %d failed\n"
+                  "\n"
+                  "%s" % (
+                      self._process['counts']['done'],
+                      self._process['counts']['elig'],
+
+                      " (%d skipped)" % self._process['counts']['skip']
+                      if self._process['counts']['skip']
+                      else "",
+
+                      self._process['counts']['okay'],
+                      self._process['counts']['fail'],
+
+                      "sleeping for %d second%s" % (
+                          self._process['throttling']['countdown'],
+                          "s"
+                          if self._process['throttling']['countdown'] != 1
+                          else ""
+                      )
+                      if (
+                          self._process['throttling'] and
+                          'countdown' in self._process['throttling']
+                      )
+                      else " "
+                  ),
+            value=self._process['counts']['done'],
+            detail=detail,
+        )
+
+    def _accept_done(self):
+        """
+        Display statistics and close out the dialog.
+        """
+
+        self._browser.model.endReset()
+        self._process['progress'].accept()
+
+        messages = [
+            "The %d note%s you selected %s been processed. " % (
+                self._process['counts']['total'],
+                "s" if self._process['counts']['total'] != 1 else "",
+                "have" if self._process['counts']['total'] != 1 else "has",
+            )
+            if self._process['counts']['done'] ==
+                self._process['counts']['total']
+            else "%d of the %d note%s you selected %s processed. " % (
+                self._process['counts']['done'],
+                self._process['counts']['total'],
+                "s" if self._process['counts']['total'] != 1 else "",
+                "were" if self._process['counts']['done'] != 1 else "was",
+            ),
+
+            "%d note%s skipped for not having both the source and "
+            "destination fields. Of those remaining, " % (
+                self._process['counts']['skip'],
+                "s were" if self._process['counts']['skip'] != 1
+                else " was",
+            )
+            if self._process['counts']['skip']
+            else "During processing, "
+        ]
+
+        if self._process['counts']['fail']:
+            if self._process['counts']['okay']:
+                messages.append(
+                    "%d note%s successfully updated, but "
+                    "%d note%s failed while processing." % (
+                        self._process['counts']['okay'],
+                        "s were" if self._process['counts']['okay'] != 1
+                        else " was",
+                        self._process['counts']['fail'],
+                        "s" if self._process['counts']['fail'] != 1
+                        else "",
+                    )
+                )
+            else:
+                messages.append("no notes were successfully updated.")
+
+            messages.append("\n\n")
+
+            if len(self._process['exceptions']) == 1:
+                messages.append("The following problem was encountered:")
+                messages += [
+                    "\n%s (%d time%s)" %
+                    (message, count, "s" if count != 1 else "")
+                    for message, count
+                    in self._process['exceptions'].items()
+                ]
+            else:
+                messages.append("The following problems were encountered:")
+                messages += [
+                    "\n- %s (%d time%s)" %
+                    (message, count, "s" if count != 1 else "")
+                    for message, count
+                    in self._process['exceptions'].items()
+                ]
+
+        else:
+            messages.append("there were no errors.")
+
+        if self._process['aborted']:
+            messages.append("\n\n")
+            messages.append(
+                "You aborted processing. If you want to rollback the changes "
+                "to the notes that were already processed, use the Undo "
+                "AwesomeTTS Batch Update option from the Edit menu."
+            )
+
+        self._addon.config.update(self._process['all'])
+        self._disable_inputs(False)
+        self._notes = None
+        self._process = None
+
+        super(BrowserGenerator, self).accept()
+
+        # this alert is done by way of a singleShot() callback to avoid random
+        # crashes on Mac OS X, which happen <5% of the time if called directly
+        QtCore.QTimer.singleShot(
+            0,
+            lambda: self._alerts("".join(messages), self._browser),
+        )
+
+    def _get_all(self):
+        """
+        Adds support for fields and behavior.
+        """
+
+        source, dest, append, behavior = self._get_field_values()
+
+        return dict(
+            super(BrowserGenerator, self)._get_all().items() +
+            [
+                ('last_mass_append', append),
+                ('last_mass_behavior', behavior),
+                ('last_mass_dest', dest),
+                ('last_mass_source', source),
+            ]
+        )
+
+    def _get_field_values(self):
+        """
+        Returns the user's source and destination fields, append state,
+        and handling mode.
+        """
+
+        return (
+            self.findChild(QtGui.QComboBox, 'source').currentText(),
+            self.findChild(QtGui.QComboBox, 'dest').currentText(),
+            self.findChild(QtGui.QRadioButton, 'append').isChecked(),
+            self.findChild(QtGui.QCheckBox, 'behavior').isChecked(),
+        )
+
+    def _on_handling_toggled(self):
+        """
+        Change the text on the behavior checkbox based on the append
+        or overwrite behavior.
+        """
+
+        append = self.findChild(QtGui.QRadioButton, 'append')
+        behavior = self.findChild(QtGui.QCheckBox, 'behavior')
+        behavior.setText(
+            "Remove Existing [sound:xxx] Tag(s)" if append.isChecked()
+            else "Wrap the Filename in [sound:xxx] Tag"
+        )
+
+        self._on_handling_or_behavior_changed(append, behavior)
+
+    def _on_handling_or_behavior_changed(self, append=None, behavior=None):
+        """
+        Hide or display the warning text about bare filenames.
+        """
+
+        append = append or self.findChild(QtGui.QRadioButton, 'append')
+        behavior = behavior or self.findChild(QtGui.QCheckBox, 'behavior')
+        self.findChild(QtGui.QLabel, 'warning').setText(
+            "Please note that if you use bare filenames, the 'Check Media' "
+            "feature in Anki will not detect audio files as in-use, even if "
+            "you insert the field into your templates."
+            if not (append.isChecked() or behavior.isChecked())
+            else ""
+        )
+
+
+class EditorGenerator(ServiceDialog):
+    """
+    Provides a dialog for adding single media files from the editors.
+    """
+
+    HELP_USAGE_DESC = "Adding audio to a single note"
+
+    HELP_USAGE_SLUG = 'editor'
+
+    __slots__ = [
+        '_editor',  # reference to one of the editors in the Anki GUI
+    ]
+
+    def __init__(self, editor, *args, **kwargs):
+        """
+        Sets our title.
+        """
+
+        self._editor = editor
+        super(EditorGenerator, self).__init__(
+            title="Add TTS Audio to Note",
+            *args, **kwargs
+        )
+
+    # UI Construction ########################################################
+
+    def _ui_control(self):
+        """
+        Replaces the superclass's version of this with a version that
+        returns a "Preview and Record" header, larger text input area,
+        and preview button on its own line.
+        """
+
+        header = QtGui.QLabel("Preview and Record")
+        header.setFont(self._FONT_HEADER)
+
+        intro = QtGui.QLabel(
+            "This text will be inserted as a [sound] tag and then "
+            "synchronized along with other media in your collection."
+        )
+        intro.setTextFormat(QtCore.Qt.PlainText)
+        intro.setWordWrap(True)
+
+        text = QtGui.QPlainTextEdit()
+        text.setObjectName('text')
+        text.setTabChangesFocus(True)
+        text.keyPressEvent = lambda key_event: \
+            self.accept() if (
+                key_event.modifiers() & QtCore.Qt.ControlModifier and
+                key_event.key() in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter]
+            ) \
+            else QtGui.QPlainTextEdit.keyPressEvent(text, key_event)
+
+        button = QtGui.QPushButton("&Preview")
+        button.setObjectName('preview')
+        button.clicked.connect(self._on_preview)
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(header)
+        layout.addWidget(intro)
+        layout.addWidget(text)
+        layout.addWidget(button)
+        layout.addWidget(self._ui_buttons())
+
+        return layout
+
+    def _ui_buttons(self):
+        """
+        Adjust title of the OK button.
+        """
+
+        buttons = super(EditorGenerator, self)._ui_buttons()
+        buttons.findChild(QtGui.QAbstractButton, 'okay').setText("&Record")
+
+        return buttons
+
+    # Events #################################################################
+
+    def show(self, *args, **kwargs):
+        """
+        Focus the text area after displaying the dialog.
+        """
+
+        super(EditorGenerator, self).show(*args, **kwargs)
+
+        text = self.findChild(QtGui.QPlainTextEdit, 'text')
+        text.setFocus()
+
+        editor = self._editor
+        web = editor.web
+        from_note = self._addon.strip.from_note
+        from_unknown = self._addon.strip.from_unknown
+        try_clipboard = lambda subtype: \
+            from_unknown(QtGui.QApplication.clipboard().text(subtype)[0])
+
+        for origin in [
+            lambda: web.hasSelection and from_note(web.selectedText()),
+            lambda: from_note(web.page().mainFrame().evaluateJavaScript(
+                '$("#f%d").text()' % editor.currentField
+            )),
+            lambda: try_clipboard('html'),
+            lambda: try_clipboard('text'),
+        ]:
+            prefill = origin()
+            if prefill:
+                text.setPlainText(prefill)
+                text.selectAll()
+                break
+
+    def accept(self):
+        """
+        Given the user's options and text, calls the service to make a
+        recording. If successful, the options are remembered and the MP3
+        inserted into the field.
+        """
+
+        now = self._get_all()
+        text_input, text_value = self._get_service_text()
+        self._disable_inputs()
+
+        self._addon.router(
+            svc_id=now['last_service'],
+            text=self._addon.strip.from_user(text_value),
+            options=now['last_options'][now['last_service']],
+            callbacks=dict(
+                done=lambda: self._disable_inputs(False),
+                okay=lambda path: (
+                    self._addon.config.update(now),
+                    super(EditorGenerator, self).accept(),
+                    self._editor.addMedia(path),
+                ),
+                fail=lambda exception: (
+                    self._alerts(
+                        "The service could not record the phrase.\n\n%s" %
+                        exception.message,
+                        self,
+                    ),
+                    text_input.setFocus(),
+                ),
+            ),
+        )
+
+
+class _Progress(Dialog):
+    """
+    Provides a dialog that can be displayed while processing.
+    """
+
+    __slots__ = [
+        '_maximum'    # the value we are counting up to
+        '_on_cancel'  # callable to invoke if the user hits cancel
+    ]
+
+    def __init__(self, maximum, on_cancel, *args, **kwargs):
+        """
+        Configures our bar's maximum and registers a cancel callback.
+        """
+
+        self._maximum = maximum
+        self._on_cancel = on_cancel
+        super(_Progress, self).__init__(*args, **kwargs)
+
+    # UI Construction ########################################################
+
+    def _ui(self):
+        """
+        Builds the interface with a status label and progress bar.
+        """
+
+        self.setMinimumWidth(500)
+
+        status = QtGui.QLabel("Please wait...")
+        status.setAlignment(QtCore.Qt.AlignCenter)
+        status.setObjectName('status')
+        status.setTextFormat(QtCore.Qt.PlainText)
+        status.setWordWrap(True)
+
+        progress_bar = QtGui.QProgressBar()
+        progress_bar.setMaximum(self._maximum)
+        progress_bar.setObjectName('bar')
+
+        detail = QtGui.QLabel("")
+        detail.setAlignment(QtCore.Qt.AlignCenter)
+        detail.setFixedHeight(100)
+        detail.setFont(self._FONT_INFO)
+        detail.setObjectName('detail')
+        detail.setScaledContents(True)
+        detail.setTextFormat(QtCore.Qt.PlainText)
+        detail.setWordWrap(True)
+
+        layout = super(_Progress, self)._ui()
+        layout.addStretch()
+        layout.addWidget(status)
+        layout.addStretch()
+        layout.addWidget(progress_bar)
+        layout.addStretch()
+        layout.addWidget(detail)
+        layout.addStretch()
+        layout.addWidget(self._ui_buttons())
+
+        return layout
+
+    def _ui_buttons(self):
+        """
+        Overrides the default behavior to only have a cancel button.
+        """
+
+        buttons = QtGui.QDialogButtonBox()
+        buttons.setObjectName('buttons')
+        buttons.rejected.connect(self.reject)
+        buttons.setStandardButtons(QtGui.QDialogButtonBox.Cancel)
+        buttons.button(QtGui.QDialogButtonBox.Cancel).setAutoDefault(False)
+
+        return buttons
+
+    # Events #################################################################
+
+    def reject(self):
+        """
+        On cancel, disable the button and call our registered callback.
+        """
+
+        self.findChild(QtGui.QDialogButtonBox, 'buttons').setDisabled(True)
+        self._on_cancel()
+
+    def update(self, label, value, detail=None):
+        """
+        Update the status text and bar.
+        """
+
+        self.findChild(QtGui.QLabel, 'status').setText(label)
+        self.findChild(QtGui.QProgressBar, 'bar').setValue(value)
+        if detail:
+            self.findChild(QtGui.QLabel, 'detail').setText(detail)

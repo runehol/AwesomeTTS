@@ -1,0 +1,119 @@
+{{!
+  ! AwesomeTTS text-to-speech add-on website
+  !
+  ! Copyright (C) 2014       Anki AwesomeTTS Development Team
+  ! Copyright (C) 2014       Dave Shifflett
+  !
+  ! This program is free software: you can redistribute it and/or modify
+  ! it under the terms of the GNU Affero General Public License as
+  ! published by the Free Software Foundation, either version 3 of the
+  ! License, or (at your option) any later version.
+  !
+  ! This program is distributed in the hope that it will be useful,
+  ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ! GNU Affero General Public License for more details.
+  !
+  ! You should have received a copy of the GNU Affero General Public License
+  ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  !}}
+
+{{> above}}
+
+<p>AwesomeTTS can generate many audio files for the notes of the cards you
+  select in the browser. This method will store the generated audio files with
+  your Anki collection, allowing these to be synchronized along with your
+  cards to mobile devices.</p>
+
+<h2>Instructions</h2>
+
+<ol>
+    <li>From the card browser, highlight the cards whose notes for which you
+      would like to generate audio.</li>
+    <li>Select your desired service and configure any options.</li>
+    <li>Type a sample phrase and then click &ldquo;Preview&rdquo; to confirm
+      that your audio is as you would like it to sound.</li>
+    <li>Select the source field from the dropdown menu that you would like
+      AwesomeTTS to read from.</li>
+    <li>Select the destination field from the dropdown menu where you would
+      like AwesomeTTS to store the <samp>[sound]</samp> tag (or path).</li>
+    <li>
+        Indicate whether you would like to <em>append</em> or
+        <em>overwrite</em> this field with the result. If you want to keep
+        the text you already have, select <em>append</em>. If you want to
+        remove the text entirely and replace it with the sound, choose
+        <em>overwrite</em>.
+
+        <ul>
+            <li><em>If appending</em>, you may choose to add additional
+              <samp>[sound]</samp> tags rather than cleaning up old ones by
+              unchecking the &ldquo;remove existing&rdquo; option.</li>
+            <li><em>If overwriting</em>, you may choose to store the bare
+              path to the audio rather than the <samp>[sound]</samp> tag by
+              unchecking the &ldquo;wrap the filename&rdquo; option.<br>
+              Please note that the option to use bare paths is for backward
+              compatibility with older versions of the add-on and its use is
+              not encouraged. Anki cannot automatically detect media files as
+              in-use if you use bare paths.</li>
+        </ul>
+    </li>
+    <li>Click &ldquo;Generate&rdquo; to begin processing. You can cancel
+      processing mid-batch if you need to.</li>
+</ol>
+
+<h3>Hints</h3>
+
+<ul>
+    <li>If one of the cards&rsquo; note in your selection does not have both
+      the source and destination field as specified, it will be skipped.</li>
+    <li>AwesomeTTS can automatically filter out certain text while processing
+      your notes, like text within parentheses. How it handles cloze deletion
+      placeholders can also be adjusted depending on your needs. To see these
+      settings, go to the <a href="/config/text">Text tab of the configuration
+      screen</a>.</li>
+    <li>If you make a mistake, you can undo your batch update by going to the
+      <kbd>Edit</kbd> menu and selecting the <kbd>Undo AwesomeTTS Batch
+      Update</kbd> option.</li>
+    <li>Please note that mass generation using an online service like
+      <a href="/services/google">Google Translate</a> or
+      <a href="/services/yandex">Yandex.Translate</a> is rate-limited. By
+      default, AwesomeTTS is very conservative about the number of requests it
+      will send to these services at one time. If you do not share a public IP
+      address with anyone else, you may choose to allow more requests at once
+      by adjusting the throttling settings on the <a href="/config/mp3s">MP3s
+      tab of the configuration screen</a>.</li>
+</ul>
+
+<h3>Screenshots</h3>
+
+<div class="grid">
+    <figure style="width: 758px">
+        <img src="/usage.browser.action.png" width="758" height="518"
+          alt="Mouse hovers the &ldquo;Add Audio to Selected&rdquo; option">
+
+        <figcaption>Card browser &ldquo;Edit&rdquo; menu</figcaption>
+    </figure>
+
+    <figure style="width: 758px">
+        <img src="/usage.browser.screen.png" width="758" height="518"
+          alt="Mouse hovers the &ldquo;Generate&rdquo; button">
+
+        <figcaption>Mass generator dialog</figcaption>
+    </figure>
+
+    <figure style="width: 758px">
+        <img src="/usage.browser.success.png" width="758" height="518"
+          alt="Confirmation dialog announcing successful processing">
+
+        <figcaption>Confirmation dialog</figcaption>
+    </figure>
+
+    <figure style="width: 758px">
+        <img src="/usage.browser.yield.png" width="758" height="518"
+          alt="Example note with a new [sound] tag in one of the fields">
+
+        <figcaption>Example note afterward</figcaption>
+    </figure>
+</div>
+
+{{> below}}

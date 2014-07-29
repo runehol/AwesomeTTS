@@ -376,8 +376,12 @@ class BrowserGenerator(ServiceDialog):
 
             if self._process['handling']['append']:
                 if self._process['handling']['behavior']:
-                    note[dest] = self._addon.strip.sounds(note[dest]).strip()
-                note[dest] += ' [sound:%s]' % filename
+                    note[dest] = (
+                        self._addon.strip.sounds(note[dest]).strip() +
+                        ' [sound:%s]' % filename
+                    )
+                elif filename not in note[dest]:
+                    note[dest] += ' [sound:%s]' % filename
 
             else:
                 if self._process['handling']['behavior']:

@@ -30,6 +30,8 @@ from PyQt4 import QtCore, QtGui
 
 from .base import Dialog
 
+_NO_SCROLLBAR = QtCore.Qt.ScrollBarAlwaysOff
+
 
 class Updater(Dialog):
     """
@@ -101,6 +103,7 @@ class Updater(Dialog):
             list_widget = QtGui.QListWidget()
             for note in self._info['notes']:
                 list_widget.addItem(QtGui.QListWidgetItem(list_icon, note))
+            list_widget.setHorizontalScrollBarPolicy(_NO_SCROLLBAR)
             list_widget.setWordWrap(True)
             layout.addWidget(list_widget)
 

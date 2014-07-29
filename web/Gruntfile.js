@@ -414,11 +414,12 @@ module.exports = function (grunt) {
             {url: '/robots\\.txt', static_files: 'robots.txt',
               upload: 'robots\\.txt', expiration: '35d'},
 
-            // TODO always-changing /api/update/xxx URLs; initially...
-            //      /api/update/abc123-1.0.0     => good-version.json
-            //      /api/update/abc123-1.0.0-dev => need-newer.json
-            //      /api/update/abc123-1.0.0-pre => need-newer.json
-
+            {url: '/api/update/[a-z\\d]+-1\\.0\\.0',
+              static_files: 'api/update/good-version.json',
+              upload: 'api/update/good-version\\.json'},
+            {url: '/api/update/[a-z\\d]+-1\\.0\\.0-(dev|pre)',
+              static_files: 'api/update/need-newer.json',
+              upload: 'api/update/need-newer\\.json'},
             {url: '/api/update/[a-z\\d]+-\\d+\\.\\d+\\.\\d+-(dev|pre)',
               static_files: 'api/update/unreleased.json',
               upload: 'api/update/unreleased\\.json'},

@@ -2,10 +2,16 @@
     "auto": true,
     "intro": "This is the first non-beta release of the add-on.",
     "notes": [
-        "Automatic update detection",
-        "Configurable string substitution and stripping",
-        "Easier single-note generator",
-        "Yandex.Translate"
+        "Yandex.Translate playback and recording support",
+        "Easier-to-use single-note generator",
+        "Browser generator can be stopped mid-batch",
+        "Compatibile with Handy Answer Key Shortcuts add-on",
+        "Automatic update support",
+        "Long phrase support for Google Translate",
+        "Fixes for some SAPI 5 TTS engines",
+        "Support for delaying playback of audio",
+        "Strip some special strings and symbols from input",
+        "Improved messaging for Google Translate HTTP 503 errors"
     ],
     "synopsis": "Users will want to update for access to automatic updates.",
     "update": true,

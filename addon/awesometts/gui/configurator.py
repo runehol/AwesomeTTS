@@ -44,7 +44,10 @@ class Configurator(Dialog):
         'debug_stdout', 'delay_answers_onthefly', 'delay_answers_stored_ours',
         'delay_answers_stored_theirs', 'delay_questions_onthefly',
         'delay_questions_stored_ours', 'delay_questions_stored_theirs',
-        'lame_flags', 'strip_note_braces', 'strip_note_brackets',
+        'lame_flags', 'spec_note_strip', 'spec_note_ellipsize',
+        'spec_template_ellipsize', 'spec_note_count', 'spec_note_count_wrap',
+        'spec_template_count', 'spec_template_count_wrap',
+        'spec_template_strip', 'strip_note_braces', 'strip_note_brackets',
         'strip_note_parens', 'strip_template_braces',
         'strip_template_brackets', 'strip_template_parens', 'sub_note_cloze',
         'sub_template_cloze', 'throttle_sleep', 'throttle_threshold',
@@ -130,8 +133,6 @@ class Configurator(Dialog):
         Returns the "Playback" tab.
         """
 
-        intro = QtGui.QLabel("Control how playback is handled.")
-
         notes = QtGui.QLabel("For [sound] tags, whether or not automatic "
           "playback is enabled is controlled on a per-deck basis, and can be "
           "played on-demand by striking R or F5.")
@@ -139,8 +140,6 @@ class Configurator(Dialog):
         notes.setWordWrap(True)
 
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(intro)
-        layout.addSpacing(self._SPACING)
         layout.addWidget(self._ui_tabs_playback_group(
             'automatic_questions',
             'tts_key_q',
@@ -231,25 +230,16 @@ class Configurator(Dialog):
         Returns the "Text" tab.
         """
 
-        intro = QtGui.QLabel("Configure how AwesomeTTS processes text.")
-
-        notes = QtGui.QLabel(
-            "AwesomeTTS will always automatically strip [sound] tags and "
-            "HTML from both template text and note fields."
-        )
-        notes.setWordWrap(True)
-
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(intro)
-        layout.addSpacing(self._SPACING)
         layout.addWidget(self._ui_tabs_text_mode(
             '_template_',
             "Handling Template Text (e.g. On-the-Fly)",
+            "For a front-side rendered cloze,",
             [
-                ('anki', "read however Anki displayed them"),
-                ('wrap', "read w/ hints wrapped in ellipses"),
-                ('ellipsize', "read as an ellipsis, ignoring hints"),
-                ('remove', "removed entirely"),
+                ('anki', "read however Anki displayed it"),
+                ('wrap', "read w/ hint wrapped in ellipses"),
+                ('ellipsize', "read as an ellipsis, ignoring hint"),
+                ('remove', "remove entirely"),
             ],
             [
                 ('parens', "parenthetical text, e.g. (generally formal)"),
@@ -260,11 +250,13 @@ class Configurator(Dialog):
         layout.addWidget(self._ui_tabs_text_mode(
             '_note_',
             "Handling Text from a Note Field (e.g. Browser Generator)",
+            "For a braced cloze marker,",
             [
-                ('anki', "read like Anki would display them"),
-                ('wrap', "read w/ hints wrapped in ellipses"),
-                ('ellipsize', "read as an ellipsis, ignoring hints"),
-                ('remove', "removed entirely"),
+                ('anki', "read as Anki would display on a card front"),
+                ('wrap', "replace w/ hint wrapped in ellipses"),
+                ('deleted', "replace w/ deleted text"),
+                ('ellipsize', "replace w/ ellipsis, ignoring both"),
+                ('remove', "remove entirely"),
             ],
             [
                 ('parens', "parenthetical text, e.g. (casual only)"),
@@ -272,8 +264,6 @@ class Configurator(Dialog):
                 ('braces', "curly-braced text, e.g. {usually plural}"),
             ],
         ))
-        layout.addSpacing(self._SPACING)
-        layout.addWidget(notes)
         layout.addStretch()
 
         tab = QtGui.QWidget()
@@ -281,7 +271,8 @@ class Configurator(Dialog):
 
         return tab
 
-    def _ui_tabs_text_mode(self, infix, label, cloze_options, strip_options):
+    def _ui_tabs_text_mode(self, infix, label, cloze_description,
+                           cloze_options, strip_options):
         """
         Returns the given checkbox options for controlling whether to
         strip from certain parenthetical text. Optionally, additional
@@ -289,15 +280,13 @@ class Configurator(Dialog):
         passing the optional parameters.
         """
 
-        when = QtGui.QLabel("Cloze placeholders should be")
-
         select = QtGui.QComboBox()
         for option_value, option_text in cloze_options:
             select.addItem(option_text, option_value)
         select.setObjectName(infix.join(['sub', 'cloze']))
 
         horizontal = QtGui.QHBoxLayout()
-        horizontal.addWidget(when)
+        horizontal.addWidget(QtGui.QLabel(cloze_description))
         horizontal.addWidget(select)
         horizontal.addStretch()
 
@@ -309,17 +298,73 @@ class Configurator(Dialog):
             checkbox.setObjectName(infix.join(['strip', option_subkey]))
             layout.addWidget(checkbox)
 
+        layout.addLayout(self._ui_tabs_text_mode_specific(
+            infix,
+            'strip',
+            ("Remove all", "characters from the input"),
+        ))
+        layout.addLayout(self._ui_tabs_text_mode_specific(
+            infix,
+            'count',
+            ("Count adjacent", "characters"),
+            True,
+        ))
+        layout.addLayout(self._ui_tabs_text_mode_specific(
+            infix,
+            'ellipsize',
+            ("Replace", "characters with an ellipsis"),
+        ))
+
         group = QtGui.QGroupBox(label)
         group.setLayout(layout)
 
         return group
 
+    def _ui_tabs_text_mode_specific(self, infix, suffix, labels, wrap=False):
+        """Returns a layout for specific character handling."""
+
+        line_edit = QtGui.QLineEdit()
+        line_edit.setObjectName(infix.join(['spec', suffix]))
+        line_edit.setValidator(self._ui_tabs_text_mode_specific.ucsv)
+        line_edit.setFixedWidth(50)
+
+        horizontal = QtGui.QHBoxLayout()
+        horizontal.addWidget(QtGui.QLabel(labels[0]))
+        horizontal.addWidget(line_edit)
+        horizontal.addWidget(QtGui.QLabel(labels[1]))
+
+        if wrap:
+            checkbox = QtGui.QCheckBox("wrap in ellipses")
+            checkbox.setObjectName(''.join(['spec', infix, suffix, '_wrap']))
+            horizontal.addWidget(checkbox)
+
+        horizontal.addStretch()
+
+        return horizontal
+
+    class _UniqueCharacterStringValidator(QtGui.QValidator):
+        """
+        Provides a QValidator-compliant class that returns a string of
+        unique, sorted characters containing no whitespace.
+        """
+
+        def fixup(self, original):
+            """Returns unique characters from original, sorted."""
+
+            return ''.join(sorted({c for c in original if not c.isspace()}))
+
+        def validate(self, original, offset):  # pylint:disable=W0613
+            """Fixes original text and resets cursor to end of line."""
+
+            filtered = self.fixup(original)
+            return QtGui.QValidator.Acceptable, filtered, len(filtered)
+
+    _ui_tabs_text_mode_specific.ucsv = _UniqueCharacterStringValidator()
+
     def _ui_tabs_mp3gen(self):
         """
         Returns the "MP3s" tab.
         """
-
-        intro = QtGui.QLabel("Control how MP3s are generated.")
 
         notes = QtGui.QLabel(
             "As of Beta 11, AwesomeTTS will no longer generate filenames "
@@ -330,7 +375,6 @@ class Configurator(Dialog):
         notes.setWordWrap(True)
 
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(intro)
         layout.addWidget(notes)
         layout.addSpacing(self._SPACING)
         layout.addWidget(self._ui_tabs_mp3gen_lame())
@@ -431,11 +475,7 @@ class Configurator(Dialog):
         Returns the "Advanced" tab.
         """
 
-        intro = QtGui.QLabel("Set advanced options or clear the media cache.")
-
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(intro)
-        layout.addSpacing(self._SPACING)
         layout.addWidget(self._ui_tabs_advanced_update())
         layout.addWidget(self._ui_tabs_advanced_debug())
         layout.addWidget(self._ui_tabs_advanced_cache())

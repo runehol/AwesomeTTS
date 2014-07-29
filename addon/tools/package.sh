@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -18,9 +18,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if [[ "$1" != *".zip" ]]
+if [ -z "$1" ]
 then
-    echo "Please specify where you want to save the package." 1>&2
+    echo 'Please specify where you want to save the package.' 1>&2
     echo 1>&2
     echo "    Usage: $0 <target>" 1>&2
     echo "     e.g.: $0 ~/AwesomeTTS.zip" 1>&2
@@ -28,21 +28,34 @@ then
 fi
 
 target=$1
-if [[ "$target" != "/"* ]]
-then
-	target=$PWD/$target
-fi
 
-if [[ -e "$target" ]]
+case $target in
+    *.zip)
+        ;;
+
+    *)
+        echo 'Expected target path to end in a ".zip" extension.' 1>&2
+        exit 1
+esac
+
+case $target in
+    /*)
+        ;;
+
+    *)
+        target=$PWD/$target
+esac
+
+if [ -e "$target" ]
 then
-    echo "Removing old package.."
+    echo 'Removing old package...'
     rm -fv "$target"
 fi
 
 oldPwd=$PWD
 cd "$(dirname "$0")/.."
 
-echo "Packing zip file.."
-zip -9R "$target" awesometts/LICENSE.txt \*.js \*.mp3 \*.py
+echo 'Packing zip file...'
+zip -9R "$target" awesometts/LICENSE.txt \*.js awesometts/\*.mp3 \*.py
 
 cd "$oldPwd"

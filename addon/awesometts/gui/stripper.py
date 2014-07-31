@@ -113,7 +113,7 @@ class BrowserStripper(Dialog):
                              for note in self._notes
                              for field in note.keys()}):
             checkbox = QtGui.QCheckBox(field)
-            checkbox.setObjectName('field_' + field)
+            checkbox.attsFieldName = field
             layout.addWidget(checkbox)
 
         panel = QtGui.QWidget()
@@ -145,10 +145,25 @@ class BrowserStripper(Dialog):
         for [sound] tags, stripping the ones requested by the user.
         """
 
-        # TODO read back options
-        # TODO iterate over _notes and update as requested
-        # TODO serialize back to config
+        fields = [
+            checkbox.attsFieldName
+            for checkbox in self.findChildren(QtGui.QCheckBox)
+            if checkbox.isChecked()
+        ]
 
+        if not fields:
+            self._alerts("You must select at least one field.", self)
+            return
+
+        mode = next(
+            radio.objectName()
+            for radio in self.findChildren(QtGui.QRadioButton)
+            if radio.isChecked()
+        )
+
+        # TODO iterate over _notes and update as requested
+
+        self._addon.config['last_strip_mode'] = mode
         self._notes = None
 
         super(BrowserStripper, self).accept()

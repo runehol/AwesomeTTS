@@ -41,18 +41,12 @@ class BrowserGenerator(ServiceDialog):
 
     HELP_USAGE_SLUG = 'browser'
 
-    INTRO = (
-        "AwesomeTTS will scan the %d note%s selected in the Browser, "
-        "determine %s both fields, store the audio in your collection, and "
-        "update the destination with either a [sound] tag or filename."
-    )
-
     _RE_WHITESPACE = re(r'\s+')
 
     __slots__ = [
-        '_browser',       # reference to the current Anki browser window
-        '_notes',         # list of Note objects selected when window opened
-        '_process',       # state during processing; see accept() method below
+        '_browser',  # reference to the current Anki browser window
+        '_notes',    # list of Note objects selected when window opened
+        '_process',  # state during processing; see accept() method below
     ]
 
     def __init__(self, browser, *args, **kwargs):
@@ -81,7 +75,7 @@ class BrowserGenerator(ServiceDialog):
         header = QtGui.QLabel("Fields and Handling")
         header.setFont(self._FONT_HEADER)
 
-        intro = QtGui.QLabel(self.INTRO)
+        intro = QtGui.QLabel()  # see show() for where the text is initialized
         intro.setObjectName('intro')
         intro.setWordWrap(True)
 
@@ -199,7 +193,10 @@ class BrowserGenerator(ServiceDialog):
         ]
 
         self.findChild(QtGui.QLabel, 'intro').setText(
-            self.INTRO % (
+            "AwesomeTTS will scan the %d note%s selected in the Browser, "
+            "determine %s both fields, store the audio in your collection, "
+            "and update the destination with a [sound] tag or filename." %
+            (
                 len(self._notes),
                 "s" if len(self._notes) != 1 else "",
                 "which have" if len(self._notes) != 1 else "if it has",

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -158,7 +157,7 @@ class BrowserGenerator(ServiceDialog):
         behavior = QtGui.QCheckBox()
         behavior.setObjectName('behavior')
         behavior.stateChanged.connect(
-            lambda status: self._on_handling_or_behavior_changed(),
+            lambda status: self._on_handling_or_behavior_change(),
         )
 
         layout = QtGui.QVBoxLayout()
@@ -233,12 +232,11 @@ class BrowserGenerator(ServiceDialog):
 
         self.findChild(
             QtGui.QRadioButton,
-            'append' if self._addon.config['last_mass_append']
-            else 'overwrite',
+            'append' if config['last_mass_append'] else 'overwrite',
         ).setChecked(True)
 
         self.findChild(QtGui.QCheckBox, 'behavior') \
-            .setChecked(self._addon.config['last_mass_behavior'])
+            .setChecked(config['last_mass_behavior'])
 
         super(BrowserGenerator, self).show(*args, **kwargs)
 
@@ -268,7 +266,7 @@ class BrowserGenerator(ServiceDialog):
                 "'%s' and '%s' fields." % (len(self._notes), source, dest)
                 if len(self._notes) > 1
                 else "The selected note does not have both '%s' and '%s'"
-                    "fields." % (source, dest),
+                     "fields." % (source, dest),
                 self,
             )
             return
@@ -314,8 +312,10 @@ class BrowserGenerator(ServiceDialog):
                 'calls': 0,  # number of cache misses in this batch
                 'sleep': self._addon.config['throttle_sleep'],
                 'threshold': self._addon.config['throttle_threshold'],
-            } if self._addon.router.has_trait(svc_id,
-                self._addon.router.Trait.INTERNET) else False,
+            } if self._addon.router.has_trait(
+                svc_id,
+                self._addon.router.Trait.INTERNET,
+            ) else False,
         }
 
         self._browser.mw.checkpoint("AwesomeTTS Batch Update")
@@ -338,73 +338,57 @@ class BrowserGenerator(ServiceDialog):
 
         self._accept_update()
 
-        if self._process['aborted'] or not self._process['queue']:
+        proc = self._process
+
+        if proc['aborted'] or not proc['queue']:
             self._accept_done()
             return
 
-        if (
-            self._process['throttling'] and
-            self._process['throttling']['calls'] >=
-            self._process['throttling']['threshold']
-        ):
-            self._process['throttling']['countdown'] = \
-                self._process['throttling']['sleep']
+        if proc['throttling'] and \
+           proc['throttling']['calls'] >= proc['throttling']['threshold']:
+            proc['throttling']['countdown'] = \
+                proc['throttling']['sleep']
 
             timer = QtCore.QTimer()
-            self._process['throttling']['timer'] = timer
+            proc['throttling']['timer'] = timer
 
             timer.timeout.connect(self._accept_throttled)
             timer.setInterval(1000)
             timer.start()
             return
 
-        note = self._process['queue'].pop(0)
-        phrase = note[self._process['fields']['source']]
+        note = proc['queue'].pop(0)
+        phrase = note[proc['fields']['source']]
         phrase = self._addon.strip.from_note(phrase)
         self._accept_update(phrase)
 
         def done():
             """Count the processed note."""
 
-            self._process['counts']['done'] += 1
+            proc['counts']['done'] += 1
 
         def okay(path):
             """Count the success and update the note."""
 
             filename = self._browser.mw.col.media.addFile(path)
-            dest = self._process['fields']['dest']
-
-            if self._process['handling']['append']:
-                if self._process['handling']['behavior']:
-                    note[dest] = (
-                        self._addon.strip.sounds(note[dest]).strip() +
-                        ' [sound:%s]' % filename
-                    )
-                elif filename not in note[dest]:
-                    note[dest] += ' [sound:%s]' % filename
-
-            else:
-                if self._process['handling']['behavior']:
-                    note[dest] = '[sound:%s]' % filename
-                else:
-                    note[dest] = filename
-
-            self._process['counts']['okay'] += 1
+            dest = proc['fields']['dest']
+            note[dest] = self._accept_next_output(note[dest], filename)
+            proc['counts']['okay'] += 1
             note.flush()
 
         def fail(exception):
             """Count the failure and the unique message."""
 
-            self._process['counts']['fail'] += 1
+            proc['counts']['fail'] += 1
 
             message = exception.message
             if isinstance(message, basestring):
                 message = self._RE_WHITESPACE.sub(' ', message).strip()
 
             try:
-                self._process['exceptions'][message] += 1
+                proc['exceptions'][message] += 1
             except KeyError:
-                self._process['exceptions'][message] = 1
+                proc['exceptions'][message] = 1
 
         callbacks = dict(
             done=done, okay=okay, fail=fail,
@@ -416,38 +400,61 @@ class BrowserGenerator(ServiceDialog):
             then=lambda: QtCore.QTimer.singleShot(0, self._accept_next),
         )
 
-        if self._process['throttling']:
+        if proc['throttling']:
             def miss(count):
                 """Count the cache miss."""
 
-                self._process['throttling']['calls'] += count
+                proc['throttling']['calls'] += count
 
             callbacks['miss'] = miss
 
         self._addon.router(
-            svc_id=self._process['service']['id'],
+            svc_id=proc['service']['id'],
             text=phrase,
-            options=self._process['service']['options'],
+            options=proc['service']['options'],
             callbacks=callbacks,
         )
+
+    def _accept_next_output(self, old_value, filename):
+        """
+        Given a note's old value and our current handling options,
+        returns a new note value using the passed filename.
+        """
+
+        proc = self._process
+
+        if proc['handling']['append']:
+            if proc['handling']['behavior']:
+                return self._addon.strip.sounds(old_value).strip() + \
+                    ' [sound:%s]' % filename
+            elif filename not in old_value:
+                return old_value + ' [sound:%s]' % filename
+
+        else:
+            if proc['handling']['behavior']:
+                return '[sound:%s]' % filename
+            else:
+                return filename
 
     def _accept_throttled(self):
         """
         Called for every "timeout" of the timer during a throttling.
         """
 
-        if self._process['aborted']:
+        proc = self._process
+
+        if proc['aborted']:
             self._accept_done()
             return
 
-        self._process['throttling']['countdown'] -= 1
+        proc['throttling']['countdown'] -= 1
         self._accept_update()
 
-        if self._process['throttling']['countdown'] <= 0:
-            self._process['throttling']['timer'].stop()
-            del self._process['throttling']['countdown']
-            del self._process['throttling']['timer']
-            self._process['throttling']['calls'] = 0
+        if proc['throttling']['countdown'] <= 0:
+            proc['throttling']['timer'].stop()
+            del proc['throttling']['countdown']
+            del proc['throttling']['timer']
+            proc['throttling']['calls'] = 0
             self._accept_next()
 
     def _accept_update(self, detail=None):
@@ -455,34 +462,36 @@ class BrowserGenerator(ServiceDialog):
         Update the progress bar and message.
         """
 
-        self._process['progress'].update(
+        proc = self._process
+
+        proc['progress'].update(
             label="finished %d of %d%s\n"
                   "%d successful, %d failed\n"
                   "\n"
                   "%s" % (
-                      self._process['counts']['done'],
-                      self._process['counts']['elig'],
+                      proc['counts']['done'],
+                      proc['counts']['elig'],
 
-                      " (%d skipped)" % self._process['counts']['skip']
-                      if self._process['counts']['skip']
+                      " (%d skipped)" % proc['counts']['skip']
+                      if proc['counts']['skip']
                       else "",
 
-                      self._process['counts']['okay'],
-                      self._process['counts']['fail'],
+                      proc['counts']['okay'],
+                      proc['counts']['fail'],
 
                       "sleeping for %d second%s" % (
-                          self._process['throttling']['countdown'],
+                          proc['throttling']['countdown'],
                           "s"
-                          if self._process['throttling']['countdown'] != 1
+                          if proc['throttling']['countdown'] != 1
                           else ""
                       )
                       if (
-                          self._process['throttling'] and
-                          'countdown' in self._process['throttling']
+                          proc['throttling'] and
+                          'countdown' in proc['throttling']
                       )
                       else " "
                   ),
-            value=self._process['counts']['done'],
+            value=proc['counts']['done'],
             detail=detail,
         )
 
@@ -492,43 +501,44 @@ class BrowserGenerator(ServiceDialog):
         """
 
         self._browser.model.endReset()
-        self._process['progress'].accept()
+
+        proc = self._process
+        proc['progress'].accept()
 
         messages = [
             "The %d note%s you selected %s been processed. " % (
-                self._process['counts']['total'],
-                "s" if self._process['counts']['total'] != 1 else "",
-                "have" if self._process['counts']['total'] != 1 else "has",
+                proc['counts']['total'],
+                "s" if proc['counts']['total'] != 1 else "",
+                "have" if proc['counts']['total'] != 1 else "has",
             )
-            if self._process['counts']['done'] ==
-                self._process['counts']['total']
+            if proc['counts']['done'] == proc['counts']['total']
             else "%d of the %d note%s you selected %s processed. " % (
-                self._process['counts']['done'],
-                self._process['counts']['total'],
-                "s" if self._process['counts']['total'] != 1 else "",
-                "were" if self._process['counts']['done'] != 1 else "was",
+                proc['counts']['done'],
+                proc['counts']['total'],
+                "s" if proc['counts']['total'] != 1 else "",
+                "were" if proc['counts']['done'] != 1 else "was",
             ),
 
             "%d note%s skipped for not having both the source and "
             "destination fields. Of those remaining, " % (
-                self._process['counts']['skip'],
-                "s were" if self._process['counts']['skip'] != 1
+                proc['counts']['skip'],
+                "s were" if proc['counts']['skip'] != 1
                 else " was",
             )
-            if self._process['counts']['skip']
+            if proc['counts']['skip']
             else "During processing, "
         ]
 
-        if self._process['counts']['fail']:
-            if self._process['counts']['okay']:
+        if proc['counts']['fail']:
+            if proc['counts']['okay']:
                 messages.append(
                     "%d note%s successfully updated, but "
                     "%d note%s failed while processing." % (
-                        self._process['counts']['okay'],
-                        "s were" if self._process['counts']['okay'] != 1
+                        proc['counts']['okay'],
+                        "s were" if proc['counts']['okay'] != 1
                         else " was",
-                        self._process['counts']['fail'],
-                        "s" if self._process['counts']['fail'] != 1
+                        proc['counts']['fail'],
+                        "s" if proc['counts']['fail'] != 1
                         else "",
                     )
                 )
@@ -537,13 +547,13 @@ class BrowserGenerator(ServiceDialog):
 
             messages.append("\n\n")
 
-            if len(self._process['exceptions']) == 1:
+            if len(proc['exceptions']) == 1:
                 messages.append("The following problem was encountered:")
                 messages += [
                     "\n%s (%d time%s)" %
                     (message, count, "s" if count != 1 else "")
                     for message, count
-                    in self._process['exceptions'].items()
+                    in proc['exceptions'].items()
                 ]
             else:
                 messages.append("The following problems were encountered:")
@@ -551,13 +561,13 @@ class BrowserGenerator(ServiceDialog):
                     "\n- %s (%d time%s)" %
                     (message, count, "s" if count != 1 else "")
                     for message, count
-                    in self._process['exceptions'].items()
+                    in proc['exceptions'].items()
                 ]
 
         else:
             messages.append("there were no errors.")
 
-        if self._process['aborted']:
+        if proc['aborted']:
             messages.append("\n\n")
             messages.append(
                 "You aborted processing. If you want to rollback the changes "
@@ -565,7 +575,7 @@ class BrowserGenerator(ServiceDialog):
                 "AwesomeTTS Batch Update option from the Edit menu."
             )
 
-        self._addon.config.update(self._process['all'])
+        self._addon.config.update(proc['all'])
         self._disable_inputs(False)
         self._notes = None
         self._process = None
@@ -622,9 +632,9 @@ class BrowserGenerator(ServiceDialog):
             else "Wrap the Filename in [sound:xxx] Tag"
         )
 
-        self._on_handling_or_behavior_changed(append, behavior)
+        self._on_handling_or_behavior_change(append, behavior)
 
-    def _on_handling_or_behavior_changed(self, append=None, behavior=None):
+    def _on_handling_or_behavior_change(self, append=None, behavior=None):
         """
         Hide or display the warning text about bare filenames.
         """
@@ -736,12 +746,12 @@ class EditorGenerator(ServiceDialog):
             from_unknown(QtGui.QApplication.clipboard().text(subtype)[0])
 
         for origin in [
-            lambda: web.hasSelection and from_note(web.selectedText()),
-            lambda: from_note(web.page().mainFrame().evaluateJavaScript(
-                '$("#f%d").text()' % editor.currentField
-            )),
-            lambda: try_clipboard('html'),
-            lambda: try_clipboard('text'),
+                lambda: web.hasSelection and from_note(web.selectedText()),
+                lambda: from_note(web.page().mainFrame().evaluateJavaScript(
+                    '$("#f%d").text()' % editor.currentField
+                )),
+                lambda: try_clipboard('html'),
+                lambda: try_clipboard('text'),
         ]:
             prefill = origin()
             if prefill:

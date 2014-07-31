@@ -78,6 +78,10 @@ class Action(QtGui.QAction, _Connector):
     Provides a menu action to show a dialog when triggered.
     """
 
+    __slots__ = [
+        '_shortcut',  # whether or not we use the Ctrl + T shortcut
+    ]
+
     def muzzle(self, disable):
         """
         If disable is True, then this shortcut will be temporarily
@@ -85,9 +89,12 @@ class Action(QtGui.QAction, _Connector):
         if it would normally be.
         """
 
-        self.setShortcut(NO_SHORTCUT if disable else SHORTCUT)
+        self.setShortcut(
+            NO_SHORTCUT if disable or not self._shortcut
+            else SHORTCUT
+        )
 
-    def __init__(self, target, text, parent):
+    def __init__(self, target, text, parent, shortcut=True):
         """
         Initializes the menu action and wires its 'triggered' event.
 
@@ -98,7 +105,9 @@ class Action(QtGui.QAction, _Connector):
         QtGui.QAction.__init__(self, ICON, text, parent)
         _Connector.__init__(self, self.triggered, target)
 
-        self.setShortcut(SHORTCUT)
+        if shortcut:
+            self.setShortcut(SHORTCUT)
+        self._shortcut = shortcut
 
         if isinstance(parent, QtGui.QMenu):
             parent.addAction(self)

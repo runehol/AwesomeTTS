@@ -116,6 +116,7 @@ config = Config(
         ('last_mass_source', 'text', 'Front', unicode, unicode),
         ('last_options', 'text', {}, TO_JSON_DICT, json.dumps),
         ('last_service', 'text', 'google', str, str),
+        ('last_strip_mode', 'text', 'ours', str, str),
         ('spec_note_count', 'text', '', unicode, unicode),
         ('spec_note_count_wrap', 'integer', True, TO_BOOL, int),
         ('spec_note_ellipsize', 'text', '', unicode, unicode),

@@ -521,27 +521,47 @@ gui.Action(
 
 anki.hooks.addHook(
     'browser.setupMenus',
-    lambda browser: gui.Action(
-        target=Bundle(
-            constructor=gui.BrowserGenerator,
-            args=(),
-            kwargs=dict(
-                browser=browser,
-                addon=addon,
-                playback=PLAY_PREVIEW,
-                alerts=aqt.utils.showWarning,
-                parent=browser,
+    lambda browser: (
+        gui.Action(
+            target=Bundle(
+                constructor=gui.BrowserGenerator,
+                args=(),
+                kwargs=dict(
+                    browser=browser,
+                    addon=addon,
+                    playback=PLAY_PREVIEW,
+                    alerts=aqt.utils.showWarning,
+                    parent=browser,
+                ),
             ),
+            text="Add Audio to Selected w/ Awesome&TTS...",
+            parent=browser.form.menuEdit,
         ),
-        text="Add Audio to Selected Notes w/ Awesome&TTS...",
-        parent=browser.form.menuEdit,
+        gui.Action(
+            target=Bundle(
+                constructor=gui.BrowserStripper,
+                args=(),
+                kwargs=dict(
+                    browser=browser,
+                    addon=addon,
+                    alerts=aqt.utils.showWarning,
+                    parent=browser,
+                ),
+            ),
+            text="Remove Audio from Selected w/ AwesomeTTS...",
+            shortcut=False,
+            parent=browser.form.menuEdit,
+        ),
     ),
 )
 aqt.browser.Browser.updateTitle = anki.hooks.wrap(
     aqt.browser.Browser.updateTitle,
-    lambda browser: browser.findChild(gui.Action).setEnabled(
-        bool(browser.form.tableView.selectionModel().selectedRows())
-    ),
+    lambda browser: [
+        action.setEnabled(
+            bool(browser.form.tableView.selectionModel().selectedRows())
+        )
+        for action in browser.findChildren(gui.Action)
+    ],
     'before',
 )
 

@@ -424,7 +424,9 @@ class BrowserGenerator(ServiceDialog):
             if proc['handling']['behavior']:
                 return self._addon.strip.sounds(old_value).strip() + \
                     ' [sound:%s]' % filename
-            elif filename not in old_value:
+            elif filename in old_value:
+                return old_value
+            else:
                 return old_value + ' [sound:%s]' % filename
 
         else:

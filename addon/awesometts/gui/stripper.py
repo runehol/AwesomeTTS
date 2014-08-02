@@ -90,6 +90,16 @@ class BrowserStripper(Dialog):
 
         return layout
 
+    def _ui_buttons(self):
+        """
+        Adjust title of the OK button.
+        """
+
+        buttons = super(BrowserStripper, self)._ui_buttons()
+        buttons.findChild(QtGui.QAbstractButton, 'okay').setText("&Remove Now")
+
+        return buttons
+
     # Events #################################################################
 
     def show(self, *args, **kwargs):

@@ -156,6 +156,17 @@ class BrowserStripper(Dialog):
             self._alerts("You must select at least one field.", self)
             return
 
+        self.setDisabled(True)
+        QtCore.QTimer.singleShot(
+            100,
+            lambda: self._accept_process(fields),
+        )
+
+    def _accept_process(self, fields):
+        """
+        Backend processing for accept(), called after a delay.
+        """
+
         mode = next(
             radio.objectName()
             for radio in self.findChildren(QtGui.QRadioButton)
@@ -206,6 +217,7 @@ class BrowserStripper(Dialog):
 
         self._browser.model.endReset()
         self._addon.config['last_strip_mode'] = mode
+        self.setDisabled(False)
         self._notes = None
 
         super(BrowserStripper, self).accept()

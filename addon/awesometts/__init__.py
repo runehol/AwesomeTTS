@@ -245,7 +245,15 @@ SPEC_ELLIP_TEMPLATE = lambda text: SPEC_ELLIP('spec_template_ellipsize', text)
 
 STRIP_FILENAMES = lambda text: RE_FILENAMES.sub('', text)
 STRIP_HTML = anki.utils.stripHTML  # this also converts character entities
-STRIP_SOUNDS = lambda text: RE_SOUNDS.sub('', text)
+STRIP_SOUNDS = lambda text, which=False: RE_SOUNDS.sub(
+    (lambda match: match.group(0) if RE_FILENAMES.match(match.group(1))
+     else '') if which == 'theirs'
+    else (lambda match: '' if RE_FILENAMES.match(match.group(1))
+          else match.group(0)) if which == 'ours'
+    else '',
+
+    text,
+)
 
 STRIP_CONDITIONALLY = lambda regex, key, text: \
     regex.sub('', text) if config[key] else text
@@ -478,6 +486,8 @@ addon = Bundle(
             # or BrowserStripper need to remove old sounds)
             atts=STRIP_SOUNDS,
         ),
+
+        filenames=STRIP_FILENAMES,
     ),
     updates=updates,
     version=VERSION,

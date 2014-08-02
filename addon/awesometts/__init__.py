@@ -205,6 +205,7 @@ RE_CLOZE_TEMPLATE = re.compile(
 )
 RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
 RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}( \(\d+\))?\.mp3')
+RE_SOUNDS = re.compile(r'\[sound:(.*?)\]')  # see also anki.sound._soundReg
 RE_TEXT_IN_BRACES = re.compile(r'\{.+?\}')
 RE_TEXT_IN_BRACKETS = re.compile(r'\[.+?\]')
 RE_TEXT_IN_PARENS = re.compile(r'\(.+?\)')
@@ -244,7 +245,7 @@ SPEC_ELLIP_TEMPLATE = lambda text: SPEC_ELLIP('spec_template_ellipsize', text)
 
 STRIP_FILENAMES = lambda text: RE_FILENAMES.sub('', text)
 STRIP_HTML = anki.utils.stripHTML  # this also converts character entities
-STRIP_SOUNDS = anki.sound.stripSounds
+STRIP_SOUNDS = lambda text: RE_SOUNDS.sub('', text)
 
 STRIP_CONDITIONALLY = lambda regex, key, text: \
     regex.sub('', text) if config[key] else text
@@ -466,9 +467,17 @@ addon = Bundle(
                 text
             )),
 
-        # target sounds specifically (e.g. Reviewer uses this to reproduce how
-        # Anki does {{FrontSide}} whereas BrowserGenerator removes old sounds)
-        sounds=STRIP_SOUNDS,
+        # target sounds specifically
+        sounds=Bundle(
+            # using Anki's method (used if we need to reproduce how Anki does
+            # something, e.g. when Reviewer emulates {{FrontSide}})
+            anki=anki.sound.stripSounds,
+
+            # using AwesomeTTS's method (which has access to a precompiled re
+            # object, usable for everything else, e.g. when BrowserGenerator
+            # or BrowserStripper need to remove old sounds)
+            atts=STRIP_SOUNDS,
+        ),
     ),
     updates=updates,
     version=VERSION,

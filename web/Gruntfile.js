@@ -126,7 +126,7 @@ module.exports = function (grunt) {
     grunt.task.loadNpmTasks('grunt-contrib-copy');
     config.copy = {
         favicon: {src: 'favicon.ico', dest: 'build/'},
-        images: {src: 'images/*.png', dest: 'build/'},
+        images: {src: 'images/*.{gif,png}', dest: 'build/'},
         redirects: {src: 'redirects.json', dest: 'build/'},
         robots: {src: 'robots.txt', dest: 'build/'},
         unresolvedPy: {src: 'unresolved/__init__.py', dest: 'build/'},
@@ -386,7 +386,15 @@ module.exports = function (grunt) {
                 }).join('|');
         }(SITEMAP)));
 
-        var IMAGES = ['/(', ')'].join(
+        var GIF_IMAGES = ['/(', ')'].join(
+            grunt.file.expand('images/*.gif').map(function (path) {
+                return path.
+                    replace(/^images\/|\.gif$/g, '').
+                    replace(/\./g, '\\.');
+            }).join('|')
+        );
+
+        var PNG_IMAGES = ['/(', ')'].join(
             grunt.file.expand('images/*.png').map(function (path) {
                 return path.
                     replace(/^images\/|\.png$/g, '').
@@ -404,7 +412,9 @@ module.exports = function (grunt) {
             {url: LEAVES, static_files: 'pages/\\1.html',
               upload: ['pages', LEAVES, '\\.html'].join(''),
               mime_type: MIME_HTML, http_headers: HEADERS_HTML},
-            {url: IMAGES + '\\.png', static_files: 'images/\\1.png',
+            {url: GIF_IMAGES + '\\.gif', static_files: 'images/\\1.gif',
+              upload: 'images/.+\\.gif'},
+            {url: PNG_IMAGES + '\\.png', static_files: 'images/\\1.png',
               upload: 'images/.+\\.png'},
 
             {url: '/style\\.css', static_files: 'style.css',
@@ -562,7 +572,7 @@ module.exports = function (grunt) {
           options: {reload: true}},
 
         favicon: {files: 'favicon.ico', tasks: 'copy:favicon'},
-        images: {files: 'images/*.png', tasks: 'copy:images'},
+        images: {files: 'images/*.{gif,png}', tasks: 'copy:images'},
         robots: {files: 'robots.txt', tasks: 'copy:robots'},
         unresolvedPy: {files: 'unresolved/__init__.py',
           tasks: 'copy:unresolvedPy'},

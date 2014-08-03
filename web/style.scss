@@ -51,9 +51,9 @@ main {
 
 $blue: #08c;
 $gray: #333;
-$ocean: #005580;
+$ocean: #005580;  // n.b. also used as foreground for figure-loader.gif
 $sky: #c0deed;
-$white: #fff;
+$white: #fff;  // n.b. also used as background for figure-loader.gif
 
 $xPadding: 20px;
 $yPadding: 10px;
@@ -139,10 +139,14 @@ $yPadding: 10px;
         max-width: 90%;
         padding: 5px;
 
+        &, a, a:hover { color: $white }
+
         img {
+            background: url('figure-loader.gif') center no-repeat;
             display: block;
             height: auto;
             max-width: 100%;
+            min-height: 100px;
         }
     }
 
@@ -151,8 +155,6 @@ $yPadding: 10px;
         line-height: 1.1;
         padding: $yPadding $xPadding - 5px $yPadding - 5px;
         text-align: center;
-
-        &, a, a:hover { color: $white }
 
         a { text-decoration: underline }
     }
@@ -276,7 +278,10 @@ $yPadding: 10px;
 
         li, a { display: block }
 
-        a[rel~=me] { background: #005580; color: #fff }
+        a[rel~=me] {
+            background: $ocean;
+            color: #fff;
+        }
 
         h1 { display: none }
         h2 { margin-top: $yPadding }

@@ -1,5 +1,9 @@
 *.db
 *.log
 *.py[co]
-awesometts/cache/
-awesometts/temp/
+
+addon/awesometts/.cache/
+
+web/build/
+web/node_modules/
+web/.grunt-gae-pid

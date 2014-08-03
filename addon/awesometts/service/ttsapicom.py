@@ -45,7 +45,7 @@ class TTSAPICom(Service):
         Returns a short, static description.
         """
 
-        return "TTS-API.com"
+        return "TTS-API.com (English only)"
 
     def options(self):
         """

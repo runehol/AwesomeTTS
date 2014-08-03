@@ -123,7 +123,7 @@ $yPadding: 10px;
     }
 
     article {
-        padding: $yPadding $xPadding;
+        padding: $yPadding $xPadding $yPadding*4;
 
         * { margin-top: 0 }
 

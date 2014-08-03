@@ -456,6 +456,9 @@ class ServiceDialog(Dialog):
                 for value, text in option['values']:
                     vinput.addItem(text, value)
 
+                if len(option['values']) == 1:
+                    vinput.setDisabled(True)
+
             panel.addWidget(label, row, 0)
             panel.addWidget(vinput, row, 1)
 
@@ -554,7 +557,8 @@ class ServiceDialog(Dialog):
         for widget in [
             widget
             for widget in self.findChildren(self._INPUT_WIDGETS)
-            if widget.objectName() != 'cancel'
+            if widget.objectName() != 'cancel' and
+                (not isinstance(widget, QtGui.QComboBox) or len(widget) > 1)
         ]:
             widget.setDisabled(flag)
 

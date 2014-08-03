@@ -34,6 +34,7 @@ __all__ = [
     'Google',
     'SAPI5',
     'Say',
+    'TTSAPICom',
     'Yandex',
 ]
 
@@ -45,4 +46,5 @@ from .festival import Festival
 from .google import Google
 from .sapi5 import SAPI5
 from .say import Say
+from .ttsapicom import TTSAPICom
 from .yandex import Yandex

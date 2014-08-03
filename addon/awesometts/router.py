@@ -422,7 +422,9 @@ class Router(object):
                 if not option['label'].endswith(":"):
                     option['label'] += ":"
 
-                if 'default' in option and isinstance(option['values'], list):
+                if 'default' in option and \
+                   isinstance(option['values'], list) and \
+                   len(option['values']) > 1:
                     option['values'] = [
                         item if item[0] != option['default']
                         else (item[0], item[1] + " [default]")

@@ -85,5 +85,5 @@ class TTSAPICom(Service):
                 # n.b. safe limit of 750, but actual limit is higher
                 for subtext in self.util_split(text, 750)
             ],
-            require=dict(mime='audio/mpeg'),
+            require=dict(mime='audio/mpeg', size=256),
         )

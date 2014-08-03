@@ -60,10 +60,9 @@ class TTSAPICom(Service):
                 values=[
                     ('en', "English (en)"),
                 ],
-                transform=lambda value: ''.join(
-                    char.lower()
-                    for char in value.split('-').pop(0)
-                    if char.isalpha()
+                transform=lambda value: (
+                    'en' if self.normalize(value).startswith('en')
+                    else value
                 ),
                 default='en',
             ),

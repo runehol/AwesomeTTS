@@ -250,6 +250,13 @@ $yPadding: 10px;
             &:nth-child(odd) {
                 clear: left;
                 float: left;
+
+                &:last-child {
+                    float: none;
+                    margin: 0 auto 1em;
+                    position: relative;
+                    top: 1em;
+                }
             }
 
             &:nth-child(even) {

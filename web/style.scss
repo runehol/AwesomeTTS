@@ -163,6 +163,7 @@ $yPadding: 10px;
         background: $gray;
         border-collapse: collapse;
         margin: 0 0 1em;
+        white-space: nowrap;
         width: 100%;
 
         &, a { color: $white }
@@ -174,14 +175,17 @@ $yPadding: 10px;
         }
 
         td { padding: $yPadding/2 $xPadding/2 }
-
-        kbd, samp { white-space: nowrap }
     }
 
     div.grid {
         padding: 0 0 $yPadding;
 
         figure { margin: $yPadding auto 0 }
+    }
+
+    div.scroll {
+        margin: 0 0 1em;
+        overflow-x: auto;
     }
 
     article:after {

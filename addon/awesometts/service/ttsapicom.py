@@ -79,8 +79,11 @@ class TTSAPICom(Service):
             path,
             [
                 ('http://tts-api.com/tts.mp3', dict(
-                    q=text,
-                )),
+                    q=subtext,
+                ))
+
+                # n.b. safe limit of 750, but actual limit is higher
+                for subtext in self.util_split(text, 750)
             ],
             require=dict(mime='audio/mpeg'),
         )

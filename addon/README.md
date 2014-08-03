@@ -74,5 +74,5 @@ the symlink method requires using a file system that supports it.
 
 ## License
 
-AwesomeTTS is free and open source software. The add-on code that runs within
+AwesomeTTS is free and open-source software. The add-on code that runs within
 Anki is released under the [GNU GPL v3](LICENSE.txt).

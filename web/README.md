@@ -13,5 +13,5 @@ task automation tool that runs under [Node.js](http://nodejs.org).
 
 ## License
 
-AwesomeTTS is free and open source software. First-party web code is released
+AwesomeTTS is free and open-source software. First-party web code is released
 under the [GNU AGPL v3](LICENSE.txt).

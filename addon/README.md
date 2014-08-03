@@ -10,6 +10,7 @@ services:
 - Google Translate
 - OS X Speech Synthesis Manager
 - Microsoft Speech API
+- TTS-API.com
 - Yandex.Translate
 
 

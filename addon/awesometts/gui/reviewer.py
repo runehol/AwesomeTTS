@@ -158,7 +158,7 @@ class Reviewer(object):
         answer_html = self.RE_ANSWER_DIVIDER.split(
             card.a()
                 .replace(question_html, '')
-                .replace(self._addon.strip.sounds(question_html), ''),
+                .replace(self._addon.strip.sounds.anki(question_html), ''),
 
             1,  # remove at most one segment in the event of multiple dividers
         ).pop().strip()

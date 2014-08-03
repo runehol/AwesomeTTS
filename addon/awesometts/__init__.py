@@ -116,6 +116,7 @@ config = Config(
         ('last_mass_source', 'text', 'Front', unicode, unicode),
         ('last_options', 'text', {}, TO_JSON_DICT, json.dumps),
         ('last_service', 'text', 'google', str, str),
+        ('last_strip_mode', 'text', 'ours', str, str),
         ('spec_note_count', 'text', '', unicode, unicode),
         ('spec_note_count_wrap', 'integer', True, TO_BOOL, int),
         ('spec_note_ellipsize', 'text', '', unicode, unicode),
@@ -204,6 +205,7 @@ RE_CLOZE_TEMPLATE = re.compile(
 )
 RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
 RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}( \(\d+\))?\.mp3')
+RE_SOUNDS = re.compile(r'\[sound:(.*?)\]')  # see also anki.sound._soundReg
 RE_TEXT_IN_BRACES = re.compile(r'\{.+?\}')
 RE_TEXT_IN_BRACKETS = re.compile(r'\[.+?\]')
 RE_TEXT_IN_PARENS = re.compile(r'\(.+?\)')
@@ -243,7 +245,15 @@ SPEC_ELLIP_TEMPLATE = lambda text: SPEC_ELLIP('spec_template_ellipsize', text)
 
 STRIP_FILENAMES = lambda text: RE_FILENAMES.sub('', text)
 STRIP_HTML = anki.utils.stripHTML  # this also converts character entities
-STRIP_SOUNDS = anki.sound.stripSounds
+STRIP_SOUNDS = lambda text, which=False: RE_SOUNDS.sub(
+    (lambda match: match.group(0) if RE_FILENAMES.match(match.group(1))
+     else '') if which == 'theirs'
+    else (lambda match: '' if RE_FILENAMES.match(match.group(1))
+          else match.group(0)) if which == 'ours'
+    else '',
+
+    text,
+)
 
 STRIP_CONDITIONALLY = lambda regex, key, text: \
     regex.sub('', text) if config[key] else text
@@ -465,9 +475,19 @@ addon = Bundle(
                 text
             )),
 
-        # target sounds specifically (e.g. Reviewer uses this to reproduce how
-        # Anki does {{FrontSide}} whereas BrowserGenerator removes old sounds)
-        sounds=STRIP_SOUNDS,
+        # target sounds specifically
+        sounds=Bundle(
+            # using Anki's method (used if we need to reproduce how Anki does
+            # something, e.g. when Reviewer emulates {{FrontSide}})
+            anki=anki.sound.stripSounds,
+
+            # using AwesomeTTS's method (which has access to a precompiled re
+            # object, usable for everything else, e.g. when BrowserGenerator
+            # or BrowserStripper need to remove old sounds)
+            atts=STRIP_SOUNDS,
+        ),
+
+        filenames=STRIP_FILENAMES,
     ),
     updates=updates,
     version=VERSION,
@@ -520,27 +540,47 @@ gui.Action(
 
 anki.hooks.addHook(
     'browser.setupMenus',
-    lambda browser: gui.Action(
-        target=Bundle(
-            constructor=gui.BrowserGenerator,
-            args=(),
-            kwargs=dict(
-                browser=browser,
-                addon=addon,
-                playback=PLAY_PREVIEW,
-                alerts=aqt.utils.showWarning,
-                parent=browser,
+    lambda browser: (
+        gui.Action(
+            target=Bundle(
+                constructor=gui.BrowserGenerator,
+                args=(),
+                kwargs=dict(
+                    browser=browser,
+                    addon=addon,
+                    playback=PLAY_PREVIEW,
+                    alerts=aqt.utils.showWarning,
+                    parent=browser,
+                ),
             ),
+            text="Add Audio to Selected w/ Awesome&TTS...",
+            parent=browser.form.menuEdit,
         ),
-        text="Add Audio to Selected Notes w/ Awesome&TTS...",
-        parent=browser.form.menuEdit,
+        gui.Action(
+            target=Bundle(
+                constructor=gui.BrowserStripper,
+                args=(),
+                kwargs=dict(
+                    browser=browser,
+                    addon=addon,
+                    alerts=aqt.utils.showWarning,
+                    parent=browser,
+                ),
+            ),
+            text="Remove Audio from Selected w/ AwesomeTTS...",
+            shortcut=False,
+            parent=browser.form.menuEdit,
+        ),
     ),
 )
 aqt.browser.Browser.updateTitle = anki.hooks.wrap(
     aqt.browser.Browser.updateTitle,
-    lambda browser: browser.findChild(gui.Action).setEnabled(
-        bool(browser.form.tableView.selectionModel().selectedRows())
-    ),
+    lambda browser: [
+        action.setEnabled(
+            bool(browser.form.tableView.selectionModel().selectedRows())
+        )
+        for action in browser.findChildren(gui.Action)
+    ],
     'before',
 )
 

@@ -33,6 +33,7 @@ __all__ = [
     'Configurator',
     'BrowserGenerator',
     'EditorGenerator',
+    'BrowserStripper',
     'Templater',
     'Updater',
 
@@ -52,6 +53,8 @@ from .generator import (
     BrowserGenerator,
     EditorGenerator,
 )
+
+from .stripper import BrowserStripper
 
 from .templater import Templater
 

@@ -225,6 +225,37 @@ class BrowserStripper(Dialog):
                 note.flush()
                 stat['notes']['upd'] += 1
 
+        messages = [
+            "%d %s processed and %d %s updated." % (
+                stat['notes']['proc'],
+                "note was" if stat['notes']['proc'] == 1 else "notes were",
+                stat['notes']['upd'],
+                "was" if stat['notes']['upd'] == 1 else "were",
+            ),
+        ]
+
+        if stat['notes']['proc'] != stat['fields']['proc']:
+            messages.append("\nOf %s, %d %s checked and %d %s changed." % (
+                "this" if stat['notes']['proc'] == 1 else "these",
+                stat['fields']['proc'],
+                "field was" if stat['fields']['proc'] == 1 else "fields were",
+                stat['fields']['upd'],
+                "was" if stat['fields']['upd'] == 1 else "were",
+            ))
+
+        if stat['fields']['skip'] == 1:
+            messages.append("\n1 field was not present on one of the notes.")
+        elif stat['fields']['skip'] > 1:
+            messages.append("\n%d fields were not present on some notes." %
+                            stat['fields']['skip'])
+
+        if stat['notes']['upd']:
+            messages.append("\n\n"
+                            "To purge sounds from your Anki collection that "
+                            'are no longer used in any notes, select "Check '
+                            'Media" from the Anki "Tools" menu in the main '
+                            "window.")
+
         self._browser.model.endReset()
         self._addon.config['last_strip_mode'] = mode
         self.setDisabled(False)
@@ -236,38 +267,5 @@ class BrowserStripper(Dialog):
         # crashes on Mac OS X, which happen <5% of the time if called directly
         QtCore.QTimer.singleShot(
             0,
-            lambda: self._alerts(
-                "%d %s processed and %d %s updated.\n"
-                "Of %s, %d %s checked and %d %s changed.\n" % (
-                    stat['notes']['proc'],
-
-                    "note was" if stat['notes']['proc'] == 1
-                    else "notes were",
-
-                    stat['notes']['upd'],
-
-                    "was" if stat['notes']['upd'] == 1 else "were",
-
-                    "this" if stat['notes']['proc'] == 1 else "these",
-
-                    stat['fields']['proc'],
-
-                    "field was" if stat['fields']['proc'] == 1
-                    else "fields were",
-
-                    stat['fields']['upd'],
-
-                    "was" if stat['fields']['upd'] == 1 else "were",
-                ) + (
-                    "All fields were present on all notes."
-                    if stat['fields']['skip'] == 0
-
-                    else "1 field was not found on its note."
-                    if stat['fields']['skip'] == 1
-
-                    else "%d fields were not found on their notes." %
-                    stat['fields']['skip']
-                ),
-                self._browser
-            ),
+            lambda: self._alerts("".join(messages), self._browser),
         )

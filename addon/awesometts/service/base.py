@@ -251,6 +251,14 @@ class Service(object):
             "to inspect output",
         )
 
+        return self._cli_decode(returned)
+
+    def _cli_decode(self, returned):
+        """
+        Given the raw bytestring from the CLI tool, try to decode it and
+        return a usable string.
+        """
+
         if not returned:
             raise EnvironmentError("Call returned no output")
 

@@ -37,6 +37,10 @@
                 "title": "Microsoft Speech API (SAPI)",
                 "what": "Interface for desktop software to enable TTS playback, built into Windows"
             },
+            "pico2wave": {
+                "title": "SVOX Pico",
+                "what": "Voice synthesizer used in the Android operating system"
+            },
             "ttsapicom": {
                 "title": "TTS-API.com",
                 "what": "English speech, available over the Internet"

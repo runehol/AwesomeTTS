@@ -32,6 +32,7 @@ __all__ = [
     'ESpeak',
     'Festival',
     'Google',
+    'Pico2Wave',
     'SAPI5',
     'Say',
     'TTSAPICom',
@@ -44,6 +45,7 @@ from .ekho import Ekho
 from .espeak import ESpeak
 from .festival import Festival
 from .google import Google
+from .pico2wave import Pico2Wave
 from .sapi5 import SAPI5
 from .say import Say
 from .ttsapicom import TTSAPICom

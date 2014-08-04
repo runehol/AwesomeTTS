@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -303,10 +302,8 @@ class Service(object):
                 "Please report this problem if it persists."
             )
 
-        if (
-            require and 'size_in' in require and
-            os.path.getsize(input_path) < require['size_in']
-        ):
+        if require and 'size_in' in require and \
+           os.path.getsize(input_path) < require['size_in']:
             raise ValueError(
                 "Input to transcoder was %d-byte stream; wanted %d+ bytes "
                 "(the service might not have liked your input text)" % (

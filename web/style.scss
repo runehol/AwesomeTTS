@@ -130,6 +130,8 @@ $yPadding: 10px;
         h2, h3 { margin-bottom: 0 }
 
         ul.cols { @include columns(2) }
+
+        li { list-style-type: none }
     }
 
     figure {

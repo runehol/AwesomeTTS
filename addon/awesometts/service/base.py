@@ -349,7 +349,7 @@ class Service(object):
 
         shutil.move(intermediate_path, output_path)  # see note above
 
-    def _cli_exec(self, callee, args, purpose):
+    def _cli_exec(self, callee, args, purpose, redirect_stderr=False):
         """
         Handles the underlying system call, logging, and exceptions when
         a call to cli_call() or cli_output() is made.
@@ -367,7 +367,11 @@ class Service(object):
             purpose,
         )
 
-        return callee(args, startupinfo=self.CLI_SI)
+        return callee(
+            args,
+            stderr=subprocess.STDOUT if redirect_stderr else None,
+            startupinfo=self.CLI_SI,
+        )
 
     def net_download(self, path, targets, require=None):
         """

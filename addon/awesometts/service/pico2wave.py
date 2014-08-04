@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Service implementation for Small Footprint TTS
+Service implementation for SVOX Pico TTS
 """
 
 __all__ = ['Pico2Wave']
@@ -30,7 +30,7 @@ from .common import Trait
 
 class Pico2Wave(Service):
     """
-    Provides a Service-compliant implementation for Small Footprint TTS.
+    Provides a Service-compliant implementation for SVOX Pico TTS.
     """
 
     __slots__ = [
@@ -38,7 +38,7 @@ class Pico2Wave(Service):
         '_voice_list',  # list of installed voices as a list of tuples
     ]
 
-    NAME = "Small Footprint"
+    NAME = "SVOX Pico"
 
     TRAITS = [Trait.TRANSCODING]
 
@@ -50,8 +50,8 @@ class Pico2Wave(Service):
 
         if self.IS_WINDOWS:
             raise EnvironmentError(
-                "Small Footprint cannot be used on Windows because unicode "
-                "text cannot be passed to the CLI via the subprocess module "
+                "SVOX Pico cannot be used on Windows because unicode text "
+                "cannot be passed to the CLI via the subprocess module in "
                 "in Python 2 and pico2wave offers no input alternative"
             )
 

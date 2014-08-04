@@ -10,7 +10,7 @@ services:
 - Google Translate
 - OS X Speech Synthesis Manager (`say`)
 - Microsoft Speech API
-- Small Footprint (`pico2wave`)
+- SVOX Pico (`pico2wave`)
 - TTS-API.com
 - Yandex.Translate
 

@@ -93,18 +93,12 @@ class BrowserGenerator(ServiceDialog):
         note.setTextFormat(QtCore.Qt.PlainText)
         note.setWordWrap(True)
 
-        warning = QtGui.QLabel()
-        warning.setMinimumHeight(60)  # despite adjustSize(), OS X misbehaves
-        warning.setObjectName('warning')
-        warning.setWordWrap(True)
-
         layout = super(BrowserGenerator, self)._ui_control()
         layout.addWidget(header)
         layout.addWidget(intro)
         layout.addWidget(note)
         layout.addLayout(self._ui_control_fields())
         layout.addWidget(self._ui_control_handling())
-        layout.addWidget(warning)
         layout.addWidget(self._ui_buttons())
 
         return layout
@@ -626,18 +620,22 @@ class BrowserGenerator(ServiceDialog):
 
     def _on_handling_or_behavior_changed(self, append=None, behavior=None):
         """
-        Hide or display the warning text about bare filenames.
+        Display a warning about bare filenames if selects the override
+        option and disables wrapping the field with a [sound] tag.
         """
 
-        append = append or self.findChild(QtGui.QRadioButton, 'append')
-        behavior = behavior or self.findChild(QtGui.QCheckBox, 'behavior')
-        self.findChild(QtGui.QLabel, 'warning').setText(
-            "Please note that if you use bare filenames, the 'Check Media' "
-            "feature in Anki will not detect audio files as in-use, even if "
-            "you insert the field into your templates."
-            if not (append.isChecked() or behavior.isChecked())
-            else ""
-        )
+        if self.isVisible():
+            append = append or self.findChild(QtGui.QRadioButton, 'append')
+            behavior = behavior or self.findChild(QtGui.QCheckBox, 'behavior')
+
+            if not (append.isChecked() or behavior.isChecked()):
+                self._alerts(
+                    'Please note that if you use bare filenames, the "Check '
+                    'Media" feature in Anki will not detect those audio '
+                    "files as in-use, even if you insert the field into your "
+                    "templates.",
+                    self,
+                )
 
 
 class EditorGenerator(ServiceDialog):

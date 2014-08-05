@@ -42,11 +42,7 @@ class BrowserGenerator(ServiceDialog):
 
     HELP_USAGE_SLUG = 'browser'
 
-    INTRO = (
-        "AwesomeTTS will scan the %d note%s selected in the Browser, "
-        "determine %s both fields, store the audio in your collection, and "
-        "update the destination with either a [sound] tag or filename."
-    )
+    INTRO = '%d note%s selected. Click "Help" for usage hints.'
 
     _RE_WHITESPACE = re(r'\s+')
 
@@ -86,17 +82,9 @@ class BrowserGenerator(ServiceDialog):
         intro.setObjectName('intro')
         intro.setWordWrap(True)
 
-        note = QtGui.QLabel(
-            "To adjust handling of cloze or parenthetical text, go to Tools "
-            "> AwesomeTTS > Text from the main window."
-        )
-        note.setTextFormat(QtCore.Qt.PlainText)
-        note.setWordWrap(True)
-
         layout = super(BrowserGenerator, self)._ui_control()
         layout.addWidget(header)
         layout.addWidget(intro)
-        layout.addWidget(note)
         layout.addLayout(self._ui_control_fields())
         layout.addWidget(self._ui_control_handling())
         layout.addWidget(self._ui_buttons())
@@ -197,7 +185,6 @@ class BrowserGenerator(ServiceDialog):
             self.INTRO % (
                 len(self._notes),
                 "s" if len(self._notes) != 1 else "",
-                "which have" if len(self._notes) != 1 else "if it has",
             )
         )
 

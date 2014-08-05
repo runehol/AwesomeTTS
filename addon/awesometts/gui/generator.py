@@ -152,7 +152,7 @@ class BrowserGenerator(ServiceDialog):
         behavior = QtGui.QCheckBox()
         behavior.setObjectName('behavior')
         behavior.stateChanged.connect(
-            lambda status: self._on_handling_or_behavior_changed(),
+            lambda status: self._on_behavior_changed(),
         )
 
         layout = QtGui.QVBoxLayout()
@@ -616,17 +616,15 @@ class BrowserGenerator(ServiceDialog):
             else "Wrap the Filename in [sound:xxx] Tag"
         )
 
-        self._on_handling_or_behavior_changed(append, behavior)
-
-    def _on_handling_or_behavior_changed(self, append=None, behavior=None):
+    def _on_behavior_changed(self):
         """
         Display a warning about bare filenames if selects the override
         option and disables wrapping the field with a [sound] tag.
         """
 
         if self.isVisible():
-            append = append or self.findChild(QtGui.QRadioButton, 'append')
-            behavior = behavior or self.findChild(QtGui.QCheckBox, 'behavior')
+            append = self.findChild(QtGui.QRadioButton, 'append')
+            behavior = self.findChild(QtGui.QCheckBox, 'behavior')
 
             if not (append.isChecked() or behavior.isChecked()):
                 self._alerts(

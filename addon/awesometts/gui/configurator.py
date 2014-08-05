@@ -238,11 +238,6 @@ class Configurator(Dialog):
                 ('ellipsize', "read as an ellipsis, ignoring hint"),
                 ('remove', "remove entirely"),
             ],
-            [
-                ('parens', "parenthetical text, e.g. (generally formal)"),
-                ('brackets', "bracketed text, e.g. [USA]"),
-                ('braces', "curly-braced text, e.g. {always singular}"),
-            ],
         ))
         layout.addWidget(self._ui_tabs_text_mode(
             '_note_',
@@ -255,11 +250,6 @@ class Configurator(Dialog):
                 ('ellipsize', "replace w/ ellipsis, ignoring both"),
                 ('remove', "remove entirely"),
             ],
-            [
-                ('parens', "parenthetical text, e.g. (casual only)"),
-                ('brackets', "bracketed text, e.g. [Spain]"),
-                ('braces', "curly-braced text, e.g. {usually plural}"),
-            ],
         ))
         layout.addStretch()
 
@@ -269,7 +259,7 @@ class Configurator(Dialog):
         return tab
 
     def _ui_tabs_text_mode(self, infix, label, cloze_description,
-                           cloze_options, strip_options):
+                           cloze_options):
         """
         Returns the given checkbox options for controlling whether to
         strip from certain parenthetical text. Optionally, additional
@@ -290,10 +280,18 @@ class Configurator(Dialog):
         layout = QtGui.QVBoxLayout()
         layout.addLayout(horizontal)
 
-        for option_subkey, option_label in strip_options:
-            checkbox = QtGui.QCheckBox("Remove " + option_label)
+        horizontal = QtGui.QHBoxLayout()
+        horizontal.addWidget(QtGui.QLabel("Strip off text within:"))
+
+        for option_subkey, option_label in [('parens', "parentheses"),
+                                            ('brackets', "brackets"),
+                                            ('braces', "braces")]:
+            checkbox = QtGui.QCheckBox(option_label)
             checkbox.setObjectName(infix.join(['strip', option_subkey]))
-            layout.addWidget(checkbox)
+            horizontal.addWidget(checkbox)
+
+        horizontal.addStretch()
+        layout.addLayout(horizontal)
 
         layout.addLayout(self._ui_tabs_text_mode_specific(
             infix,

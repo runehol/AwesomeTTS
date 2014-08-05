@@ -133,7 +133,7 @@ class Configurator(Dialog):
         Returns the "Playback" tab.
         """
 
-        notes = QtGui.QLabel('Anki controls if and when to play [sound] '
+        notes = QtGui.QLabel('Anki controls if and how to play [sound] '
                              'tags. Click "Help" for more information.')
 
         layout = QtGui.QVBoxLayout()

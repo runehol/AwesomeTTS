@@ -133,11 +133,8 @@ class Configurator(Dialog):
         Returns the "Playback" tab.
         """
 
-        notes = QtGui.QLabel("For [sound] tags, whether or not automatic "
-          "playback is enabled is controlled on a per-deck basis, and can be "
-          "played on-demand by striking R or F5.")
-        notes.setTextFormat(QtCore.Qt.PlainText)
-        notes.setWordWrap(True)
+        notes = QtGui.QLabel('Anki controls if and when to play [sound] '
+                             'tags. Click "Help" for more information.')
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self._ui_tabs_playback_group(

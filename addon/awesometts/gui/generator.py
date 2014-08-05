@@ -615,6 +615,7 @@ class BrowserGenerator(ServiceDialog):
             "Remove Existing [sound:xxx] Tag(s)" if append.isChecked()
             else "Wrap the Filename in [sound:xxx] Tag"
         )
+        behavior.setChecked(True)
 
     def _on_behavior_changed(self):
         """

@@ -42,11 +42,7 @@ class BrowserGenerator(ServiceDialog):
 
     HELP_USAGE_SLUG = 'browser'
 
-    INTRO = (
-        "AwesomeTTS will scan the %d note%s selected in the Browser, "
-        "determine %s both fields, store the audio in your collection, and "
-        "update the destination with either a [sound] tag or filename."
-    )
+    INTRO = '%d note%s selected. Click "Help" for usage hints.'
 
     _RE_WHITESPACE = re(r'\s+')
 
@@ -86,25 +82,11 @@ class BrowserGenerator(ServiceDialog):
         intro.setObjectName('intro')
         intro.setWordWrap(True)
 
-        note = QtGui.QLabel(
-            "To adjust handling of cloze or parenthetical text, go to Tools "
-            "> AwesomeTTS > Text from the main window."
-        )
-        note.setTextFormat(QtCore.Qt.PlainText)
-        note.setWordWrap(True)
-
-        warning = QtGui.QLabel()
-        warning.setMinimumHeight(60)  # despite adjustSize(), OS X misbehaves
-        warning.setObjectName('warning')
-        warning.setWordWrap(True)
-
         layout = super(BrowserGenerator, self)._ui_control()
         layout.addWidget(header)
         layout.addWidget(intro)
-        layout.addWidget(note)
         layout.addLayout(self._ui_control_fields())
         layout.addWidget(self._ui_control_handling())
-        layout.addWidget(warning)
         layout.addWidget(self._ui_buttons())
 
         return layout
@@ -158,7 +140,7 @@ class BrowserGenerator(ServiceDialog):
         behavior = QtGui.QCheckBox()
         behavior.setObjectName('behavior')
         behavior.stateChanged.connect(
-            lambda status: self._on_handling_or_behavior_changed(),
+            lambda status: self._on_behavior_changed(),
         )
 
         layout = QtGui.QVBoxLayout()
@@ -203,7 +185,6 @@ class BrowserGenerator(ServiceDialog):
             self.INTRO % (
                 len(self._notes),
                 "s" if len(self._notes) != 1 else "",
-                "which have" if len(self._notes) != 1 else "if it has",
             )
         )
 
@@ -621,23 +602,26 @@ class BrowserGenerator(ServiceDialog):
             "Remove Existing [sound:xxx] Tag(s)" if append.isChecked()
             else "Wrap the Filename in [sound:xxx] Tag"
         )
+        behavior.setChecked(True)
 
-        self._on_handling_or_behavior_changed(append, behavior)
-
-    def _on_handling_or_behavior_changed(self, append=None, behavior=None):
+    def _on_behavior_changed(self):
         """
-        Hide or display the warning text about bare filenames.
+        Display a warning about bare filenames if selects the override
+        option and disables wrapping the field with a [sound] tag.
         """
 
-        append = append or self.findChild(QtGui.QRadioButton, 'append')
-        behavior = behavior or self.findChild(QtGui.QCheckBox, 'behavior')
-        self.findChild(QtGui.QLabel, 'warning').setText(
-            "Please note that if you use bare filenames, the 'Check Media' "
-            "feature in Anki will not detect audio files as in-use, even if "
-            "you insert the field into your templates."
-            if not (append.isChecked() or behavior.isChecked())
-            else ""
-        )
+        if self.isVisible():
+            append = self.findChild(QtGui.QRadioButton, 'append')
+            behavior = self.findChild(QtGui.QCheckBox, 'behavior')
+
+            if not (append.isChecked() or behavior.isChecked()):
+                self._alerts(
+                    'Please note that if you use bare filenames, the "Check '
+                    'Media" feature in Anki will not detect those audio '
+                    "files as in-use, even if you insert the field into your "
+                    "templates.",
+                    self,
+                )
 
 
 class EditorGenerator(ServiceDialog):

@@ -72,28 +72,18 @@ class Templater(ServiceDialog):
         header = QtGui.QLabel("Tag Options")
         header.setFont(self._FONT_HEADER)
 
-        intro = QtGui.QLabel(
-            "In review mode, AwesomeTTS can automatically read the text from "
-            "any <tts> tags in the template, generating on-the-fly audio "
-            "playback. You can specify a specific note field to read from or "
-            "customize the text yourself."
-        )
+        intro = QtGui.QLabel('AwesomeTTS can automatically speak <tts> tags '
+                             'in your cards, playing speech on-the-fly. '
+                             'Click "Help" for usage hints.')
         intro.setTextFormat(QtCore.Qt.PlainText)
         intro.setWordWrap(True)
-
-        hint = QtGui.QLabel(
-            "Normally, the content of <tts> tags are visible like any other "
-            "HTML tag, but you can alter their appearance with inline CSS or "
-            "the shared style rules."
-        )
-        hint.setTextFormat(QtCore.Qt.PlainText)
-        hint.setWordWrap(True)
 
         layout = super(Templater, self)._ui_control()
         layout.addWidget(header)
         layout.addWidget(intro)
-        layout.addWidget(hint)
+        layout.addStretch()
         layout.addLayout(self._ui_control_fields())
+        layout.addStretch()
         layout.addWidget(self._ui_buttons())
 
         return layout

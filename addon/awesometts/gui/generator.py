@@ -82,8 +82,10 @@ class BrowserGenerator(ServiceDialog):
         layout = super(BrowserGenerator, self)._ui_control()
         layout.addWidget(header)
         layout.addWidget(intro)
+        layout.addStretch()
         layout.addLayout(self._ui_control_fields())
         layout.addWidget(self._ui_control_handling())
+        layout.addStretch()
         layout.addWidget(self._ui_buttons())
 
         return layout
@@ -669,10 +671,8 @@ class EditorGenerator(ServiceDialog):
         header = QtGui.QLabel("Preview and Record")
         header.setFont(self._FONT_HEADER)
 
-        intro = QtGui.QLabel(
-            "This text will be inserted as a [sound] tag and then "
-            "synchronized along with other media in your collection."
-        )
+        intro = QtGui.QLabel("This will be inserted as a [sound] tag and "
+                             "synchronized with your collection.")
         intro.setTextFormat(QtCore.Qt.PlainText)
         intro.setWordWrap(True)
 

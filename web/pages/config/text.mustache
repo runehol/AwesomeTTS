@@ -35,8 +35,8 @@
   inside of a larger note that the studier must recall. For more about cloze
   deletion or how Anki implements it within cards, see the <a rel="external"
   href="http://ankisrs.net/docs/manual.html#cloze-deletion">cloze deletion
-  topic in the manual</a>. The &ldquo;cloze placeholders should be&rdquo;
-  option will let you control how AwesomeTTS handles these.</p>
+  topic in the manual</a>. The cloze options will let you control how
+  AwesomeTTS handles these.</p>
 
 <p>Options are also available here that can be helpful for users who keep
   snippets of text within their note fields that they want visually on-screen
@@ -131,10 +131,9 @@
       structure, service used, and options selected.</li>
     <li>AwesomeTTS will always remove <code>[sound]</code> tags and HTML from
       either kind of input source.</li>
-    <li>Bracketed text is treated separately from cloze deletion placeholder
-      text, and the two options can be used together without conflicting, even
-      though the cloze deletion placeholders will render visually with
-      brackets.</li>
+    <li>Regular bracketed and braced text is treated separately from any cloze
+      handling and the two options can be used together without conflicting,
+      even though the cloze functionality uses these symbols.</li>
     <li>When handling text from the clipboard (e.g. for prepopulating the
       input text field when <a href="/usage/editor">adding audio files in the
       note editor</a>), options from both sections will be applied.</li>
@@ -155,20 +154,20 @@
         transform input text using the following rules in the following order:
 
         <ol>
-            <li>substitution of any cloze deletion templates, <strong>as
-              directed by the user</strong></li>
+            <li>handling of any cloze functionality, <strong>as directed by
+              the user</strong></li>
             <li>removal of any HTML tags, <strong>always</strong></li>
             <li>removal of any <code>[sound]</code> tags,
               <strong>always</strong></li>
             <li>removal of any AwesomeTTS-derived paths (e.g. from using the
               bare path option from the <a href="/usage/browser">browser
               generator</a>), <strong>always</strong></li>
-            <li>removal of any parenthetical text, <strong>if enabled by the
+            <li>removal of any text within parentheses, <strong>if enabled by
+              the user</strong></li>
+            <li>removal of any text within brackets, <strong>if enabled by the
               user</strong></li>
-            <li>removal of any bracketed text, <strong>if enabled by the
-              user</strong></li>
-            <li>removal of any curly-braced text, <strong>if enabled by the
-              user</strong></li>
+            <li>removal of any text within curly braces, <strong>if enabled by
+              the user</strong></li>
             <li>removal of any specifically-targeted characters, <strong>as
               directed by the user</strong></li>
             <li>counting of any specifically-targeted characters, <strong>as

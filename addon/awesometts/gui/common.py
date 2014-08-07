@@ -43,20 +43,26 @@ NO_SHORTCUT = QtGui.QKeySequence()
 def key_event_combo(event):
     """
     Given a key event, returns an integer representing the combination
-    of keys that were pressed.
+    of keys that were pressed. Keys that are considered "modifier" keys
+    are returned as-is without considering any modifier keys that have
+    been pressed in combination with them (even if those keys are not
+    allowed to act as modifiers themselves, e.g. the X11 mode switch).
     """
 
+    key = event.key()
     modifiers = event.modifiers()
-    return event.key() + sum(code
-                             for code in key_event_combo.MODIFIER_CODES
-                             if modifiers & code)
 
-key_event_combo.MODIFIER_CODES = [
-    value
-    for attr, value in vars(QtCore.Qt).items()
-    if (len(attr) > 8 and attr.endswith('Modifier') and
-        isinstance(value, int) and value > 0)
-]
+    return key if key in key_event_combo.MOD_KEYS \
+        else key + sum(flag
+                       for flag in key_event_combo.MOD_FLAGS
+                       if modifiers & flag)
+
+key_event_combo.MOD_FLAGS = [QtCore.Qt.AltModifier, QtCore.Qt.ControlModifier,
+                             QtCore.Qt.MetaModifier, QtCore.Qt.ShiftModifier]
+
+key_event_combo.MOD_KEYS = [QtCore.Qt.Key_Alt, QtCore.Qt.Key_AltGr,
+                            QtCore.Qt.Key_Control, QtCore.Qt.Key_Meta,
+                            QtCore.Qt.Key_Mode_switch, QtCore.Qt.Key_Shift]
 
 
 def key_combo_desc(combo):

@@ -43,10 +43,17 @@ NO_SHORTCUT = QtGui.QKeySequence()
 def key_event_combo(event):
     """
     Given a key event, returns an integer representing the combination
-    of keys that were pressed. Keys that are considered "modifier" keys
-    are returned as-is without considering any modifier keys that have
-    been pressed in combination with them (even if those keys are not
-    allowed to act as modifiers themselves, e.g. the X11 mode switch).
+    of keys that was pressed or released.
+
+    Keys that are considered "modifier" keys (MOD_KEYS) are returned
+    as-is without including any additional modifier flags that were
+    active. This stops ambiguous shortcut combinations (e.g. Shift+Ctrl
+    vs. Ctrl+Shift, which would have different integer results).
+
+    MOD_KEYS also includes some keys (e.g. AltGr) that are not correctly
+    handled by QKeySequence#toString() when combined with a recognized
+    modifier flag (e.g. Shift+AltGr results in gibberish). These problem
+    keys are thus also returned as-is without a modifier flag.
     """
 
     key = event.key()

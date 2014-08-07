@@ -31,7 +31,7 @@ import os.path
 from PyQt4 import QtCore, QtGui
 
 from .base import Dialog
-from .common import key_combo_desc
+from .common import key_event_combo, key_combo_desc
 
 # all methods might need 'self' in the future, pylint:disable=R0201
 
@@ -658,40 +658,46 @@ class Configurator(Dialog):
         )
 
     def keyPressEvent(self, key_event):  # from PyQt4, pylint:disable=C0103
-        """
-        If we have a shortcut button awaiting a key event to change its
-        binding, we capture it and process it.
+        """Assign new combo for shortcut buttons undergoing changes."""
 
-        Otherwise, we forward to the superclass.
-        """
-
-        buttons = [
-            button
-            for button in self.findChildren(QtGui.QPushButton)
-            if (
-                button.objectName().startswith('tts_key_') and
-                button.isChecked()
-            )
-        ]
-
+        buttons = self._get_pressed_shortcut_buttons()
         if not buttons:
             return super(Configurator, self).keyPressEvent(key_event)
 
-        new_value = (
-            None if key_event.key() in [
-                QtCore.Qt.Key_Escape,
-                QtCore.Qt.Key_Backspace,
-                QtCore.Qt.Key_Delete,
-                QtCore.Qt.Key_Enter,
-                QtCore.Qt.Key_Return,
-            ]
-            else key_event.key()
-        )
+        combo = key_event_combo(key_event)
+
+        if combo == QtCore.Qt.Key_Escape:
+            for button in buttons:
+                button.awesometts_pending = False
+                button.setText(key_combo_desc(button.awesometts_value))
+            return
+
+        if combo in [QtCore.Qt.Key_Backspace, QtCore.Qt.Key_Delete]:
+            combo = None
 
         for button in buttons:
-            button.awesometts_value = new_value
+            button.awesometts_pending = combo
+            button.setText(key_combo_desc(combo))
+
+    def keyReleaseEvent(self, key_event):  # from PyQt4, pylint:disable=C0103
+        """Disengage all shortcut buttons undergoing changes."""
+
+        buttons = self._get_pressed_shortcut_buttons()
+        if not buttons:
+            return super(Configurator, self).keyPressEvent(key_event)
+
+        for button in buttons:
+            if button.awesometts_pending is not False:
+                button.awesometts_value = button.awesometts_pending
             button.setChecked(False)
-            button.setText(key_combo_desc(button.awesometts_value))
+
+    def _get_pressed_shortcut_buttons(self):
+        """Returns all shortcut buttons that are pressed."""
+
+        return [button
+                for button in self.findChildren(QtGui.QPushButton)
+                if (button.objectName().startswith('tts_key_') and
+                    button.isChecked())]
 
     def _on_update_request(self):
         """

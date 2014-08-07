@@ -31,6 +31,7 @@ import os.path
 from PyQt4 import QtCore, QtGui
 
 from .base import Dialog
+from .common import key_combo_desc
 
 # all methods might need 'self' in the future, pylint:disable=R0201
 
@@ -61,25 +62,11 @@ class Configurator(Dialog):
     )
 
     __slots__ = [
-        '_qt_keys',    # mapping of QT key integers to human-readable names
     ]
 
     def __init__(self, *args, **kwargs):
-        """
-        Pregenerate our mapping of all QT keys.
-        """
-
-        self._qt_keys = {
-            value: key[4:]
-            for key, value
-            in vars(QtCore.Qt).items()
-            if len(key) > 4 and key.startswith('Key_')
-        }
-
-        super(Configurator, self).__init__(
-            title="Configuration",
-            *args, **kwargs
-        )
+        super(Configurator, self).__init__(title="Configuration",
+                                           *args, **kwargs)
 
     # UI Construction ########################################################
 
@@ -205,7 +192,7 @@ class Configurator(Dialog):
                 shortcut.setText("press new key"),
                 shortcut.setFocus(),  # needed for OS X if text inputs present
             ) if is_down
-            else shortcut.setText(self._get_key(shortcut.awesometts_value))
+            else shortcut.setText(key_combo_desc(shortcut.awesometts_value))
         )
 
         horizontal = QtGui.QHBoxLayout()
@@ -587,7 +574,7 @@ class Configurator(Dialog):
 
             elif isinstance(widget, QtGui.QPushButton):
                 widget.awesometts_value = value
-                widget.setText(self._get_key(widget.awesometts_value))
+                widget.setText(key_combo_desc(widget.awesometts_value))
 
             elif isinstance(widget, QtGui.QComboBox):
                 widget.setCurrentIndex(max(widget.findData(value), 0))
@@ -704,7 +691,7 @@ class Configurator(Dialog):
         for button in buttons:
             button.awesometts_value = new_value
             button.setChecked(False)
-            button.setText(self._get_key(button.awesometts_value))
+            button.setText(key_combo_desc(button.awesometts_value))
 
     def _on_update_request(self):
         """
@@ -781,12 +768,3 @@ class Configurator(Dialog):
 
         else:
             button.setText("successfully emptied cache")
-
-    # Auxiliary ##############################################################
-
-    def _get_key(self, code):
-        """
-        Retrieve the human-readable version of the given Qt key code.
-        """
-
-        return self._qt_keys.get(code, 'unknown') if code else 'unassigned'

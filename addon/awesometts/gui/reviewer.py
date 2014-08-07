@@ -35,6 +35,8 @@ import re
 from BeautifulSoup import BeautifulSoup
 from PyQt4.QtCore import Qt
 
+from common import key_event_combo
+
 
 # n.b. Previously, before playing handlers, these event handlers checked to
 # make sure that 'not sound.hasSound()'. I am guessing that this was done
@@ -123,18 +125,20 @@ class Reviewer(object):
         if state not in ['answer', 'question']:
             return False
 
-        code = key_event.key()
+        combo = key_event_combo(key_event)
         handled = False
 
-        if code in [Qt.Key_R, Qt.Key_F5]:
+        if combo in [Qt.Key_R, Qt.Key_F5]:
             replay_audio()
             handled = True
 
-        if code == self._addon.config['tts_key_q']:
+        if self._addon.config['tts_key_q'] and \
+           combo == self._addon.config['tts_key_q']:
             self._play_html(card.q(), self._playback.shortcut)
             handled = True
 
-        if state == 'answer' and code == self._addon.config['tts_key_a']:
+        if state == 'answer' and self._addon.config['tts_key_a'] and \
+           combo == self._addon.config['tts_key_a']:
             self._play_html(self._get_answer(card), self._playback.shortcut)
             handled = True
 

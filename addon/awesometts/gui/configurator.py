@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -26,7 +25,9 @@ Configuration dialog
 
 __all__ = ['Configurator']
 
-import os, os.path
+import os
+import os.path
+
 from PyQt4 import QtCore, QtGui
 
 from .base import Dialog
@@ -107,10 +108,10 @@ class Configurator(Dialog):
         use_icons = not platform.startswith('darwin')
 
         for content, icon, label in [
-            (self._ui_tabs_playback, 'player-time', "Playback"),
-            (self._ui_tabs_text, 'editclear', "Text"),
-            (self._ui_tabs_mp3gen, 'document-new', "MP3s"),
-            (self._ui_tabs_advanced, 'configure', "Advanced"),
+                (self._ui_tabs_playback, 'player-time', "Playback"),
+                (self._ui_tabs_text, 'editclear', "Text"),
+                (self._ui_tabs_mp3gen, 'document-new', "MP3s"),
+                (self._ui_tabs_advanced, 'configure', "Advanced"),
         ]:
             if use_icons:
                 tabs.addTab(
@@ -158,10 +159,8 @@ class Configurator(Dialog):
 
         return tab
 
-    def _ui_tabs_playback_group(
-        self,
-        automatic_key, shortcut_key, delay_key_prefix, label
-    ):
+    def _ui_tabs_playback_group(self, automatic_key, shortcut_key,
+                                delay_key_prefix, label):
         """
         Returns the "Questions / Fronts of Cards" and "Answers / Backs
         of Cards" input groups.
@@ -176,9 +175,9 @@ class Configurator(Dialog):
         wait_widgets = {}
 
         for subkey, description in [
-            ('onthefly', "on-the-fly <tts> tags"),
-            ('stored_ours', "AwesomeTTS [sound] tags"),
-            ('stored_theirs', "other [sound] tags"),
+                ('onthefly', "on-the-fly <tts> tags"),
+                ('stored_ours', "AwesomeTTS [sound] tags"),
+                ('stored_theirs', "other [sound] tags"),
         ]:
             spinner = QtGui.QSpinBox()
             spinner.setObjectName(delay_key_prefix + subkey)
@@ -191,7 +190,7 @@ class Configurator(Dialog):
             horizontal.addWidget(QtGui.QLabel("Wait"))
             horizontal.addWidget(spinner)
             horizontal.addWidget(QtGui.QLabel("before automatically "
-                "playing " + description))
+                                              "playing " + description))
             horizontal.addStretch()
 
             layout.addLayout(horizontal)
@@ -211,7 +210,7 @@ class Configurator(Dialog):
 
         horizontal = QtGui.QHBoxLayout()
         horizontal.addWidget(QtGui.QLabel("To manually play on-the-fly <tts> "
-          "tags, strike"))
+                                          "tags, strike"))
         horizontal.addWidget(shortcut)
         horizontal.addStretch()
 
@@ -575,9 +574,9 @@ class Configurator(Dialog):
         """
 
         for widget, value in [
-            (widget, self._addon.config[widget.objectName()])
-            for widget in self.findChildren(self._PROPERTY_WIDGETS)
-            if widget.objectName() in self._PROPERTY_KEYS
+                (widget, self._addon.config[widget.objectName()])
+                for widget in self.findChildren(self._PROPERTY_WIDGETS)
+                if widget.objectName() in self._PROPERTY_KEYS
         ]:
             if isinstance(widget, QtGui.QCheckBox):
                 widget.setChecked(value)
@@ -635,12 +634,22 @@ class Configurator(Dialog):
 
         self._addon.config.update({
             widget.objectName(): (
-                widget.isChecked() if isinstance(widget, QtGui.QCheckBox)
-                else widget.awesometts_value if
-                    isinstance(widget, QtGui.QPushButton)
-                else widget.value() if isinstance(widget, QtGui.QSpinBox)
-                else widget.itemData(widget.currentIndex()) if
-                    isinstance(widget, QtGui.QComboBox)
+                widget.isChecked() if isinstance(
+                    widget,
+                    QtGui.QCheckBox,
+                )
+                else widget.awesometts_value if isinstance(
+                    widget,
+                    QtGui.QPushButton,
+                )
+                else widget.value() if isinstance(
+                    widget,
+                    QtGui.QSpinBox,
+                )
+                else widget.itemData(widget.currentIndex()) if isinstance(
+                    widget,
+                    QtGui.QComboBox,
+                )
                 else widget.text()
             )
             for widget in self.findChildren(self._PROPERTY_WIDGETS)
@@ -672,8 +681,10 @@ class Configurator(Dialog):
         buttons = [
             button
             for button in self.findChildren(QtGui.QPushButton)
-            if button.objectName().startswith('tts_key_') and
+            if (
+                button.objectName().startswith('tts_key_') and
                 button.isChecked()
+            )
         ]
 
         if not buttons:
@@ -727,8 +738,10 @@ class Configurator(Dialog):
                             info=info,
                             is_manual=True,
                             addon=self._addon,
-                            parent=self if self.isVisible()
-                                else self.parentWidget(),
+                            parent=(
+                                self if self.isVisible()
+                                else self.parentWidget()
+                            ),
                         )]
                     ],
                 ),

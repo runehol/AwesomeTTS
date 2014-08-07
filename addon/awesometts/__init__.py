@@ -63,6 +63,10 @@ WEB = 'https://ankiatts.appspot.com'
 
 TO_BOOL = lambda value: bool(int(value))  # workaround for bool('0') == True
 
+TO_NULLABLE_INT = lambda value: int(value) if value else None
+
+TO_NULLABLE_KEY = lambda value: Qt.Key(value) if value else None
+
 TO_JSON_DICT = lambda value: isinstance(value, basestring) and \
     value.lstrip().startswith('{') and json.loads(value) or {}
 
@@ -139,8 +143,8 @@ config = Config(
         ('templater_target', 'text', 'front', str, str),
         ('throttle_sleep', 'integer', 30, int, int),
         ('throttle_threshold', 'integer', 10, int, int),
-        ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
-        ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),
+        ('TTS_KEY_A', 'integer', Qt.Key_F4, TO_NULLABLE_KEY, TO_NULLABLE_INT),
+        ('TTS_KEY_Q', 'integer', Qt.Key_F3, TO_NULLABLE_KEY, TO_NULLABLE_INT),
         ('updates_enabled', 'integer', True, TO_BOOL, int),
         ('updates_ignore', 'text', '', str, str),
         ('updates_postpone', 'integer', 0, int, lambda i: int(round(i))),

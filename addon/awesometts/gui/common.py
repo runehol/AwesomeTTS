@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -39,6 +38,43 @@ ICON = QtGui.QIcon(':/icons/speaker.png')
 SHORTCUT = QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_T)
 
 NO_SHORTCUT = QtGui.QKeySequence()
+
+
+def key_event_combo(event):
+    """
+    Given a key event, returns an integer representing the combination
+    of keys that were pressed.
+    """
+
+    modifiers = event.modifiers()
+    return event.key() + sum(code
+                             for code in key_event_combo.MODIFIER_CODES
+                             if modifiers & code)
+
+key_event_combo.MODIFIER_CODES = [
+    value
+    for attr, value in vars(QtCore.Qt).items()
+    if (len(attr) > 8 and attr.endswith('Modifier') and
+        isinstance(value, int) and value > 0)
+]
+
+
+def key_combo_desc(combo):
+    """
+    Given an key combination as returned by key_event_combo, returns a
+    human-readable description.
+    """
+
+    return "unassigned" if not combo \
+        else key_combo_desc.LOOKUP[combo] if combo in key_combo_desc.LOOKUP \
+        else QtGui.QKeySequence(combo).toString(QtGui.QKeySequence.NativeText)
+
+key_combo_desc.LOOKUP = {
+    value: attr[4:]
+    for attr, value in vars(QtCore.Qt).items()
+    if (len(attr) > 4 and attr.startswith('Key_') and
+        isinstance(value, int) and value > 0)
+}
 
 
 class _Connector(object):  # used like a mixin, pylint:disable=R0903

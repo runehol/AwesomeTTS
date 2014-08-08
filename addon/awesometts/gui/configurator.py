@@ -184,21 +184,10 @@ class Configurator(Dialog):
 
         automatic.stateChanged.connect(wait_widgets['onthefly'].setEnabled)
 
-        shortcut = QtGui.QPushButton()
-        shortcut.setObjectName(shortcut_key)
-        shortcut.setCheckable(True)
-        shortcut.toggled.connect(
-            lambda is_down: (
-                shortcut.setText("press new key"),
-                shortcut.setFocus(),  # needed for OS X if text inputs present
-            ) if is_down
-            else shortcut.setText(key_combo_desc(shortcut.awesometts_value))
-        )
-
         horizontal = QtGui.QHBoxLayout()
         horizontal.addWidget(QtGui.QLabel("To manually play on-the-fly <tts> "
                                           "tags, strike"))
-        horizontal.addWidget(shortcut)
+        horizontal.addWidget(self._factory_shortcut(shortcut_key))
         horizontal.addStretch()
 
         layout.addLayout(horizontal)
@@ -551,6 +540,24 @@ class Configurator(Dialog):
         group.setLayout(layout)
 
         return group
+
+    # Factories ##############################################################
+
+    def _factory_shortcut(self, object_name):
+        """Returns a push button capable of being assigned a shortcut."""
+
+        shortcut = QtGui.QPushButton()
+        shortcut.setObjectName(object_name)
+        shortcut.setCheckable(True)
+        shortcut.toggled.connect(
+            lambda is_down: (
+                shortcut.setText("press keystroke"),
+                shortcut.setFocus(),  # needed for OS X if text inputs present
+            ) if is_down
+            else shortcut.setText(key_combo_desc(shortcut.awesometts_value))
+        )
+
+        return shortcut
 
     # Events #################################################################
 

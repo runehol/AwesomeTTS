@@ -46,14 +46,16 @@ class Configurator(Dialog):
         'debug_stdout', 'delay_answers_onthefly', 'delay_answers_stored_ours',
         'delay_answers_stored_theirs', 'delay_questions_onthefly',
         'delay_questions_stored_ours', 'delay_questions_stored_theirs',
-        'lame_flags', 'spec_note_strip', 'spec_note_ellipsize',
-        'spec_template_ellipsize', 'spec_note_count', 'spec_note_count_wrap',
-        'spec_template_count', 'spec_template_count_wrap',
-        'spec_template_strip', 'strip_note_braces', 'strip_note_brackets',
-        'strip_note_parens', 'strip_template_braces',
-        'strip_template_brackets', 'strip_template_parens', 'sub_note_cloze',
-        'sub_template_cloze', 'throttle_sleep', 'throttle_threshold',
-        'tts_key_a', 'tts_key_q', 'updates_enabled',
+        'lame_flags', 'launch_browser_generator', 'launch_browser_stripper',
+        'launch_configurator', 'launch_editor_generator', 'launch_templater',
+        'spec_note_strip', 'spec_note_ellipsize', 'spec_template_ellipsize',
+        'spec_note_count', 'spec_note_count_wrap', 'spec_template_count',
+        'spec_template_count_wrap', 'spec_template_strip',
+        'strip_note_braces', 'strip_note_brackets', 'strip_note_parens',
+        'strip_template_braces', 'strip_template_brackets',
+        'strip_template_parens', 'sub_note_cloze', 'sub_template_cloze',
+        'throttle_sleep', 'throttle_threshold', 'tts_key_a', 'tts_key_q',
+        'updates_enabled',
     ]
 
     _PROPERTY_WIDGETS = (
@@ -98,6 +100,7 @@ class Configurator(Dialog):
                 (self._ui_tabs_playback, 'player-time', "Playback"),
                 (self._ui_tabs_text, 'editclear', "Text"),
                 (self._ui_tabs_mp3gen, 'document-new', "MP3s"),
+                (self._ui_tabs_windows, 'kpersonalizer', "Windows"),
                 (self._ui_tabs_advanced, 'configure', "Advanced"),
         ]:
             if use_icons:
@@ -440,6 +443,50 @@ class Configurator(Dialog):
 
         return group
 
+    def _ui_tabs_windows(self):
+        """
+        Returns the "Window" tab.
+        """
+
+        grid = QtGui.QGridLayout()
+        for i, (desc, sub) in enumerate([
+                ("open configuration in main window", 'configurator'),
+                ("insert <tts> tag in template editor", 'templater'),
+                ("mass generate MP3s in card browser", 'browser_generator'),
+                ("mass remove MP3s in card browser", 'browser_stripper'),
+                ("generate single MP3 in note editor*", 'editor_generator'),
+        ]):
+            grid.addWidget(QtGui.QLabel("To " + desc + ", strike"), i, 0)
+            grid.addWidget(self._factory_shortcut('launch_' + sub), i, 1)
+        grid.setColumnStretch(1, 1)
+
+        group = QtGui.QGroupBox("Window Shortcuts")
+        group.setLayout(grid)
+
+        note = QtGui.QLabel(
+            "* By default, AwesomeTTS binds %(native)s for most actions. "
+            "However, if you use math equations and LaTeX with Anki using "
+            "the %(native)s E/M/T keystrokes, you may want to reassign or "
+            "unbind the shortcut for generating MP3s in the note editor." %
+            dict(
+                native=QtGui.QKeySequence(
+                    QtCore.Qt.ControlModifier |
+                    QtCore.Qt.Key_T
+                ).toString(QtGui.QKeySequence.NativeText),
+            )
+        )
+        note.setWordWrap(True)
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(group)
+        layout.addWidget(note)
+        layout.addStretch()
+
+        tab = QtGui.QWidget()
+        tab.setLayout(layout)
+
+        return tab
+
     def _ui_tabs_advanced(self):
         """
         Returns the "Advanced" tab.
@@ -703,8 +750,9 @@ class Configurator(Dialog):
 
         return [button
                 for button in self.findChildren(QtGui.QPushButton)
-                if (button.objectName().startswith('tts_key_') and
-                    button.isChecked())]
+                if (button.isChecked() and
+                    (button.objectName().startswith('launch_') or
+                     button.objectName().startswith('tts_key_')))]
 
     def _on_update_request(self):
         """

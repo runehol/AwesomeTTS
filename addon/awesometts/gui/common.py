@@ -35,10 +35,6 @@ from PyQt4 import QtCore, QtGui
 
 ICON = QtGui.QIcon(':/icons/speaker.png')
 
-SHORTCUT = QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_T)
-
-NO_SHORTCUT = QtGui.QKeySequence()
-
 
 def key_event_combo(event):
     """
@@ -127,8 +123,10 @@ class Action(QtGui.QAction, _Connector):
     Provides a menu action to show a dialog when triggered.
     """
 
+    NO_SEQUENCE = QtGui.QKeySequence()
+
     __slots__ = [
-        '_shortcut',  # whether or not we use the Ctrl + T shortcut
+        '_sequence',  # the key sequence that activates this action
     ]
 
     def muzzle(self, disable):
@@ -138,12 +136,9 @@ class Action(QtGui.QAction, _Connector):
         if it would normally be.
         """
 
-        self.setShortcut(
-            NO_SHORTCUT if disable or not self._shortcut
-            else SHORTCUT
-        )
+        self.setShortcut(self.NO_SEQUENCE if disable else self._sequence)
 
-    def __init__(self, target, text, parent, shortcut=True):
+    def __init__(self, target, text, sequence, parent):
         """
         Initializes the menu action and wires its 'triggered' event.
 
@@ -154,9 +149,8 @@ class Action(QtGui.QAction, _Connector):
         QtGui.QAction.__init__(self, ICON, text, parent)
         _Connector.__init__(self, self.triggered, target)
 
-        if shortcut:
-            self.setShortcut(SHORTCUT)
-        self._shortcut = shortcut
+        self.setShortcut(sequence)
+        self._sequence = sequence
 
         if isinstance(parent, QtGui.QMenu):
             parent.addAction(self)
@@ -167,7 +161,7 @@ class Button(QtGui.QPushButton, _Connector):
     Provides a button to show a dialog when clicked.
     """
 
-    def __init__(self, target, tooltip, text=None, style=None):
+    def __init__(self, target, tooltip, sequence, text=None, style=None):
         """
         Initializes the button and wires its 'clicked' event.
 
@@ -186,11 +180,9 @@ class Button(QtGui.QPushButton, _Connector):
             self.setFixedHeight(20)
             self.setFocusPolicy(QtCore.Qt.NoFocus)
 
-        self.setShortcut(SHORTCUT)
-        self.setToolTip(
-            "%s (%s)" %
-            (tooltip, SHORTCUT.toString(QtGui.QKeySequence.NativeText))
-        )
+        self.setShortcut(sequence)
+        self.setToolTip("%s (%s)" % (tooltip, key_combo_desc(sequence))
+                        if sequence else tooltip)
 
         if style:
             self.setStyle(style)

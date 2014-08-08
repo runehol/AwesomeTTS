@@ -744,8 +744,14 @@ class Configurator(Dialog):
         """Disengage all shortcut buttons undergoing changes."""
 
         buttons = self._get_pressed_shortcut_buttons()
+
         if not buttons:
-            return super(Configurator, self).keyPressEvent(key_event)
+            return super(Configurator, self).keyReleaseEvent(key_event)
+
+        elif key_event.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]:
+            # need to ignore and eat key release on enter/return so that user
+            # can activate the button without immediately deactivating it
+            return
 
         for button in buttons:
             if button.awesometts_pending is not False:

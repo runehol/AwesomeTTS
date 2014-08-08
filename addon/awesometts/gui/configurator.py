@@ -468,12 +468,8 @@ class Configurator(Dialog):
             "However, if you use math equations and LaTeX with Anki using "
             "the %(native)s E/M/T keystrokes, you may want to reassign or "
             "unbind the shortcut for generating MP3s in the note editor." %
-            dict(
-                native=QtGui.QKeySequence(
-                    QtCore.Qt.ControlModifier |
-                    QtCore.Qt.Key_T
-                ).toString(QtGui.QKeySequence.NativeText),
-            )
+            dict(native=key_combo_desc(QtCore.Qt.ControlModifier |
+                                       QtCore.Qt.Key_T))
         )
         note.setWordWrap(True)
 

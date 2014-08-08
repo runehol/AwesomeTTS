@@ -600,6 +600,7 @@ class Configurator(Dialog):
         """Returns a push button capable of being assigned a shortcut."""
 
         shortcut = QtGui.QPushButton()
+        shortcut.awesometts_pending = False
         shortcut.setObjectName(object_name)
         shortcut.setCheckable(True)
         shortcut.toggled.connect(

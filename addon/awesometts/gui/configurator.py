@@ -477,9 +477,19 @@ class Configurator(Dialog):
         )
         note.setWordWrap(True)
 
+        disclaimer = QtGui.QLabel(
+            "Changes to the editor and browser shortcuts will take effect "
+            "the next time you open those windows. Some keystrokes will not "
+            "work in certain windows, depending on what Anki and your other "
+            "add-ons have already reserved, so you may have to experiment to "
+            "find what works best."
+        )
+        disclaimer.setWordWrap(True)
+
         layout = QtGui.QVBoxLayout()
         layout.addWidget(group)
         layout.addWidget(note)
+        layout.addWidget(disclaimer)
         layout.addStretch()
 
         tab = QtGui.QWidget()

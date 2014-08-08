@@ -130,8 +130,8 @@ config = Config(
         ('last_strip_mode', 'text', 'ours', str, str),
         ('launch_browser_generator', 'integer', Qt.ControlModifier | Qt.Key_T,
          TO_NULLABLE_KEY, TO_NULLABLE_INT),
-        ('launch_browser_stripper', 'integer', Qt.ControlModifier |
-         Qt.AltModifier | Qt.Key_T, TO_NULLABLE_KEY, TO_NULLABLE_INT),
+        ('launch_browser_stripper', 'integer', None, TO_NULLABLE_KEY,
+         TO_NULLABLE_INT),
         ('launch_configurator', 'integer', Qt.ControlModifier | Qt.Key_T,
          TO_NULLABLE_KEY, TO_NULLABLE_INT),
         ('launch_editor_generator', 'integer', Qt.ControlModifier | Qt.Key_T,

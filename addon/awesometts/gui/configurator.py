@@ -453,7 +453,7 @@ class Configurator(Dialog):
                 ("open configuration in main window", 'configurator'),
                 ("insert <tts> tag in template editor", 'templater'),
                 ("mass generate MP3s in card browser", 'browser_generator'),
-                ("mass remove MP3s in card browser", 'browser_stripper'),
+                ("mass remove audio in card browser", 'browser_stripper'),
                 ("generate single MP3 in note editor*", 'editor_generator'),
         ]):
             grid.addWidget(QtGui.QLabel("To " + desc + ", strike"), i, 0)

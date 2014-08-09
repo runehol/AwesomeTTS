@@ -474,18 +474,24 @@ class Configurator(Dialog):
         note.setWordWrap(True)
 
         disclaimer = QtGui.QLabel(
-            "Changes to the editor and browser shortcuts will take effect "
-            "the next time you open those windows. Some keystrokes will not "
-            "work in certain windows, depending on what Anki and your other "
-            "add-ons have already reserved, so you may have to experiment to "
-            "find what works best."
+            "Changes to editor and browser shortcuts will take effect the "
+            "next time you open those windows."
         )
         disclaimer.setWordWrap(True)
+
+        disclaimer2 = QtGui.QLabel(
+            "Some keys cannot be used as shortcuts. Additionally, certain "
+            "keystrokes might not work in certain windows depending on your "
+            "operating system and other add-ons you are running, so you may "
+            "have to experiment to find what works best."
+        )
+        disclaimer2.setWordWrap(True)
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(group)
         layout.addWidget(note)
         layout.addWidget(disclaimer)
+        layout.addWidget(disclaimer2)
         layout.addStretch()
 
         tab = QtGui.QWidget()
@@ -725,19 +731,21 @@ class Configurator(Dialog):
         if not buttons:
             return super(Configurator, self).keyPressEvent(key_event)
 
-        combo = key_event_combo(key_event)
+        key = key_event.key()
 
-        if not combo:
-            return
-
-        if combo == QtCore.Qt.Key_Escape:
+        if key == QtCore.Qt.Key_Escape:
             for button in buttons:
                 button.awesometts_pending = False
                 button.setText(key_combo_desc(button.awesometts_value))
             return
 
-        if combo in [QtCore.Qt.Key_Backspace, QtCore.Qt.Key_Delete]:
+        if key in [QtCore.Qt.Key_Backspace, QtCore.Qt.Key_Delete]:
             combo = None
+
+        else:
+            combo = key_event_combo(key_event)
+            if not combo:
+                return
 
         for button in buttons:
             button.awesometts_pending = combo

@@ -31,6 +31,7 @@ all carry a speaker icon (if supported by the desktop environment).
 __all__ = ['ICON', 'Action', 'Button', 'Filter']
 
 from PyQt4 import QtCore, QtGui
+from PyQt4.QtCore import Qt
 
 
 ICON = QtGui.QIcon(':/icons/speaker.png')
@@ -46,15 +47,15 @@ def key_event_combo(event):
     an event. When used by themselves or exclusively with modifiers,
     these keys cause various problems: gibberish strings returned from
     QKeySequence#toString() and in menus, inability to capture the
-    keystroke because the window manager does not forward it to Qt, and
+    keystroke because the window manager does not forward it to Qt,
     ambiguous shortcuts where order would matter (e.g. Ctrl + Alt would
     produce a different numerical value than Alt + Ctrl, because the
     key codes for Alt and Ctrl are different from the modifier flag
-    codes for Alt and Ctrl).
+    codes for Alt and Ctrl), and clashes with input navigation.
     """
 
     key = event.key()
-    if key in key_event_combo.BLACKLIST:
+    if key < 32 or key in key_event_combo.BLACKLIST:
         return None
 
     modifiers = event.modifiers()
@@ -62,12 +63,18 @@ def key_event_combo(event):
                      for flag in key_event_combo.MOD_FLAGS
                      if modifiers & flag)
 
-key_event_combo.MOD_FLAGS = [QtCore.Qt.AltModifier, QtCore.Qt.ControlModifier,
-                             QtCore.Qt.MetaModifier, QtCore.Qt.ShiftModifier]
+key_event_combo.MOD_FLAGS = [Qt.AltModifier, Qt.ControlModifier,
+                             Qt.MetaModifier, Qt.ShiftModifier]
 
-key_event_combo.BLACKLIST = [QtCore.Qt.Key_Alt, QtCore.Qt.Key_AltGr,
-                             QtCore.Qt.Key_Control, QtCore.Qt.Key_Meta,
-                             QtCore.Qt.Key_Mode_switch, QtCore.Qt.Key_Shift]
+key_event_combo.BLACKLIST = [
+    Qt.Key_Alt, Qt.Key_AltGr, Qt.Key_Backspace, Qt.Key_Backtab,
+    Qt.Key_CapsLock, Qt.Key_Control, Qt.Key_Delete, Qt.Key_Down, Qt.Key_End,
+    Qt.Key_Enter, Qt.Key_Equal, Qt.Key_Escape, Qt.Key_Home, Qt.Key_Insert,
+    Qt.Key_Left, Qt.Key_Meta, Qt.Key_Minus, Qt.Key_Mode_switch,
+    Qt.Key_NumLock, Qt.Key_PageDown, Qt.Key_PageUp, Qt.Key_Plus,
+    Qt.Key_Return, Qt.Key_Right, Qt.Key_ScrollLock, Qt.Key_Shift,
+    Qt.Key_Space, Qt.Key_Tab, Qt.Key_Underscore, Qt.Key_Up,
+]
 
 
 def key_combo_desc(combo):
@@ -172,7 +179,7 @@ class Button(QtGui.QPushButton, _Connector):
         else:
             self.setFixedWidth(20)
             self.setFixedHeight(20)
-            self.setFocusPolicy(QtCore.Qt.NoFocus)
+            self.setFocusPolicy(Qt.NoFocus)
 
         self.setShortcut(sequence)
         self.setToolTip("%s (%s)" % (tooltip, key_combo_desc(sequence))

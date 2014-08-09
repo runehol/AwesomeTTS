@@ -31,6 +31,7 @@ import os.path
 from PyQt4 import QtCore, QtGui
 
 from .base import Dialog
+from .common import key_event_combo, key_combo_desc
 
 # all methods might need 'self' in the future, pylint:disable=R0201
 
@@ -45,14 +46,16 @@ class Configurator(Dialog):
         'debug_stdout', 'delay_answers_onthefly', 'delay_answers_stored_ours',
         'delay_answers_stored_theirs', 'delay_questions_onthefly',
         'delay_questions_stored_ours', 'delay_questions_stored_theirs',
-        'lame_flags', 'spec_note_strip', 'spec_note_ellipsize',
-        'spec_template_ellipsize', 'spec_note_count', 'spec_note_count_wrap',
-        'spec_template_count', 'spec_template_count_wrap',
-        'spec_template_strip', 'strip_note_braces', 'strip_note_brackets',
-        'strip_note_parens', 'strip_template_braces',
-        'strip_template_brackets', 'strip_template_parens', 'sub_note_cloze',
-        'sub_template_cloze', 'throttle_sleep', 'throttle_threshold',
-        'tts_key_a', 'tts_key_q', 'updates_enabled',
+        'lame_flags', 'launch_browser_generator', 'launch_browser_stripper',
+        'launch_configurator', 'launch_editor_generator', 'launch_templater',
+        'spec_note_strip', 'spec_note_ellipsize', 'spec_template_ellipsize',
+        'spec_note_count', 'spec_note_count_wrap', 'spec_template_count',
+        'spec_template_count_wrap', 'spec_template_strip',
+        'strip_note_braces', 'strip_note_brackets', 'strip_note_parens',
+        'strip_template_braces', 'strip_template_brackets',
+        'strip_template_parens', 'sub_note_cloze', 'sub_template_cloze',
+        'throttle_sleep', 'throttle_threshold', 'tts_key_a', 'tts_key_q',
+        'updates_enabled',
     ]
 
     _PROPERTY_WIDGETS = (
@@ -61,25 +64,11 @@ class Configurator(Dialog):
     )
 
     __slots__ = [
-        '_qt_keys',    # mapping of QT key integers to human-readable names
     ]
 
     def __init__(self, *args, **kwargs):
-        """
-        Pregenerate our mapping of all QT keys.
-        """
-
-        self._qt_keys = {
-            value: key[4:]
-            for key, value
-            in vars(QtCore.Qt).items()
-            if len(key) > 4 and key.startswith('Key_')
-        }
-
-        super(Configurator, self).__init__(
-            title="Configuration",
-            *args, **kwargs
-        )
+        super(Configurator, self).__init__(title="Configuration",
+                                           *args, **kwargs)
 
     # UI Construction ########################################################
 
@@ -111,6 +100,7 @@ class Configurator(Dialog):
                 (self._ui_tabs_playback, 'player-time', "Playback"),
                 (self._ui_tabs_text, 'editclear', "Text"),
                 (self._ui_tabs_mp3gen, 'document-new', "MP3s"),
+                (self._ui_tabs_windows, 'kpersonalizer', "Windows"),
                 (self._ui_tabs_advanced, 'configure', "Advanced"),
         ]:
             if use_icons:
@@ -197,21 +187,10 @@ class Configurator(Dialog):
 
         automatic.stateChanged.connect(wait_widgets['onthefly'].setEnabled)
 
-        shortcut = QtGui.QPushButton()
-        shortcut.setObjectName(shortcut_key)
-        shortcut.setCheckable(True)
-        shortcut.toggled.connect(
-            lambda is_down: (
-                shortcut.setText("press new key"),
-                shortcut.setFocus(),  # needed for OS X if text inputs present
-            ) if is_down
-            else shortcut.setText(self._get_key(shortcut.awesometts_value))
-        )
-
         horizontal = QtGui.QHBoxLayout()
         horizontal.addWidget(QtGui.QLabel("To manually play on-the-fly <tts> "
                                           "tags, strike"))
-        horizontal.addWidget(shortcut)
+        horizontal.addWidget(self._factory_shortcut(shortcut_key))
         horizontal.addStretch()
 
         layout.addLayout(horizontal)
@@ -464,6 +443,62 @@ class Configurator(Dialog):
 
         return group
 
+    def _ui_tabs_windows(self):
+        """
+        Returns the "Window" tab.
+        """
+
+        grid = QtGui.QGridLayout()
+        for i, (desc, sub) in enumerate([
+                ("open configuration in main window", 'configurator'),
+                ("insert <tts> tag in template editor", 'templater'),
+                ("mass generate MP3s in card browser", 'browser_generator'),
+                ("mass remove audio in card browser", 'browser_stripper'),
+                ("generate single MP3 in note editor*", 'editor_generator'),
+        ]):
+            grid.addWidget(QtGui.QLabel("To " + desc + ", strike"), i, 0)
+            grid.addWidget(self._factory_shortcut('launch_' + sub), i, 1)
+        grid.setColumnStretch(1, 1)
+
+        group = QtGui.QGroupBox("Window Shortcuts")
+        group.setLayout(grid)
+
+        note = QtGui.QLabel(
+            "* By default, AwesomeTTS binds %(native)s for most actions. "
+            "However, if you use math equations and LaTeX with Anki using "
+            "the %(native)s E/M/T keystrokes, you may want to reassign or "
+            "unbind the shortcut for generating MP3s in the note editor." %
+            dict(native=key_combo_desc(QtCore.Qt.ControlModifier |
+                                       QtCore.Qt.Key_T))
+        )
+        note.setWordWrap(True)
+
+        disclaimer = QtGui.QLabel(
+            "Changes to editor and browser shortcuts will take effect the "
+            "next time you open those windows."
+        )
+        disclaimer.setWordWrap(True)
+
+        disclaimer2 = QtGui.QLabel(
+            "Some keys cannot be used as shortcuts. Additionally, certain "
+            "keystrokes might not work in certain windows depending on your "
+            "operating system and other add-ons you are running, so you may "
+            "have to experiment to find what works best."
+        )
+        disclaimer2.setWordWrap(True)
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(group)
+        layout.addWidget(note)
+        layout.addWidget(disclaimer)
+        layout.addWidget(disclaimer2)
+        layout.addStretch()
+
+        tab = QtGui.QWidget()
+        tab.setLayout(layout)
+
+        return tab
+
     def _ui_tabs_advanced(self):
         """
         Returns the "Advanced" tab.
@@ -565,6 +600,25 @@ class Configurator(Dialog):
 
         return group
 
+    # Factories ##############################################################
+
+    def _factory_shortcut(self, object_name):
+        """Returns a push button capable of being assigned a shortcut."""
+
+        shortcut = QtGui.QPushButton()
+        shortcut.awesometts_pending = False
+        shortcut.setObjectName(object_name)
+        shortcut.setCheckable(True)
+        shortcut.toggled.connect(
+            lambda is_down: (
+                shortcut.setText("press keystroke"),
+                shortcut.setFocus(),  # needed for OS X if text inputs present
+            ) if is_down
+            else shortcut.setText(key_combo_desc(shortcut.awesometts_value))
+        )
+
+        return shortcut
+
     # Events #################################################################
 
     def show(self, *args, **kwargs):
@@ -587,7 +641,7 @@ class Configurator(Dialog):
 
             elif isinstance(widget, QtGui.QPushButton):
                 widget.awesometts_value = value
-                widget.setText(self._get_key(widget.awesometts_value))
+                widget.setText(key_combo_desc(widget.awesometts_value))
 
             elif isinstance(widget, QtGui.QComboBox):
                 widget.setCurrentIndex(max(widget.findData(value), 0))
@@ -671,40 +725,58 @@ class Configurator(Dialog):
         )
 
     def keyPressEvent(self, key_event):  # from PyQt4, pylint:disable=C0103
-        """
-        If we have a shortcut button awaiting a key event to change its
-        binding, we capture it and process it.
+        """Assign new combo for shortcut buttons undergoing changes."""
 
-        Otherwise, we forward to the superclass.
-        """
-
-        buttons = [
-            button
-            for button in self.findChildren(QtGui.QPushButton)
-            if (
-                button.objectName().startswith('tts_key_') and
-                button.isChecked()
-            )
-        ]
-
+        buttons = self._get_pressed_shortcut_buttons()
         if not buttons:
             return super(Configurator, self).keyPressEvent(key_event)
 
-        new_value = (
-            None if key_event.key() in [
-                QtCore.Qt.Key_Escape,
-                QtCore.Qt.Key_Backspace,
-                QtCore.Qt.Key_Delete,
-                QtCore.Qt.Key_Enter,
-                QtCore.Qt.Key_Return,
-            ]
-            else key_event.key()
-        )
+        key = key_event.key()
+
+        if key == QtCore.Qt.Key_Escape:
+            for button in buttons:
+                button.awesometts_pending = False
+                button.setText(key_combo_desc(button.awesometts_value))
+            return
+
+        if key in [QtCore.Qt.Key_Backspace, QtCore.Qt.Key_Delete]:
+            combo = None
+
+        else:
+            combo = key_event_combo(key_event)
+            if not combo:
+                return
 
         for button in buttons:
-            button.awesometts_value = new_value
+            button.awesometts_pending = combo
+            button.setText(key_combo_desc(combo))
+
+    def keyReleaseEvent(self, key_event):  # from PyQt4, pylint:disable=C0103
+        """Disengage all shortcut buttons undergoing changes."""
+
+        buttons = self._get_pressed_shortcut_buttons()
+
+        if not buttons:
+            return super(Configurator, self).keyReleaseEvent(key_event)
+
+        elif key_event.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]:
+            # need to ignore and eat key release on enter/return so that user
+            # can activate the button without immediately deactivating it
+            return
+
+        for button in buttons:
+            if button.awesometts_pending is not False:
+                button.awesometts_value = button.awesometts_pending
             button.setChecked(False)
-            button.setText(self._get_key(button.awesometts_value))
+
+    def _get_pressed_shortcut_buttons(self):
+        """Returns all shortcut buttons that are pressed."""
+
+        return [button
+                for button in self.findChildren(QtGui.QPushButton)
+                if (button.isChecked() and
+                    (button.objectName().startswith('launch_') or
+                     button.objectName().startswith('tts_key_')))]
 
     def _on_update_request(self):
         """
@@ -781,12 +853,3 @@ class Configurator(Dialog):
 
         else:
             button.setText("successfully emptied cache")
-
-    # Auxiliary ##############################################################
-
-    def _get_key(self, code):
-        """
-        Retrieve the human-readable version of the given Qt key code.
-        """
-
-        return self._qt_keys.get(code, 'unknown') if code else 'unassigned'

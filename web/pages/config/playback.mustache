@@ -46,9 +46,9 @@
   collection&rsquo;s media library and then inserted into the notes as
   <samp>[sound]</samp> tags. Anki <em>is</em> aware of these, and as such,
   remains in control of whether they are automatically played as well as the
-  shortcut keys available (<kbd>R</kbd> or <kbd>F5</kbd>) to play them
-  manually. AwesomeTTS, however, is able to add delays to these stored sound
-  files just like it can add delays to on-the-fly audio.</p>
+  shortcut keys available to play them manually (<kbd>R</kbd> or
+  <kbd>F5</kbd>). AwesomeTTS, however, is able to add delays to these stored
+  sound files just like it can add delays to on-the-fly audio.</p>
 
 <h2>Questions / Fronts of Cards</h2>
 
@@ -65,12 +65,13 @@
       are automatically played.</li>
 
     <li><strong>To manually play on-the-fly <code>&lt;tts&gt;</code> tags,
-      strike <samp>key</samp>:</strong> Clicking this and then striking a
-      single key will change the shortcut key that AwesomeTTS listens for to
-      playback any <code>&lt;tts&gt;</code> tag found on the front side of
-      your card&rsquo;s template. This shortcut key is always available when a
-      card is displayed that has a front <code>&lt;tts&gt;</code> tag. This
-      shortcut key does <em>not</em> affect stored sounds.</li>
+      strike <samp>&hellip;</samp>:</strong> Clicking this and then striking a
+      key (e.g. <kbd>F3</kbd>) or key combination (e.g. <kbd>Ctrl+F11</kbd>)
+      will change the shortcut that AwesomeTTS listens for to playback any
+      <code>&lt;tts&gt;</code> tag found on the front side of your
+      card&rsquo;s template. This shortcut is always available when a card is
+      displayed that has a front <code>&lt;tts&gt;</code> tag. This shortcut
+      does <em>not</em> affect stored sounds.</li>
 </ul>
 
 <h2>Answers / Backs of Cards</h2>
@@ -88,12 +89,13 @@
       are automatically played.</li>
 
     <li><strong>To manually play on-the-fly <code>&lt;tts&gt;</code> tags,
-      strike <samp>key</samp>:</strong> Clicking this and then striking a
-      single key will change the shortcut key that AwesomeTTS listens for to
-      playback any <code>&lt;tts&gt;</code> tag found on the back side of your
-      card&rsquo;s template. This shortcut key is only available once the
-      answer to a card has been revealed and that answer template has a
-      <code>&lt;tts&gt;</code> tag. This shortcut key does <em>not</em> affect
+      strike <samp>&hellip;</samp>:</strong> Clicking this and then striking a
+      key (e.g. <kbd>F4</kbd>) or key combination (e.g. <kbd>Ctrl+F12</kbd>)
+      will change the shortcut that AwesomeTTS listens for to playback
+      any <code>&lt;tts&gt;</code> tag found on the back side of your
+      card&rsquo;s template. This shortcut is only available once the answer
+      to a card has been revealed and that answer template has a
+      <code>&lt;tts&gt;</code> tag. This shortcut does <em>not</em> affect
       stored sounds.</li>
 </ul>
 
@@ -111,20 +113,27 @@
 <h2>Additional Tips</h2>
 
 <ul>
+    {{! n.b. Some of these are present but reworded on the Windows tab. }}
     <li>If you want to customize how AwesomeTTS handles cloze deletions or
       text wrapped in parentheses, brackets, or braces, go to the
       <a rel="next" href="/config/text">Text tab</a> for those settings.</li>
     <li>To unset an on-the-fly shortcut altogether, you can click its button
-      and then strike either <kbd>Esc</kbd> or <kbd>Del</kbd>.</li>
-    <li>You may set both on-the-fly shortcut keys to the same keystroke, in
-      which case AwesomeTTS will read <code>&lt;tts&gt;</code> tags from
-      <em>either</em> side of the card, if they exist and are visible.</li>
-    <li>You may set both or either shortcut keys to <kbd>R</kbd> or
-      <kbd>F5</kbd>, which are keys Anki uses for its own playback. AwesomeTTS
-      will have Anki play any stored sounds before playback of any
-      <code>&lt;tts&gt;</code> tags.</li>
-    <li>To set both on-the-fly shortcuts at the same time to the same key, you
-      can click both buttons and strike your desired key once.</li>
+      and then strike either <kbd>Backspace</kbd> or <kbd>Delete</kbd>.</li>
+    <li>You may set both on-the-fly shortcuts to the same key or key
+      combination, in which case AwesomeTTS will read <code>&lt;tts&gt;</code>
+      tags from <em>either</em> side of the card, if they exist and are
+      visible.</li>
+    <li>You may set both or either shortcuts to <kbd>R</kbd> or <kbd>F5</kbd>,
+      which are keys Anki uses for its own playback. AwesomeTTS will have Anki
+      play any stored sounds before playback of any <code>&lt;tts&gt;</code>
+      tags.</li>
+    <li>To set both on-the-fly shortcuts at the same time to the same key or
+      key combination, you can click both buttons and then strike your desired
+      shortcut once. All shortcuts will be set simultaneously.</li>
+    <li>While setting a shortcut, you can strike <kbd>Escape</kbd> to cancel
+      and revert back to what the shortcut was before you clicked the
+      button.</li>
+    <li>Some keys are reserved and cannot be used in shortcuts.</li>
     <li>If multiple pieces of audio are queued for automatic playback at the
       same time (i.e. for a card side more than one <samp>&lt;tts&gt;</samp>
       and/or <samp>[sound]</samp> tags), AwesomeTTS will use the delay setting

@@ -101,6 +101,11 @@
                 "title": "MP3 Generation Configuration",
                 "what": "Tune how the LAME transcoder gets called, control download rate limiting"
             },
+            "windows": {
+                "terse": "Windows",
+                "title": "Window Configuration",
+                "what": "Change the shortcut keys used to open windows"
+            },
             "advanced": {
                 "terse": "Advanced",
                 "title": "Advanced Configuration",

@@ -36,6 +36,7 @@ import sys
 from time import time
 
 from PyQt4.QtCore import PYQT_VERSION_STR, Qt, QEvent
+from PyQt4.QtGui import QKeySequence
 
 import anki
 import aqt
@@ -62,6 +63,10 @@ WEB = 'https://ankiatts.appspot.com'
 # Conversions and transformations
 
 TO_BOOL = lambda value: bool(int(value))  # workaround for bool('0') == True
+
+TO_NULLABLE_INT = lambda value: int(value) if value else None
+
+TO_NULLABLE_KEY = lambda value: Qt.Key(value) if value else None
 
 TO_JSON_DICT = lambda value: isinstance(value, basestring) and \
     value.lstrip().startswith('{') and json.loads(value) or {}
@@ -92,6 +97,12 @@ logger = Logger(
     ),
 )
 
+sequences = {
+    key: QKeySequence()
+    for key in ['browser_generator', 'browser_stripper', 'configurator',
+                'editor_generator', 'templater']
+}
+
 config = Config(
     db=Bundle(
         path=paths.CONFIG,
@@ -117,6 +128,16 @@ config = Config(
         ('last_options', 'text', {}, TO_JSON_DICT, json.dumps),
         ('last_service', 'text', 'google', str, str),
         ('last_strip_mode', 'text', 'ours', str, str),
+        ('launch_browser_generator', 'integer', Qt.ControlModifier | Qt.Key_T,
+         TO_NULLABLE_KEY, TO_NULLABLE_INT),
+        ('launch_browser_stripper', 'integer', None, TO_NULLABLE_KEY,
+         TO_NULLABLE_INT),
+        ('launch_configurator', 'integer', Qt.ControlModifier | Qt.Key_T,
+         TO_NULLABLE_KEY, TO_NULLABLE_INT),
+        ('launch_editor_generator', 'integer', Qt.ControlModifier | Qt.Key_T,
+         TO_NULLABLE_KEY, TO_NULLABLE_INT),
+        ('launch_templater', 'integer', Qt.ControlModifier | Qt.Key_T,
+         TO_NULLABLE_KEY, TO_NULLABLE_INT),
         ('spec_note_count', 'text', '', unicode, unicode),
         ('spec_note_count_wrap', 'integer', True, TO_BOOL, int),
         ('spec_note_ellipsize', 'text', '', unicode, unicode),
@@ -139,8 +160,8 @@ config = Config(
         ('templater_target', 'text', 'front', str, str),
         ('throttle_sleep', 'integer', 30, int, int),
         ('throttle_threshold', 'integer', 10, int, int),
-        ('TTS_KEY_A', 'integer', Qt.Key_F4, Qt.Key, int),
-        ('TTS_KEY_Q', 'integer', Qt.Key_F3, Qt.Key, int),
+        ('TTS_KEY_A', 'integer', Qt.Key_F4, TO_NULLABLE_KEY, TO_NULLABLE_INT),
+        ('TTS_KEY_Q', 'integer', Qt.Key_F3, TO_NULLABLE_KEY, TO_NULLABLE_INT),
         ('updates_enabled', 'integer', True, TO_BOOL, int),
         ('updates_ignore', 'text', '', str, str),
         ('updates_postpone', 'integer', 0, int, lambda i: int(round(i))),
@@ -150,6 +171,14 @@ config = Config(
         (
             ['debug_file', 'debug_stdout'],
             logger.activate,  # BufferedLogger instance, pylint: disable=E1103
+        ),
+        (
+            ['launch_' + key for key in sequences.keys()],
+            lambda config: ([sequences[key].swap(config['launch_' + key] or 0)
+                            for key in sequences.keys()],
+                            [conf_menu.setShortcut(sequences['configurator'])
+                             for conf_menu in (aqt.mw.form.menuTools.
+                                               findChildren(gui.Action))])
         ),
     ],
 )
@@ -537,6 +566,7 @@ gui.Action(
         kwargs=dict(addon=addon, parent=aqt.mw),
     ),
     text="Awesome&TTS...",
+    sequence=sequences['configurator'],
     parent=aqt.mw.form.menuTools,
 )
 
@@ -556,6 +586,7 @@ anki.hooks.addHook(
                 ),
             ),
             text="Add Audio to Selected w/ Awesome&TTS...",
+            sequence=sequences['browser_generator'],
             parent=browser.form.menuEdit,
         ),
         gui.Action(
@@ -570,7 +601,7 @@ anki.hooks.addHook(
                 ),
             ),
             text="Remove Audio from Selected w/ AwesomeTTS...",
-            shortcut=False,
+            sequence=sequences['browser_stripper'],
             parent=browser.form.menuEdit,
         ),
     ),
@@ -591,6 +622,7 @@ anki.hooks.addHook(
     lambda editor: editor.iconsBox.addWidget(
         gui.Button(
             tooltip="Record and insert an audio clip here w/ AwesomeTTS",
+            sequence=sequences['editor_generator'],
             target=Bundle(
                 constructor=gui.EditorGenerator,
                 args=(),
@@ -632,6 +664,7 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
         gui.Button(
             text="Add &TTS",
             tooltip="Insert a tag for on-the-fly playback w/ AwesomeTTS",
+            sequence=sequences['templater'],
             target=Bundle(
                 constructor=gui.Templater,
                 args=(),

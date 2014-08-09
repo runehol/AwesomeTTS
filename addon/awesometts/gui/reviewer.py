@@ -35,7 +35,7 @@ import re
 from BeautifulSoup import BeautifulSoup
 from PyQt4.QtCore import Qt
 
-from common import key_event_combo
+from .common import key_event_combo
 
 
 # n.b. Previously, before playing handlers, these event handlers checked to
@@ -126,19 +126,22 @@ class Reviewer(object):
             return False
 
         combo = key_event_combo(key_event)
+        if not combo:
+            return False
+
         handled = False
 
         if combo in [Qt.Key_R, Qt.Key_F5]:
             replay_audio()
             handled = True
 
-        if self._addon.config['tts_key_q'] and \
-           combo == self._addon.config['tts_key_q']:
+        question_combo = self._addon.config['tts_key_q']
+        if question_combo and combo == question_combo:
             self._play_html(card.q(), self._playback.shortcut)
             handled = True
 
-        if state == 'answer' and self._addon.config['tts_key_a'] and \
-           combo == self._addon.config['tts_key_a']:
+        answer_combo = self._addon.config['tts_key_a']
+        if state == 'answer' and answer_combo and combo == answer_combo:
             self._play_html(self._get_answer(card), self._playback.shortcut)
             handled = True
 

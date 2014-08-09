@@ -727,6 +727,9 @@ class Configurator(Dialog):
 
         combo = key_event_combo(key_event)
 
+        if not combo:
+            return
+
         if combo == QtCore.Qt.Key_Escape:
             for button in buttons:
                 button.awesometts_pending = False

@@ -41,31 +41,33 @@ def key_event_combo(event):
     Given a key event, returns an integer representing the combination
     of keys that was pressed or released.
 
-    Keys that are considered "modifier" keys (MOD_KEYS) are returned
-    as-is without including any additional modifier flags that were
-    active. This stops ambiguous shortcut combinations (e.g. Shift+Ctrl
-    vs. Ctrl+Shift, which would have different integer results).
-
-    MOD_KEYS also includes some keys (e.g. AltGr) that are not correctly
-    handled by QKeySequence#toString() when combined with a recognized
-    modifier flag (e.g. Shift+AltGr results in gibberish). These problem
-    keys are thus also returned as-is without a modifier flag.
+    Certain keys are blacklisted (see BLACKLIST) and key_event_combo()
+    will return None if it sees these keys in the primary key() slot for
+    an event. When used by themselves or exclusively with modifiers,
+    these keys cause various problems: gibberish strings returned from
+    QKeySequence#toString() and in menus, inability to capture the
+    keystroke because the window manager does not forward it to Qt, and
+    ambiguous shortcuts where order would matter (e.g. Ctrl + Alt would
+    produce a different numerical value than Alt + Ctrl, because the
+    key codes for Alt and Ctrl are different from the modifier flag
+    codes for Alt and Ctrl).
     """
 
     key = event.key()
-    modifiers = event.modifiers()
+    if key in key_event_combo.BLACKLIST:
+        return None
 
-    return key if key in key_event_combo.MOD_KEYS \
-        else key + sum(flag
-                       for flag in key_event_combo.MOD_FLAGS
-                       if modifiers & flag)
+    modifiers = event.modifiers()
+    return key + sum(flag
+                     for flag in key_event_combo.MOD_FLAGS
+                     if modifiers & flag)
 
 key_event_combo.MOD_FLAGS = [QtCore.Qt.AltModifier, QtCore.Qt.ControlModifier,
                              QtCore.Qt.MetaModifier, QtCore.Qt.ShiftModifier]
 
-key_event_combo.MOD_KEYS = [QtCore.Qt.Key_Alt, QtCore.Qt.Key_AltGr,
-                            QtCore.Qt.Key_Control, QtCore.Qt.Key_Meta,
-                            QtCore.Qt.Key_Mode_switch, QtCore.Qt.Key_Shift]
+key_event_combo.BLACKLIST = [QtCore.Qt.Key_Alt, QtCore.Qt.Key_AltGr,
+                             QtCore.Qt.Key_Control, QtCore.Qt.Key_Meta,
+                             QtCore.Qt.Key_Mode_switch, QtCore.Qt.Key_Shift]
 
 
 def key_combo_desc(combo):

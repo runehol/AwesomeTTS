@@ -76,16 +76,8 @@ def key_combo_desc(combo):
     human-readable description.
     """
 
-    return "unassigned" if not combo \
-        else key_combo_desc.LOOKUP[combo] if combo in key_combo_desc.LOOKUP \
-        else QtGui.QKeySequence(combo).toString(QtGui.QKeySequence.NativeText)
-
-key_combo_desc.LOOKUP = {
-    value: attr[4:]
-    for attr, value in vars(QtCore.Qt).items()
-    if (len(attr) > 4 and attr.startswith('Key_') and
-        isinstance(value, int) and value > 0)
-}
+    return QtGui.QKeySequence(combo).toString(QtGui.QKeySequence.NativeText) \
+        if combo else "unassigned"
 
 
 class _Connector(object):  # used like a mixin, pylint:disable=R0903

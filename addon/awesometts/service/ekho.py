@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -94,22 +93,32 @@ class Ekho(Service):
             return (
                 voice_lookup[normalized] if normalized in voice_lookup
 
-                else voice_lookup['mandarin'] if 'mandarin' in voice_lookup
-                    and normalized in ['cmn', 'cosc', 'goyu', 'huyu', 'mand',
-                        'zh', 'zhcn']
+                else voice_lookup['mandarin'] if (
+                    'mandarin' in voice_lookup and
+                    normalized in ['cmn', 'cosc', 'goyu', 'huyu', 'mand',
+                                   'zh', 'zhcn']
+                )
 
-                else voice_lookup['cantonese'] if 'cantonese' in voice_lookup
-                    and normalized in ['cant', 'guzh', 'yue', 'yyef', 'zhhk',
-                        'zhyue']
+                else voice_lookup['cantonese'] if (
+                    'cantonese' in voice_lookup and
+                    normalized in ['cant', 'guzh', 'yue', 'yyef', 'zhhk',
+                                   'zhyue']
+                )
 
-                else voice_lookup['hakka'] if 'hakka' in voice_lookup
-                    and normalized in ['hak', 'hakk', 'kejia']
+                else voice_lookup['hakka'] if (
+                    'hakka' in voice_lookup and
+                    normalized in ['hak', 'hakk', 'kejia']
+                )
 
-                else voice_lookup['tibetan'] if 'tibetan' in voice_lookup
-                    and normalized in ['cent', 'west']
+                else voice_lookup['tibetan'] if (
+                    'tibetan' in voice_lookup and
+                    normalized in ['cent', 'west']
+                )
 
-                else voice_lookup['hangul'] if 'hangul' in voice_lookup
-                    and normalized in ['ko', 'kor', 'kore', 'korean']
+                else voice_lookup['hangul'] if (
+                    'hangul' in voice_lookup and
+                    normalized in ['ko', 'kor', 'kore', 'korean']
+                )
 
                 else value
             )

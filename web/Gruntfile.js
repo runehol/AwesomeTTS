@@ -92,6 +92,58 @@ module.exports = function (grunt) {
         });
     }(grunt.file.readJSON('sitemap.json'), ''));
 
+    var gaeRegex = function (strings, forceWrap) {
+        var map = {};
+
+        strings.forEach(function (string) {
+            var current = map;
+
+            string.split('').forEach(function (character) {
+                if (!current[character]) {
+                    current[character] = {};
+                }
+                current = current[character];
+            });
+
+            current.end = true;
+        });
+
+        var safe = /[\-\w\/]/;
+        var esc = function (character) {
+            return safe.test(character) ? character : ('\\' + character);
+        };
+
+        return (function subpattern(lookup, forceWrap) {
+            var end = lookup.end;
+            var characters = Object.keys(lookup).
+                             filter(function (key) { return key !== 'end'; }).
+                             sort();
+
+            switch (characters.length) {
+                case 0:
+                    return '';
+
+                case 1:
+                    var character = characters[0];
+                    var next = subpattern(lookup[character]);
+
+                    return end ? '(' + esc(character) + next + ')?' :
+                        forceWrap ? '(' + esc(character) + next + ')' :
+                        esc(character) + next;
+
+                default:
+                    var inside = characters.
+                        map(function (character) {
+                            return esc(character) +
+                                subpattern(lookup[character]);
+                        }).
+                        join('|');
+
+                    return end ? '(' + inside + ')?' : '(' + inside + ')';
+            }
+        }(map, forceWrap));
+    };
+
     var config = {pkg: 'package.json'};
     grunt.config.init(config);
 
@@ -365,41 +417,42 @@ module.exports = function (grunt) {
           runtime: 'python27', api_version: '1', threadsafe: true,
           default_expiration: '12h'};
 
-        var INDICES = ['/(', ')'].join((function getIndices(nodes) {
-            return nodes.
+        var INDICES = '/' + gaeRegex(
+            SITEMAP.
                 filter(function (node) { return node.children; }).
-                map(function (node) {
-                    var opt = getIndices(node.children);
-                    var slug = node.me.slug;
-                    return opt ? [slug, '(/(', opt, '))?'].join('') : slug;
-                }).join('|');
-        }(SITEMAP)));
-
-        var LEAVES = ['/(', ')'].join((function getLeaves(nodes) {
-            return nodes.
-                map(function (node) {
-                    var children = node.children;
-                    var slug = node.me.slug;
-                    return children ?
-                        [slug, ['(', ')'].join(getLeaves(children))].join('/') :
-                        slug;
-                }).join('|');
-        }(SITEMAP)));
-
-        var GIF_IMAGES = ['/(', ')'].join(
-            grunt.file.expand('images/*.gif').map(function (path) {
-                return path.
-                    replace(/^images\/|\.gif$/g, '').
-                    replace(/\./g, '\\.');
-            }).join('|')
+                map(function (node) { return node.me.slug; }),
+            true
         );
 
-        var PNG_IMAGES = ['/(', ')'].join(
+        var LEAVES = '/' + gaeRegex(
+            Array.prototype.concat.apply(
+                SITEMAP.
+                    filter(function (node) { return !node.children; }).
+                    map(function (node) { return node.me.slug; }),
+
+                SITEMAP.
+                    filter(function (node) { return node.children; }).
+                    map(function (node) {
+                        return node.children.map(function (subnode) {
+                            return node.me.slug + '/' + subnode.me.slug;
+                        });
+                    })
+            ),
+            true
+        );
+
+        var GIF_IMAGES = '/' + gaeRegex(
+            grunt.file.expand('images/*.gif').map(function (path) {
+                return path.replace(/^images\/|\.gif$/g, '');
+            }),
+            true
+        );
+
+        var PNG_IMAGES = '/' + gaeRegex(
             grunt.file.expand('images/*.png').map(function (path) {
-                return path.
-                    replace(/^images\/|\.png$/g, '').
-                    replace(/\./g, '\\.');
-            }).join('|')
+                return path.replace(/^images\/|\.png$/g, '');
+            }),
+            true
         );
 
         var HANDLERS = [
@@ -424,16 +477,17 @@ module.exports = function (grunt) {
             {url: '/robots\\.txt', static_files: 'robots.txt',
               upload: 'robots\\.txt', expiration: '35d'},
 
-            {url: '/api/update/[a-z\\d]+-1\\.0\\.1',
+            {url: '/api/update/[a-z\\d]+-' + gaeRegex([
+                '1.0.1',
+              ]),
               static_files: 'api/update/good-version.json',
               upload: 'api/update/good-version\\.json'},
-            {url: '/api/update/[a-z\\d]+-1\\.0\\.1-pre',
+            {url: '/api/update/[a-z\\d]+-' + gaeRegex([
+                '1.0.1-pre', '1.0.0', '1.0.0-pre', '1.0.0-dev',
+              ]),
               static_files: 'api/update/need-newer.json',
               upload: 'api/update/need-newer\\.json'},
-            {url: '/api/update/[a-z\\d]+-1\\.0\\.0(-(dev|pre))?',
-              static_files: 'api/update/need-newer.json',
-              upload: 'api/update/need-newer\\.json'},
-            {url: '/api/update/[a-z\\d]+-\\d+\\.\\d+\\.\\d+-(dev|pre)',
+            {url: '/api/update/[a-z\\d]+-\\d+\\.\\d+\\.(0-dev|\\d+-pre)',
               static_files: 'api/update/unreleased.json',
               upload: 'api/update/unreleased\\.json'},
 

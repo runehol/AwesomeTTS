@@ -57,7 +57,16 @@ class Ekho(Service):
         re_voice = re.compile(r"'(\w+)'")
 
         self._voice_list = sorted({
-            (capture, capture)
+            (
+                # Workaround for Korean: in at least ekho v5.8.2, passing
+                # `--voice Hangul` fails, but `--voice hangul` works. This is
+                # different from the other voices that either only work when
+                # capitalized (e.g. Mandarin, Cantonese) or accept both forms
+                # (e.g. hakka/Hakka, ngangien/Ngangien, tibetan/Tibetan).
+
+                'hangul' if capture == 'Hangul' else capture,
+                capture,
+            )
             for line in output if re_list.search(line)
             for capture in re_voice.findall(line)
         }, key=lambda voice: voice[1].lower())

@@ -35,6 +35,7 @@ __all__ = [
     'Pico2Wave',
     'SAPI5',
     'Say',
+    'SpanishDict',
     'TTSAPICom',
     'Yandex',
 ]
@@ -48,5 +49,6 @@ from .google import Google
 from .pico2wave import Pico2Wave
 from .sapi5 import SAPI5
 from .say import Say
+from .spanishdict import SpanishDict
 from .ttsapicom import TTSAPICom
 from .yandex import Yandex

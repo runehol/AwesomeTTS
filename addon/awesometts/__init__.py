@@ -193,6 +193,7 @@ router = Router(
             ('pico2wave', service.Pico2Wave),
             ('sapi5', service.SAPI5),
             ('say', service.Say),
+            ('spanishdict', service.SpanishDict),
             ('ttsapicom', service.TTSAPICom),
             ('yandex', service.Yandex),
         ],

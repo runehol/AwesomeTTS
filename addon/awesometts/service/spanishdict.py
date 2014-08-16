@@ -69,6 +69,7 @@ class SpanishDict(Service):
                     ('es', "Spanish (es)"),
                 ],
                 transform=transform_voice,
+                default='es',
             ),
         ]
 

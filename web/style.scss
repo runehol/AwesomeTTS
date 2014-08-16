@@ -58,6 +58,8 @@ $white: #fff;  // n.b. also used as background for figure-loader.gif
 $xPadding: 20px;
 $yPadding: 10px;
 
+$fixedWidthAfter: 1400px;
+
 @media screen {
     html {
         background: $sky;
@@ -69,7 +71,7 @@ $yPadding: 10px;
         background: $white;
         color: $gray;
         margin: 0 auto;
-        max-width: 1400px;
+        max-width: $fixedWidthAfter;
         padding: 0;
 
         :first-child { margin-top: 0 }
@@ -123,7 +125,7 @@ $yPadding: 10px;
     }
 
     article {
-        padding: $yPadding $xPadding $yPadding*4;
+        padding: $yPadding $xPadding $yPadding*2;
 
         * { margin-top: 0 }
 
@@ -198,7 +200,7 @@ $yPadding: 10px;
         border-top: dotted 1px;
         line-height: 1.4;
         margin: 0 $xPadding;
-        padding: 0 0 $yPadding;
+        padding: $yPadding 0 $yPadding*2;
 
         li {
             display: block;
@@ -278,7 +280,7 @@ $yPadding: 10px;
     #plat {
         display: block;
         float: left;
-        padding: $yPadding 0;
+        padding: $yPadding 0 $yPadding*2;
         width: 20%;
 
         li, a { display: block }
@@ -300,6 +302,10 @@ $yPadding: 10px;
 
 @media screen and (min-width: 1100px) {
     article ul.cols { @include columns(4) }
+}
+
+@media screen and (min-width: $fixedWidthAfter) {
+    html { overflow-y: scroll }
 }
 
 @media print {

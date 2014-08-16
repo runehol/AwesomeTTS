@@ -10,6 +10,7 @@ services:
 - Google Translate
 - OS X Speech Synthesis Manager (`say`)
 - Microsoft Speech API
+- SpanishDict.com
 - SVOX Pico (`pico2wave`)
 - TTS-API.com
 - Yandex.Translate

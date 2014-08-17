@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -161,10 +160,9 @@ class Config(object):
         cursor.set_logger(self._logger)
 
         # check for existence of the configuration table
-        if len(cursor.execute(
-            'SELECT name FROM sqlite_master WHERE type=? AND name=?',
-            ('table', self._db.table),
-        ).fetchall()):
+        if len(cursor.execute('SELECT name FROM sqlite_master '
+                              'WHERE type=? AND name=?',
+                              ('table', self._db.table)).fetchall()):
             # detect existing columns
             existing_cols = [
                 meta['name'].lower()

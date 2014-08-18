@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -254,16 +253,20 @@ class Router(object):
                 task=lambda: service['instance'].run(text, options, path),
                 callback=lambda exception: (
                     self._busy.remove(path),
+
                     'done' in callbacks and callbacks['done'](),
+
                     'miss' in callbacks and callbacks['miss'](
                         service['instance'].net_download_count()
                     ),
+
                     callbacks['fail'](exception) if exception
-                        else callbacks['okay'](path) if os.path.exists(path)
-                        else callbacks['fail'](RuntimeError(
-                            "The %s service did not successfully write out "
-                            "an MP3." % service['name']
-                        )),
+                    else callbacks['okay'](path) if os.path.exists(path)
+                    else callbacks['fail'](RuntimeError(
+                        "The %s service did not successfully write out "
+                        "an MP3." % service['name']
+                    )),
+
                     'then' in callbacks and callbacks['then'](),
                 )
             )
@@ -321,10 +324,8 @@ class Router(object):
                     transformed_value = svc_option['transform'](options[key])
 
                     if isinstance(svc_option['values'], tuple):
-                        if (
-                            transformed_value < svc_option['values'][0] or
-                            transformed_value > svc_option['values'][1]
-                        ):
+                        if transformed_value < svc_option['values'][0] or \
+                           transformed_value > svc_option['values'][1]:
                             raise ValueError("outside of %d..%d" % (
                                 svc_option['values'][0],
                                 svc_option['values'][1],
@@ -586,11 +587,9 @@ class _Pool(QtGui.QWidget):
         """
 
         if exception:
-            if not (
-                hasattr(exception, 'message') and
-                isinstance(exception.message, basestring) and
-                exception.message
-            ):
+            if not (hasattr(exception, 'message') and
+                    isinstance(exception.message, basestring) and
+                    exception.message):
                 exception.message = format(exception) or \
                     "No additional details available"
 

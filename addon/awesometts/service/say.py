@@ -56,18 +56,19 @@ class Say(Service):
 
         super(Say, self).__init__(*args, **kwargs)
 
-        # n.b. voices *can* have spaces; optionally also capture language code
+        # n.b. voices *may* have spaces but *must* have a language code (the
+        # language code used to be optional, but because very long voice names
+        # will only have one space between the voice name and the language
+        # code, it is not possible to reliably tell the difference between a
+        # language code and a successive word in a voice name... as far as I
+        # know, the `say -v ?` output always includes something in the
+        # language code column, so this should be fine)
         import re
-        re_voice = re.compile(r'^\s*([-\w]+( [-\w]+)*)(\s+([-\w]+))?')
+        re_voice = re.compile(r'^\s*([-\w]+( [-\w]+)*)\s+([-\w]+)')
 
         self._voice_list = sorted([
-            (
-                match.group(1),
-
-                "%s (%s)" % (match.group(1), match.group(4).replace('_', '-'))
-                if match.group(4)
-                else match.group(1),
-            )
+            (match.group(1),
+             "%s (%s)" % (match.group(1), match.group(3).replace('_', '-')))
             for match in [
                 re_voice.match(line)
                 for line in self.cli_output('say', '-v', '?')

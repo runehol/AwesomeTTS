@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -91,7 +90,7 @@ class Updates(QtGui.QWidget):
 
         self._used = True
         self._worker = dict(callbacks=callbacks, got_finished=False,
-            got_signal=False, instance=instance)
+                            got_signal=False, instance=instance)
 
         self.connect(instance, _SIGNAL_NEED, self._on_signal_need)
         self.connect(instance, _SIGNAL_GOOD, self._on_signal_good)
@@ -191,10 +190,8 @@ class Updates(QtGui.QWidget):
         these happen, which avoids crashes.
         """
 
-        if (
-            self._worker and
-            self._worker['got_finished'] and self._worker['got_signal']
-        ):
+        if self._worker and \
+           self._worker['got_finished'] and self._worker['got_signal']:
             self._worker = None
             self._logger.debug("Reaped updates worker")
 
@@ -257,11 +254,11 @@ class _Worker(QtCore.QThread):
 
             update = payload.get('update')
 
-            if update == True:
+            if update is True:
                 info = self._validate_update(payload)
                 self.emit(_SIGNAL_NEED, info['version'], info)
 
-            elif update == False:
+            elif update is False:
                 self.emit(_SIGNAL_GOOD)
 
             else:

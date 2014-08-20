@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -48,7 +47,9 @@ if __name__ == "__main__":
 
 # Begin temporary migration code from Beta 10 and older (unless noted)
 
+
 import os
+
 
 def os_call(callee, *args, **kwargs):
     """Call the function with the given arguments, ignoring OSError."""
@@ -60,36 +61,34 @@ def os_call(callee, *args, **kwargs):
 
 _PKG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'awesometts')
 
-for _filename in [
-    'main.py', 'main.pyc', 'main.pyo',
-    'util.py', 'util.pyc', 'util.pyo',
-]:
+for _filename in ['main.py', 'main.pyc', 'main.pyo',
+                  'util.py', 'util.pyc', 'util.pyo']:
     os_call(os.unlink, os.path.join(_PKG, _filename))
 
 for _directory, _rmdir, _filenames in [
-    ('designer', True, [
-        'configurator.ui', 'filegenerator.ui', 'massgenerator.ui',
-    ]),
-    ('forms', True, [
-        'configurator.py', 'configurator.pyc', 'configurator.pyo',
-        'filegenerator.py', 'filegenerator.pyc', 'filegenerator.pyo',
-        'massgenerator.py', 'massgenerator.pyc', 'massgenerator.pyo',
-        '__init__.py', '__init__.pyc', '__init__.pyo',
-    ]),
-    ('service', False, [
-        'sapi5.vbs',  # for Beta 11 and older
-    ]),
-    ('services', True, [
-        'ekho.py', 'ekho.pyc', 'ekho.pyo',
-        'espeak.py', 'espeak.pyc', 'espeak.pyo',
-        'Google.py', 'Google.pyc', 'Google.pyo',
-        'sapi5.py', 'sapi5.pyc', 'sapi5.pyo', 'sapi5.vbs',
-        'say.py', 'say.pyc', 'say.pyo',
-        '__init__.py', '__init__.pyc', '__init__.pyo',
-    ]),
-    ('tools', True, [
-        'build_ui.sh',
-    ]),
+        ('designer', True, [
+            'configurator.ui', 'filegenerator.ui', 'massgenerator.ui',
+        ]),
+        ('forms', True, [
+            'configurator.py', 'configurator.pyc', 'configurator.pyo',
+            'filegenerator.py', 'filegenerator.pyc', 'filegenerator.pyo',
+            'massgenerator.py', 'massgenerator.pyc', 'massgenerator.pyo',
+            '__init__.py', '__init__.pyc', '__init__.pyo',
+        ]),
+        ('service', False, [
+            'sapi5.vbs',  # for Beta 11 and older
+        ]),
+        ('services', True, [
+            'ekho.py', 'ekho.pyc', 'ekho.pyo',
+            'espeak.py', 'espeak.pyc', 'espeak.pyo',
+            'Google.py', 'Google.pyc', 'Google.pyo',
+            'sapi5.py', 'sapi5.pyc', 'sapi5.pyo', 'sapi5.vbs',
+            'say.py', 'say.pyc', 'say.pyo',
+            '__init__.py', '__init__.pyc', '__init__.pyo',
+        ]),
+        ('tools', True, [
+            'build_ui.sh',
+        ]),
 ]:
     for _filename in _filenames:
         os_call(os.unlink, os.path.join(_PKG, _directory, _filename))
@@ -102,6 +101,7 @@ os_call(
     os.path.join(_PKG, 'conf.db'),
     os.path.join(_PKG, 'config.db'),
 )
+
 
 # End temporary migration code
 

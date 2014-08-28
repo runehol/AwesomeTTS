@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -42,12 +41,7 @@ import anki
 import aqt
 import aqt.clayout
 
-from . import (
-    gui,
-    paths,
-    service,
-)
-
+from . import conversion as to, gui, paths, service
 from .bundle import Bundle
 from .config import Config
 from .logger import Logger
@@ -58,24 +52,6 @@ from .updates import Updates
 VERSION = '1.1.0-dev'
 
 WEB = 'https://ankiatts.appspot.com'
-
-
-# Conversions and transformations
-
-TO_BOOL = lambda value: bool(int(value))  # workaround for bool('0') == True
-
-TO_NULLABLE_INT = lambda value: int(value) if value else None
-
-TO_NULLABLE_KEY = lambda value: Qt.Key(value) if value else None
-
-TO_JSON_DICT = lambda value: isinstance(value, basestring) and \
-    value.lstrip().startswith('{') and json.loads(value) or {}
-
-TO_NORMALIZED = lambda value: ''.join(
-    char.lower()
-    for char in value
-    if char.isalpha() or char.isdigit()
-)
 
 
 # Core class initialization and dependency setup, pylint:disable=C0103
@@ -107,13 +83,13 @@ config = Config(
     db=Bundle(
         path=paths.CONFIG,
         table='general',
-        normalize=TO_NORMALIZED,
+        normalize=to.NORMALIZED,
     ),
     cols=[
-        ('automaticAnswers', 'integer', True, TO_BOOL, int),
-        ('automaticQuestions', 'integer', True, TO_BOOL, int),
-        ('debug_file', 'integer', False, TO_BOOL, int),
-        ('debug_stdout', 'integer', False, TO_BOOL, int),
+        ('automaticAnswers', 'integer', True, to.BOOL, int),
+        ('automaticQuestions', 'integer', True, to.BOOL, int),
+        ('debug_file', 'integer', False, to.BOOL, int),
+        ('debug_stdout', 'integer', False, to.BOOL, int),
         ('delay_answers_onthefly', 'integer', 0, int, int),
         ('delay_answers_stored_ours', 'integer', 0, int, int),
         ('delay_answers_stored_theirs', 'integer', 0, int, int),
@@ -121,48 +97,48 @@ config = Config(
         ('delay_questions_stored_ours', 'integer', 0, int, int),
         ('delay_questions_stored_theirs', 'integer', 0, int, int),
         ('lame_flags', 'text', '--quiet -q 2', str, str),
-        ('last_mass_append', 'integer', True, TO_BOOL, int),
-        ('last_mass_behavior', 'integer', True, TO_BOOL, int),
+        ('last_mass_append', 'integer', True, to.BOOL, int),
+        ('last_mass_behavior', 'integer', True, to.BOOL, int),
         ('last_mass_dest', 'text', 'Back', unicode, unicode),
         ('last_mass_source', 'text', 'Front', unicode, unicode),
-        ('last_options', 'text', {}, TO_JSON_DICT, json.dumps),
+        ('last_options', 'text', {}, to.JSON_DICT, json.dumps),
         ('last_service', 'text', 'google', str, str),
         ('last_strip_mode', 'text', 'ours', str, str),
         ('launch_browser_generator', 'integer', Qt.ControlModifier | Qt.Key_T,
-         TO_NULLABLE_KEY, TO_NULLABLE_INT),
-        ('launch_browser_stripper', 'integer', None, TO_NULLABLE_KEY,
-         TO_NULLABLE_INT),
+         to.NULLABLE_KEY, to.NULLABLE_INT),
+        ('launch_browser_stripper', 'integer', None, to.NULLABLE_KEY,
+         to.NULLABLE_INT),
         ('launch_configurator', 'integer', Qt.ControlModifier | Qt.Key_T,
-         TO_NULLABLE_KEY, TO_NULLABLE_INT),
+         to.NULLABLE_KEY, to.NULLABLE_INT),
         ('launch_editor_generator', 'integer', Qt.ControlModifier | Qt.Key_T,
-         TO_NULLABLE_KEY, TO_NULLABLE_INT),
+         to.NULLABLE_KEY, to.NULLABLE_INT),
         ('launch_templater', 'integer', Qt.ControlModifier | Qt.Key_T,
-         TO_NULLABLE_KEY, TO_NULLABLE_INT),
+         to.NULLABLE_KEY, to.NULLABLE_INT),
         ('spec_note_count', 'text', '', unicode, unicode),
-        ('spec_note_count_wrap', 'integer', True, TO_BOOL, int),
+        ('spec_note_count_wrap', 'integer', True, to.BOOL, int),
         ('spec_note_ellipsize', 'text', '', unicode, unicode),
         ('spec_note_strip', 'text', '', unicode, unicode),
         ('spec_template_count', 'text', '', unicode, unicode),
-        ('spec_template_count_wrap', 'integer', True, TO_BOOL, int),
+        ('spec_template_count_wrap', 'integer', True, to.BOOL, int),
         ('spec_template_ellipsize', 'text', '', unicode, unicode),
         ('spec_template_strip', 'text', '', unicode, unicode),
-        ('strip_note_braces', 'integer', False, TO_BOOL, int),
-        ('strip_note_brackets', 'integer', False, TO_BOOL, int),
-        ('strip_note_parens', 'integer', False, TO_BOOL, int),
-        ('strip_template_braces', 'integer', False, TO_BOOL, int),
-        ('strip_template_brackets', 'integer', False, TO_BOOL, int),
-        ('strip_template_parens', 'integer', False, TO_BOOL, int),
+        ('strip_note_braces', 'integer', False, to.BOOL, int),
+        ('strip_note_brackets', 'integer', False, to.BOOL, int),
+        ('strip_note_parens', 'integer', False, to.BOOL, int),
+        ('strip_template_braces', 'integer', False, to.BOOL, int),
+        ('strip_template_brackets', 'integer', False, to.BOOL, int),
+        ('strip_template_parens', 'integer', False, to.BOOL, int),
         ('sub_note_cloze', 'text', 'anki', str, str),
         ('sub_template_cloze', 'text', 'anki', str, str),
-        ('templater_cloze', 'integer', True, TO_BOOL, int),
+        ('templater_cloze', 'integer', True, to.BOOL, int),
         ('templater_field', 'text', 'Front', unicode, unicode),
         ('templater_hide', 'text', 'normal', str, str),
         ('templater_target', 'text', 'front', str, str),
         ('throttle_sleep', 'integer', 30, int, int),
         ('throttle_threshold', 'integer', 10, int, int),
-        ('TTS_KEY_A', 'integer', Qt.Key_F4, TO_NULLABLE_KEY, TO_NULLABLE_INT),
-        ('TTS_KEY_Q', 'integer', Qt.Key_F3, TO_NULLABLE_KEY, TO_NULLABLE_INT),
-        ('updates_enabled', 'integer', True, TO_BOOL, int),
+        ('TTS_KEY_A', 'integer', Qt.Key_F4, to.NULLABLE_KEY, to.NULLABLE_INT),
+        ('TTS_KEY_Q', 'integer', Qt.Key_F3, to.NULLABLE_KEY, to.NULLABLE_INT),
+        ('updates_enabled', 'integer', True, to.BOOL, int),
         ('updates_ignore', 'text', '', str, str),
         ('updates_postpone', 'integer', 0, int, lambda i: int(round(i))),
     ],
@@ -200,12 +176,12 @@ router = Router(
         aliases=[
             ('g', 'google'),
         ],
-        normalize=TO_NORMALIZED,
+        normalize=to.NORMALIZED,
         args=(),
         kwargs=dict(
             temp_dir=paths.TEMP,
             lame_flags=lambda: config['lame_flags'],
-            normalize=TO_NORMALIZED,
+            normalize=to.NORMALIZED,
             logger=logger,
         ),
     ),

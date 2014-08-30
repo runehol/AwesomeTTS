@@ -27,7 +27,6 @@ Add-on package initialization
 __all__ = []
 
 import inspect
-import json
 import logging
 import platform
 import re
@@ -101,7 +100,7 @@ config = Config(
         ('last_mass_behavior', 'integer', True, to.BOOL, int),
         ('last_mass_dest', 'text', 'Back', unicode, unicode),
         ('last_mass_source', 'text', 'Front', unicode, unicode),
-        ('last_options', 'text', {}, to.JSON_DICT, json.dumps),
+        ('last_options', 'text', {}, to.JSON_DICT, to.compact_json),
         ('last_service', 'text', 'google', str, str),
         ('last_strip_mode', 'text', 'ours', str, str),
         ('launch_browser_generator', 'integer', Qt.ControlModifier | Qt.Key_T,

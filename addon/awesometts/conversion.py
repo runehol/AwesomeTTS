@@ -22,34 +22,14 @@
 Helpful type conversions
 """
 
-__all__ = ['BOOL', 'NULLABLE_INT', 'NULLABLE_KEY', 'JSON_DICT', 'NORMALIZED',
-           'compact_json', 'substitution_compiled', 'substitution_json',
-           'substitution_list']
+__all__ = ['compact_json', 'deserialized_dict', 'lax_bool',
+           'normalized_ascii', 'nullable_key', 'nullable_int',
+           'substitution_compiled', 'substitution_json', 'substitution_list']
 
 import json
 import re
 
 from PyQt4.QtCore import Qt
-
-
-# TODO: Rename and convert to regular functions with more fault tolerance
-
-BOOL = lambda value: bool(int(value))  # workaround for bool('0') == True
-
-NULLABLE_INT = lambda value: int(value) if value else None
-
-NULLABLE_KEY = lambda value: Qt.Key(value) if value else None
-
-JSON_DICT = lambda value: isinstance(value, basestring) and \
-    value.lstrip().startswith('{') and json.loads(value) or {}
-
-NORMALIZED = lambda value: ''.join(
-    char.lower()
-    for char in value
-    if char.isalpha() or char.isdigit()
-)
-
-# END TODO
 
 
 def compact_json(obj):
@@ -58,6 +38,80 @@ def compact_json(obj):
     return json.dumps(obj, separators=compact_json.SEPARATORS)
 
 compact_json.SEPARATORS = (',', ':')
+
+
+def deserialized_dict(json_str):
+    """
+    Given a JSON string, returns a dict. If the input is invalid or
+    does not have an object at the top-level, returns an empty dict.
+    """
+
+    if isinstance(json_str, dict):
+        return json_str
+
+    try:
+        obj = json.loads(json_str)
+    except StandardError:
+        return {}
+
+    return obj if isinstance(obj, dict) else {}
+
+
+def lax_bool(value):
+    """
+    Like bool(), but correctly returns False for '0', 'false', and
+    similar strings.
+    """
+
+    if isinstance(value, basestring):
+        value = value.strip().strip('-0').lower()
+        return value not in lax_bool.FALSE_STRINGS
+
+    return bool(value)
+
+lax_bool.FALSE_STRINGS = ['', 'false', 'no', 'off', 'unset']
+
+
+def normalized_ascii(value):
+    """
+    Returns a plain ASCII string containing only alphanumeric characters
+    from the given value.
+    """
+
+    if isinstance(value, unicode):
+        value = value.encode('ascii', 'ignore')
+    elif not isinstance(value, basestring):
+        value = str(value)
+
+    return ''.join(char.lower()
+                   for char in value
+                   if char.isalpha() or char.isdigit())
+
+
+def nullable_key(value):
+    """
+    Returns an instance of PyQt4.QtCore.Qt.Key for the given value, if
+    possible. If the incoming value cannot be represented as a key,
+    returns None.
+    """
+
+    if isinstance(value, Qt.Key):
+        return value
+
+    value = nullable_int(value)
+    return Qt.Key(value) if value else None
+
+
+def nullable_int(value):
+    """
+    Returns an integer for the given value, if possible. If the incoming
+    value cannot be represented as an integer, returns None.
+    """
+
+    try:
+        return int(value)
+    except StandardError:
+        return None
 
 
 def substitution_compiled(rule):
@@ -72,11 +126,13 @@ def substitution_compiled(rule):
         pattern=rule['input'] if rule['regex'] else re.escape(rule['input']),
         flags=sum(
             value
-            for key, value in [('ignore_case', re.IGNORECASE),
-                               ('unicode', re.UNICODE)]
+            for key, value in substitution_compiled.FLAGS
             if rule[key]
         ),
     )
+
+substitution_compiled.FLAGS = [('ignore_case', re.IGNORECASE),
+                               ('unicode', re.UNICODE)]
 
 
 def substitution_json(rules):
@@ -119,9 +175,7 @@ def substitution_list(json_str):
                 isinstance(candidate['replace'], basestring)):
             continue
 
-        for key, default in [('regex', False),
-                             ('ignore_case', True),
-                             ('unicode', True)]:
+        for key, default in substitution_list.DEFAULTS:
             if key not in candidate:
                 candidate[key] = default
 
@@ -133,3 +187,6 @@ def substitution_list(json_str):
         rules.append(candidate)
 
     return rules
+
+substitution_list.DEFAULTS = [('regex', False), ('ignore_case', True),
+                              ('unicode', True)]

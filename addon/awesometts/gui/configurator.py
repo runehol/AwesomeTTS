@@ -239,10 +239,43 @@ class Configurator(Dialog):
     def _ui_tabs_text_mode(self, infix, label, cloze_description,
                            cloze_options):
         """
-        Returns the given checkbox options for controlling whether to
-        strip from certain parenthetical text. Optionally, additional
-        copy may also be included and/or the cloze control dropdown by
-        passing the optional parameters.
+        Returns a group box widget for the given text manipulation
+        context.
+        """
+
+        subtabs = QtGui.QTabWidget()
+        subtabs.setTabPosition(QtGui.QTabWidget.West)
+
+        for sublabel, sublayout in [
+                ("Simple", self._ui_tabs_text_mode_simple(infix,
+                                                          cloze_description,
+                                                          cloze_options)),
+                ("Advanced", self._ui_tabs_text_mode_adv(infix)),
+        ]:
+            subwidget = QtGui.QWidget()
+            subwidget.setLayout(sublayout)
+
+            subtabs.addTab(subwidget, sublabel)
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(subtabs)
+
+        group = QtGui.QGroupBox(label)
+        group.setLayout(layout)
+
+        _, top, right, bottom = layout.getContentsMargins()
+        layout.setContentsMargins(0, top, right, bottom)
+
+        _, top, right, bottom = group.getContentsMargins()
+        group.setContentsMargins(0, top, right, bottom)
+
+        return group
+
+    def _ui_tabs_text_mode_simple(self, infix, cloze_description,
+                                  cloze_options):
+        """
+        Returns a layout with the "simple" configuration options
+        available for manipulating text from the given context.
         """
 
         select = QtGui.QComboBox()
@@ -271,34 +304,34 @@ class Configurator(Dialog):
         horizontal.addStretch()
         layout.addLayout(horizontal)
 
-        layout.addLayout(self._ui_tabs_text_mode_specific(
+        layout.addLayout(self._ui_tabs_text_mode_simple_spec(
             infix,
             'strip',
             ("Remove all", "characters from the input"),
         ))
-        layout.addLayout(self._ui_tabs_text_mode_specific(
+        layout.addLayout(self._ui_tabs_text_mode_simple_spec(
             infix,
             'count',
             ("Count adjacent", "characters"),
             True,
         ))
-        layout.addLayout(self._ui_tabs_text_mode_specific(
+        layout.addLayout(self._ui_tabs_text_mode_simple_spec(
             infix,
             'ellipsize',
             ("Replace", "characters with an ellipsis"),
         ))
 
-        group = QtGui.QGroupBox(label)
-        group.setLayout(layout)
+        layout.addStretch()
 
-        return group
+        return layout
 
-    def _ui_tabs_text_mode_specific(self, infix, suffix, labels, wrap=False):
+    def _ui_tabs_text_mode_simple_spec(self, infix, suffix, labels,
+                                       wrap=False):
         """Returns a layout for specific character handling."""
 
         line_edit = QtGui.QLineEdit()
         line_edit.setObjectName(infix.join(['spec', suffix]))
-        line_edit.setValidator(self._ui_tabs_text_mode_specific.ucsv)
+        line_edit.setValidator(self._ui_tabs_text_mode_simple_spec.ucsv)
         line_edit.setFixedWidth(50)
 
         horizontal = QtGui.QHBoxLayout()
@@ -332,7 +365,26 @@ class Configurator(Dialog):
             filtered = self.fixup(original)
             return QtGui.QValidator.Acceptable, filtered, len(filtered)
 
-    _ui_tabs_text_mode_specific.ucsv = _UniqueCharacterStringValidator()
+    _ui_tabs_text_mode_simple_spec.ucsv = _UniqueCharacterStringValidator()
+
+    def _ui_tabs_text_mode_adv(self, infix):
+        """
+        Returns a layout with the "advanced" pattern replacement
+        panel for manipulating text from the given context.
+        """
+
+        notes = QtGui.QLabel(
+            "If you want to transform specific input strings (e.g. expansion "
+            "of abbreviations) before generating the speech output, you can "
+            "do so here."
+        )
+        notes.setWordWrap(True)
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(notes)
+        layout.addStretch()
+
+        return layout
 
     def _ui_tabs_mp3gen(self):
         """

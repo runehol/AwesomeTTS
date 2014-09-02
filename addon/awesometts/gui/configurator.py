@@ -54,13 +54,13 @@ class Configurator(Dialog):
         'strip_note_braces', 'strip_note_brackets', 'strip_note_parens',
         'strip_template_braces', 'strip_template_brackets',
         'strip_template_parens', 'sub_note_cloze', 'sub_template_cloze',
-        'throttle_sleep', 'throttle_threshold', 'tts_key_a', 'tts_key_q',
-        'updates_enabled',
+        'sul_note', 'sul_template', 'throttle_sleep', 'throttle_threshold',
+        'tts_key_a', 'tts_key_q', 'updates_enabled',
     ]
 
     _PROPERTY_WIDGETS = (
         QtGui.QCheckBox, QtGui.QComboBox, QtGui.QLineEdit, QtGui.QPushButton,
-        QtGui.QSpinBox,
+        QtGui.QSpinBox, QtGui.QListView,
     )
 
     __slots__ = [
@@ -373,18 +373,27 @@ class Configurator(Dialog):
         panel for manipulating text from the given context.
         """
 
-        notes = QtGui.QLabel(
-            "If you want to transform specific input strings (e.g. expansion "
-            "of abbreviations) before generating the speech output, you can "
-            "do so here."
-        )
-        notes.setWordWrap(True)
+        list_view = _SubListView()
+        list_view.setObjectName('sul' + infix.rstrip('_'))
 
-        layout = QtGui.QVBoxLayout()
-        layout.addWidget(notes)
-        layout.addStretch()
+        add_btn = QtGui.QPushButton(QtGui.QIcon(':/icons/list-add.png'), "")
+        add_btn.setIconSize(QtCore.QSize(16, 16))
+        add_btn.setFlat(True)
 
-        return layout
+        del_btn = QtGui.QPushButton(QtGui.QIcon(':/icons/editdelete.png'), "")
+        del_btn.setIconSize(QtCore.QSize(16, 16))
+        del_btn.setFlat(True)
+
+        vertical = QtGui.QVBoxLayout()
+        vertical.addWidget(add_btn)
+        vertical.addWidget(del_btn)
+        vertical.addStretch()
+
+        horizontal = QtGui.QHBoxLayout()
+        horizontal.addWidget(list_view)
+        horizontal.addLayout(vertical)
+
+        return horizontal
 
     def _ui_tabs_mp3gen(self):
         """
@@ -701,6 +710,9 @@ class Configurator(Dialog):
             elif isinstance(widget, QtGui.QSpinBox):
                 widget.setValue(value)
 
+            elif isinstance(widget, QtGui.QListView):
+                widget.setModel(value)
+
         widget = self.findChild(QtGui.QPushButton, 'on_cache')
         if widget:
             widget.awesometts_list = (
@@ -755,6 +767,10 @@ class Configurator(Dialog):
                 else widget.itemData(widget.currentIndex()) if isinstance(
                     widget,
                     QtGui.QComboBox,
+                )
+                else widget.model().raw_data if isinstance(
+                    widget,
+                    QtGui.QListView,
                 )
                 else widget.text()
             )
@@ -905,3 +921,128 @@ class Configurator(Dialog):
 
         else:
             button.setText("successfully emptied cache")
+
+
+class _SubRuleDelegate(QtGui.QItemDelegate):
+    """Item view specifically for a substitution rule."""
+
+    sizeHint = lambda self, option, index: self.sizeHint.SIZE
+    sizeHint.SIZE = QtCore.QSize(-1, 50)
+
+    def createEditor(self, parent,    # pylint:disable=C0103
+                     option, index):  # pylint:disable=W0613
+        """Return a panel to change rule values."""
+
+        edits = QtGui.QHBoxLayout()
+        edits.addWidget(QtGui.QLineEdit())
+        edits.addWidget(QtGui.QLabel("<strong>&rArr;</strong>"))
+        edits.addWidget(QtGui.QLineEdit())
+        edits.setContentsMargins(0, 0, 0, 0)
+
+        checkboxes = QtGui.QHBoxLayout()
+        checkboxes.addWidget(QtGui.QCheckBox("regex"))
+        checkboxes.addWidget(QtGui.QCheckBox("case-insensitive"))
+        checkboxes.addWidget(QtGui.QCheckBox("unicode"))
+        checkboxes.addStretch()
+        checkboxes.setContentsMargins(0, 0, 0, 0)
+
+        layout = QtGui.QVBoxLayout()
+        layout.addStretch()
+        layout.addLayout(edits)
+        layout.addLayout(checkboxes)
+        layout.addStretch()
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        panel = QtGui.QWidget(parent)
+        panel.setAutoFillBackground(True)
+        panel.setFocusPolicy(QtCore.Qt.StrongFocus)
+        panel.setLayout(layout)
+        panel.setContentsMargins(0, 0, 0, 0)
+
+        return panel
+
+    def setEditorData(self, editor, index):  # pylint:disable=C0103
+        """Populate controls and focus the first edit box."""
+
+        rule = index.data(QtCore.Qt.EditRole)
+
+        edits = editor.findChildren(QtGui.QLineEdit)
+        edits[0].setText(rule['input'])
+        edits[1].setText(rule['replace'])
+
+        checkboxes = editor.findChildren(QtGui.QCheckBox)
+        checkboxes[0].setChecked(rule['regex'])
+        checkboxes[1].setChecked(rule['ignore_case'])
+        checkboxes[2].setChecked(rule['unicode'])
+
+        QtCore.QTimer.singleShot(0, edits[0].setFocus)
+
+    def setModelData(self, editor, model, index):  # pylint:disable=C0103
+        """Update the underlying model after edit."""
+
+        edits = editor.findChildren(QtGui.QLineEdit)
+        checkboxes = editor.findChildren(QtGui.QCheckBox)
+
+        # TODO should validation/compilation happen here or in setData()?
+        model.setData(index, {
+            'input': edits[0].text(),  # TODO this needs validation
+            'replace': edits[1].text(),
+            'regex': checkboxes[0].isChecked(),
+            'ignore_case': checkboxes[1].isChecked(),
+            'unicode': checkboxes[2].isChecked(),
+            # TODO 'compiled': ...
+        })
+
+
+class _SubListView(QtGui.QListView):
+    """List view specifically for substitution lists."""
+
+    setModel = lambda self, model: \
+        super(_SubListView, self).setModel(_SubListModel(model))
+
+    def __init__(self, *args, **kwargs):
+        super(_SubListView, self).__init__(*args, **kwargs)
+        self.setItemDelegate(self.__init__.DELEGATE)
+    __init__.DELEGATE = _SubRuleDelegate()
+
+
+class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
+    """Provides glue to/from the underlying substitution list."""
+
+    __slots__ = ['raw_data']
+
+    flags = lambda self, index: self.flags.LIST_ITEM
+    flags.LIST_ITEM = (QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable |
+                       QtCore.Qt.ItemIsEnabled)
+
+    rowCount = lambda self, parent: len(self.raw_data)
+
+    def __init__(self, sublist, *args, **kwargs):
+        super(_SubListModel, self).__init__(*args, **kwargs)
+        self.raw_data = [dict(obj) for obj in sublist]  # deep copy
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        """Return display or edit data for the indexed rule."""
+
+        if role == QtCore.Qt.DisplayRole:
+            rule = self.raw_data[index.row()]
+            text = ('/%s/' if rule['regex'] else '"%s"') % rule['input']
+            action = ('replace it with "%s"' % rule['replace']
+                      if rule['replace'] else "remove it")
+            attr = ", ".join([
+                "regex pattern" if rule['regex'] else "plain text",
+                "case-insensitive" if rule['ignore_case'] else "case matters",
+                "unicode enabled" if rule['unicode'] else "unicode disabled",
+            ])
+
+            return "match " + text + " and " + action + "\n(" + attr + ")"
+
+        elif role == QtCore.Qt.EditRole:
+            return self.raw_data[index.row()]
+
+    def setData(self, index, value,        # pylint:disable=C0103
+                role=QtCore.Qt.EditRole):  # pylint:disable=W0613
+        """Update the new value into the raw list."""
+
+        self.raw_data[index.row()] = value
+        return True

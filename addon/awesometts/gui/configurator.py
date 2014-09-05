@@ -373,9 +373,6 @@ class Configurator(Dialog):
         panel for manipulating text from the given context.
         """
 
-        list_view = _SubListView()
-        list_view.setObjectName('sul' + infix.rstrip('_'))
-
         add_btn = QtGui.QPushButton(QtGui.QIcon(':/icons/list-add.png'), "")
         add_btn.setIconSize(QtCore.QSize(16, 16))
         add_btn.setFlat(True)
@@ -383,6 +380,9 @@ class Configurator(Dialog):
         del_btn = QtGui.QPushButton(QtGui.QIcon(':/icons/editdelete.png'), "")
         del_btn.setIconSize(QtCore.QSize(16, 16))
         del_btn.setFlat(True)
+
+        list_view = _SubListView(add_btn, del_btn)
+        list_view.setObjectName('sul' + infix.rstrip('_'))
 
         vertical = QtGui.QVBoxLayout()
         vertical.addWidget(add_btn)
@@ -997,13 +997,47 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
 class _SubListView(QtGui.QListView):
     """List view specifically for substitution lists."""
 
-    setModel = lambda self, model: \
+    __slots__ = ['_add_btn', '_del_btn']
+
+    def __init__(self, add_btn, del_btn, *args, **kwargs):
+        super(_SubListView, self).__init__(*args, **kwargs)
+
+        add_btn.clicked.connect(self._add_rule)
+        self._add_btn = add_btn
+
+        del_btn.clicked.connect(self._del_rules)
+        self._del_btn = del_btn
+
+        self.setItemDelegate(self.__init__.DELEGATE)
+        self.setSelectionMode(self.ExtendedSelection)
+
+    __init__.DELEGATE = _SubRuleDelegate()
+
+    def setModel(self, model):  # pylint:disable=C0103
+        """Enable/disable buttons as selection changes."""
+
         super(_SubListView, self).setModel(_SubListModel(model))
 
-    def __init__(self, *args, **kwargs):
-        super(_SubListView, self).__init__(*args, **kwargs)
-        self.setItemDelegate(self.__init__.DELEGATE)
-    __init__.DELEGATE = _SubRuleDelegate()
+        self._del_btn.setEnabled(False)
+        self.selectionModel().selectionChanged. \
+            connect(lambda now, old: self._del_btn.setEnabled(now.count() > 0))
+
+    def _add_rule(self):
+        """Add a new rule and trigger an edit."""
+
+        model = self.model()
+        model.insertRow()
+
+        index = model.index(model.rowCount(self) - 1)
+
+        self.scrollToBottom()
+        self.setCurrentIndex(index)
+        self.edit(index)
+
+    def _del_rules(self):
+        """Remove the selected rule(s)."""
+
+        pass  # TODO
 
 
 class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
@@ -1015,7 +1049,7 @@ class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
     flags.LIST_ITEM = (QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable |
                        QtCore.Qt.ItemIsEnabled)
 
-    rowCount = lambda self, parent: len(self.raw_data)
+    rowCount = lambda self, parent=None: len(self.raw_data)
 
     def __init__(self, sublist, *args, **kwargs):
         super(_SubListModel, self).__init__(*args, **kwargs)
@@ -1039,6 +1073,18 @@ class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
 
         elif role == QtCore.Qt.EditRole:
             return self.raw_data[index.row()]
+
+    def insertRow(self, row=None, parent=None):  # pylint:disable=C0103
+        """Inserts a new row at the given position (default end)."""
+
+        if not row:
+            row = len(self.raw_data)  # defaults to end
+
+        self.beginInsertRows(parent or QtCore.QModelIndex(), row, row)
+        self.raw_data.insert(row, {'input': '', 'replace': '', 'regex': False,
+                                   'ignore_case': True, 'unicode': True})
+        self.endInsertRows()
+        return True
 
     def setData(self, index, value,        # pylint:disable=C0103
                 role=QtCore.Qt.EditRole):  # pylint:disable=W0613

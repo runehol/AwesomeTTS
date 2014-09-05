@@ -373,21 +373,24 @@ class Configurator(Dialog):
         panel for manipulating text from the given context.
         """
 
-        add_btn = QtGui.QPushButton(QtGui.QIcon(':/icons/list-add.png'), "")
-        add_btn.setIconSize(QtCore.QSize(16, 16))
-        add_btn.setFlat(True)
+        buttons = []
+        for tooltip, icon in [("Add New Rule", 'list-add'),
+                              ("Move Selected Up", 'arrow-up'),
+                              ("Move Selected Down", 'arrow-down'),
+                              ("Remove Selected", 'editdelete')]:
+            btn = QtGui.QPushButton(QtGui.QIcon(':/icons/%s.png' % icon), "")
+            btn.setIconSize(QtCore.QSize(16, 16))
+            btn.setFlat(True)
+            btn.setToolTip(tooltip)
+            buttons.append(btn)
 
-        del_btn = QtGui.QPushButton(QtGui.QIcon(':/icons/editdelete.png'), "")
-        del_btn.setIconSize(QtCore.QSize(16, 16))
-        del_btn.setFlat(True)
-
-        list_view = _SubListView(add_btn, del_btn)
+        list_view = _SubListView(*buttons)  # pylint:disable=W0142
         list_view.setObjectName('sul' + infix.rstrip('_'))
 
         vertical = QtGui.QVBoxLayout()
-        vertical.addWidget(add_btn)
-        vertical.addWidget(del_btn)
-        vertical.addStretch()
+        for btn in buttons:
+            vertical.addWidget(btn)
+        vertical.insertStretch(len(buttons) - 1)
 
         horizontal = QtGui.QHBoxLayout()
         horizontal.addWidget(list_view)
@@ -997,13 +1000,19 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
 class _SubListView(QtGui.QListView):
     """List view specifically for substitution lists."""
 
-    __slots__ = ['_add_btn', '_del_btn']
+    __slots__ = ['_add_btn', '_up_btn', '_down_btn', '_del_btn']
 
-    def __init__(self, add_btn, del_btn, *args, **kwargs):
+    def __init__(self, add_btn, up_btn, down_btn, del_btn, *args, **kwargs):
         super(_SubListView, self).__init__(*args, **kwargs)
 
         add_btn.clicked.connect(self._add_rule)
         self._add_btn = add_btn
+
+        up_btn.clicked.connect(lambda: self._reorder_rules('up'))
+        self._up_btn = up_btn
+
+        down_btn.clicked.connect(lambda: self._reorder_rules('down'))
+        self._down_btn = down_btn
 
         del_btn.clicked.connect(self._del_rules)
         self._del_btn = del_btn
@@ -1014,13 +1023,25 @@ class _SubListView(QtGui.QListView):
     __init__.DELEGATE = _SubRuleDelegate()
 
     def setModel(self, model):  # pylint:disable=C0103
-        """Enable/disable buttons as selection changes."""
+        """Configures model and sets up event handling."""
 
         super(_SubListView, self).setModel(_SubListModel(model))
+        self._on_selection()
+        self.selectionModel().selectionChanged.connect(self._on_selection)
 
-        self._del_btn.setEnabled(False)
-        self.selectionModel().selectionChanged. \
-            connect(lambda now, old: self._del_btn.setEnabled(now.count() > 0))
+    def _on_selection(self):
+        """Enable/disable buttons as selection changes."""
+
+        indexes = self.selectionModel().selectedIndexes()
+
+        some = len(indexes) > 0
+        rows = sorted(index.row() for index in indexes) if some else []
+        contiguous = some and rows[-1] == rows[0] + len(rows) - 1
+
+        self._up_btn.setEnabled(contiguous and rows[0] > 0)
+        self._down_btn.setEnabled(contiguous and
+                                  rows[-1] < self.model().rowCount() - 1)
+        self._del_btn.setEnabled(some)
 
     def _add_rule(self):
         """Add a new rule and trigger an edit."""
@@ -1036,6 +1057,11 @@ class _SubListView(QtGui.QListView):
 
     def _del_rules(self):
         """Remove the selected rule(s)."""
+
+        pass  # TODO
+
+    def _reorder_rules(self, direction):
+        """Move the selected rule(s) up or down."""
 
         pass  # TODO
 

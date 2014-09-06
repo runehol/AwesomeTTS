@@ -1058,7 +1058,10 @@ class _SubListView(QtGui.QListView):
     def _del_rules(self):
         """Remove the selected rule(s)."""
 
-        pass  # TODO
+        model = self.model()
+        indexes = self.selectionModel().selectedIndexes()
+        for row in reversed(sorted(index.row() for index in indexes)):
+            model.removeRows(row)
 
     def _reorder_rules(self, direction):
         """Move the selected rule(s) up or down."""
@@ -1110,6 +1113,15 @@ class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
         self.raw_data.insert(row, {'input': '', 'replace': '', 'regex': False,
                                    'ignore_case': True, 'unicode': True})
         self.endInsertRows()
+        return True
+
+    def removeRows(self, row, count=1, parent=None):  # pylint:disable=C0103
+        """Removes the given count of records at the given row."""
+
+        self.beginRemoveRows(parent or QtCore.QModelIndex(),
+                             row, row + count - 1)
+        self.raw_data = self.raw_data[0:row] + self.raw_data[row + count:]
+        self.endRemoveRows()
         return True
 
     def setData(self, index, value,        # pylint:disable=C0103

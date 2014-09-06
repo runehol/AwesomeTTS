@@ -1066,7 +1066,13 @@ class _SubListView(QtGui.QListView):
     def _reorder_rules(self, direction):
         """Move the selected rule(s) up or down."""
 
-        pass  # TODO
+        indexes = self.selectionModel().selectedIndexes()
+        rows = sorted(index.row() for index in indexes)
+        if direction == 'up':
+            self.model().moveRowsUp(rows[0], len(rows))
+        else:
+            self.model().moveRowsDown(rows[0], len(rows))
+        self._on_selection()
 
 
 class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
@@ -1113,6 +1119,31 @@ class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
         self.raw_data.insert(row, {'input': '', 'replace': '', 'regex': False,
                                    'ignore_case': True, 'unicode': True})
         self.endInsertRows()
+        return True
+
+    def moveRowsDown(self, row, count):  # pylint:disable=C0103
+        """Moves the given count of records at the given row down."""
+
+        parent = QtCore.QModelIndex()
+        self.beginMoveRows(parent, row, row + count - 1,
+                           parent, row + count + 1)
+        self.raw_data = (self.raw_data[0:row] +
+                         self.raw_data[row + count:row + count + 1] +
+                         self.raw_data[row:row + count] +
+                         self.raw_data[row + count + 1:])
+        self.endMoveRows()
+        return True
+
+    def moveRowsUp(self, row, count):  # pylint:disable=C0103
+        """Moves the given count of records at the given row up."""
+
+        parent = QtCore.QModelIndex()
+        self.beginMoveRows(parent, row, row + count - 1, parent, row - 1)
+        self.raw_data = (self.raw_data[0:row - 1] +
+                         self.raw_data[row:row + count] +
+                         self.raw_data[row - 1:row] +
+                         self.raw_data[row + count:])
+        self.endMoveRows()
         return True
 
     def removeRows(self, row, count=1, parent=None):  # pylint:disable=C0103

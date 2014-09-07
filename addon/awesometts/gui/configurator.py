@@ -63,10 +63,10 @@ class Configurator(Dialog):
         QtGui.QSpinBox, QtGui.QListView,
     )
 
-    __slots__ = [
-    ]
+    __slots__ = ['_sul_compiler']
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, sul_compiler, *args, **kwargs):
+        self._sul_compiler = sul_compiler
         super(Configurator, self).__init__(title="Configuration",
                                            *args, **kwargs)
 
@@ -384,7 +384,7 @@ class Configurator(Dialog):
             btn.setToolTip(tooltip)
             buttons.append(btn)
 
-        list_view = _SubListView(*buttons)  # pylint:disable=W0142
+        list_view = _SubListView(self._sul_compiler, buttons)
         list_view.setObjectName('sul' + infix.rstrip('_'))
 
         vertical = QtGui.QVBoxLayout()
@@ -932,6 +932,12 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
     sizeHint = lambda self, option, index: self.sizeHint.SIZE
     sizeHint.SIZE = QtCore.QSize(-1, 50)
 
+    __slots__ = ['_sul_compiler']
+
+    def __init__(self, sul_compiler, *args, **kwargs):
+        super(_SubRuleDelegate, self).__init__(*args, **kwargs)
+        self._sul_compiler = sul_compiler
+
     def createEditor(self, parent,    # pylint:disable=C0103
                      option, index):  # pylint:disable=W0613
         """Return a panel to change rule values."""
@@ -985,16 +991,18 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
 
         edits = editor.findChildren(QtGui.QLineEdit)
         checkboxes = editor.findChildren(QtGui.QCheckBox)
+        obj = {'input': edits[0].text(), 'compiled': None,
+               'replace': edits[1].text(), 'regex': checkboxes[0].isChecked(),
+               'ignore_case': checkboxes[1].isChecked(),
+               'unicode': checkboxes[2].isChecked()}
 
-        # TODO should validation/compilation happen here or in setData()?
-        model.setData(index, {
-            'input': edits[0].text(),  # TODO this needs validation
-            'replace': edits[1].text(),
-            'regex': checkboxes[0].isChecked(),
-            'ignore_case': checkboxes[1].isChecked(),
-            'unicode': checkboxes[2].isChecked(),
-            # TODO 'compiled': ...
-        })
+        if obj['input']:
+            try:
+                obj['compiled'] = self._sul_compiler(obj)
+            except Exception:  # sre_constants.error, pylint:disable=W0703
+                pass
+
+        model.setData(index, obj)
 
 
 class _SubListView(QtGui.QListView):
@@ -1002,25 +1010,17 @@ class _SubListView(QtGui.QListView):
 
     __slots__ = ['_add_btn', '_up_btn', '_down_btn', '_del_btn']
 
-    def __init__(self, add_btn, up_btn, down_btn, del_btn, *args, **kwargs):
+    def __init__(self, sul_compiler, buttons, *args, **kwargs):
         super(_SubListView, self).__init__(*args, **kwargs)
 
-        add_btn.clicked.connect(self._add_rule)
-        self._add_btn = add_btn
+        self._add_btn, self._up_btn, self._down_btn, self._del_btn = buttons
+        self._add_btn.clicked.connect(self._add_rule)
+        self._up_btn.clicked.connect(lambda: self._reorder_rules('up'))
+        self._down_btn.clicked.connect(lambda: self._reorder_rules('down'))
+        self._del_btn.clicked.connect(self._del_rules)
 
-        up_btn.clicked.connect(lambda: self._reorder_rules('up'))
-        self._up_btn = up_btn
-
-        down_btn.clicked.connect(lambda: self._reorder_rules('down'))
-        self._down_btn = down_btn
-
-        del_btn.clicked.connect(self._del_rules)
-        self._del_btn = del_btn
-
-        self.setItemDelegate(self.__init__.DELEGATE)
+        self.setItemDelegate(_SubRuleDelegate(sul_compiler))
         self.setSelectionMode(self.ExtendedSelection)
-
-    __init__.DELEGATE = _SubRuleDelegate()
 
     def setModel(self, model):  # pylint:disable=C0103
         """Configures model and sets up event handling."""
@@ -1095,6 +1095,12 @@ class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
 
         if role == QtCore.Qt.DisplayRole:
             rule = self.raw_data[index.row()]
+
+            if not rule['input']:
+                return "empty match pattern"
+            elif not rule['compiled']:
+                return "invalid match pattern: " + rule['input']
+
             text = ('/%s/' if rule['regex'] else '"%s"') % rule['input']
             action = ('replace it with "%s"' % rule['replace']
                       if rule['replace'] else "remove it")

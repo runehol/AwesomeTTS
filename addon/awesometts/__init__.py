@@ -542,7 +542,8 @@ gui.Action(
     target=Bundle(
         constructor=gui.Configurator,
         args=(),
-        kwargs=dict(addon=addon, parent=aqt.mw),
+        kwargs=dict(addon=addon, sul_compiler=to.substitution_compiled,
+                    parent=aqt.mw),
     ),
     text="Awesome&TTS...",
     sequence=sequences['configurator'],

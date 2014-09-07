@@ -753,6 +753,10 @@ class Configurator(Dialog):
         Once done, we pass the signal onto Qt to close the window.
         """
 
+        for list_view in self.findChildren(QtGui.QListView):
+            for editor in list_view.findChildren(QtGui.QWidget, 'editor'):
+                list_view.commitData(editor)  # if an editor is open, save it
+
         self._addon.config.update({
             widget.objectName(): (
                 widget.isChecked() if isinstance(
@@ -962,6 +966,7 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
         layout.setContentsMargins(0, 0, 0, 0)
 
         panel = QtGui.QWidget(parent)
+        panel.setObjectName('editor')
         panel.setAutoFillBackground(True)
         panel.setFocusPolicy(QtCore.Qt.StrongFocus)
         panel.setLayout(layout)

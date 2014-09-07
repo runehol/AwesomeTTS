@@ -1040,10 +1040,13 @@ class _SubListView(QtGui.QListView):
         some = len(indexes) > 0
         rows = sorted(index.row() for index in indexes) if some else []
         contiguous = some and rows[-1] == rows[0] + len(rows) - 1
+        allow_up = contiguous and rows[0] > 0
+        allow_down = contiguous and rows[-1] < self.model().rowCount() - 1
 
-        self._up_btn.setEnabled(contiguous and rows[0] > 0)
-        self._down_btn.setEnabled(contiguous and
-                                  rows[-1] < self.model().rowCount() - 1)
+        if not allow_down and self._down_btn.hasFocus():
+            self._up_btn.setFocus()  # avoid refocus going to delete button
+        self._up_btn.setEnabled(allow_up)
+        self._down_btn.setEnabled(allow_down)
         self._del_btn.setEnabled(some)
 
     def _add_rule(self):

@@ -771,10 +771,9 @@ class Configurator(Dialog):
                     widget,
                     QtGui.QComboBox,
                 )
-                else widget.model().raw_data if isinstance(
-                    widget,
-                    QtGui.QListView,
-                )
+                else [i for i in widget.model().raw_data
+                      if i['compiled']] if isinstance(widget,
+                                                      QtGui.QListView)
                 else widget.text()
             )
             for widget in self.findChildren(self._PROPERTY_WIDGETS)
@@ -996,11 +995,10 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
                'ignore_case': checkboxes[1].isChecked(),
                'unicode': checkboxes[2].isChecked()}
 
-        if obj['input']:
-            try:
-                obj['compiled'] = self._sul_compiler(obj)
-            except Exception:  # sre_constants.error, pylint:disable=W0703
-                pass
+        try:
+            obj['compiled'] = self._sul_compiler(obj)
+        except Exception:  # sre_constants.error, pylint:disable=W0703
+            pass
 
         model.setData(index, obj)
 
@@ -1122,7 +1120,8 @@ class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
             row = len(self.raw_data)  # defaults to end
 
         self.beginInsertRows(parent or QtCore.QModelIndex(), row, row)
-        self.raw_data.insert(row, {'input': '', 'replace': '', 'regex': False,
+        self.raw_data.insert(row, {'input': '', 'compiled': None,
+                                   'replace': '', 'regex': False,
                                    'ignore_case': True, 'unicode': True})
         self.endInsertRows()
         return True

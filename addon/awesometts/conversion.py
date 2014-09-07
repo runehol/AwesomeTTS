@@ -122,6 +122,7 @@ def substitution_compiled(rule):
     be supported here.
     """
 
+    assert rule['input'], "Input pattern may not be empty"
     return re.compile(
         pattern=rule['input'] if rule['regex'] else re.escape(rule['input']),
         flags=sum(

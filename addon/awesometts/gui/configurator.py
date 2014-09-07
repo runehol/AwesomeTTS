@@ -257,6 +257,7 @@ class Configurator(Dialog):
             subtabs.addTab(subwidget, sublabel)
 
         layout = QtGui.QVBoxLayout()
+        layout.setMargin(0)
         layout.addWidget(subtabs)
 
         group = QtGui.QGroupBox(label)
@@ -934,7 +935,7 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
     """Item view specifically for a substitution rule."""
 
     sizeHint = lambda self, option, index: self.sizeHint.SIZE
-    sizeHint.SIZE = QtCore.QSize(-1, 50)
+    sizeHint.SIZE = QtCore.QSize(-1, 40)
 
     __slots__ = ['_sul_compiler']
 
@@ -950,28 +951,32 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
         edits.addWidget(QtGui.QLineEdit())
         edits.addWidget(QtGui.QLabel("<strong>&rArr;</strong>"))
         edits.addWidget(QtGui.QLineEdit())
-        edits.setContentsMargins(0, 0, 0, 0)
 
         checkboxes = QtGui.QHBoxLayout()
         checkboxes.addWidget(QtGui.QCheckBox("regex"))
         checkboxes.addWidget(QtGui.QCheckBox("case-insensitive"))
         checkboxes.addWidget(QtGui.QCheckBox("unicode"))
         checkboxes.addStretch()
-        checkboxes.setContentsMargins(0, 0, 0, 0)
 
         layout = QtGui.QVBoxLayout()
         layout.addStretch()
         layout.addLayout(edits)
         layout.addLayout(checkboxes)
         layout.addStretch()
-        layout.setContentsMargins(0, 0, 0, 0)
 
         panel = QtGui.QWidget(parent)
         panel.setObjectName('editor')
         panel.setAutoFillBackground(True)
         panel.setFocusPolicy(QtCore.Qt.StrongFocus)
         panel.setLayout(layout)
-        panel.setContentsMargins(0, 0, 0, 0)
+
+        for layout in [edits, checkboxes, layout]:
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setMargin(0)
+            layout.setSpacing(0)
+
+        for widget in [panel] + panel.findChildren(QtGui.QWidget):
+            widget.setContentsMargins(0, 0, 0, 0)
 
         return panel
 

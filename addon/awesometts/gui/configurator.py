@@ -216,7 +216,7 @@ class Configurator(Dialog):
                 ('ellipsize', "read as an ellipsis, ignoring hint"),
                 ('remove', "remove entirely"),
             ],
-        ))
+        ), 50)
         layout.addWidget(self._ui_tabs_text_mode(
             '_note_',
             "Handling Text from a Note Field (e.g. Browser Generator)",
@@ -228,8 +228,7 @@ class Configurator(Dialog):
                 ('ellipsize', "replace w/ ellipsis, ignoring both"),
                 ('remove', "remove entirely"),
             ],
-        ))
-        layout.addStretch()
+        ), 50)
 
         tab = QtGui.QWidget()
         tab.setLayout(layout)
@@ -386,6 +385,8 @@ class Configurator(Dialog):
 
         list_view = _SubListView(self._sul_compiler, buttons)
         list_view.setObjectName('sul' + infix.rstrip('_'))
+        list_view.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,
+                                QtGui.QSizePolicy.Ignored)
 
         vertical = QtGui.QVBoxLayout()
         for btn in buttons:

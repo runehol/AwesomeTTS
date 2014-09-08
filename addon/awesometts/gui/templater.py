@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -97,28 +96,27 @@ class Templater(ServiceDialog):
         layout = QtGui.QGridLayout()
 
         for row, label, name, options in [
-            (0, "Field:", 'field', [
-                ('', "customize the tag's content"),
-            ] + [
-                (field, field)
-                for field in sorted({
-                    field['name']
-                    for field in self._card_layout.model['flds']
-                })
-            ]),
+                (0, "Field:", 'field', [
+                    ('', "customize the tag's content"),
+                ] + [
+                    (field, field)
+                    for field in sorted({field['name']
+                                         for field
+                                         in self._card_layout.model['flds']})
+                ]),
 
-            (1, "Visibility:", 'hide', [
-                ('normal', "insert the tag as-is"),
-                ('inline', "hide just this tag w/ inline CSS"),
-                ('global', "add rule to hide any TTS tag for this note type"),
-            ]),
+                (1, "Visibility:", 'hide', [
+                    ('normal', "insert the tag as-is"),
+                    ('inline', "hide just this tag w/ inline CSS"),
+                    ('global', "add rule to hide any TTS tag for note type"),
+                ]),
 
-            (2, "Add to:", 'target', [
-                ('front', "Front Template"),
-                ('back', "Back Template"),
-            ]),
+                (2, "Add to:", 'target', [
+                    ('front', "Front Template"),
+                    ('back', "Back Template"),
+                ]),
 
-            # row 3 is used below if self._is_cloze is True
+                # row 3 is used below if self._is_cloze is True
         ]:
             label = QtGui.QLabel(label)
             label.setFont(self._FONT_LABEL)
@@ -212,12 +210,13 @@ class Templater(ServiceDialog):
 
                 ' '.join([
                     '%s="%s"' % (key, escape(str(value)))
-                    for key, value in
+                    for key, value in (
                         now['last_options'][now['last_service']].items()
                         + (
                             [('style', 'display: none')]
                             if now['templater_hide'] == 'inline' else []
                         )
+                    )
                 ]),
 
                 (

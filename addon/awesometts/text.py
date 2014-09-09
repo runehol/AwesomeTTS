@@ -30,6 +30,12 @@ import re
 
 
 RE_CLOZE_BRACED = re.compile(anki.template.template.clozeReg % r'\d+')
+RE_CLOZE_RENDERED = re.compile(
+    # see anki.template.template.clozeText; n.b. the presence of the brackets
+    # in the pattern means that this will only match and replace on the
+    # question side of cards
+    r'<span class=.?cloze.?>\[(.+?)\]</span>'
+)
 RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
 RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}( \(\d+\))?\.mp3')
 RE_SOUNDS = re.compile(r'\[sound:(.*?)\]')  # see also anki.sound._soundReg
@@ -116,6 +122,29 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
         match.group(3) if match.group(3)
         else '...'
     )
+
+    def _rule_clozes_rendered(self, text, value):
+        """
+        Given a rendered cloze HTML tag, examine the option value and
+        return an appropriate replacement.
+        """
+
+        return RE_CLOZE_RENDERED.sub(
+            '...' if value == 'ellipsize'
+            else '' if value == 'remove'
+            else self._rule_clozes_rendered.wrapper if value == 'wrap'
+            else self._rule_clozes_rendered.ankier,  # value == 'anki'
+
+            text,
+        )
+
+    _rule_clozes_rendered.wrapper = lambda match: (
+        '... %s ...' % match.group(1).strip('.')
+        if match.group(1).strip('.')
+        else match.group(1)
+    )
+
+    _rule_clozes_rendered.ankier = lambda match: match.group(1)
 
     def _rule_ellipses(self, text):
         """

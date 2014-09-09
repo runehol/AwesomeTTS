@@ -110,18 +110,18 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
 
         return text
 
-    def _rule_clozes_braced(self, text, value):
+    def _rule_clozes_braced(self, text, mode):
         """
         Given a braced cloze placeholder in a note, examine the option
-        value and return an appropriate replacement.
+        mode and return an appropriate replacement.
         """
 
         return RE_CLOZE_BRACED.sub(
-            '...' if value == 'ellipsize'
-            else '' if value == 'remove'
-            else self._rule_clozes_braced.wrapper if value == 'wrap'
-            else self._rule_clozes_braced.deleter if value == 'deleted'
-            else self._rule_clozes_braced.ankier,  # value == 'anki'
+            '...' if mode == 'ellipsize'
+            else '' if mode == 'remove'
+            else self._rule_clozes_braced.wrapper if mode == 'wrap'
+            else self._rule_clozes_braced.deleter if mode == 'deleted'
+            else self._rule_clozes_braced.ankier,  # mode == 'anki'
 
             text,
         )
@@ -142,17 +142,17 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
         else '...'
     )
 
-    def _rule_clozes_rendered(self, text, value):
+    def _rule_clozes_rendered(self, text, mode):
         """
-        Given a rendered cloze HTML tag, examine the option value and
+        Given a rendered cloze HTML tag, examine the option mode and
         return an appropriate replacement.
         """
 
         return RE_CLOZE_RENDERED.sub(
-            '...' if value == 'ellipsize'
-            else '' if value == 'remove'
-            else self._rule_clozes_rendered.wrapper if value == 'wrap'
-            else self._rule_clozes_rendered.ankier,  # value == 'anki'
+            '...' if mode == 'ellipsize'
+            else '' if mode == 'remove'
+            else self._rule_clozes_rendered.wrapper if mode == 'wrap'
+            else self._rule_clozes_rendered.ankier,  # mode == 'anki'
 
             text,
         )

@@ -22,13 +22,14 @@
 Basic manipulation and sanitization of input text
 """
 
-__all__ = ['RE_ELLIPSES', 'RE_FILENAMES', 'RE_SOUNDS', 'RE_WHITESPACE',
-           'STRIP_HTML', 'Sanitizer']
+__all__ = ['RE_CLOZE_BRACED', 'RE_ELLIPSES', 'RE_FILENAMES', 'RE_SOUNDS',
+           'RE_WHITESPACE', 'STRIP_HTML', 'Sanitizer']
 
 import anki
 import re
 
 
+RE_CLOZE_BRACED = re.compile(anki.template.template.clozeReg % r'\d+')
 RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
 RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}( \(\d+\))?\.mp3')
 RE_SOUNDS = re.compile(r'\[sound:(.*?)\]')  # see also anki.sound._soundReg
@@ -83,6 +84,38 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
             self._logger.debug("Transformation using %s: %s", applied, text)
 
         return text
+
+    def _rule_clozes_braced(self, text, value):
+        """
+        Given a braced cloze placeholder in a note, examine the option
+        value and return an appropriate replacement.
+        """
+
+        return RE_CLOZE_BRACED.sub(
+            '...' if value == 'ellipsize'
+            else '' if value == 'remove'
+            else self._rule_clozes_braced.wrapper if value == 'wrap'
+            else self._rule_clozes_braced.deleter if value == 'deleted'
+            else self._rule_clozes_braced.ankier,  # value == 'anki'
+
+            text,
+        )
+
+    _rule_clozes_braced.wrapper = lambda match: (
+        '... %s ...' % match.group(3).strip('.') if (match.group(3) and
+                                                     match.group(3).strip('.'))
+        else '...'
+    )
+
+    _rule_clozes_braced.deleter = lambda match: (
+        match.group(1) if match.group(1)
+        else '...'
+    )
+
+    _rule_clozes_braced.ankier = lambda match: (
+        match.group(3) if match.group(3)
+        else '...'
+    )
 
     def _rule_ellipses(self, text):
         """

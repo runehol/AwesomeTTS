@@ -23,8 +23,9 @@ Basic manipulation and sanitization of input text
 """
 
 __all__ = ['RE_ELLIPSES', 'RE_FILENAMES', 'RE_SOUNDS', 'RE_WHITESPACE',
-           'Sanitizer']
+           'STRIP_HTML', 'Sanitizer']
 
+import anki
 import re
 
 
@@ -32,6 +33,8 @@ RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
 RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}( \(\d+\))?\.mp3')
 RE_SOUNDS = re.compile(r'\[sound:(.*?)\]')  # see also anki.sound._soundReg
 RE_WHITESPACE = re.compile(r'[\0\s]+')
+
+STRIP_HTML = anki.utils.stripHTML  # this also converts character entities
 
 
 class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
@@ -95,6 +98,13 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
         """
 
         return RE_FILENAMES.sub('', text)
+
+    def _rule_html(self, text):
+        """
+        Removes any HTML, including converting character entities.
+        """
+
+        return STRIP_HTML(text)
 
     def _rule_sounds_ours(self, text):
         """

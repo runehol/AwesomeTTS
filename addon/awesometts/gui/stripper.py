@@ -217,9 +217,6 @@ class BrowserStripper(Dialog):
                              else strips.theirs(old_value) if mode == 'theirs'
                              else strips.univ(old_value))
 
-                if mode in ('ours', 'any'):
-                    new_value = self._addon.strip.filenames(new_value)
-
                 if old_value == new_value:
                     self._addon.logger.debug("Note %d unchanged for %s\n%s",
                                              note.id, field, old_value)

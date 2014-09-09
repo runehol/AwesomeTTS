@@ -491,12 +491,10 @@ addon = Bundle(
             # using AwesomeTTS's methods (which have access to precompiled re
             # objects, usable for everything else, e.g. when BrowserGenerator
             # or BrowserStripper need to remove old sounds)
-            ours=Sanitizer(rules=['sounds_ours'], logger=logger),
+            ours=Sanitizer(rules=['sounds_ours', 'filenames'], logger=logger),
             theirs=Sanitizer(rules=['sounds_theirs'], logger=logger),
-            univ=Sanitizer(rules=['sounds_univ'], logger=logger),
+            univ=Sanitizer(rules=['sounds_univ', 'filenames'], logger=logger),
         ),
-
-        filenames=STRIP_FILENAMES,
     ),
     updates=updates,
     version=VERSION,

@@ -89,6 +89,13 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
 
         return RE_ELLIPSES.sub(' ... ', text)
 
+    def _rule_filenames(self, text):
+        """
+        Removes any filenames that appear to be from AwesomeTTS.
+        """
+
+        return RE_FILENAMES.sub('', text)
+
     def _rule_sounds_ours(self, text):
         """
         Removes sound tags that appear to be from AwesomeTTS.

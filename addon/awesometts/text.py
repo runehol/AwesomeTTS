@@ -22,13 +22,15 @@
 Basic manipulation and sanitization of input text
 """
 
-__all__ = ['Sanitizer',
-           'RE_ELLIPSES', 'RE_WHITESPACE']
+__all__ = ['RE_ELLIPSES', 'RE_FILENAMES', 'RE_SOUNDS', 'RE_WHITESPACE',
+           'Sanitizer']
 
 import re
 
 
 RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
+RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}( \(\d+\))?\.mp3')
+RE_SOUNDS = re.compile(r'\[sound:(.*?)\]')  # see also anki.sound._soundReg
 RE_WHITESPACE = re.compile(r'[\0\s]+')
 
 
@@ -86,6 +88,39 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
         """
 
         return RE_ELLIPSES.sub(' ... ', text)
+
+    def _rule_sounds_ours(self, text):
+        """
+        Removes sound tags that appear to be from AwesomeTTS.
+        """
+
+        return RE_SOUNDS.sub(
+            lambda match: (
+                '' if RE_FILENAMES.match(match.group(1))
+                else match.group(0)
+            ),
+            text,
+        )
+
+    def _rule_sounds_theirs(self, text):
+        """
+        Removes sound tags that appear to NOT be from AwesomeTTS.
+        """
+
+        return RE_SOUNDS.sub(
+            lambda match: (
+                match.group(0) if RE_FILENAMES.match(match.group(1))
+                else ''
+            ),
+            text,
+        )
+
+    def _rule_sounds_univ(self, text):
+        """
+        Removes sound tags, regardless of origin.
+        """
+
+        return RE_SOUNDS.sub('', text)
 
     def _rule_whitespace(self, text):
         """

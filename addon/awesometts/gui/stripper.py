@@ -192,9 +192,6 @@ class BrowserStripper(Dialog):
             if radio.isChecked()
         )
 
-        which = mode if mode in ('ours', 'theirs') else False
-        also_filenames = mode in ('ours', 'any')
-
         self._browser.mw.checkpoint("AwesomeTTS Sound Removal")
         self._browser.model.beginReset()
 
@@ -215,8 +212,12 @@ class BrowserStripper(Dialog):
                     stat['fields']['skip'] += 1
                     continue
 
-                new_value = self._addon.strip.sounds.atts(old_value, which)
-                if also_filenames:
+                strips = self._addon.strip.sounds
+                new_value = (strips.ours(old_value) if mode == 'ours'
+                             else strips.theirs(old_value) if mode == 'theirs'
+                             else strips.univ(old_value))
+
+                if mode in ('ours', 'any'):
                     new_value = self._addon.strip.filenames(new_value)
 
                 if old_value == new_value:

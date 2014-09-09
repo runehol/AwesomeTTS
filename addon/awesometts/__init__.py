@@ -488,10 +488,12 @@ addon = Bundle(
             # something, e.g. when Reviewer emulates {{FrontSide}})
             anki=anki.sound.stripSounds,
 
-            # using AwesomeTTS's method (which has access to a precompiled re
-            # object, usable for everything else, e.g. when BrowserGenerator
+            # using AwesomeTTS's methods (which have access to precompiled re
+            # objects, usable for everything else, e.g. when BrowserGenerator
             # or BrowserStripper need to remove old sounds)
-            atts=STRIP_SOUNDS,
+            ours=Sanitizer(rules=['sounds_ours'], logger=logger),
+            theirs=Sanitizer(rules=['sounds_theirs'], logger=logger),
+            univ=Sanitizer(rules=['sounds_univ'], logger=logger),
         ),
 
         filenames=STRIP_FILENAMES,

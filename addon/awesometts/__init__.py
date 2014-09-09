@@ -45,7 +45,7 @@ from .bundle import Bundle
 from .config import Config
 from .logger import Logger
 from .router import Router
-from .text import Sanitizer
+from .text import RE_FILENAMES, Sanitizer
 from .updates import Updates
 
 
@@ -215,7 +215,6 @@ RE_CLOZE_TEMPLATE = re.compile(
     r'<span class=.?cloze.?>\[(.+?)\]</span>'
 )
 RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
-RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}( \(\d+\))?\.mp3')
 RE_SOUNDS = re.compile(r'\[sound:(.*?)\]')  # see also anki.sound._soundReg
 RE_TEXT_IN_BRACES = re.compile(r'\{.+?\}')
 RE_TEXT_IN_BRACKETS = re.compile(r'\[.+?\]')

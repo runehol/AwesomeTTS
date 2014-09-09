@@ -72,16 +72,35 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
                 text = getattr(self, '_rule_' + rule)(text)
 
             elif isinstance(rule, tuple):  # rule that depends on config
-                rule, key = rule
+                try:
+                    addl = rule[2]
+                except IndexError:
+                    addl = None
+                key = rule[1]
+                rule = rule[0]
+
                 value = self._config[key]
 
                 if value is True:  # basic on/off config flag
-                    applied.append(rule)
-                    text = getattr(self, '_rule_' + rule)(text)
+                    if addl:
+                        addl = self._config[addl]
+                        applied.append((rule, addl))
+                        text = getattr(self, '_rule_' + rule)(text, addl)
+
+                    else:
+                        applied.append(rule)
+                        text = getattr(self, '_rule_' + rule)(text)
 
                 elif value:  # some other truthy value that drives the rule
-                    applied.append((rule, value))
-                    text = getattr(self, '_rule_' + rule)(text, value)
+                    if addl:
+                        addl = self._config[addl]
+                        applied.append((rule, value, addl))
+                        text = getattr(self, '_rule_' + rule)(text, value,
+                                                              addl)
+
+                    else:
+                        applied.append((rule, value))
+                        text = getattr(self, '_rule_' + rule)(text, value)
 
             else:
                 raise AssertionError("bad rule given to Sanitizer instance")

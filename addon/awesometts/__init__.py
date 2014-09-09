@@ -45,6 +45,7 @@ from .bundle import Bundle
 from .config import Config
 from .logger import Logger
 from .router import Router
+from .text import Sanitizer
 from .updates import Updates
 
 
@@ -479,11 +480,7 @@ addon = Bundle(
             ))))))))))))))),
 
         # for direct user input (e.g. previews, EditorGenerator insertion)
-        from_user=lambda text:
-            COLLAPSE_WHITESPACE(
-            COLLAPSE_ELLIPSES(
-                text
-            )),
+        from_user=Sanitizer(rules=['ellipses', 'whitespace'], logger=logger),
 
         # target sounds specifically
         sounds=Bundle(

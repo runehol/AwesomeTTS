@@ -165,6 +165,26 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
 
     _rule_clozes_rendered.ankier = lambda match: match.group(1)
 
+    def _rule_counter(self, text, characters, wrap):
+        """
+        Upon encountering the given characters, replace with the number
+        of those characters that were encountered.
+        """
+
+        return re.sub(
+            r'[' + re.escape(characters) + ']{2,}',
+
+            self._rule_counter.wrapper if wrap
+            else self._rule_counter.spacer,
+
+            text,
+        )
+
+    _rule_counter.wrapper = lambda match: (' ... ' + str(len(match.group(0))) +
+                                           ' ... ')
+
+    _rule_counter.spacer = lambda match: (' ' + str(len(match.group(0))) + ' ')
+
     def _rule_ellipses(self, text):
         """
         Given at least three periods, separated by whitespace or not,

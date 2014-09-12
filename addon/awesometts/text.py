@@ -25,8 +25,8 @@ Basic manipulation and sanitization of input text
 __all__ = ['RE_CLOZE_BRACED', 'RE_ELLIPSES', 'RE_FILENAMES', 'RE_SOUNDS',
            'RE_WHITESPACE', 'STRIP_HTML', 'Sanitizer']
 
-import anki
 import re
+import anki
 
 
 RE_CLOZE_BRACED = re.compile(anki.template.template.clozeReg % r'\d+')
@@ -56,7 +56,6 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
     ]
 
     def __init__(self, rules, config=None, logger=None):
-
         self._rules = rules
         self._config = config
         self._logger = logger
@@ -247,3 +246,17 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
         """
 
         return RE_WHITESPACE.sub(' ', text).strip()
+
+    def _aux_within(self, text, begin_char, end_char):
+        """
+        Removes any substring of text that starts with begin_char and
+        ends with end_char.
+        """
+
+        return text  # TODO
+
+    _rule_within_braces = lambda self, text: self._aux_within(text, '{', '}')
+
+    _rule_within_brackets = lambda self, text: self._aux_within(text, '[', ']')
+
+    _rule_within_parens = lambda self, text: self._aux_within(text, '(', ')')

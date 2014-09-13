@@ -356,6 +356,7 @@ addon = Bundle(
 
         # like the previous, but for the back sides of cards
         from_template_back=Sanitizer([
+            ('clozes_revealed', 'otf_only_revealed_cloze'),
             'html',
             'sounds_univ',
             'filenames',

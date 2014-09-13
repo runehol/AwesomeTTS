@@ -29,6 +29,7 @@ __all__ = ['RE_CLOZE_BRACED', 'RE_CLOZE_RENDERED', 'RE_ELLIPSES',
 import re
 from StringIO import StringIO
 
+from BeautifulSoup import BeautifulSoup
 import anki
 
 
@@ -183,6 +184,22 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
     )
 
     _rule_clozes_rendered.ankier = lambda match: match.group(1)
+
+    def _rule_clozes_revealed(self, text):
+        """
+        Given text that has a revealed cloze span, return only the
+        contents of that span.
+        """
+
+        revealed_tags = BeautifulSoup(text)('span', attrs={'class': 'cloze'})
+
+        return ' ... '.join(
+            ''.join(
+                unicode(content)
+                for content in tag.contents
+            )
+            for tag in revealed_tags
+        ) if revealed_tags else text
 
     def _rule_counter(self, text, characters, wrap):
         """

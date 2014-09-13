@@ -175,7 +175,7 @@ config = Config(
         (
             ['launch_' + key for key in sequences.keys()],
             lambda config: ([sequences[key].swap(config['launch_' + key] or 0)
-                            for key in sequences.keys()],
+                             for key in sequences.keys()],
                             [conf_menu.setShortcut(sequences['configurator'])
                              for conf_menu in (aqt.mw.form.menuTools.
                                                findChildren(gui.Action))])
@@ -552,11 +552,12 @@ reviewer_filter = gui.Filter(
         card=aqt.mw.reviewer.card,
         replay_audio=aqt.mw.reviewer.replayAudio,
     ),
-    when=lambda event:
+    when=lambda event: (
         aqt.mw.state == 'review' and
         event.type() == QEvent.KeyPress and
         not event.isAutoRepeat() and
-        not event.spontaneous(),
+        not event.spontaneous()
+    ),
 )
 aqt.mw.installEventFilter(reviewer_filter)
 
@@ -648,7 +649,7 @@ aqt.editor.Editor.enableButtons = anki.hooks.wrap(
         # Selected Notes" menu so this more "local" shortcut works instead.
         # Has no effect on "Add" as findChildren() returns empty list there.
         [action.muzzle(val) for action
-            in editor.parentWindow.findChildren(gui.Action)],
+         in editor.parentWindow.findChildren(gui.Action)],
     ),
     'before',
 )
@@ -690,15 +691,13 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
 # Without the main window, update components (e.g. aqt.downloader.download,
 # aqt.addons.GetAddons) that depend on it might fail unexpectedly.
 
-if (
-    config['updates_enabled'] and
-    (not config['updates_postpone'] or config['updates_postpone'] <= time())
-):
+if config['updates_enabled'] and \
+   (not config['updates_postpone'] or config['updates_postpone'] <= time()):
     anki.hooks.addHook(
         'profileLoaded',
         lambda: updates.used() or updates.check(
             callbacks=dict(
-                need=lambda version, info:
+                need=lambda version, info: (
                     None if config['updates_ignore'] == version
                     else [
                         updater.show()
@@ -708,7 +707,8 @@ if (
                             addon=addon,
                             parent=aqt.mw,
                         )]
-                    ],
+                    ]
+                ),
             ),
         ),
     )

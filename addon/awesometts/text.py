@@ -112,6 +112,19 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
 
         return text
 
+    def _rule_char_ellipsize(self, text, chars):
+        """Ellipsizes given chars from the text."""
+
+        return ''.join(
+            ('...' if char in chars else char)
+            for char in text
+        )
+
+    def _rule_char_remove(self, text, chars):
+        """Removes given chars from the text."""
+
+        return ''.join(char for char in text if char not in chars)
+
     def _rule_clozes_braced(self, text, mode):
         """
         Given a braced cloze placeholder in a note, examine the option

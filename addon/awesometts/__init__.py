@@ -338,8 +338,23 @@ addon = Bundle(
 
         # for cleaning up already-processed HTML templates (e.g. on-the-fly,
         # where cloze is marked with <span class=cloze></span> tags)
-        from_template=Sanitizer([
+        from_template_front=Sanitizer([
             ('clozes_rendered', 'sub_template_cloze'),
+            'html',
+            'sounds_univ',
+            'filenames',
+            ('within_parens', 'strip_template_parens'),
+            ('within_brackets', 'strip_template_brackets'),
+            ('within_braces', 'strip_template_braces'),
+            ('char_remove', 'spec_template_strip'),
+            ('counter', 'spec_template_count', 'spec_template_count_wrap'),
+            ('char_ellipsize', 'spec_template_ellipsize'),
+            'ellipses',
+            'whitespace',
+        ], config=config, logger=logger),
+
+        # like the previous, but for the back sides of cards
+        from_template_back=Sanitizer([
             'html',
             'sounds_univ',
             'filenames',

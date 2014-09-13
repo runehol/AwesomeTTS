@@ -191,10 +191,12 @@ class Reviewer(object):
         """
 
         assert side in ['front', 'back'], "invalid 'side' passed"
+        from_template = (self._addon.strip.from_template_back if side == 'back'
+                         else self._addon.strip.from_template_front)
 
         for tag in BeautifulSoup(html)('tts'):
             text = ''.join(unicode(content) for content in tag.contents)
-            text = self._addon.strip.from_template(text)
+            text = from_template(text)
             if not text:
                 continue
 
@@ -268,7 +270,7 @@ class Reviewer(object):
             voice = components.pop(0)
 
             text = ':'.join(components)
-            text = self._addon.strip.from_template(text)
+            text = from_template(text)
             if not text:
                 continue
 

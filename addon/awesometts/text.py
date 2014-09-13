@@ -22,10 +22,13 @@
 Basic manipulation and sanitization of input text
 """
 
-__all__ = ['RE_CLOZE_BRACED', 'RE_ELLIPSES', 'RE_FILENAMES', 'RE_SOUNDS',
-           'RE_WHITESPACE', 'STRIP_HTML', 'Sanitizer']
+__all__ = ['RE_CLOZE_BRACED', 'RE_CLOZE_RENDERED', 'RE_ELLIPSES',
+           'RE_FILENAMES', 'RE_SOUNDS', 'RE_WHITESPACE', 'STRIP_HTML',
+           'Sanitizer']
 
 import re
+from cStringIO import StringIO
+
 import anki
 
 
@@ -247,16 +250,50 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
 
         return RE_WHITESPACE.sub(' ', text).strip()
 
-    def _aux_within(self, text, begin_char, end_char):
-        """
-        Removes any substring of text that starts with begin_char and
-        ends with end_char.
-        """
+    _rule_within_braces = lambda self, text: _aux_within(text, '{', '}')
 
-        return text  # TODO
+    _rule_within_brackets = lambda self, text: _aux_within(text, '[', ']')
 
-    _rule_within_braces = lambda self, text: self._aux_within(text, '{', '}')
+    _rule_within_parens = lambda self, text: _aux_within(text, '(', ')')
 
-    _rule_within_brackets = lambda self, text: self._aux_within(text, '[', ']')
 
-    _rule_within_parens = lambda self, text: self._aux_within(text, '(', ')')
+def _aux_within(text, begin_char, end_char):
+    """
+    Removes any substring of text that starts with begin_char and
+    ends with end_char.
+    """
+
+    changed = False
+    result = StringIO()
+    sequences = []
+
+    for char in text:
+        if char == begin_char:  # begins new level of text to possibly cut
+            sequence = StringIO()
+            sequence.write(char)
+            sequences.append(sequence)
+
+        elif char == end_char:
+            if sequences:  # match the last opening char and cut this text
+                changed = True
+                sequences.pop().close()
+
+            else:  # include closing chars w/o matching opening in result
+                result.write(char)
+
+        elif sequences:  # write regular chars to current sequence level
+            sequences[-1].write(char)
+
+        else:  # write top-level regular chars to the result
+            result.write(char)
+
+    if changed:  # replace passed text object with the buffer
+        for sequence in sequences:  # include stuff lacking a closing char
+            result.write(sequence.getvalue())
+        text = result.getvalue()
+
+    result.close()
+    while sequences:
+        sequences.pop().close()
+
+    return text

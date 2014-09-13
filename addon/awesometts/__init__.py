@@ -29,7 +29,6 @@ __all__ = []
 import inspect
 import logging
 import platform
-import re
 import sys
 from time import time
 
@@ -207,112 +206,6 @@ updates = Updates(
 # n.b. be careful wrapping methods that have return values (see anki.hooks);
 #      in general, only the 'before' mode absolves us of responsibility
 
-RE_CLOZE_NOTE = re.compile(anki.template.template.clozeReg % r'\d+')
-RE_CLOZE_TEMPLATE = re.compile(
-    # see anki.template.template.clozeText; n.b. the presence of the brackets
-    # in the pattern means that this will only match and replace on the
-    # question side of cards and that the answer side will be read normally
-    r'<span class=.?cloze.?>\[(.+?)\]</span>'
-)
-RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
-RE_SOUNDS = re.compile(r'\[sound:(.*?)\]')  # see also anki.sound._soundReg
-RE_TEXT_IN_BRACES = re.compile(r'\{.+?\}')
-RE_TEXT_IN_BRACKETS = re.compile(r'\[.+?\]')
-RE_TEXT_IN_PARENS = re.compile(r'\(.+?\)')
-RE_WHITESPACE = re.compile(r'[\0\s]+')
-
-COLLAPSE_ELLIPSES = lambda text: RE_ELLIPSES.sub(' ... ', text)
-COLLAPSE_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
-
-SPEC_COUNT = lambda key, wrap_key, text: \
-    re.sub(
-        r'[' + re.escape(config[key]) + ']+',
-        lambda match: str(len(match.group(0))).join(
-            [' ... ', ' ... '] if config[wrap_key]
-            else [' ', ' ']
-        ),
-        text,
-    ) if config[key] \
-    else text
-SPEC_COUNT_NOTE = lambda text: SPEC_COUNT('spec_note_count',
-                                          'spec_note_count_wrap',
-                                          text)
-SPEC_COUNT_TEMPLATE = lambda text: SPEC_COUNT('spec_template_count',
-                                              'spec_template_count_wrap',
-                                              text)
-
-SPEC_STRIP = lambda key, text: \
-    ''.join(c for c in text if c not in config[key]) if config[key] \
-    else text
-SPEC_STRIP_NOTE = lambda text: SPEC_STRIP('spec_note_strip', text)
-SPEC_STRIP_TEMPLATE = lambda text: SPEC_STRIP('spec_template_strip', text)
-
-SPEC_ELLIP = lambda key, text: \
-    ''.join(('...' if c in config[key] else c) for c in text) if config[key] \
-    else text
-SPEC_ELLIP_NOTE = lambda text: SPEC_ELLIP('spec_note_ellipsize', text)
-SPEC_ELLIP_TEMPLATE = lambda text: SPEC_ELLIP('spec_template_ellipsize', text)
-
-STRIP_FILENAMES = lambda text: RE_FILENAMES.sub('', text)
-STRIP_HTML = anki.utils.stripHTML  # this also converts character entities
-STRIP_SOUNDS = lambda text, which=False: RE_SOUNDS.sub(
-    (lambda match: match.group(0) if RE_FILENAMES.match(match.group(1))
-     else '') if which == 'theirs'
-    else (lambda match: '' if RE_FILENAMES.match(match.group(1))
-          else match.group(0)) if which == 'ours'
-    else '',
-
-    text,
-)
-
-STRIP_CONDITIONALLY = lambda regex, key, text: \
-    regex.sub('', text) if config[key] else text
-
-STRIP_CONDITIONALLY_NOTE = lambda text: \
-    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACES, 'strip_note_braces',
-    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACKETS, 'strip_note_brackets',
-    STRIP_CONDITIONALLY(RE_TEXT_IN_PARENS, 'strip_note_parens',
-        text
-    )))
-
-STRIP_CONDITIONALLY_TEMPLATE = lambda text: \
-    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACES, 'strip_template_braces',
-    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACKETS, 'strip_template_brackets',
-    STRIP_CONDITIONALLY(RE_TEXT_IN_PARENS, 'strip_template_parens',
-        text
-    )))
-
-SUB_CLOZES_NOTE = lambda text: RE_CLOZE_NOTE.sub(
-    lambda match:
-        '...' if config['sub_note_cloze'] == 'ellipsize'
-        else '' if config['sub_note_cloze'] == 'remove'
-        else (
-            '... %s ...' % match.group(3).strip('.') if
-                match.group(3) and
-                match.group(3).strip('.')
-            else '...'
-        ) if config['sub_note_cloze'] == 'wrap'
-        else (
-            match.group(1) if match.group(1)
-            else '...'
-        ) if config['sub_note_cloze'] == 'deleted'
-        else match.group(3) if match.group(3)
-        else '...',
-    text,
-)
-
-SUB_CLOZES_TEMPLATE = lambda text: RE_CLOZE_TEMPLATE.sub(
-    lambda match:
-        '...' if config['sub_template_cloze'] == 'ellipsize'
-        else '' if config['sub_template_cloze'] == 'remove'
-        else '... %s ...' % match.group(1).strip('.') if
-            config['sub_template_cloze'] == 'wrap' and
-            match.group(1).strip('.')
-        else match.group(1),
-    text,
-)
-
-
 PLAY_ANKI = anki.sound.play
 
 PLAY_BLANK = lambda seconds, reason, path: \
@@ -428,55 +321,58 @@ addon = Bundle(
         # for content directly from a note field (e.g. BrowserGenerator runs,
         # prepopulating a modal input based on some note field, where cloze
         # placeholders are still in their unprocessed state)
-        from_note=lambda text:
-            COLLAPSE_WHITESPACE(
-            COLLAPSE_ELLIPSES(
-            SPEC_ELLIP_NOTE(
-            SPEC_COUNT_NOTE(
-            SPEC_STRIP_NOTE(
-            STRIP_CONDITIONALLY_NOTE(
-            STRIP_FILENAMES(
-            STRIP_SOUNDS(
-            STRIP_HTML(
-            SUB_CLOZES_NOTE(
-                text
-            )))))))))),
+        from_note=Sanitizer([
+            ('clozes_braced', 'sub_note_cloze'),
+            'html',
+            'sounds_univ',
+            'filenames',
+            ('within_parens', 'strip_note_parens'),
+            ('within_brackets', 'strip_note_brackets'),
+            ('within_braces', 'strip_note_braces'),
+            ('char_remove', 'spec_note_strip'),
+            ('counter', 'spec_note_count', 'spec_note_count_wrap'),
+            ('char_ellipsize', 'spec_note_ellipsize'),
+            'ellipses',
+            'whitespace',
+        ], config=config, logger=logger),
 
         # for cleaning up already-processed HTML templates (e.g. on-the-fly,
         # where cloze is marked with <span class=cloze></span> tags)
-        from_template=lambda text:
-            COLLAPSE_WHITESPACE(
-            COLLAPSE_ELLIPSES(
-            SPEC_ELLIP_TEMPLATE(
-            SPEC_COUNT_TEMPLATE(
-            SPEC_STRIP_TEMPLATE(
-            STRIP_CONDITIONALLY_TEMPLATE(
-            STRIP_FILENAMES(
-            STRIP_SOUNDS(
-            STRIP_HTML(
-            SUB_CLOZES_TEMPLATE(
-                text
-            )))))))))),
+        from_template=Sanitizer([
+            ('clozes_rendered', 'sub_template_cloze'),
+            'html',
+            'sounds_univ',
+            'filenames',
+            ('within_parens', 'strip_template_parens'),
+            ('within_brackets', 'strip_template_brackets'),
+            ('within_braces', 'strip_template_braces'),
+            ('char_remove', 'spec_template_strip'),
+            ('counter', 'spec_template_count', 'spec_template_count_wrap'),
+            ('char_ellipsize', 'spec_template_ellipsize'),
+            'ellipses',
+            'whitespace',
+        ], config=config, logger=logger),
 
         # for cleaning up text from unknown sources (e.g. system clipboard)
-        from_unknown=lambda text:
-            COLLAPSE_WHITESPACE(
-            COLLAPSE_ELLIPSES(
-            SPEC_ELLIP_TEMPLATE(
-            SPEC_ELLIP_NOTE(
-            SPEC_COUNT_TEMPLATE(
-            SPEC_COUNT_NOTE(
-            SPEC_STRIP_TEMPLATE(
-            SPEC_STRIP_NOTE(
-            STRIP_CONDITIONALLY_TEMPLATE(
-            STRIP_CONDITIONALLY_NOTE(
-            STRIP_FILENAMES(
-            STRIP_SOUNDS(
-            STRIP_HTML(
-            SUB_CLOZES_TEMPLATE(
-            SUB_CLOZES_NOTE(
-                text
-            ))))))))))))))),
+        from_unknown=Sanitizer([
+            ('clozes_braced', 'sub_note_cloze'),
+            ('clozes_rendered', 'sub_template_cloze'),
+            'html',
+            'sounds_univ',
+            'filenames',
+            ('within_parens', ['strip_note_parens', 'strip_template_parens']),
+            ('within_brackets', ['strip_note_brackets',
+                                 'strip_template_brackets']),
+            ('within_braces', ['strip_note_braces', 'strip_template_braces']),
+            ('char_remove', 'spec_note_strip'),
+            ('char_remove', 'spec_template_strip'),
+            ('counter', 'spec_note_count', 'spec_note_count_wrap'),
+            ('counter', 'spec_template_count', 'spec_template_count_wrap'),
+            ('char_ellipsize', 'spec_note_ellipsize'),
+            ('char_ellipsize', 'spec_template_ellipsize'),
+            'ellipses',
+            'whitespace',
+        ], config=config, logger=logger),
 
         # for direct user input (e.g. previews, EditorGenerator insertion)
         from_user=Sanitizer(rules=['ellipses', 'whitespace'], logger=logger),

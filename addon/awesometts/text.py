@@ -27,7 +27,7 @@ __all__ = ['RE_CLOZE_BRACED', 'RE_CLOZE_RENDERED', 'RE_ELLIPSES',
            'Sanitizer']
 
 import re
-from cStringIO import StringIO
+from StringIO import StringIO
 
 import anki
 

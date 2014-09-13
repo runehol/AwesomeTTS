@@ -341,6 +341,7 @@ addon = Bundle(
         # where cloze is marked with <span class=cloze></span> tags)
         from_template_front=Sanitizer([
             ('clozes_rendered', 'sub_template_cloze'),
+            'hint_links',
             'html',
             'sounds_univ',
             'filenames',
@@ -357,6 +358,7 @@ addon = Bundle(
         # like the previous, but for the back sides of cards
         from_template_back=Sanitizer([
             ('clozes_revealed', 'otf_only_revealed_cloze'),
+            'hint_links',
             'html',
             'sounds_univ',
             'filenames',
@@ -370,10 +372,13 @@ addon = Bundle(
             'whitespace',
         ], config=config, logger=logger),
 
-        # for cleaning up text from unknown sources (e.g. system clipboard)
+        # for cleaning up text from unknown sources (e.g. system clipboard);
+        # n.b. clozes_revealed is not used here without the card context and
+        # it would be a weird thing to apply to the clipboard content anyway
         from_unknown=Sanitizer([
             ('clozes_braced', 'sub_note_cloze'),
             ('clozes_rendered', 'sub_template_cloze'),
+            'hint_links',
             'html',
             'sounds_univ',
             'filenames',

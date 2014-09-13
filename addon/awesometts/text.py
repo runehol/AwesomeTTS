@@ -23,8 +23,8 @@ Basic manipulation and sanitization of input text
 """
 
 __all__ = ['RE_CLOZE_BRACED', 'RE_CLOZE_RENDERED', 'RE_ELLIPSES',
-           'RE_FILENAMES', 'RE_SOUNDS', 'RE_WHITESPACE', 'STRIP_HTML',
-           'Sanitizer']
+           'RE_FILENAMES', 'RE_HINT_LINK', 'RE_SOUNDS', 'RE_WHITESPACE',
+           'STRIP_HTML', 'Sanitizer']
 
 import re
 from StringIO import StringIO
@@ -42,6 +42,7 @@ RE_CLOZE_RENDERED = re.compile(
 )
 RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
 RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}( \(\d+\))?\.mp3')
+RE_HINT_LINK = re.compile(r'<a[^>]+class=.?hint.?[^>]*>[^<]+</a>')
 RE_SOUNDS = re.compile(r'\[sound:(.*?)\]')  # see also anki.sound._soundReg
 RE_WHITESPACE = re.compile(r'[\0\s]+')
 
@@ -235,6 +236,13 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
         """
 
         return RE_FILENAMES.sub('', text)
+
+    def _rule_hint_links(self, text):
+        """
+        Removes hint links from the use of a {{hint:XXX}} field.
+        """
+
+        return RE_HINT_LINK.sub('', text)
 
     def _rule_html(self, text):
         """

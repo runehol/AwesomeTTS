@@ -237,6 +237,18 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
 
         return RE_FILENAMES.sub('', text)
 
+    def _rule_hint_content(self, text):
+        """
+        Removes hint content from the use of a {{hint:xxx}} field.
+        """
+
+        soup = BeautifulSoup(text)
+        hints = soup.findAll('div', attrs={'class': 'hint'})
+        while hints:
+            hints.pop().extract()
+
+        return unicode(soup)
+
     def _rule_hint_links(self, text):
         """
         Removes hint links from the use of a {{hint:XXX}} field.

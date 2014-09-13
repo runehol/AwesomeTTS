@@ -114,6 +114,7 @@ config = Config(
         ('launch_templater', 'integer', Qt.ControlModifier | Qt.Key_T,
          to.nullable_key, to.nullable_int),
         ('otf_only_revealed_cloze', 'integer', False, to.lax_bool, int),
+        ('otf_remove_hints', 'integer', False, to.lax_bool, int),
         ('spec_note_count', 'text', '', unicode, unicode),
         ('spec_note_count_wrap', 'integer', True, to.lax_bool, int),
         ('spec_note_ellipsize', 'text', '', unicode, unicode),
@@ -342,6 +343,7 @@ addon = Bundle(
         from_template_front=Sanitizer([
             ('clozes_rendered', 'sub_template_cloze'),
             'hint_links',
+            ('hint_content', 'otf_remove_hints'),
             'html',
             'sounds_univ',
             'filenames',
@@ -359,6 +361,7 @@ addon = Bundle(
         from_template_back=Sanitizer([
             ('clozes_revealed', 'otf_only_revealed_cloze'),
             'hint_links',
+            ('hint_content', 'otf_remove_hints'),
             'html',
             'sounds_univ',
             'filenames',
@@ -379,6 +382,7 @@ addon = Bundle(
             ('clozes_braced', 'sub_note_cloze'),
             ('clozes_rendered', 'sub_template_cloze'),
             'hint_links',
+            ('hint_content', 'otf_remove_hints'),
             'html',
             'sounds_univ',
             'filenames',

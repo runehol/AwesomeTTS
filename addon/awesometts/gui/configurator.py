@@ -48,11 +48,11 @@ class Configurator(Dialog):
         'delay_questions_stored_ours', 'delay_questions_stored_theirs',
         'lame_flags', 'launch_browser_generator', 'launch_browser_stripper',
         'launch_configurator', 'launch_editor_generator', 'launch_templater',
-        'otf_only_revealed_cloze', 'spec_note_strip', 'spec_note_ellipsize',
-        'spec_template_ellipsize', 'spec_note_count', 'spec_note_count_wrap',
-        'spec_template_count', 'spec_template_count_wrap',
-        'spec_template_strip', 'strip_note_braces', 'strip_note_brackets',
-        'strip_note_parens', 'strip_template_braces',
+        'otf_only_revealed_cloze', 'otf_remove_hints', 'spec_note_strip',
+        'spec_note_ellipsize', 'spec_template_ellipsize', 'spec_note_count',
+        'spec_note_count_wrap', 'spec_template_count',
+        'spec_template_count_wrap', 'spec_template_strip', 'strip_note_braces',
+        'strip_note_brackets', 'strip_note_parens', 'strip_template_braces',
         'strip_template_brackets', 'strip_template_parens', 'sub_note_cloze',
         'sub_template_cloze', 'sul_note', 'sul_template', 'throttle_sleep',
         'throttle_threshold', 'tts_key_a', 'tts_key_q', 'updates_enabled',
@@ -216,7 +216,7 @@ class Configurator(Dialog):
                 ('ellipsize', "read as an ellipsis, ignoring hint"),
                 ('remove', "remove entirely"),
             ],
-            cloze_reveal_option=True,
+            template_options=True,
         ), 50)
         layout.addWidget(self._ui_tabs_text_mode(
             '_note_',
@@ -271,7 +271,7 @@ class Configurator(Dialog):
         return group
 
     def _ui_tabs_text_mode_simple(self, infix, cloze_description,
-                                  cloze_options, cloze_reveal_option=False):
+                                  cloze_options, template_options=False):
         """
         Returns a layout with the "simple" configuration options
         available for manipulating text from the given context.
@@ -290,11 +290,19 @@ class Configurator(Dialog):
         layout = QtGui.QVBoxLayout()
         layout.addLayout(horizontal)
 
-        if cloze_reveal_option:
-            checkbox = QtGui.QCheckBox("On the answer side of a cloze card, "
-                                       "only read the revealed text")
+        if template_options:
+            horizontal = QtGui.QHBoxLayout()
+
+            checkbox = QtGui.QCheckBox("For cloze answers, read revealed "
+                                       "text only")
             checkbox.setObjectName('otf_only_revealed_cloze')
-            layout.addWidget(checkbox)
+            horizontal.addWidget(checkbox)
+
+            checkbox = QtGui.QCheckBox("Ignore {{hint}} fields")
+            checkbox.setObjectName('otf_remove_hints')
+            horizontal.addWidget(checkbox)
+
+            layout.addLayout(horizontal)
 
         horizontal = QtGui.QHBoxLayout()
         horizontal.addWidget(QtGui.QLabel("Strip off text within:"))

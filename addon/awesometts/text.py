@@ -81,7 +81,11 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
                 key = rule[1]
                 rule = rule[0]
 
-                value = self._config[key]
+                # if the "key" is actually a list, then we will return True
+                # for `value` if ANY key in the list yields a truthy config
+                value = (next((True for k in key if self._config[k]),
+                              False) if isinstance(key, list)
+                         else self._config[key])
 
                 if value is True:  # basic on/off config flag
                     if addl:

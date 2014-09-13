@@ -222,6 +222,19 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
 
     _rule_counter.spacer = lambda match: (' ' + str(len(match.group(0))) + ' ')
 
+    def _rule_custom_sub(self, text, rules):
+        """
+        Upon encountering text that matches one of the user's compiled
+        rules, make a replacement. Run whitespace and ellipsis rules
+        before each one.
+        """
+
+        for rule in rules:
+            text = self._rule_whitespace(self._rule_ellipses(text))
+            text = rule['compiled'].sub(rule['replace'], text)
+
+        return text
+
     def _rule_ellipses(self, text):
         """
         Given at least three periods, separated by whitespace or not,

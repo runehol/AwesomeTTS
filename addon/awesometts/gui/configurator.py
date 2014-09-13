@@ -48,14 +48,14 @@ class Configurator(Dialog):
         'delay_questions_stored_ours', 'delay_questions_stored_theirs',
         'lame_flags', 'launch_browser_generator', 'launch_browser_stripper',
         'launch_configurator', 'launch_editor_generator', 'launch_templater',
-        'spec_note_strip', 'spec_note_ellipsize', 'spec_template_ellipsize',
-        'spec_note_count', 'spec_note_count_wrap', 'spec_template_count',
-        'spec_template_count_wrap', 'spec_template_strip',
-        'strip_note_braces', 'strip_note_brackets', 'strip_note_parens',
-        'strip_template_braces', 'strip_template_brackets',
-        'strip_template_parens', 'sub_note_cloze', 'sub_template_cloze',
-        'sul_note', 'sul_template', 'throttle_sleep', 'throttle_threshold',
-        'tts_key_a', 'tts_key_q', 'updates_enabled',
+        'otf_only_revealed_cloze', 'spec_note_strip', 'spec_note_ellipsize',
+        'spec_template_ellipsize', 'spec_note_count', 'spec_note_count_wrap',
+        'spec_template_count', 'spec_template_count_wrap',
+        'spec_template_strip', 'strip_note_braces', 'strip_note_brackets',
+        'strip_note_parens', 'strip_template_braces',
+        'strip_template_brackets', 'strip_template_parens', 'sub_note_cloze',
+        'sub_template_cloze', 'sul_note', 'sul_template', 'throttle_sleep',
+        'throttle_threshold', 'tts_key_a', 'tts_key_q', 'updates_enabled',
     ]
 
     _PROPERTY_WIDGETS = (
@@ -216,6 +216,7 @@ class Configurator(Dialog):
                 ('ellipsize', "read as an ellipsis, ignoring hint"),
                 ('remove', "remove entirely"),
             ],
+            cloze_reveal_option=True,
         ), 50)
         layout.addWidget(self._ui_tabs_text_mode(
             '_note_',
@@ -235,8 +236,7 @@ class Configurator(Dialog):
 
         return tab
 
-    def _ui_tabs_text_mode(self, infix, label, cloze_description,
-                           cloze_options):
+    def _ui_tabs_text_mode(self, infix, label, *args, **kwargs):
         """
         Returns a group box widget for the given text manipulation
         context.
@@ -246,9 +246,8 @@ class Configurator(Dialog):
         subtabs.setTabPosition(QtGui.QTabWidget.West)
 
         for sublabel, sublayout in [
-                ("Simple", self._ui_tabs_text_mode_simple(infix,
-                                                          cloze_description,
-                                                          cloze_options)),
+                ("Simple", self._ui_tabs_text_mode_simple(infix, *args,
+                                                          **kwargs)),
                 ("Advanced", self._ui_tabs_text_mode_adv(infix)),
         ]:
             subwidget = QtGui.QWidget()
@@ -272,7 +271,7 @@ class Configurator(Dialog):
         return group
 
     def _ui_tabs_text_mode_simple(self, infix, cloze_description,
-                                  cloze_options):
+                                  cloze_options, cloze_reveal_option=False):
         """
         Returns a layout with the "simple" configuration options
         available for manipulating text from the given context.
@@ -290,6 +289,12 @@ class Configurator(Dialog):
 
         layout = QtGui.QVBoxLayout()
         layout.addLayout(horizontal)
+
+        if cloze_reveal_option:
+            checkbox = QtGui.QCheckBox("On the answer side of a cloze card, "
+                                       "only read the revealed text")
+            checkbox.setObjectName('otf_only_revealed_cloze')
+            layout.addWidget(checkbox)
 
         horizontal = QtGui.QHBoxLayout()
         horizontal.addWidget(QtGui.QLabel("Strip off text within:"))

@@ -113,6 +113,7 @@ config = Config(
          to.nullable_key, to.nullable_int),
         ('launch_templater', 'integer', Qt.ControlModifier | Qt.Key_T,
          to.nullable_key, to.nullable_int),
+        ('otf_only_revealed_cloze', 'integer', False, to.lax_bool, int),
         ('spec_note_count', 'text', '', unicode, unicode),
         ('spec_note_count_wrap', 'integer', True, to.lax_bool, int),
         ('spec_note_ellipsize', 'text', '', unicode, unicode),

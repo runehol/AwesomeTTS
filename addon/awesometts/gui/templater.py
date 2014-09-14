@@ -24,9 +24,10 @@ Template generation dialog
 
 __all__ = ['Templater']
 
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtGui
 
 from .base import ServiceDialog
+from .common import Checkbox, Label, Note
 
 # all methods might need 'self' in the future, pylint:disable=R0201
 
@@ -68,18 +69,13 @@ class Templater(ServiceDialog):
         field input selector, then the base class's cancel/OK buttons.
         """
 
-        header = QtGui.QLabel("Tag Options")
+        header = Label("Tag Options")
         header.setFont(self._FONT_HEADER)
-
-        intro = QtGui.QLabel('AwesomeTTS can automatically speak <tts> tags '
-                             'in your cards, playing speech on-the-fly. '
-                             'Click "Help" for usage hints.')
-        intro.setTextFormat(QtCore.Qt.PlainText)
-        intro.setWordWrap(True)
 
         layout = super(Templater, self)._ui_control()
         layout.addWidget(header)
-        layout.addWidget(intro)
+        layout.addWidget(Note('AwesomeTTS can automatically play the content '
+                              'of <tts> tags in your cards on-the-fly.'))
         layout.addStretch()
         layout.addLayout(self._ui_control_fields())
         layout.addStretch()
@@ -118,7 +114,7 @@ class Templater(ServiceDialog):
 
                 # row 3 is used below if self._is_cloze is True
         ]:
-            label = QtGui.QLabel(label)
+            label = Label(label)
             label.setFont(self._FONT_LABEL)
 
             widgets[name] = self._ui_control_fields_dropdown(name, options)
@@ -126,11 +122,10 @@ class Templater(ServiceDialog):
             layout.addWidget(widgets[name], row, 1)
 
         if self._is_cloze:
-            cloze = QtGui.QCheckBox()
-            cloze.setObjectName('cloze')
+            cloze = Checkbox(object_name='cloze')
             cloze.setMinimumHeight(25)
 
-            warning = QtGui.QLabel("Remember 'cloze:' for any cloze fields.")
+            warning = Label("Remember 'cloze:' for any cloze fields.")
             warning.setMinimumHeight(25)
 
             layout.addWidget(cloze, 3, 1)
@@ -187,7 +182,7 @@ class Templater(ServiceDialog):
             ))
 
         if self._is_cloze:
-            self.findChild(QtGui.QCheckBox, 'cloze') \
+            self.findChild(Checkbox, 'cloze') \
                 .setChecked(self._addon.config['templater_cloze'])
 
         dropdown.setFocus()  # abuses fact that 'field' is last in the loop
@@ -259,7 +254,7 @@ class Templater(ServiceDialog):
             (
                 [(
                     'templater_cloze',
-                    self.findChild(QtGui.QCheckBox, 'cloze').isChecked(),
+                    self.findChild(Checkbox, 'cloze').isChecked(),
                 )]
                 if self._is_cloze and combos['field']
                 else []

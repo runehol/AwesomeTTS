@@ -27,6 +27,7 @@ __all__ = ['BrowserStripper']
 from PyQt4 import QtCore, QtGui
 
 from .base import Dialog
+from .common import Checkbox, Label, Note
 
 
 class BrowserStripper(Dialog):
@@ -63,9 +64,8 @@ class BrowserStripper(Dialog):
         scroll area, radio buttons, and help/okay/cancel buttons.
         """
 
-        intro = QtGui.QLabel()  # see show() for where the text is initialized
+        intro = Note()  # see show() for where the text is initialized
         intro.setObjectName('intro')
-        intro.setWordWrap(True)
 
         scroll = QtGui.QScrollArea()
         scroll.setObjectName('scroll')
@@ -74,7 +74,7 @@ class BrowserStripper(Dialog):
         layout.addWidget(intro)
         layout.addWidget(scroll)
         layout.addSpacing(self._SPACING)
-        layout.addWidget(QtGui.QLabel("... and remove the following:"))
+        layout.addWidget(Label("... and remove the following:"))
 
         for value, label in [
                 (
@@ -122,7 +122,7 @@ class BrowserStripper(Dialog):
             for note_id in self._browser.selectedNotes()
         ]
 
-        self.findChild(QtGui.QLabel, 'intro').setText(
+        self.findChild(Note, 'intro').setText(
             "From the %d note%s selected in the Browser, scan the following "
             "fields:" %
             (len(self._notes), "s" if len(self._notes) != 1 else "")
@@ -132,8 +132,8 @@ class BrowserStripper(Dialog):
         for field in sorted({field
                              for note in self._notes
                              for field in note.keys()}):
-            checkbox = QtGui.QCheckBox(field)
-            checkbox.attsFieldName = field
+            checkbox = Checkbox(field)
+            checkbox.atts_field_name = field
             layout.addWidget(checkbox)
 
         panel = QtGui.QWidget()
@@ -166,8 +166,8 @@ class BrowserStripper(Dialog):
         """
 
         fields = [
-            checkbox.attsFieldName
-            for checkbox in self.findChildren(QtGui.QCheckBox)
+            checkbox.atts_field_name
+            for checkbox in self.findChildren(Checkbox)
             if checkbox.isChecked()
         ]
 

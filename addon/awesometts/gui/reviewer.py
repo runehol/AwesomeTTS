@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -165,9 +164,9 @@ class Reviewer(object):
         question_html = card.q()
 
         answer_html = self.RE_ANSWER_DIVIDER.split(
-            card.a()
-                .replace(question_html, '')
-                .replace(self._addon.strip.sounds.anki(question_html), ''),
+            card.a().
+            replace(question_html, '').
+            replace(self._addon.strip.sounds.anki(question_html), ''),
 
             1,  # remove at most one segment in the event of multiple dividers
         ).pop().strip()
@@ -195,93 +194,105 @@ class Reviewer(object):
                          else self._addon.strip.from_template_front)
 
         for tag in BeautifulSoup(html)('tts'):
-            text = ''.join(unicode(content) for content in tag.contents)
-            text = from_template(text)
-            if not text:
-                continue
-
-            attr = dict(tag.attrs)
-
-            try:
-                svc_id = attr.pop('service')
-            except KeyError:
-                self._alerts(
-                    "This tag needs a 'service' attribute:\n%s" %
-                    tag.prettify().decode('utf-8'),
-                    self._parent,
-                )
-                continue
-
-            self._addon.router(
-                svc_id=svc_id,
-                text=text,
-                options=attr,
-                callbacks=dict(
-                    okay=playback,
-                    fail=lambda exception:
-                        # we can safely ignore "service busy" errors in review
-                        isinstance(exception, self._addon.router.BusyError) or
-                        self._alerts(
-                            "Unable to play this tag:\n%s\n\n%s" % (
-                                tag.prettify().decode('utf-8').strip(),
-                                exception.message,
-                            ),
-                            self._parent,
-                        ),
-                ),
-            )
-
-        def bad_legacy_tag(legacy, message):
-            """Reassembles the legacy given tag and displays an alert."""
-
-            self._alerts(
-                "Unable to play this tag:\n[%sTTS:%s]\n\n%s" %
-                (legacy[0], legacy[1], message),
-                self._parent,
-            )
+            self._play_html_tag(tag, from_template, playback)
 
         for legacy in self.RE_LEGACY_TAGS.findall(html):
-            components = legacy[1].split(':')
+            self._play_html_legacy(legacy, from_template, playback)
 
-            if legacy[0] and legacy[0].strip().lower() == 'g':
-                if len(components) < 2:
-                    bad_legacy_tag(
-                        legacy,
-                        "Old-style GTTS bracket tags must specify the "
-                        "voice, e.g. [GTTS:es:hola], [GTTS:es:{{Front}}], "
-                        "[GTTS:en:{{text:Back}}]",
-                    )
-                    continue
+    def _play_html_tag(self, tag, from_template, playback):
+        """Helper method for _play_html()."""
 
-                svc_id = 'google'
+        text = ''.join(unicode(content) for content in tag.contents)
+        text = from_template(text)
+        if not text:
+            return
 
-            else:
-                if len(components) < 3:
-                    bad_legacy_tag(
-                        legacy,
-                        "Old-style TTS bracket tags must specify service and "
-                        "voice, e.g. [TTS:g:es:mundo], [TTS:g:es:{{Front}}], "
-                        "[TTS:g:en:{{text:Back}}]",
-                    )
-                    continue
+        attr = dict(tag.attrs)
 
-                svc_id = components.pop(0)
-
-            voice = components.pop(0)
-
-            text = ':'.join(components)
-            text = from_template(text)
-            if not text:
-                continue
-
-            self._addon.router(
-                svc_id=svc_id,
-                text=text,
-                options={'voice': voice},
-                callbacks=dict(
-                    okay=playback,
-                    fail=lambda exception:
-                        isinstance(exception, self._addon.router.BusyError) or
-                        bad_legacy_tag(legacy, exception.message),
-                ),
+        try:
+            svc_id = attr.pop('service')
+        except KeyError:
+            self._alerts(
+                "This tag needs a 'service' attribute:\n%s" %
+                tag.prettify().decode('utf-8'),
+                self._parent,
             )
+            return
+
+        self._addon.router(
+            svc_id=svc_id,
+            text=text,
+            options=attr,
+            callbacks=dict(
+                okay=playback,
+                fail=lambda exception: (
+                    # we can safely ignore "service busy" errors in review
+                    isinstance(exception, self._addon.router.BusyError) or
+                    self._alerts(
+                        "Unable to play this tag:\n%s\n\n%s" % (
+                            tag.prettify().decode('utf-8').strip(),
+                            exception.message,
+                        ),
+                        self._parent,
+                    )
+                ),
+            ),
+        )
+
+    def _play_html_legacy(self, legacy, from_template, playback):
+        """Helper method for _play_html()."""
+
+        components = legacy[1].split(':')
+
+        if legacy[0] and legacy[0].strip().lower() == 'g':
+            if len(components) < 2:
+                self._play_html_legacy_bad(
+                    legacy,
+                    "Old-style GTTS bracket tags must specify the "
+                    "voice, e.g. [GTTS:es:hola], [GTTS:es:{{Front}}], "
+                    "[GTTS:en:{{text:Back}}]",
+                )
+                return
+
+            svc_id = 'google'
+
+        else:
+            if len(components) < 3:
+                self._play_html_legacy_bad(
+                    legacy,
+                    "Old-style TTS bracket tags must specify service and "
+                    "voice, e.g. [TTS:g:es:mundo], [TTS:g:es:{{Front}}], "
+                    "[TTS:g:en:{{text:Back}}]",
+                )
+                return
+
+            svc_id = components.pop(0)
+
+        voice = components.pop(0)
+
+        text = ':'.join(components)
+        text = from_template(text)
+        if not text:
+            return
+
+        self._addon.router(
+            svc_id=svc_id,
+            text=text,
+            options={'voice': voice},
+            callbacks=dict(
+                okay=playback,
+                fail=lambda exception: (
+                    isinstance(exception, self._addon.router.BusyError) or
+                    self._play_html_legacy_bad(legacy, exception.message)
+                ),
+            ),
+        )
+
+    def _play_html_legacy_bad(self, legacy, message):
+        """Reassembles the legacy given tag and displays an alert."""
+
+        self._alerts(
+            "Unable to play this tag:\n[%sTTS:%s]\n\n%s" %
+            (legacy[0], legacy[1], message),
+            self._parent,
+        )

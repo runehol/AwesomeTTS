@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -29,7 +28,7 @@ use with AwesomeTTS.
 __all__ = ['Dialog', 'ServiceDialog']
 
 from PyQt4 import QtCore, QtGui
-from .common import ICON
+from .common import Label, Note, ICON
 
 # all methods might need 'self' in the future, pylint:disable=R0201
 
@@ -112,10 +111,10 @@ class Dialog(QtGui.QDialog):
         of the base class _ui() method.
         """
 
-        title = QtGui.QLabel(self._title)
+        title = Label(self._title)
         title.setFont(self._FONT_TITLE)
 
-        version = QtGui.QLabel("AwesomeTTS\nv" + self._addon.version)
+        version = Label("AwesomeTTS\nv" + self._addon.version)
         version.setFont(self._FONT_INFO)
 
         layout = QtGui.QHBoxLayout()
@@ -178,10 +177,8 @@ class Dialog(QtGui.QDialog):
                 btn.setObjectName('okay')
             elif buttons.buttonRole(btn) == QtGui.QDialogButtonBox.RejectRole:
                 btn.setObjectName('cancel')
-            elif (
-                buttons.buttonRole(btn) == QtGui.QDialogButtonBox.HelpRole and
-                has_help_menu
-            ):
+            elif (buttons.buttonRole(btn) == QtGui.QDialogButtonBox.HelpRole
+                  and has_help_menu):
                 btn.setMenu(self.help_menu(btn))
 
         return buttons
@@ -215,7 +212,7 @@ class ServiceDialog(Dialog):
     """
 
     _INPUT_WIDGETS = (QtGui.QAbstractButton, QtGui.QComboBox, QtGui.QLineEdit,
-        QtGui.QPlainTextEdit)
+                      QtGui.QPlainTextEdit)
 
     _OPTIONS_WIDGETS = (QtGui.QComboBox, QtGui.QAbstractSpinBox)
 
@@ -237,6 +234,7 @@ class ServiceDialog(Dialog):
         self._panel_built = {}
         self._panel_set = {}
         self._playback = playback
+        self._svc_id = None
 
         super(ServiceDialog, self).__init__(*args, **kwargs)
 
@@ -249,14 +247,14 @@ class ServiceDialog(Dialog):
 
         layout = super(ServiceDialog, self)._ui()
 
-        horizontal = QtGui.QHBoxLayout()
-        horizontal.addLayout(self._ui_services())
-        horizontal.addSpacing(self._SPACING)
-        horizontal.addWidget(self._ui_divider())
-        horizontal.addSpacing(self._SPACING)
-        horizontal.addLayout(self._ui_control())
+        hor = QtGui.QHBoxLayout()
+        hor.addLayout(self._ui_services())
+        hor.addSpacing(self._SPACING)
+        hor.addWidget(self._ui_divider())
+        hor.addSpacing(self._SPACING)
+        hor.addLayout(self._ui_control())
 
-        layout.addLayout(horizontal)
+        layout.addLayout(hor)
         return layout
 
     def _ui_services(self):
@@ -264,8 +262,6 @@ class ServiceDialog(Dialog):
         Return the service panel, which includes a dropdown for the
         service and a stacked widget for each service's options.
         """
-
-        intro = QtGui.QLabel("Generate using")
 
         dropdown = QtGui.QComboBox()
         dropdown.setObjectName('service')
@@ -276,10 +272,9 @@ class ServiceDialog(Dialog):
         for svc_id, text in self._addon.router.get_services():
             dropdown.addItem(text, svc_id)
 
-            label = QtGui.QLabel("Pass the following to %s:" % text)
-
             panel = QtGui.QGridLayout()
-            panel.addWidget(label, 0, 0, 1, 2)
+            panel.addWidget(Label("Pass the following to %s:" % text),
+                            0, 0, 1, 2)
 
             widget = QtGui.QWidget()
             widget.setLayout(panel)
@@ -288,17 +283,17 @@ class ServiceDialog(Dialog):
 
         dropdown.activated.connect(self._on_service_activated)
 
-        horizontal = QtGui.QHBoxLayout()
-        horizontal.addWidget(intro)
-        horizontal.addWidget(dropdown)
-        horizontal.addStretch()
+        hor = QtGui.QHBoxLayout()
+        hor.addWidget(Label("Generate using"))
+        hor.addWidget(dropdown)
+        hor.addStretch()
 
-        header = QtGui.QLabel("Configure Service")
+        header = Label("Configure Service")
         header.setFont(self._FONT_HEADER)
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(header)
-        layout.addLayout(horizontal)
+        layout.addLayout(hor)
         layout.addWidget(stack)
 
         return layout
@@ -327,16 +322,16 @@ class ServiceDialog(Dialog):
         button.setObjectName('preview')
         button.clicked.connect(self._on_preview)
 
-        horizontal = QtGui.QHBoxLayout()
-        horizontal.addWidget(text)
-        horizontal.addWidget(button)
+        hor = QtGui.QHBoxLayout()
+        hor.addWidget(text)
+        hor.addWidget(button)
 
-        header = QtGui.QLabel("Preview")
+        header = Label("Preview")
         header.setFont(self._FONT_HEADER)
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(header)
-        layout.addLayout(horizontal)
+        layout.addLayout(hor)
         layout.addStretch()
         layout.addSpacing(self._SPACING)
 
@@ -435,7 +430,7 @@ class ServiceDialog(Dialog):
         panel = widget.layout()
 
         for option in options:
-            label = QtGui.QLabel(option['label'])
+            label = Label(option['label'])
             label.setFont(self._FONT_LABEL)
 
             if isinstance(option['values'], tuple):
@@ -464,8 +459,7 @@ class ServiceDialog(Dialog):
 
             row += 1
 
-        label = QtGui.QLabel(self._addon.router.get_desc(svc_id))
-        label.setWordWrap(True)
+        label = Note(self._addon.router.get_desc(svc_id))
         label.setFont(self._FONT_INFO)
 
         panel.addWidget(label, row, 0, 1, 2, QtCore.Qt.AlignBottom)
@@ -554,12 +548,13 @@ class ServiceDialog(Dialog):
         cancel button.
         """
 
-        for widget in [
-            widget
-            for widget in self.findChildren(self._INPUT_WIDGETS)
-            if widget.objectName() != 'cancel' and
-                (not isinstance(widget, QtGui.QComboBox) or len(widget) > 1)
-        ]:
+        for widget in (
+                widget
+                for widget in self.findChildren(self._INPUT_WIDGETS)
+                if widget.objectName() != 'cancel'
+                and (not isinstance(widget, QtGui.QComboBox) or
+                     len(widget) > 1)
+        ):
             widget.setDisabled(flag)
 
     def _get_service_values(self):

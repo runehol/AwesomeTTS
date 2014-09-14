@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -29,6 +28,7 @@ from time import time
 from PyQt4 import QtCore, QtGui
 
 from .base import Dialog
+from .common import Note
 
 _NO_SCROLLBAR = QtCore.Qt.ScrollBarAlwaysOff
 
@@ -92,10 +92,7 @@ class Updater(Dialog):
         layout = super(Updater, self)._ui()
 
         if self._info['intro']:
-            label = QtGui.QLabel(self._info['intro'])
-            label.setTextFormat(QtCore.Qt.PlainText)
-            label.setWordWrap(True)
-            layout.addWidget(label)
+            layout.addWidget(Note(self._info['intro']))
 
         if self._info['notes']:
             list_icon = QtGui.QIcon(':/icons/rating.png')
@@ -108,16 +105,11 @@ class Updater(Dialog):
             layout.addWidget(list_widget)
 
         if self._info['synopsis']:
-            label = QtGui.QLabel(self._info['synopsis'])
-            label.setTextFormat(QtCore.Qt.PlainText)
-            label.setWordWrap(True)
-            layout.addWidget(label)
+            layout.addWidget(Note(self._info['synopsis']))
 
         if self._inhibited:
-            inhibited = QtGui.QLabel(self._inhibited)
+            inhibited = Note(self._inhibited)
             inhibited.setFont(self._FONT_INFO)
-            inhibited.setTextFormat(QtCore.Qt.PlainText)
-            inhibited.setWordWrap(True)
 
             layout.addSpacing(self._SPACING)
             layout.addWidget(inhibited)

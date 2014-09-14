@@ -28,7 +28,7 @@ As everything done from the add-on code has to do with AwesomeTTS, these
 all carry a speaker icon (if supported by the desktop environment).
 """
 
-__all__ = ['ICON', 'Action', 'Button', 'Filter']
+__all__ = ['ICON', 'Action', 'Button', 'Checkbox', 'Filter', 'Note']
 
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import Qt
@@ -195,6 +195,14 @@ class Button(QtGui.QPushButton, _Connector):
             self.setStyle(style)
 
 
+class Checkbox(QtGui.QCheckBox):
+    """Provides a checkbox with a better constructor."""
+
+    def __init__(self, text=None, object_name=None, parent=None):
+        super(Checkbox, self).__init__(text, parent)
+        self.setObjectName(object_name)
+
+
 class Filter(QtCore.QObject):
     """
     Once instantiated, serves as an installEventFilter-compatible object
@@ -222,3 +230,27 @@ class Filter(QtCore.QObject):
         """
 
         return bool(self._when(event) and self._relay(event))
+
+
+class HTML(QtGui.QLabel):
+    """Label with HTML enabled."""
+
+    def __init__(self, *args, **kwargs):
+        super(HTML, self).__init__(*args, **kwargs)
+        self.setTextFormat(QtCore.Qt.RichText)
+
+
+class Label(QtGui.QLabel):
+    """Label with HTML disabled."""
+
+    def __init__(self, *args, **kwargs):
+        super(Label, self).__init__(*args, **kwargs)
+        self.setTextFormat(QtCore.Qt.PlainText)
+
+
+class Note(Label):
+    """Label with wrapping enabled and HTML disabled."""
+
+    def __init__(self, *args, **kwargs):
+        super(Note, self).__init__(*args, **kwargs)
+        self.setWordWrap(True)

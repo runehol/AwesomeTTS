@@ -29,6 +29,7 @@ from re import compile as re
 from PyQt4 import QtCore, QtGui
 
 from .base import Dialog, ServiceDialog
+from .common import Checkbox, Label, Note
 
 
 class BrowserGenerator(ServiceDialog):
@@ -72,12 +73,11 @@ class BrowserGenerator(ServiceDialog):
         class's cancel/OK buttons.
         """
 
-        header = QtGui.QLabel("Fields and Handling")
+        header = Label("Fields and Handling")
         header.setFont(self._FONT_HEADER)
 
-        intro = QtGui.QLabel()  # see show() for where the text is initialized
+        intro = Note()  # see show() for where the text is initialized
         intro.setObjectName('intro')
-        intro.setWordWrap(True)
 
         layout = super(BrowserGenerator, self)._ui_control()
         layout.addWidget(header)
@@ -99,13 +99,13 @@ class BrowserGenerator(ServiceDialog):
         from call to call.
         """
 
-        source_label = QtGui.QLabel("Source Field:")
+        source_label = Label("Source Field:")
         source_label.setFont(self._FONT_LABEL)
 
         source_dropdown = QtGui.QComboBox()
         source_dropdown.setObjectName('source')
 
-        dest_label = QtGui.QLabel("Destination Field:")
+        dest_label = Label("Destination Field:")
         dest_label.setFont(self._FONT_LABEL)
 
         dest_dropdown = QtGui.QComboBox()
@@ -136,8 +136,7 @@ class BrowserGenerator(ServiceDialog):
         overwrite.setObjectName('overwrite')
         overwrite.toggled.connect(self._on_handling_toggled)
 
-        behavior = QtGui.QCheckBox()
-        behavior.setObjectName('behavior')
+        behavior = Checkbox(object_name='behavior')
         behavior.stateChanged.connect(
             lambda status: self._on_behavior_changed(),
         )
@@ -180,7 +179,7 @@ class BrowserGenerator(ServiceDialog):
             for note_id in self._browser.selectedNotes()
         ]
 
-        self.findChild(QtGui.QLabel, 'intro').setText(
+        self.findChild(Note, 'intro').setText(
             '%d note%s selected. Click "Help" for usage hints.' %
             (len(self._notes), "s" if len(self._notes) != 1 else "")
         )
@@ -214,7 +213,7 @@ class BrowserGenerator(ServiceDialog):
             'append' if config['last_mass_append'] else 'overwrite',
         ).setChecked(True)
 
-        self.findChild(QtGui.QCheckBox, 'behavior') \
+        self.findChild(Checkbox, 'behavior') \
             .setChecked(config['last_mass_behavior'])
 
         super(BrowserGenerator, self).show(*args, **kwargs)
@@ -597,7 +596,7 @@ class BrowserGenerator(ServiceDialog):
             self.findChild(QtGui.QComboBox, 'source').currentText(),
             self.findChild(QtGui.QComboBox, 'dest').currentText(),
             self.findChild(QtGui.QRadioButton, 'append').isChecked(),
-            self.findChild(QtGui.QCheckBox, 'behavior').isChecked(),
+            self.findChild(Checkbox, 'behavior').isChecked(),
         )
 
     def _on_handling_toggled(self):
@@ -607,7 +606,7 @@ class BrowserGenerator(ServiceDialog):
         """
 
         append = self.findChild(QtGui.QRadioButton, 'append')
-        behavior = self.findChild(QtGui.QCheckBox, 'behavior')
+        behavior = self.findChild(Checkbox, 'behavior')
         behavior.setText(
             "Remove Existing [sound:xxx] Tag(s)" if append.isChecked()
             else "Wrap the Filename in [sound:xxx] Tag"
@@ -623,7 +622,7 @@ class BrowserGenerator(ServiceDialog):
 
         if self.isVisible():
             append = self.findChild(QtGui.QRadioButton, 'append')
-            behavior = self.findChild(QtGui.QCheckBox, 'behavior')
+            behavior = self.findChild(Checkbox, 'behavior')
 
             if not (append.isChecked() or behavior.isChecked()):
                 self._alerts(
@@ -668,13 +667,8 @@ class EditorGenerator(ServiceDialog):
         and preview button on its own line.
         """
 
-        header = QtGui.QLabel("Preview and Record")
+        header = Label("Preview and Record")
         header.setFont(self._FONT_HEADER)
-
-        intro = QtGui.QLabel("This will be inserted as a [sound] tag and "
-                             "synchronized with your collection.")
-        intro.setTextFormat(QtCore.Qt.PlainText)
-        intro.setWordWrap(True)
 
         text = QtGui.QPlainTextEdit()
         text.setObjectName('text')
@@ -692,7 +686,8 @@ class EditorGenerator(ServiceDialog):
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(header)
-        layout.addWidget(intro)
+        layout.addWidget(Note("This will be inserted as a [sound] tag and "
+                              "synchronized with your collection."))
         layout.addWidget(text)
         layout.addWidget(button)
         layout.addWidget(self._ui_buttons())
@@ -804,24 +799,20 @@ class _Progress(Dialog):
 
         self.setMinimumWidth(500)
 
-        status = QtGui.QLabel("Please wait...")
+        status = Note("Please wait...")
         status.setAlignment(QtCore.Qt.AlignCenter)
         status.setObjectName('status')
-        status.setTextFormat(QtCore.Qt.PlainText)
-        status.setWordWrap(True)
 
         progress_bar = QtGui.QProgressBar()
         progress_bar.setMaximum(self._maximum)
         progress_bar.setObjectName('bar')
 
-        detail = QtGui.QLabel("")
+        detail = Note("")
         detail.setAlignment(QtCore.Qt.AlignCenter)
         detail.setFixedHeight(100)
         detail.setFont(self._FONT_INFO)
         detail.setObjectName('detail')
         detail.setScaledContents(True)
-        detail.setTextFormat(QtCore.Qt.PlainText)
-        detail.setWordWrap(True)
 
         layout = super(_Progress, self)._ui()
         layout.addStretch()
@@ -863,7 +854,7 @@ class _Progress(Dialog):
         Update the status text and bar.
         """
 
-        self.findChild(QtGui.QLabel, 'status').setText(label)
+        self.findChild(Note, 'status').setText(label)
         self.findChild(QtGui.QProgressBar, 'bar').setValue(value)
         if detail:
-            self.findChild(QtGui.QLabel, 'detail').setText(detail)
+            self.findChild(Note, 'detail').setText(detail)

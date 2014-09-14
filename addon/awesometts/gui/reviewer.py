@@ -104,10 +104,11 @@ class Reviewer(object):
         """
 
         if state == 'question' and self._addon.config['automatic_questions']:
-            self._play_html(card.q(), self._playback.auto_question)
+            self._play_html('front', card.q(), self._playback.auto_question)
 
         elif state == 'answer' and self._addon.config['automatic_answers']:
-            self._play_html(self._get_answer(card), self._playback.auto_answer)
+            self._play_html('back', self._get_answer(card),
+                            self._playback.auto_answer)
 
     def key_handler(self, key_event, state, card, replay_audio):
         """
@@ -137,12 +138,13 @@ class Reviewer(object):
 
         question_combo = self._addon.config['tts_key_q']
         if question_combo and combo == question_combo:
-            self._play_html(card.q(), self._playback.shortcut)
+            self._play_html('front', card.q(), self._playback.shortcut)
             handled = True
 
         answer_combo = self._addon.config['tts_key_a']
         if state == 'answer' and answer_combo and combo == answer_combo:
-            self._play_html(self._get_answer(card), self._playback.shortcut)
+            self._play_html('back', self._get_answer(card),
+                            self._playback.shortcut)
             handled = True
 
         return handled
@@ -176,7 +178,7 @@ class Reviewer(object):
 
         return answer_html
 
-    def _play_html(self, html, playback):
+    def _play_html(self, side, html, playback):
         """
         Read in the passed HTML, attempt to discover <tts> tags in it,
         and pass them to the router for processing.
@@ -188,9 +190,13 @@ class Reviewer(object):
             - [TTS:espeak:voice:text] for eSpeak
         """
 
+        assert side in ['front', 'back'], "invalid 'side' passed"
+        from_template = (self._addon.strip.from_template_back if side == 'back'
+                         else self._addon.strip.from_template_front)
+
         for tag in BeautifulSoup(html)('tts'):
             text = ''.join(unicode(content) for content in tag.contents)
-            text = self._addon.strip.from_template(text)
+            text = from_template(text)
             if not text:
                 continue
 
@@ -264,7 +270,7 @@ class Reviewer(object):
             voice = components.pop(0)
 
             text = ':'.join(components)
-            text = self._addon.strip.from_template(text)
+            text = from_template(text)
             if not text:
                 continue
 

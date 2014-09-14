@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -28,10 +27,8 @@ Add-on package initialization
 __all__ = []
 
 import inspect
-import json
 import logging
 import platform
-import re
 import sys
 from time import time
 
@@ -42,40 +39,18 @@ import anki
 import aqt
 import aqt.clayout
 
-from . import (
-    gui,
-    paths,
-    service,
-)
-
+from . import conversion as to, gui, paths, service
 from .bundle import Bundle
 from .config import Config
 from .logger import Logger
 from .router import Router
+from .text import RE_FILENAMES, Sanitizer
 from .updates import Updates
 
 
 VERSION = '1.1.0-dev'
 
 WEB = 'https://ankiatts.appspot.com'
-
-
-# Conversions and transformations
-
-TO_BOOL = lambda value: bool(int(value))  # workaround for bool('0') == True
-
-TO_NULLABLE_INT = lambda value: int(value) if value else None
-
-TO_NULLABLE_KEY = lambda value: Qt.Key(value) if value else None
-
-TO_JSON_DICT = lambda value: isinstance(value, basestring) and \
-    value.lstrip().startswith('{') and json.loads(value) or {}
-
-TO_NORMALIZED = lambda value: ''.join(
-    char.lower()
-    for char in value
-    if char.isalpha() or char.isdigit()
-)
 
 
 # Core class initialization and dependency setup, pylint:disable=C0103
@@ -107,13 +82,13 @@ config = Config(
     db=Bundle(
         path=paths.CONFIG,
         table='general',
-        normalize=TO_NORMALIZED,
+        normalize=to.normalized_ascii,
     ),
     cols=[
-        ('automaticAnswers', 'integer', True, TO_BOOL, int),
-        ('automaticQuestions', 'integer', True, TO_BOOL, int),
-        ('debug_file', 'integer', False, TO_BOOL, int),
-        ('debug_stdout', 'integer', False, TO_BOOL, int),
+        ('automaticAnswers', 'integer', True, to.lax_bool, int),
+        ('automaticQuestions', 'integer', True, to.lax_bool, int),
+        ('debug_file', 'integer', False, to.lax_bool, int),
+        ('debug_stdout', 'integer', False, to.lax_bool, int),
         ('delay_answers_onthefly', 'integer', 0, int, int),
         ('delay_answers_stored_ours', 'integer', 0, int, int),
         ('delay_answers_stored_theirs', 'integer', 0, int, int),
@@ -121,48 +96,53 @@ config = Config(
         ('delay_questions_stored_ours', 'integer', 0, int, int),
         ('delay_questions_stored_theirs', 'integer', 0, int, int),
         ('lame_flags', 'text', '--quiet -q 2', str, str),
-        ('last_mass_append', 'integer', True, TO_BOOL, int),
-        ('last_mass_behavior', 'integer', True, TO_BOOL, int),
+        ('last_mass_append', 'integer', True, to.lax_bool, int),
+        ('last_mass_behavior', 'integer', True, to.lax_bool, int),
         ('last_mass_dest', 'text', 'Back', unicode, unicode),
         ('last_mass_source', 'text', 'Front', unicode, unicode),
-        ('last_options', 'text', {}, TO_JSON_DICT, json.dumps),
+        ('last_options', 'text', {}, to.deserialized_dict, to.compact_json),
         ('last_service', 'text', 'google', str, str),
         ('last_strip_mode', 'text', 'ours', str, str),
         ('launch_browser_generator', 'integer', Qt.ControlModifier | Qt.Key_T,
-         TO_NULLABLE_KEY, TO_NULLABLE_INT),
-        ('launch_browser_stripper', 'integer', None, TO_NULLABLE_KEY,
-         TO_NULLABLE_INT),
+         to.nullable_key, to.nullable_int),
+        ('launch_browser_stripper', 'integer', None, to.nullable_key,
+         to.nullable_int),
         ('launch_configurator', 'integer', Qt.ControlModifier | Qt.Key_T,
-         TO_NULLABLE_KEY, TO_NULLABLE_INT),
+         to.nullable_key, to.nullable_int),
         ('launch_editor_generator', 'integer', Qt.ControlModifier | Qt.Key_T,
-         TO_NULLABLE_KEY, TO_NULLABLE_INT),
+         to.nullable_key, to.nullable_int),
         ('launch_templater', 'integer', Qt.ControlModifier | Qt.Key_T,
-         TO_NULLABLE_KEY, TO_NULLABLE_INT),
+         to.nullable_key, to.nullable_int),
+        ('otf_only_revealed_cloze', 'integer', False, to.lax_bool, int),
+        ('otf_remove_hints', 'integer', False, to.lax_bool, int),
         ('spec_note_count', 'text', '', unicode, unicode),
-        ('spec_note_count_wrap', 'integer', True, TO_BOOL, int),
+        ('spec_note_count_wrap', 'integer', True, to.lax_bool, int),
         ('spec_note_ellipsize', 'text', '', unicode, unicode),
         ('spec_note_strip', 'text', '', unicode, unicode),
         ('spec_template_count', 'text', '', unicode, unicode),
-        ('spec_template_count_wrap', 'integer', True, TO_BOOL, int),
+        ('spec_template_count_wrap', 'integer', True, to.lax_bool, int),
         ('spec_template_ellipsize', 'text', '', unicode, unicode),
         ('spec_template_strip', 'text', '', unicode, unicode),
-        ('strip_note_braces', 'integer', False, TO_BOOL, int),
-        ('strip_note_brackets', 'integer', False, TO_BOOL, int),
-        ('strip_note_parens', 'integer', False, TO_BOOL, int),
-        ('strip_template_braces', 'integer', False, TO_BOOL, int),
-        ('strip_template_brackets', 'integer', False, TO_BOOL, int),
-        ('strip_template_parens', 'integer', False, TO_BOOL, int),
+        ('strip_note_braces', 'integer', False, to.lax_bool, int),
+        ('strip_note_brackets', 'integer', False, to.lax_bool, int),
+        ('strip_note_parens', 'integer', False, to.lax_bool, int),
+        ('strip_template_braces', 'integer', False, to.lax_bool, int),
+        ('strip_template_brackets', 'integer', False, to.lax_bool, int),
+        ('strip_template_parens', 'integer', False, to.lax_bool, int),
         ('sub_note_cloze', 'text', 'anki', str, str),
         ('sub_template_cloze', 'text', 'anki', str, str),
-        ('templater_cloze', 'integer', True, TO_BOOL, int),
+        ('sul_note', 'text', [], to.substitution_list, to.substitution_json),
+        ('sul_template', 'text', [], to.substitution_list,
+         to.substitution_json),
+        ('templater_cloze', 'integer', True, to.lax_bool, int),
         ('templater_field', 'text', 'Front', unicode, unicode),
         ('templater_hide', 'text', 'normal', str, str),
         ('templater_target', 'text', 'front', str, str),
         ('throttle_sleep', 'integer', 30, int, int),
         ('throttle_threshold', 'integer', 10, int, int),
-        ('TTS_KEY_A', 'integer', Qt.Key_F4, TO_NULLABLE_KEY, TO_NULLABLE_INT),
-        ('TTS_KEY_Q', 'integer', Qt.Key_F3, TO_NULLABLE_KEY, TO_NULLABLE_INT),
-        ('updates_enabled', 'integer', True, TO_BOOL, int),
+        ('TTS_KEY_A', 'integer', Qt.Key_F4, to.nullable_key, to.nullable_int),
+        ('TTS_KEY_Q', 'integer', Qt.Key_F3, to.nullable_key, to.nullable_int),
+        ('updates_enabled', 'integer', True, to.lax_bool, int),
         ('updates_ignore', 'text', '', str, str),
         ('updates_postpone', 'integer', 0, int, lambda i: int(round(i))),
     ],
@@ -200,12 +180,12 @@ router = Router(
         aliases=[
             ('g', 'google'),
         ],
-        normalize=TO_NORMALIZED,
+        normalize=to.normalized_ascii,
         args=(),
         kwargs=dict(
             temp_dir=paths.TEMP,
             lame_flags=lambda: config['lame_flags'],
-            normalize=TO_NORMALIZED,
+            normalize=to.normalized_ascii,
             logger=logger,
         ),
     ),
@@ -227,113 +207,6 @@ updates = Updates(
 # GUI interaction with Anki, pylint:disable=C0103
 # n.b. be careful wrapping methods that have return values (see anki.hooks);
 #      in general, only the 'before' mode absolves us of responsibility
-
-RE_CLOZE_NOTE = re.compile(anki.template.template.clozeReg % r'\d+')
-RE_CLOZE_TEMPLATE = re.compile(
-    # see anki.template.template.clozeText; n.b. the presence of the brackets
-    # in the pattern means that this will only match and replace on the
-    # question side of cards and that the answer side will be read normally
-    r'<span class=.?cloze.?>\[(.+?)\]</span>'
-)
-RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
-RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}( \(\d+\))?\.mp3')
-RE_SOUNDS = re.compile(r'\[sound:(.*?)\]')  # see also anki.sound._soundReg
-RE_TEXT_IN_BRACES = re.compile(r'\{.+?\}')
-RE_TEXT_IN_BRACKETS = re.compile(r'\[.+?\]')
-RE_TEXT_IN_PARENS = re.compile(r'\(.+?\)')
-RE_WHITESPACE = re.compile(r'[\0\s]+')
-
-COLLAPSE_ELLIPSES = lambda text: RE_ELLIPSES.sub(' ... ', text)
-COLLAPSE_WHITESPACE = lambda text: RE_WHITESPACE.sub(' ', text).strip()
-
-SPEC_COUNT = lambda key, wrap_key, text: \
-    re.sub(
-        r'[' + re.escape(config[key]) + ']+',
-        lambda match: str(len(match.group(0))).join(
-            [' ... ', ' ... '] if config[wrap_key]
-            else [' ', ' ']
-        ),
-        text,
-    ) if config[key] \
-    else text
-SPEC_COUNT_NOTE = lambda text: SPEC_COUNT('spec_note_count',
-                                          'spec_note_count_wrap',
-                                          text)
-SPEC_COUNT_TEMPLATE = lambda text: SPEC_COUNT('spec_template_count',
-                                              'spec_template_count_wrap',
-                                              text)
-
-SPEC_STRIP = lambda key, text: \
-    ''.join(c for c in text if c not in config[key]) if config[key] \
-    else text
-SPEC_STRIP_NOTE = lambda text: SPEC_STRIP('spec_note_strip', text)
-SPEC_STRIP_TEMPLATE = lambda text: SPEC_STRIP('spec_template_strip', text)
-
-SPEC_ELLIP = lambda key, text: \
-    ''.join(('...' if c in config[key] else c) for c in text) if config[key] \
-    else text
-SPEC_ELLIP_NOTE = lambda text: SPEC_ELLIP('spec_note_ellipsize', text)
-SPEC_ELLIP_TEMPLATE = lambda text: SPEC_ELLIP('spec_template_ellipsize', text)
-
-STRIP_FILENAMES = lambda text: RE_FILENAMES.sub('', text)
-STRIP_HTML = anki.utils.stripHTML  # this also converts character entities
-STRIP_SOUNDS = lambda text, which=False: RE_SOUNDS.sub(
-    (lambda match: match.group(0) if RE_FILENAMES.match(match.group(1))
-     else '') if which == 'theirs'
-    else (lambda match: '' if RE_FILENAMES.match(match.group(1))
-          else match.group(0)) if which == 'ours'
-    else '',
-
-    text,
-)
-
-STRIP_CONDITIONALLY = lambda regex, key, text: \
-    regex.sub('', text) if config[key] else text
-
-STRIP_CONDITIONALLY_NOTE = lambda text: \
-    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACES, 'strip_note_braces',
-    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACKETS, 'strip_note_brackets',
-    STRIP_CONDITIONALLY(RE_TEXT_IN_PARENS, 'strip_note_parens',
-        text
-    )))
-
-STRIP_CONDITIONALLY_TEMPLATE = lambda text: \
-    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACES, 'strip_template_braces',
-    STRIP_CONDITIONALLY(RE_TEXT_IN_BRACKETS, 'strip_template_brackets',
-    STRIP_CONDITIONALLY(RE_TEXT_IN_PARENS, 'strip_template_parens',
-        text
-    )))
-
-SUB_CLOZES_NOTE = lambda text: RE_CLOZE_NOTE.sub(
-    lambda match:
-        '...' if config['sub_note_cloze'] == 'ellipsize'
-        else '' if config['sub_note_cloze'] == 'remove'
-        else (
-            '... %s ...' % match.group(3).strip('.') if
-                match.group(3) and
-                match.group(3).strip('.')
-            else '...'
-        ) if config['sub_note_cloze'] == 'wrap'
-        else (
-            match.group(1) if match.group(1)
-            else '...'
-        ) if config['sub_note_cloze'] == 'deleted'
-        else match.group(3) if match.group(3)
-        else '...',
-    text,
-)
-
-SUB_CLOZES_TEMPLATE = lambda text: RE_CLOZE_TEMPLATE.sub(
-    lambda match:
-        '...' if config['sub_template_cloze'] == 'ellipsize'
-        else '' if config['sub_template_cloze'] == 'remove'
-        else '... %s ...' % match.group(1).strip('.') if
-            config['sub_template_cloze'] == 'wrap' and
-            match.group(1).strip('.')
-        else match.group(1),
-    text,
-)
-
 
 PLAY_ANKI = anki.sound.play
 
@@ -450,62 +323,90 @@ addon = Bundle(
         # for content directly from a note field (e.g. BrowserGenerator runs,
         # prepopulating a modal input based on some note field, where cloze
         # placeholders are still in their unprocessed state)
-        from_note=lambda text:
-            COLLAPSE_WHITESPACE(
-            COLLAPSE_ELLIPSES(
-            SPEC_ELLIP_NOTE(
-            SPEC_COUNT_NOTE(
-            SPEC_STRIP_NOTE(
-            STRIP_CONDITIONALLY_NOTE(
-            STRIP_FILENAMES(
-            STRIP_SOUNDS(
-            STRIP_HTML(
-            SUB_CLOZES_NOTE(
-                text
-            )))))))))),
+        from_note=Sanitizer([
+            ('clozes_braced', 'sub_note_cloze'),
+            'html',
+            'sounds_univ',
+            'filenames',
+            ('within_parens', 'strip_note_parens'),
+            ('within_brackets', 'strip_note_brackets'),
+            ('within_braces', 'strip_note_braces'),
+            ('char_remove', 'spec_note_strip'),
+            ('counter', 'spec_note_count', 'spec_note_count_wrap'),
+            ('char_ellipsize', 'spec_note_ellipsize'),
+            ('custom_sub', 'sul_note'),
+            'ellipses',
+            'whitespace',
+        ], config=config, logger=logger),
 
         # for cleaning up already-processed HTML templates (e.g. on-the-fly,
         # where cloze is marked with <span class=cloze></span> tags)
-        from_template=lambda text:
-            COLLAPSE_WHITESPACE(
-            COLLAPSE_ELLIPSES(
-            SPEC_ELLIP_TEMPLATE(
-            SPEC_COUNT_TEMPLATE(
-            SPEC_STRIP_TEMPLATE(
-            STRIP_CONDITIONALLY_TEMPLATE(
-            STRIP_FILENAMES(
-            STRIP_SOUNDS(
-            STRIP_HTML(
-            SUB_CLOZES_TEMPLATE(
-                text
-            )))))))))),
+        from_template_front=Sanitizer([
+            ('clozes_rendered', 'sub_template_cloze'),
+            'hint_links',
+            ('hint_content', 'otf_remove_hints'),
+            'html',
+            'sounds_univ',
+            'filenames',
+            ('within_parens', 'strip_template_parens'),
+            ('within_brackets', 'strip_template_brackets'),
+            ('within_braces', 'strip_template_braces'),
+            ('char_remove', 'spec_template_strip'),
+            ('counter', 'spec_template_count', 'spec_template_count_wrap'),
+            ('char_ellipsize', 'spec_template_ellipsize'),
+            ('custom_sub', 'sul_template'),
+            'ellipses',
+            'whitespace',
+        ], config=config, logger=logger),
 
-        # for cleaning up text from unknown sources (e.g. system clipboard)
-        from_unknown=lambda text:
-            COLLAPSE_WHITESPACE(
-            COLLAPSE_ELLIPSES(
-            SPEC_ELLIP_TEMPLATE(
-            SPEC_ELLIP_NOTE(
-            SPEC_COUNT_TEMPLATE(
-            SPEC_COUNT_NOTE(
-            SPEC_STRIP_TEMPLATE(
-            SPEC_STRIP_NOTE(
-            STRIP_CONDITIONALLY_TEMPLATE(
-            STRIP_CONDITIONALLY_NOTE(
-            STRIP_FILENAMES(
-            STRIP_SOUNDS(
-            STRIP_HTML(
-            SUB_CLOZES_TEMPLATE(
-            SUB_CLOZES_NOTE(
-                text
-            ))))))))))))))),
+        # like the previous, but for the back sides of cards
+        from_template_back=Sanitizer([
+            ('clozes_revealed', 'otf_only_revealed_cloze'),
+            'hint_links',
+            ('hint_content', 'otf_remove_hints'),
+            'html',
+            'sounds_univ',
+            'filenames',
+            ('within_parens', 'strip_template_parens'),
+            ('within_brackets', 'strip_template_brackets'),
+            ('within_braces', 'strip_template_braces'),
+            ('char_remove', 'spec_template_strip'),
+            ('counter', 'spec_template_count', 'spec_template_count_wrap'),
+            ('char_ellipsize', 'spec_template_ellipsize'),
+            ('custom_sub', 'sul_template'),
+            'ellipses',
+            'whitespace',
+        ], config=config, logger=logger),
+
+        # for cleaning up text from unknown sources (e.g. system clipboard);
+        # n.b. clozes_revealed is not used here without the card context and
+        # it would be a weird thing to apply to the clipboard content anyway
+        from_unknown=Sanitizer([
+            ('clozes_braced', 'sub_note_cloze'),
+            ('clozes_rendered', 'sub_template_cloze'),
+            'hint_links',
+            ('hint_content', 'otf_remove_hints'),
+            'html',
+            'sounds_univ',
+            'filenames',
+            ('within_parens', ['strip_note_parens', 'strip_template_parens']),
+            ('within_brackets', ['strip_note_brackets',
+                                 'strip_template_brackets']),
+            ('within_braces', ['strip_note_braces', 'strip_template_braces']),
+            ('char_remove', 'spec_note_strip'),
+            ('char_remove', 'spec_template_strip'),
+            ('counter', 'spec_note_count', 'spec_note_count_wrap'),
+            ('counter', 'spec_template_count', 'spec_template_count_wrap'),
+            ('char_ellipsize', 'spec_note_ellipsize'),
+            ('char_ellipsize', 'spec_template_ellipsize'),
+            ('custom_sub', 'sul_note'),
+            ('custom_sub', 'sul_template'),
+            'ellipses',
+            'whitespace',
+        ], config=config, logger=logger),
 
         # for direct user input (e.g. previews, EditorGenerator insertion)
-        from_user=lambda text:
-            COLLAPSE_WHITESPACE(
-            COLLAPSE_ELLIPSES(
-                text
-            )),
+        from_user=Sanitizer(rules=['ellipses', 'whitespace'], logger=logger),
 
         # target sounds specifically
         sounds=Bundle(
@@ -513,13 +414,13 @@ addon = Bundle(
             # something, e.g. when Reviewer emulates {{FrontSide}})
             anki=anki.sound.stripSounds,
 
-            # using AwesomeTTS's method (which has access to a precompiled re
-            # object, usable for everything else, e.g. when BrowserGenerator
+            # using AwesomeTTS's methods (which have access to precompiled re
+            # objects, usable for everything else, e.g. when BrowserGenerator
             # or BrowserStripper need to remove old sounds)
-            atts=STRIP_SOUNDS,
+            ours=Sanitizer(rules=['sounds_ours', 'filenames'], logger=logger),
+            theirs=Sanitizer(rules=['sounds_theirs'], logger=logger),
+            univ=Sanitizer(rules=['sounds_univ', 'filenames'], logger=logger),
         ),
-
-        filenames=STRIP_FILENAMES,
     ),
     updates=updates,
     version=VERSION,
@@ -565,7 +466,8 @@ gui.Action(
     target=Bundle(
         constructor=gui.Configurator,
         args=(),
-        kwargs=dict(addon=addon, parent=aqt.mw),
+        kwargs=dict(addon=addon, sul_compiler=to.substitution_compiled,
+                    parent=aqt.mw),
     ),
     text="Awesome&TTS...",
     sequence=sequences['configurator'],

@@ -27,6 +27,7 @@ __all__ = ['Configurator']
 
 import os
 import os.path
+import re
 
 from PyQt4 import QtCore, QtGui
 
@@ -48,25 +49,25 @@ class Configurator(Dialog):
         'delay_questions_stored_ours', 'delay_questions_stored_theirs',
         'lame_flags', 'launch_browser_generator', 'launch_browser_stripper',
         'launch_configurator', 'launch_editor_generator', 'launch_templater',
-        'spec_note_strip', 'spec_note_ellipsize', 'spec_template_ellipsize',
-        'spec_note_count', 'spec_note_count_wrap', 'spec_template_count',
-        'spec_template_count_wrap', 'spec_template_strip',
-        'strip_note_braces', 'strip_note_brackets', 'strip_note_parens',
-        'strip_template_braces', 'strip_template_brackets',
-        'strip_template_parens', 'sub_note_cloze', 'sub_template_cloze',
-        'throttle_sleep', 'throttle_threshold', 'tts_key_a', 'tts_key_q',
-        'updates_enabled',
+        'otf_only_revealed_cloze', 'otf_remove_hints', 'spec_note_strip',
+        'spec_note_ellipsize', 'spec_template_ellipsize', 'spec_note_count',
+        'spec_note_count_wrap', 'spec_template_count',
+        'spec_template_count_wrap', 'spec_template_strip', 'strip_note_braces',
+        'strip_note_brackets', 'strip_note_parens', 'strip_template_braces',
+        'strip_template_brackets', 'strip_template_parens', 'sub_note_cloze',
+        'sub_template_cloze', 'sul_note', 'sul_template', 'throttle_sleep',
+        'throttle_threshold', 'tts_key_a', 'tts_key_q', 'updates_enabled',
     ]
 
     _PROPERTY_WIDGETS = (
         QtGui.QCheckBox, QtGui.QComboBox, QtGui.QLineEdit, QtGui.QPushButton,
-        QtGui.QSpinBox,
+        QtGui.QSpinBox, QtGui.QListView,
     )
 
-    __slots__ = [
-    ]
+    __slots__ = ['_sul_compiler']
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, sul_compiler, *args, **kwargs):
+        self._sul_compiler = sul_compiler
         super(Configurator, self).__init__(title="Configuration",
                                            *args, **kwargs)
 
@@ -216,7 +217,8 @@ class Configurator(Dialog):
                 ('ellipsize', "read as an ellipsis, ignoring hint"),
                 ('remove', "remove entirely"),
             ],
-        ))
+            template_options=True,
+        ), 50)
         layout.addWidget(self._ui_tabs_text_mode(
             '_note_',
             "Handling Text from a Note Field (e.g. Browser Generator)",
@@ -228,21 +230,53 @@ class Configurator(Dialog):
                 ('ellipsize', "replace w/ ellipsis, ignoring both"),
                 ('remove', "remove entirely"),
             ],
-        ))
-        layout.addStretch()
+        ), 50)
 
         tab = QtGui.QWidget()
         tab.setLayout(layout)
 
         return tab
 
-    def _ui_tabs_text_mode(self, infix, label, cloze_description,
-                           cloze_options):
+    def _ui_tabs_text_mode(self, infix, label, *args, **kwargs):
         """
-        Returns the given checkbox options for controlling whether to
-        strip from certain parenthetical text. Optionally, additional
-        copy may also be included and/or the cloze control dropdown by
-        passing the optional parameters.
+        Returns a group box widget for the given text manipulation
+        context.
+        """
+
+        subtabs = QtGui.QTabWidget()
+        subtabs.setTabPosition(QtGui.QTabWidget.West)
+
+        for sublabel, sublayout in [
+                ("Simple", self._ui_tabs_text_mode_simple(infix, *args,
+                                                          **kwargs)),
+                ("Advanced", self._ui_tabs_text_mode_adv(infix)),
+        ]:
+            subwidget = QtGui.QWidget()
+            subwidget.setLayout(sublayout)
+
+            subtabs.addTab(subwidget, sublabel)
+
+        layout = QtGui.QVBoxLayout()
+        layout.setMargin(0)
+        layout.addWidget(subtabs)
+
+        group = QtGui.QGroupBox(label)
+        group.setFlat(True)
+        group.setLayout(layout)
+
+        _, top, right, bottom = layout.getContentsMargins()
+        layout.setContentsMargins(0, top, right, bottom)
+
+        _, top, right, bottom = group.getContentsMargins()
+        group.setContentsMargins(0, top, right, bottom)
+
+        return group
+
+    def _ui_tabs_text_mode_simple(self, infix, cloze_description,
+                                  cloze_options, template_options=False):
+        """
+        Returns a layout with the "simple" configuration options
+        available for manipulating text from the given context.
         """
 
         select = QtGui.QComboBox()
@@ -258,6 +292,20 @@ class Configurator(Dialog):
         layout = QtGui.QVBoxLayout()
         layout.addLayout(horizontal)
 
+        if template_options:
+            horizontal = QtGui.QHBoxLayout()
+
+            checkbox = QtGui.QCheckBox("For cloze answers, read revealed "
+                                       "text only")
+            checkbox.setObjectName('otf_only_revealed_cloze')
+            horizontal.addWidget(checkbox)
+
+            checkbox = QtGui.QCheckBox("Ignore {{hint}} fields")
+            checkbox.setObjectName('otf_remove_hints')
+            horizontal.addWidget(checkbox)
+
+            layout.addLayout(horizontal)
+
         horizontal = QtGui.QHBoxLayout()
         horizontal.addWidget(QtGui.QLabel("Strip off text within:"))
 
@@ -271,34 +319,34 @@ class Configurator(Dialog):
         horizontal.addStretch()
         layout.addLayout(horizontal)
 
-        layout.addLayout(self._ui_tabs_text_mode_specific(
+        layout.addLayout(self._ui_tabs_text_mode_simple_spec(
             infix,
             'strip',
             ("Remove all", "characters from the input"),
         ))
-        layout.addLayout(self._ui_tabs_text_mode_specific(
+        layout.addLayout(self._ui_tabs_text_mode_simple_spec(
             infix,
             'count',
             ("Count adjacent", "characters"),
             True,
         ))
-        layout.addLayout(self._ui_tabs_text_mode_specific(
+        layout.addLayout(self._ui_tabs_text_mode_simple_spec(
             infix,
             'ellipsize',
             ("Replace", "characters with an ellipsis"),
         ))
 
-        group = QtGui.QGroupBox(label)
-        group.setLayout(layout)
+        layout.addStretch()
 
-        return group
+        return layout
 
-    def _ui_tabs_text_mode_specific(self, infix, suffix, labels, wrap=False):
+    def _ui_tabs_text_mode_simple_spec(self, infix, suffix, labels,
+                                       wrap=False):
         """Returns a layout for specific character handling."""
 
         line_edit = QtGui.QLineEdit()
         line_edit.setObjectName(infix.join(['spec', suffix]))
-        line_edit.setValidator(self._ui_tabs_text_mode_specific.ucsv)
+        line_edit.setValidator(self._ui_tabs_text_mode_simple_spec.ucsv)
         line_edit.setFixedWidth(50)
 
         horizontal = QtGui.QHBoxLayout()
@@ -332,7 +380,40 @@ class Configurator(Dialog):
             filtered = self.fixup(original)
             return QtGui.QValidator.Acceptable, filtered, len(filtered)
 
-    _ui_tabs_text_mode_specific.ucsv = _UniqueCharacterStringValidator()
+    _ui_tabs_text_mode_simple_spec.ucsv = _UniqueCharacterStringValidator()
+
+    def _ui_tabs_text_mode_adv(self, infix):
+        """
+        Returns a layout with the "advanced" pattern replacement
+        panel for manipulating text from the given context.
+        """
+
+        buttons = []
+        for tooltip, icon in [("Add New Rule", 'list-add'),
+                              ("Move Selected Up", 'arrow-up'),
+                              ("Move Selected Down", 'arrow-down'),
+                              ("Remove Selected", 'editdelete')]:
+            btn = QtGui.QPushButton(QtGui.QIcon(':/icons/%s.png' % icon), "")
+            btn.setIconSize(QtCore.QSize(16, 16))
+            btn.setFlat(True)
+            btn.setToolTip(tooltip)
+            buttons.append(btn)
+
+        list_view = _SubListView(self._sul_compiler, buttons)
+        list_view.setObjectName('sul' + infix.rstrip('_'))
+        list_view.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,
+                                QtGui.QSizePolicy.Ignored)
+
+        vertical = QtGui.QVBoxLayout()
+        for btn in buttons:
+            vertical.addWidget(btn)
+        vertical.insertStretch(len(buttons) - 1)
+
+        horizontal = QtGui.QHBoxLayout()
+        horizontal.addWidget(list_view)
+        horizontal.addLayout(vertical)
+
+        return horizontal
 
     def _ui_tabs_mp3gen(self):
         """
@@ -649,6 +730,9 @@ class Configurator(Dialog):
             elif isinstance(widget, QtGui.QSpinBox):
                 widget.setValue(value)
 
+            elif isinstance(widget, QtGui.QListView):
+                widget.setModel(value)
+
         widget = self.findChild(QtGui.QPushButton, 'on_cache')
         if widget:
             widget.awesometts_list = (
@@ -686,6 +770,10 @@ class Configurator(Dialog):
         Once done, we pass the signal onto Qt to close the window.
         """
 
+        for list_view in self.findChildren(QtGui.QListView):
+            for editor in list_view.findChildren(QtGui.QWidget, 'editor'):
+                list_view.commitData(editor)  # if an editor is open, save it
+
         self._addon.config.update({
             widget.objectName(): (
                 widget.isChecked() if isinstance(
@@ -704,6 +792,10 @@ class Configurator(Dialog):
                     widget,
                     QtGui.QComboBox,
                 )
+                else [
+                    i for i in widget.model().raw_data
+                    if i['compiled'] and 'bad_replace' not in i
+                ] if isinstance(widget, QtGui.QListView)
                 else widget.text()
             )
             for widget in self.findChildren(self._PROPERTY_WIDGETS)
@@ -853,3 +945,269 @@ class Configurator(Dialog):
 
         else:
             button.setText("successfully emptied cache")
+
+
+class _SubRuleDelegate(QtGui.QItemDelegate):
+    """Item view specifically for a substitution rule."""
+
+    sizeHint = lambda self, option, index: self.sizeHint.SIZE
+    sizeHint.SIZE = QtCore.QSize(-1, 40)
+
+    __slots__ = ['_sul_compiler']
+
+    def __init__(self, sul_compiler, *args, **kwargs):
+        super(_SubRuleDelegate, self).__init__(*args, **kwargs)
+        self._sul_compiler = sul_compiler
+
+    def createEditor(self, parent,    # pylint:disable=C0103
+                     option, index):  # pylint:disable=W0613
+        """Return a panel to change rule values."""
+
+        edits = QtGui.QHBoxLayout()
+        edits.addWidget(QtGui.QLineEdit())
+        edits.addWidget(QtGui.QLabel("&nbsp;<strong>&rarr;</strong>&nbsp;"))
+        edits.addWidget(QtGui.QLineEdit())
+
+        checkboxes = QtGui.QHBoxLayout()
+        checkboxes.addStretch()
+        checkboxes.addWidget(QtGui.QCheckBox("regex"))
+        checkboxes.addStretch()
+        checkboxes.addWidget(QtGui.QCheckBox("case-insensitive"))
+        checkboxes.addStretch()
+        checkboxes.addWidget(QtGui.QCheckBox("unicode"))
+        checkboxes.addStretch()
+
+        layout = QtGui.QVBoxLayout()
+        layout.addStretch()
+        layout.addLayout(edits)
+        layout.addLayout(checkboxes)
+        layout.addStretch()
+
+        panel = QtGui.QWidget(parent)
+        panel.setObjectName('editor')
+        panel.setAutoFillBackground(True)
+        panel.setFocusPolicy(QtCore.Qt.StrongFocus)
+        panel.setLayout(layout)
+
+        for layout in [edits, checkboxes, layout]:
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setMargin(0)
+            layout.setSpacing(0)
+
+        for widget in [panel] + panel.findChildren(QtGui.QWidget):
+            widget.setContentsMargins(0, 0, 0, 0)
+
+        return panel
+
+    def setEditorData(self, editor, index):  # pylint:disable=C0103
+        """Populate controls and focus the first edit box."""
+
+        rule = index.data(QtCore.Qt.EditRole)
+
+        edits = editor.findChildren(QtGui.QLineEdit)
+        edits[0].setText(rule['input'])
+        edits[1].setText(rule['replace'])
+
+        checkboxes = editor.findChildren(QtGui.QCheckBox)
+        checkboxes[0].setChecked(rule['regex'])
+        checkboxes[1].setChecked(rule['ignore_case'])
+        checkboxes[2].setChecked(rule['unicode'])
+
+        QtCore.QTimer.singleShot(0, edits[0].setFocus)
+
+    def setModelData(self, editor, model, index):  # pylint:disable=C0103
+        """Update the underlying model after edit."""
+
+        edits = editor.findChildren(QtGui.QLineEdit)
+        checkboxes = editor.findChildren(QtGui.QCheckBox)
+        obj = {'input': edits[0].text(), 'compiled': None,
+               'replace': edits[1].text(), 'regex': checkboxes[0].isChecked(),
+               'ignore_case': checkboxes[1].isChecked(),
+               'unicode': checkboxes[2].isChecked()}
+
+        try:
+            obj['compiled'] = self._sul_compiler(obj)
+        except Exception:  # sre_constants.error, pylint:disable=W0703
+            pass
+
+        if obj['compiled'] and obj['regex']:
+            groups = obj['compiled'].groups
+            for group in self.setModelData.RE_SLASH.findall(obj['replace']):
+                group = int(group)
+                if not group or group > groups:
+                    obj['bad_replace'] = True
+                    break
+
+        model.setData(index, obj)
+
+    setModelData.RE_SLASH = re.compile(r'\\(\d+)')
+
+
+class _SubListView(QtGui.QListView):
+    """List view specifically for substitution lists."""
+
+    __slots__ = ['_add_btn', '_up_btn', '_down_btn', '_del_btn']
+
+    def __init__(self, sul_compiler, buttons, *args, **kwargs):
+        super(_SubListView, self).__init__(*args, **kwargs)
+
+        self._add_btn, self._up_btn, self._down_btn, self._del_btn = buttons
+        self._add_btn.clicked.connect(self._add_rule)
+        self._up_btn.clicked.connect(lambda: self._reorder_rules('up'))
+        self._down_btn.clicked.connect(lambda: self._reorder_rules('down'))
+        self._del_btn.clicked.connect(self._del_rules)
+
+        self.setItemDelegate(_SubRuleDelegate(sul_compiler))
+        self.setSelectionMode(self.ExtendedSelection)
+
+    def setModel(self, model):  # pylint:disable=C0103
+        """Configures model and sets up event handling."""
+
+        super(_SubListView, self).setModel(_SubListModel(model))
+        self._on_selection()
+        self.selectionModel().selectionChanged.connect(self._on_selection)
+
+    def _on_selection(self):
+        """Enable/disable buttons as selection changes."""
+
+        indexes = self.selectionModel().selectedIndexes()
+
+        some = len(indexes) > 0
+        rows = sorted(index.row() for index in indexes) if some else []
+        contiguous = some and rows[-1] == rows[0] + len(rows) - 1
+        allow_up = contiguous and rows[0] > 0
+        allow_down = contiguous and rows[-1] < self.model().rowCount() - 1
+
+        if not allow_down and self._down_btn.hasFocus():
+            self._up_btn.setFocus()  # avoid refocus going to delete button
+        self._up_btn.setEnabled(allow_up)
+        self._down_btn.setEnabled(allow_down)
+        self._del_btn.setEnabled(some)
+
+    def _add_rule(self):
+        """Add a new rule and trigger an edit."""
+
+        model = self.model()
+        model.insertRow()
+
+        index = model.index(model.rowCount(self) - 1)
+
+        self.scrollToBottom()
+        self.setCurrentIndex(index)
+        self.edit(index)
+
+    def _del_rules(self):
+        """Remove the selected rule(s)."""
+
+        model = self.model()
+        indexes = self.selectionModel().selectedIndexes()
+        for row in reversed(sorted(index.row() for index in indexes)):
+            model.removeRows(row)
+
+    def _reorder_rules(self, direction):
+        """Move the selected rule(s) up or down."""
+
+        indexes = self.selectionModel().selectedIndexes()
+        rows = sorted(index.row() for index in indexes)
+        if direction == 'up':
+            self.model().moveRowsUp(rows[0], len(rows))
+        else:
+            self.model().moveRowsDown(rows[0], len(rows))
+        self._on_selection()
+
+
+class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
+    """Provides glue to/from the underlying substitution list."""
+
+    __slots__ = ['raw_data']
+
+    flags = lambda self, index: self.flags.LIST_ITEM
+    flags.LIST_ITEM = (QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable |
+                       QtCore.Qt.ItemIsEnabled)
+
+    rowCount = lambda self, parent=None: len(self.raw_data)
+
+    def __init__(self, sublist, *args, **kwargs):
+        super(_SubListModel, self).__init__(*args, **kwargs)
+        self.raw_data = [dict(obj) for obj in sublist]  # deep copy
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        """Return display or edit data for the indexed rule."""
+
+        if role == QtCore.Qt.DisplayRole:
+            rule = self.raw_data[index.row()]
+
+            if not rule['input']:
+                return "empty match pattern"
+            elif not rule['compiled']:
+                return "invalid match pattern: " + rule['input']
+            elif 'bad_replace' in rule:
+                return "bad replacement string: " + rule['replace']
+
+            text = ('/%s/' if rule['regex'] else '"%s"') % rule['input']
+            action = ('replace it with "%s"' % rule['replace']
+                      if rule['replace'] else "remove it")
+            attr = ", ".join([
+                "regex pattern" if rule['regex'] else "plain text",
+                "case-insensitive" if rule['ignore_case'] else "case matters",
+                "unicode enabled" if rule['unicode'] else "unicode disabled",
+            ])
+
+            return "match " + text + " and " + action + "\n(" + attr + ")"
+
+        elif role == QtCore.Qt.EditRole:
+            return self.raw_data[index.row()]
+
+    def insertRow(self, row=None, parent=None):  # pylint:disable=C0103
+        """Inserts a new row at the given position (default end)."""
+
+        if not row:
+            row = len(self.raw_data)  # defaults to end
+
+        self.beginInsertRows(parent or QtCore.QModelIndex(), row, row)
+        self.raw_data.insert(row, {'input': '', 'compiled': None,
+                                   'replace': '', 'regex': False,
+                                   'ignore_case': True, 'unicode': True})
+        self.endInsertRows()
+        return True
+
+    def moveRowsDown(self, row, count):  # pylint:disable=C0103
+        """Moves the given count of records at the given row down."""
+
+        parent = QtCore.QModelIndex()
+        self.beginMoveRows(parent, row, row + count - 1,
+                           parent, row + count + 1)
+        self.raw_data = (self.raw_data[0:row] +
+                         self.raw_data[row + count:row + count + 1] +
+                         self.raw_data[row:row + count] +
+                         self.raw_data[row + count + 1:])
+        self.endMoveRows()
+        return True
+
+    def moveRowsUp(self, row, count):  # pylint:disable=C0103
+        """Moves the given count of records at the given row up."""
+
+        parent = QtCore.QModelIndex()
+        self.beginMoveRows(parent, row, row + count - 1, parent, row - 1)
+        self.raw_data = (self.raw_data[0:row - 1] +
+                         self.raw_data[row:row + count] +
+                         self.raw_data[row - 1:row] +
+                         self.raw_data[row + count:])
+        self.endMoveRows()
+        return True
+
+    def removeRows(self, row, count=1, parent=None):  # pylint:disable=C0103
+        """Removes the given count of records at the given row."""
+
+        self.beginRemoveRows(parent or QtCore.QModelIndex(),
+                             row, row + count - 1)
+        self.raw_data = self.raw_data[0:row] + self.raw_data[row + count:]
+        self.endRemoveRows()
+        return True
+
+    def setData(self, index, value,        # pylint:disable=C0103
+                role=QtCore.Qt.EditRole):  # pylint:disable=W0613
+        """Update the new value into the raw list."""
+
+        self.raw_data[index.row()] = value
+        return True

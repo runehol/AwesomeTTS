@@ -1025,6 +1025,26 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
                'ignore_case': checkboxes[1].isChecked(),
                'unicode': checkboxes[2].isChecked()}
 
+        input_len = len(obj['input'])
+        if input_len > 2 and obj['input'].startswith('/'):
+            input_ends = obj['input'].endswith
+            if input_ends('/'):
+                obj['input'] = obj['input'][1:-1]
+                obj['regex'] = True
+            elif input_len > 3:
+                if input_ends('/i'):
+                    obj['input'] = obj['input'][1:-2]
+                    obj['regex'] = True
+                    obj['ignore_case'] = True
+                elif input_ends('/g'):
+                    obj['input'] = obj['input'][1:-2]
+                    obj['regex'] = True
+                elif input_len > 4 and (input_ends('/ig') or
+                                        input_ends('/gi')):
+                    obj['input'] = obj['input'][1:-3]
+                    obj['regex'] = True
+                    obj['ignore_case'] = True
+
         try:
             obj['compiled'] = self._sul_compiler(obj)
         except Exception:  # sre_constants.error, pylint:disable=W0703
@@ -1144,7 +1164,9 @@ class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
             elif 'bad_replace' in rule:
                 return "bad replacement string: " + rule['replace']
 
-            text = ('/%s/' if rule['regex'] else '"%s"') % rule['input']
+            text = '/%s/%s' % (rule['input'],
+                               'i' if rule['ignore_case'] else '') \
+                   if rule['regex'] else '"%s"' % rule['input']
             action = ('replace it with "%s"' % rule['replace']
                       if rule['replace'] else "remove it")
             attr = ", ".join([

@@ -261,6 +261,7 @@ class Configurator(Dialog):
         layout.addWidget(subtabs)
 
         group = QtGui.QGroupBox(label)
+        group.setFlat(True)
         group.setLayout(layout)
 
         _, top, right, bottom = layout.getContentsMargins()
@@ -964,12 +965,15 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
 
         edits = QtGui.QHBoxLayout()
         edits.addWidget(QtGui.QLineEdit())
-        edits.addWidget(QtGui.QLabel("<strong>&rArr;</strong>"))
+        edits.addWidget(QtGui.QLabel("&nbsp;<strong>&rarr;</strong>&nbsp;"))
         edits.addWidget(QtGui.QLineEdit())
 
         checkboxes = QtGui.QHBoxLayout()
+        checkboxes.addStretch()
         checkboxes.addWidget(QtGui.QCheckBox("regex"))
+        checkboxes.addStretch()
         checkboxes.addWidget(QtGui.QCheckBox("case-insensitive"))
+        checkboxes.addStretch()
         checkboxes.addWidget(QtGui.QCheckBox("unicode"))
         checkboxes.addStretch()
 

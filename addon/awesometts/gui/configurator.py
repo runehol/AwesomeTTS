@@ -27,6 +27,7 @@ __all__ = ['Configurator']
 
 import os
 import os.path
+import re
 
 from PyQt4 import QtCore, QtGui
 
@@ -790,9 +791,10 @@ class Configurator(Dialog):
                     widget,
                     QtGui.QComboBox,
                 )
-                else [i for i in widget.model().raw_data
-                      if i['compiled']] if isinstance(widget,
-                                                      QtGui.QListView)
+                else [
+                    i for i in widget.model().raw_data
+                    if i['compiled'] and 'bad_replace' not in i
+                ] if isinstance(widget, QtGui.QListView)
                 else widget.text()
             )
             for widget in self.findChildren(self._PROPERTY_WIDGETS)
@@ -1024,7 +1026,17 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
         except Exception:  # sre_constants.error, pylint:disable=W0703
             pass
 
+        if obj['compiled'] and obj['regex']:
+            groups = obj['compiled'].groups
+            for group in self.setModelData.RE_SLASH.findall(obj['replace']):
+                group = int(group)
+                if not group or group > groups:
+                    obj['bad_replace'] = True
+                    break
+
         model.setData(index, obj)
+
+    setModelData.RE_SLASH = re.compile(r'\\(\d+)')
 
 
 class _SubListView(QtGui.QListView):
@@ -1125,6 +1137,8 @@ class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
                 return "empty match pattern"
             elif not rule['compiled']:
                 return "invalid match pattern: " + rule['input']
+            elif 'bad_replace' in rule:
+                return "bad replacement string: " + rule['replace']
 
             text = ('/%s/' if rule['regex'] else '"%s"') % rule['input']
             action = ('replace it with "%s"' % rule['replace']

@@ -106,4 +106,9 @@ os_call(
 # End temporary migration code
 
 
-import awesometts  # imported for side effects, pylint: disable=W0611
+import awesometts
+
+# TODO test that any of these could be disabled without breaking others
+awesometts.sound_tag_delays()  # delayed playing of stored [sound]s in review
+# awesometts.on_the_fly()        # automatic on-the-fly playback and shortcuts
+# . . .

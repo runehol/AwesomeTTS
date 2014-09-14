@@ -24,9 +24,9 @@
 Add-on package initialization
 """
 
-__all__ = []
+# TODO update this as new closures are made
+__all__ = ['sound_tag_delays']
 
-import inspect
 import logging
 import platform
 import sys
@@ -43,8 +43,9 @@ from . import conversion as to, gui, paths, service
 from .bundle import Bundle
 from .config import Config
 from .logger import Logger
+from .player import Player
 from .router import Router
-from .text import RE_FILENAMES, Sanitizer
+from .text import Sanitizer
 from .updates import Updates
 
 
@@ -53,7 +54,7 @@ VERSION = '1.1.0-dev'
 WEB = 'https://ankiatts.appspot.com'
 
 
-# Core class initialization and dependency setup, pylint:disable=C0103
+# Begin core class initialization and dependency setup, pylint:disable=C0103
 
 logger = Logger(
     name='AwesomeTTS',
@@ -153,6 +154,7 @@ config = Config(
             logger.activate,  # BufferedLogger instance, pylint: disable=E1103
         ),
         (
+            # TODO move this into a function
             ['launch_' + key for key in sequences.keys()],
             lambda config: ([sequences[key].swap(config['launch_' + key] or 0)
                              for key in sequences.keys()],
@@ -161,6 +163,17 @@ config = Config(
                                                findChildren(gui.Action))])
         ),
     ],
+)
+
+player = Player(
+    anki=Bundle(
+        mw=aqt.mw,
+        native=anki.sound.play,  # need direct reference, as this gets wrapped
+        sound=anki.sound,  # for accessing queue member, which is not wrapped
+    ),
+    blank=paths.BLANK,
+    config=config,
+    logger=logger,
 )
 
 router = Router(
@@ -203,94 +216,6 @@ updates = Updates(
     logger=logger,
 )
 
-
-# GUI interaction with Anki, pylint:disable=C0103
-# n.b. be careful wrapping methods that have return values (see anki.hooks);
-#      in general, only the 'before' mode absolves us of responsibility
-
-PLAY_ANKI = anki.sound.play
-
-PLAY_BLANK = lambda seconds, reason, path: \
-    logger.debug("Ignoring %d-second delay (%s): %s", seconds, reason, path) \
-    if anki.sound.mplayerQueue \
-    else (
-        logger.debug("Need %d-second delay (%s): %s", seconds, reason, path),
-        [PLAY_ANKI(paths.BLANK) for i in range(seconds)],
-    )
-
-PLAY_PREVIEW = lambda path: (
-    PLAY_BLANK(0, "preview mode", path),
-    PLAY_ANKI(path),
-)
-
-PLAY_ONTHEFLY_QUESTION = lambda path: (
-    PLAY_BLANK(
-        config['delay_questions_onthefly'],
-        "on-the-fly automatic question",
-        path,
-    ),
-    PLAY_ANKI(path),
-)
-
-PLAY_ONTHEFLY_ANSWER = lambda path: (
-    PLAY_BLANK(
-        config['delay_answers_onthefly'],
-        "on-the-fly automatic answer",
-        path,
-    ),
-    PLAY_ANKI(path),
-)
-
-PLAY_ONTHEFLY_SHORTCUT = lambda path: (
-    PLAY_BLANK(0, "on-the-fly shortcut mode", path),
-    PLAY_ANKI(path),
-)
-
-PLAY_WRAPPED = lambda path: (
-    PLAY_BLANK(0, "wrapped, non-review", path) if aqt.mw.state != 'review'
-    else PLAY_BLANK(0, "wrapped, blacklisted caller", path) if next(
-        (
-            True
-            for frame in inspect.stack()
-            if frame[3] in [
-                'addMedia',     # if the user adds media in review
-                'replayAudio',  # if the user strikes R or F5
-            ]
-        ),
-        False,
-    )
-    else (
-        PLAY_BLANK(
-            config['delay_questions_stored_ours'],
-            "wrapped, AwesomeTTS sound on question side",
-            path,
-        ) if RE_FILENAMES.search(path)
-        else PLAY_BLANK(
-            config['delay_questions_stored_theirs'],
-            "wrapped, non-AwesomeTTS sound on question side",
-            path,
-        )
-    ) if aqt.mw.reviewer.state == 'question'
-    else (
-        PLAY_BLANK(
-            config['delay_answers_stored_ours'],
-            "wrapped, AwesomeTTS sound on answer side",
-            path,
-        ) if RE_FILENAMES.search(path)
-        else PLAY_BLANK(
-            config['delay_answers_stored_theirs'],
-            "wrapped, non-AwesomeTTS sound on answer side",
-            path,
-        )
-    ) if aqt.mw.reviewer.state == 'answer'
-    else PLAY_BLANK(0, "wrapped, unknown review state", path),
-
-    PLAY_ANKI(path),
-)
-
-anki.sound.play = PLAY_WRAPPED
-
-
 addon = Bundle(
     config=config,
     downloader=Bundle(
@@ -313,6 +238,7 @@ addon = Bundle(
         cache=paths.CACHE,
         is_link=paths.ADDON_IS_LINKED,
     ),
+    player=player,
     router=router,
     strip=Bundle(
         # n.b. cloze substitution logic happens first in both modes because:
@@ -427,13 +353,29 @@ addon = Bundle(
     web=WEB,
 )
 
+# End core class initialization and dependency setup, pylint:enable=C0103
+
+
+# GUI interaction with Anki
+# n.b. be careful wrapping methods that have return values (see anki.hooks);
+#      in general, only the 'before' mode absolves us of responsibility
+
+
+def sound_tag_delays():
+    """
+    Enables support for the following sound delay configuration options:
+
+    - delay_questions_stored_ours (AwesomeTTS MP3s on questions)
+    - delay_questions_stored_theirs (non-AwesomeTTS MP3s on questions)
+    - delay_answers_stored_ours (AwesomeTTS MP3s on answers)
+    - delay_answers_stored_theirs (non-AwesomeTTS MP3s on answers)
+    """
+
+    anki.sound.play = player.native_wrapper
+
+
 reviewer = gui.Reviewer(
     addon=addon,
-    playback=Bundle(
-        auto_question=PLAY_ONTHEFLY_QUESTION,
-        auto_answer=PLAY_ONTHEFLY_ANSWER,
-        shortcut=PLAY_ONTHEFLY_SHORTCUT,
-    ),
     alerts=aqt.utils.showWarning,
     parent=aqt.mw,
 )
@@ -484,7 +426,6 @@ anki.hooks.addHook(
                 kwargs=dict(
                     browser=browser,
                     addon=addon,
-                    playback=PLAY_PREVIEW,
                     alerts=aqt.utils.showWarning,
                     parent=browser,
                 ),
@@ -533,7 +474,6 @@ anki.hooks.addHook(
                 kwargs=dict(
                     editor=editor,
                     addon=addon,
-                    playback=PLAY_PREVIEW,
                     alerts=aqt.utils.showWarning,
                     parent=editor.parentWindow,
                 ),
@@ -575,7 +515,6 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
                 kwargs=dict(
                     card_layout=card_layout,
                     addon=addon,
-                    playback=PLAY_PREVIEW,
                     alerts=aqt.utils.showWarning,
                     parent=card_layout,
                 ),

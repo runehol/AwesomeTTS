@@ -25,14 +25,15 @@ Add-on package initialization
 """
 
 # TODO update this as new closures are made
-__all__ = ['sound_tag_delays']
+__all__ = ['sound_tag_delays', 'on_the_fly']
 
+# TODO check to see if any of these imports can move into closures
 import logging
 import platform
 import sys
 from time import time
 
-from PyQt4.QtCore import PYQT_VERSION_STR, Qt, QEvent
+from PyQt4.QtCore import PYQT_VERSION_STR, Qt
 from PyQt4.QtGui import QKeySequence
 
 import anki
@@ -374,35 +375,46 @@ def sound_tag_delays():
     anki.sound.play = player.native_wrapper
 
 
-reviewer = gui.Reviewer(
-    addon=addon,
-    alerts=aqt.utils.showWarning,
-    parent=aqt.mw,
-)
-anki.hooks.addHook(
-    'showQuestion',
-    lambda: reviewer.card_handler('question', aqt.mw.reviewer.card),
-)
-anki.hooks.addHook(
-    'showAnswer',
-    lambda: reviewer.card_handler('answer', aqt.mw.reviewer.card),
-)
+def on_the_fly():
+    """
+    Enables support for AwesomeTTS to automatically play text-to-speech
+    tags and to also play them on-demand via shortcut keys.
+    """
 
-reviewer_filter = gui.Filter(
-    relay=lambda event: reviewer.key_handler(
-        key_event=event,
-        state=aqt.mw.reviewer.state,
-        card=aqt.mw.reviewer.card,
-        replay_audio=aqt.mw.reviewer.replayAudio,
-    ),
-    when=lambda event: (
-        aqt.mw.state == 'review' and
-        event.type() == QEvent.KeyPress and
-        not event.isAutoRepeat() and
-        not event.spontaneous()
-    ),
-)
-aqt.mw.installEventFilter(reviewer_filter)
+    from PyQt4.QtCore import QEvent
+
+    reviewer = gui.Reviewer(addon=addon,
+                            alerts=aqt.utils.showWarning,
+                            parent=aqt.mw)
+
+    anki.hooks.addHook(
+        'showQuestion',
+        lambda: reviewer.card_handler('question', aqt.mw.reviewer.card),
+    )
+
+    anki.hooks.addHook(
+        'showAnswer',
+        lambda: reviewer.card_handler('answer', aqt.mw.reviewer.card),
+    )
+
+    reviewer_filter = gui.Filter(
+        relay=lambda event: reviewer.key_handler(
+            key_event=event,
+            state=aqt.mw.reviewer.state,
+            card=aqt.mw.reviewer.card,
+            replay_audio=aqt.mw.reviewer.replayAudio,
+        ),
+
+        when=lambda event: (aqt.mw.state == 'review' and
+                            event.type() == QEvent.KeyPress and
+                            not event.isAutoRepeat() and
+                            not event.spontaneous()),
+
+        parent=aqt.mw,  # prevents filter from being garbage collected
+    )
+
+    aqt.mw.installEventFilter(reviewer_filter)
+
 
 gui.Action(
     target=Bundle(

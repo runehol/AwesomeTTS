@@ -416,17 +416,24 @@ def on_the_fly():
     aqt.mw.installEventFilter(reviewer_filter)
 
 
-gui.Action(
-    target=Bundle(
-        constructor=gui.Configurator,
-        args=(),
-        kwargs=dict(addon=addon, sul_compiler=to.substitution_compiled,
-                    parent=aqt.mw),
-    ),
-    text="Awesome&TTS...",
-    sequence=sequences['configurator'],
-    parent=aqt.mw.form.menuTools,
-)
+def config_menu():
+    """
+    Adds a menu item to the Tools menu in Anki's main window for
+    launching the configuration dialog.
+    """
+
+    gui.Action(
+        target=Bundle(
+            constructor=gui.Configurator,
+            args=(),
+            kwargs=dict(addon=addon, sul_compiler=to.substitution_compiled,
+                        parent=aqt.mw),
+        ),
+        text="Awesome&TTS...",
+        sequence=sequences['configurator'],
+        parent=aqt.mw.form.menuTools,
+    )
+
 
 anki.hooks.addHook(
     'browser.setupMenus',

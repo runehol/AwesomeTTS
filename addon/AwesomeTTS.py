@@ -111,4 +111,5 @@ import awesometts
 # TODO test that any of these could be disabled without breaking others
 awesometts.sound_tag_delays()  # delayed playing of stored [sound]s in review
 awesometts.on_the_fly()        # automatic on-the-fly playback and shortcuts
+awesometts.config_menu()       # provides access to configuration dialog
 # . . .

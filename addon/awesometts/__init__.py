@@ -26,6 +26,7 @@ Add-on package initialization
 
 # TODO update this as new closures are made
 __all__ = [
+    'browser_menus',
     'config_menu',
     'editor_button',
     'on_the_fly',
@@ -357,6 +358,56 @@ addon = Bundle(
 #      in general, only the 'before' mode absolves us of responsibility
 
 
+def browser_menus():
+    """
+    Gives user access to mass generator, MP3 stripper, and the hook that
+    disables and enables it upon selection of items.
+    """
+
+    anki.hooks.addHook(
+        'browser.setupMenus',
+        lambda browser: (
+            gui.Action(
+                target=Bundle(
+                    constructor=gui.BrowserGenerator,
+                    args=(),
+                    kwargs=dict(browser=browser,
+                                addon=addon,
+                                alerts=aqt.utils.showWarning,
+                                parent=browser),
+                ),
+                text="Add Audio to Selected w/ Awesome&TTS...",
+                sequence=sequences['browser_generator'],
+                parent=browser.form.menuEdit,
+            ),
+            gui.Action(
+                target=Bundle(
+                    constructor=gui.BrowserStripper,
+                    args=(),
+                    kwargs=dict(browser=browser,
+                                addon=addon,
+                                alerts=aqt.utils.showWarning,
+                                parent=browser),
+                ),
+                text="Remove Audio from Selected w/ AwesomeTTS...",
+                sequence=sequences['browser_stripper'],
+                parent=browser.form.menuEdit,
+            ),
+        ),
+    )
+
+    aqt.browser.Browser.updateTitle = anki.hooks.wrap(
+        aqt.browser.Browser.updateTitle,
+        lambda browser: [
+            action.setEnabled(
+                bool(browser.form.tableView.selectionModel().selectedRows())
+            )
+            for action in browser.findChildren(gui.Action)
+        ],
+        'before',
+    )
+
+
 def config_menu():
     """
     Adds a menu item to the Tools menu in Anki's main window for
@@ -525,51 +576,7 @@ def window_shortcuts():
                 on_sequence_change)
 
 
-anki.hooks.addHook(
-    'browser.setupMenus',
-    lambda browser: (
-        gui.Action(
-            target=Bundle(
-                constructor=gui.BrowserGenerator,
-                args=(),
-                kwargs=dict(
-                    browser=browser,
-                    addon=addon,
-                    alerts=aqt.utils.showWarning,
-                    parent=browser,
-                ),
-            ),
-            text="Add Audio to Selected w/ Awesome&TTS...",
-            sequence=sequences['browser_generator'],
-            parent=browser.form.menuEdit,
-        ),
-        gui.Action(
-            target=Bundle(
-                constructor=gui.BrowserStripper,
-                args=(),
-                kwargs=dict(
-                    browser=browser,
-                    addon=addon,
-                    alerts=aqt.utils.showWarning,
-                    parent=browser,
-                ),
-            ),
-            text="Remove Audio from Selected w/ AwesomeTTS...",
-            sequence=sequences['browser_stripper'],
-            parent=browser.form.menuEdit,
-        ),
-    ),
-)
-aqt.browser.Browser.updateTitle = anki.hooks.wrap(
-    aqt.browser.Browser.updateTitle,
-    lambda browser: [
-        action.setEnabled(
-            bool(browser.form.tableView.selectionModel().selectedRows())
-        )
-        for action in browser.findChildren(gui.Action)
-    ],
-    'before',
-)
+
 
 
 import aqt.clayout

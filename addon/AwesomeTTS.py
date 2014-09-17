@@ -113,6 +113,7 @@ import awesometts
 # prefixing it with a hash (#) sign.
 # TODO Test that there is no cross-component breakage by removing/reordering
 
+awesometts.browser_menus()     # mass generator and MP3 stripper
 awesometts.config_menu()       # provides access to configuration dialog
 awesometts.editor_button()     # single audio clip generator button
 awesometts.on_the_fly()        # automatic on-the-fly playback and shortcuts

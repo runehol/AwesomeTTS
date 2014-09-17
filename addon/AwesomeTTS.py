@@ -111,10 +111,11 @@ import awesometts
 # If a specific component of AwesomeTTS that you do not need is causing a
 # problem (e.g. conflicting with another add-on), you can disable it here by
 # prefixing it with a hash (#) sign.
-# TODO Test that there is no cross-component breakage by doing this.
+# TODO Test that there is no cross-component breakage by removing/reordering
 
 awesometts.config_menu()       # provides access to configuration dialog
 awesometts.editor_button()     # single audio clip generator button
 awesometts.on_the_fly()        # automatic on-the-fly playback and shortcuts
 awesometts.sound_tag_delays()  # delayed playing of stored [sound]s in review
 awesometts.update_checker()    # if enabled, runs the add-on update checker
+awesometts.window_shortcuts()  # enable/update shortcuts for add-on windows

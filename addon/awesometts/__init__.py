@@ -31,20 +31,18 @@ __all__ = [
     'on_the_fly',
     'sound_tag_delays',
     'update_checker',
+    'window_shortcuts',
 ]
 
-# TODO check to see if any of these imports can move into closures
 import logging
 import platform
 import sys
-from time import time
 
 from PyQt4.QtCore import PYQT_VERSION_STR, Qt
 from PyQt4.QtGui import QKeySequence
 
 import anki
 import aqt
-import aqt.clayout
 
 from . import conversion as to, gui, paths, service
 from .bundle import Bundle
@@ -159,15 +157,6 @@ config = Config(
         (
             ['debug_file', 'debug_stdout'],
             logger.activate,  # BufferedLogger instance, pylint: disable=E1103
-        ),
-        (
-            # TODO move this into a function
-            ['launch_' + key for key in sequences.keys()],
-            lambda config: ([sequences[key].swap(config['launch_' + key] or 0)
-                             for key in sequences.keys()],
-                            [conf_menu.setShortcut(sequences['configurator'])
-                             for conf_menu in (aqt.mw.form.menuTools.
-                                               findChildren(gui.Action))])
         ),
     ],
 )
@@ -492,6 +481,7 @@ def update_checker():
     aqt.addons.GetAddons) that expect it might fail unexpectedly.
     """
 
+    from time import time
     if not config['updates_enabled'] or \
        config['updates_postpone'] and config['updates_postpone'] > time():
         return
@@ -513,6 +503,26 @@ def update_checker():
         'profileLoaded',
         lambda: updates.used() or updates.check(callbacks=dict(need=on_need)),
     )
+
+
+def window_shortcuts():
+    """Enables shortcuts to launch windows."""
+
+    def on_sequence_change(new_config):
+        """Update sequences on configuration changes."""
+
+        for key, sequence in sequences.items():
+            sequence.swap(new_config['launch_' + key] or 0)
+
+        try:
+            aqt.mw.form.menuTools.findChild(gui.Action). \
+                setShortcut(sequences['configurator'])
+        except AttributeError:  # we do not have a config menu
+            pass
+
+    on_sequence_change(config)  # set config menu if created before we ran
+    config.bind(['launch_' + key for key in sequences.keys()],
+                on_sequence_change)
 
 
 anki.hooks.addHook(
@@ -562,6 +572,7 @@ aqt.browser.Browser.updateTitle = anki.hooks.wrap(
 )
 
 
+import aqt.clayout
 aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
     aqt.clayout.CardLayout.setupButtons,
     lambda card_layout: card_layout.buttons.insertWidget(

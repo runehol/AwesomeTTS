@@ -24,9 +24,9 @@
 Add-on package initialization
 """
 
-# TODO update this as new closures are made
 __all__ = [
     'browser_menus',
+    'cards_button',
     'config_menu',
     'editor_button',
     'on_the_fly',
@@ -357,6 +357,10 @@ addon = Bundle(
 # n.b. be careful wrapping methods that have return values (see anki.hooks);
 #      in general, only the 'before' mode absolves us of responsibility
 
+# These are all called manually from the AwesomeTTS.py loader so that if there
+# is some sort of breakage with a specific component, it could be possibly
+# disabled easily by users who are not utilizing that functionality.
+
 
 def browser_menus():
     """
@@ -405,6 +409,41 @@ def browser_menus():
             for action in browser.findChildren(gui.Action)
         ],
         'before',
+    )
+
+
+def cards_button():
+    """Provides access to the templater helper."""
+
+    from aqt import clayout
+
+    clayout.CardLayout.setupButtons = anki.hooks.wrap(
+        clayout.CardLayout.setupButtons,
+        lambda card_layout: card_layout.buttons.insertWidget(
+            # Now, the card layout for regular notes has 7 buttons/stretchers
+            # and the one for cloze notes has 6 (as it lacks a "Flip" button);
+            # position 3 puts our button after "Add Field", but in the event
+            # that the form suddenly has a different number of buttons, let's
+            # just fallback to the far left position
+
+            3 if card_layout.buttons.count() in [6, 7] else 0,
+            gui.Button(
+                text="Add &TTS",
+                tooltip="Insert a tag for on-the-fly playback w/ AwesomeTTS",
+                sequence=sequences['templater'],
+                target=Bundle(
+                    constructor=gui.Templater,
+                    args=(),
+                    kwargs=dict(
+                        card_layout=card_layout,
+                        addon=addon,
+                        alerts=aqt.utils.showWarning,
+                        parent=card_layout,
+                    ),
+                ),
+            ),
+        ),
+        'after',  # must use 'after' so that 'buttons' attribute is set
     )
 
 
@@ -574,36 +613,3 @@ def window_shortcuts():
     on_sequence_change(config)  # set config menu if created before we ran
     config.bind(['launch_' + key for key in sequences.keys()],
                 on_sequence_change)
-
-
-
-
-
-import aqt.clayout
-aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
-    aqt.clayout.CardLayout.setupButtons,
-    lambda card_layout: card_layout.buttons.insertWidget(
-        # today, the card layout for regular notes has 7 buttons/stretchers
-        # and the one for cloze notes has 6 (as it lacks the "Flip" button);
-        # position 3 puts our button after "Add Field", but in the event that
-        # the form suddenly has a different number of buttons, let's just
-        # fallback to the far left position
-        3 if card_layout.buttons.count() in [6, 7] else 0,
-        gui.Button(
-            text="Add &TTS",
-            tooltip="Insert a tag for on-the-fly playback w/ AwesomeTTS",
-            sequence=sequences['templater'],
-            target=Bundle(
-                constructor=gui.Templater,
-                args=(),
-                kwargs=dict(
-                    card_layout=card_layout,
-                    addon=addon,
-                    alerts=aqt.utils.showWarning,
-                    parent=card_layout,
-                ),
-            ),
-        ),
-    ),
-    'after',  # must use 'after' so that 'buttons' attribute is set
-)

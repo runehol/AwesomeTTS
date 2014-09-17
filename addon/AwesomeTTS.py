@@ -111,9 +111,9 @@ import awesometts
 # If a specific component of AwesomeTTS that you do not need is causing a
 # problem (e.g. conflicting with another add-on), you can disable it here by
 # prefixing it with a hash (#) sign.
-# TODO Test that there is no cross-component breakage by removing/reordering
 
 awesometts.browser_menus()     # mass generator and MP3 stripper
+awesometts.cards_button()      # on-the-fly templater helper in card view
 awesometts.config_menu()       # provides access to configuration dialog
 awesometts.editor_button()     # single audio clip generator button
 awesometts.on_the_fly()        # automatic on-the-fly playback and shortcuts

@@ -24,16 +24,9 @@
 Add-on package initialization
 """
 
-__all__ = [
-    'browser_menus',
-    'cards_button',
-    'config_menu',
-    'editor_button',
-    'on_the_fly',
-    'sound_tag_delays',
-    'update_checker',
-    'window_shortcuts',
-]
+__all__ = ['browser_menus', 'cards_button', 'config_menu', 'editor_button',
+           'on_the_fly', 'sound_tag_delays', 'update_checker',
+           'window_shortcuts']
 
 import logging
 import platform
@@ -65,11 +58,9 @@ WEB = 'https://ankiatts.appspot.com'
 logger = Logger(
     name='AwesomeTTS',
     handlers=dict(
-        debug_file=logging.FileHandler(
-            paths.LOG,
-            encoding='utf-8',
-            delay=True,
-        ),
+        debug_file=logging.FileHandler(paths.LOG,
+                                       encoding='utf-8',
+                                       delay=True),
         debug_stdout=logging.StreamHandler(sys.stdout),
     ),
     formatter=logging.Formatter(
@@ -79,18 +70,14 @@ logger = Logger(
     ),
 )
 
-sequences = {
-    key: QKeySequence()
-    for key in ['browser_generator', 'browser_stripper', 'configurator',
-                'editor_generator', 'templater']
-}
+sequences = {key: QKeySequence()
+             for key in ['browser_generator', 'browser_stripper',
+                         'configurator', 'editor_generator', 'templater']}
 
 config = Config(
-    db=Bundle(
-        path=paths.CONFIG,
-        table='general',
-        normalize=to.normalized_ascii,
-    ),
+    db=Bundle(path=paths.CONFIG,
+              table='general',
+              normalize=to.normalized_ascii),
     cols=[
         ('automaticAnswers', 'integer', True, to.lax_bool, int),
         ('automaticQuestions', 'integer', True, to.lax_bool, int),
@@ -192,12 +179,10 @@ router = Router(
         ],
         normalize=to.normalized_ascii,
         args=(),
-        kwargs=dict(
-            temp_dir=paths.TEMP,
-            lame_flags=lambda: config['lame_flags'],
-            normalize=to.normalized_ascii,
-            logger=logger,
-        ),
+        kwargs=dict(temp_dir=paths.TEMP,
+                    lame_flags=lambda: config['lame_flags'],
+                    normalize=to.normalized_ascii,
+                    logger=logger),
     ),
     cache_dir=paths.CACHE,
     logger=logger,
@@ -222,19 +207,15 @@ addon = Bundle(
         kwargs=dict(),
         attrs=dict(
             form=Bundle(
-                code=Bundle(
-                    text=lambda: '301952613',
-                ),
+                code=Bundle(text=lambda: '301952613'),
             ),
             mw=aqt.mw,
         ),
         fail=lambda message: aqt.utils.showCritical(message, aqt.mw),
     ),
     logger=logger,
-    paths=Bundle(
-        cache=paths.CACHE,
-        is_link=paths.ADDON_IS_LINKED,
-    ),
+    paths=Bundle(cache=paths.CACHE,
+                 is_link=paths.ADDON_IS_LINKED),
     player=player,
     router=router,
     strip=Bundle(
@@ -434,12 +415,10 @@ def cards_button():
                 target=Bundle(
                     constructor=gui.Templater,
                     args=(),
-                    kwargs=dict(
-                        card_layout=card_layout,
-                        addon=addon,
-                        alerts=aqt.utils.showWarning,
-                        parent=card_layout,
-                    ),
+                    kwargs=dict(card_layout=card_layout,
+                                addon=addon,
+                                alerts=aqt.utils.showWarning,
+                                parent=card_layout),
                 ),
             ),
         ),

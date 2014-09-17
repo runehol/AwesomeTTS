@@ -108,8 +108,12 @@ os_call(
 
 import awesometts
 
-# TODO test that any of these could be disabled without breaking others
-awesometts.sound_tag_delays()  # delayed playing of stored [sound]s in review
-awesometts.on_the_fly()        # automatic on-the-fly playback and shortcuts
+# If a specific component of AwesomeTTS that you do not need is causing a
+# problem (e.g. conflicting with another add-on), you can disable it here by
+# prefixing it with a hash (#) sign.
+# TODO Test that there is no cross-component breakage by doing this.
+
 awesometts.config_menu()       # provides access to configuration dialog
-# . . .
+awesometts.on_the_fly()        # automatic on-the-fly playback and shortcuts
+awesometts.sound_tag_delays()  # delayed playing of stored [sound]s in review
+awesometts.update_checker()    # if enabled, runs the add-on update checker

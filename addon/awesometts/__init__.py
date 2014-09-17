@@ -25,7 +25,12 @@ Add-on package initialization
 """
 
 # TODO update this as new closures are made
-__all__ = ['sound_tag_delays', 'on_the_fly']
+__all__ = [
+    'config_menu',
+    'on_the_fly',
+    'sound_tag_delays',
+    'update_checker',
+]
 
 # TODO check to see if any of these imports can move into closures
 import logging
@@ -362,17 +367,23 @@ addon = Bundle(
 #      in general, only the 'before' mode absolves us of responsibility
 
 
-def sound_tag_delays():
+def config_menu():
     """
-    Enables support for the following sound delay configuration options:
-
-    - delay_questions_stored_ours (AwesomeTTS MP3s on questions)
-    - delay_questions_stored_theirs (non-AwesomeTTS MP3s on questions)
-    - delay_answers_stored_ours (AwesomeTTS MP3s on answers)
-    - delay_answers_stored_theirs (non-AwesomeTTS MP3s on answers)
+    Adds a menu item to the Tools menu in Anki's main window for
+    launching the configuration dialog.
     """
 
-    anki.sound.play = player.native_wrapper
+    gui.Action(
+        target=Bundle(
+            constructor=gui.Configurator,
+            args=(),
+            kwargs=dict(addon=addon, sul_compiler=to.substitution_compiled,
+                        parent=aqt.mw),
+        ),
+        text="Awesome&TTS...",
+        sequence=sequences['configurator'],
+        parent=aqt.mw.form.menuTools,
+    )
 
 
 def on_the_fly():
@@ -416,22 +427,49 @@ def on_the_fly():
     aqt.mw.installEventFilter(reviewer_filter)
 
 
-def config_menu():
+def sound_tag_delays():
     """
-    Adds a menu item to the Tools menu in Anki's main window for
-    launching the configuration dialog.
+    Enables support for the following sound delay configuration options:
+
+    - delay_questions_stored_ours (AwesomeTTS MP3s on questions)
+    - delay_questions_stored_theirs (non-AwesomeTTS MP3s on questions)
+    - delay_answers_stored_ours (AwesomeTTS MP3s on answers)
+    - delay_answers_stored_theirs (non-AwesomeTTS MP3s on answers)
     """
 
-    gui.Action(
-        target=Bundle(
-            constructor=gui.Configurator,
-            args=(),
-            kwargs=dict(addon=addon, sul_compiler=to.substitution_compiled,
-                        parent=aqt.mw),
-        ),
-        text="Awesome&TTS...",
-        sequence=sequences['configurator'],
-        parent=aqt.mw.form.menuTools,
+    anki.sound.play = player.native_wrapper
+
+
+def update_checker():
+    """
+    Automatic check for new version, if neither postponed nor ignored.
+
+    With the profilesLoaded hook, we do not run the check until the user
+    is actually in a profile, which guarantees the main window has been
+    loaded. Without it, update components (e.g. aqt.downloader.download,
+    aqt.addons.GetAddons) that expect it might fail unexpectedly.
+    """
+
+    if not config['updates_enabled'] or \
+       config['updates_postpone'] and config['updates_postpone'] > time():
+        return
+
+    def on_need(version, info):
+        """If not an ignored version, pop open the updater dialog."""
+
+        if config['updates_ignore'] == version:
+            return
+
+        gui.Updater(
+            version=version,
+            info=info,
+            addon=addon,
+            parent=aqt.mw,
+        ).show()
+
+    anki.hooks.addHook(
+        'profileLoaded',
+        lambda: updates.used() or updates.check(callbacks=dict(need=on_need)),
     )
 
 
@@ -542,33 +580,3 @@ aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
     ),
     'after',  # must use 'after' so that 'buttons' attribute is set
 )
-
-
-# Automatic check for new version, if enabled and not postponed/ignored
-
-# By using the profilesLoaded hook, we do not run the update until the user is
-# actually in a profile, which guarantees the main window has been loaded.
-# Without the main window, update components (e.g. aqt.downloader.download,
-# aqt.addons.GetAddons) that depend on it might fail unexpectedly.
-
-if config['updates_enabled'] and \
-   (not config['updates_postpone'] or config['updates_postpone'] <= time()):
-    anki.hooks.addHook(
-        'profileLoaded',
-        lambda: updates.used() or updates.check(
-            callbacks=dict(
-                need=lambda version, info: (
-                    None if config['updates_ignore'] == version
-                    else [
-                        updater.show()
-                        for updater in [gui.Updater(
-                            version=version,
-                            info=info,
-                            addon=addon,
-                            parent=aqt.mw,
-                        )]
-                    ]
-                ),
-            ),
-        ),
-    )

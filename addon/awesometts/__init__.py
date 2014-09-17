@@ -27,6 +27,7 @@ Add-on package initialization
 # TODO update this as new closures are made
 __all__ = [
     'config_menu',
+    'editor_button',
     'on_the_fly',
     'sound_tag_delays',
     'update_checker',
@@ -386,6 +387,47 @@ def config_menu():
     )
 
 
+def editor_button():
+    """
+    Enable the generation of a single audio clip through the editor,
+    which is present in the "Add" and browser windows.
+    """
+
+    anki.hooks.addHook(
+        'setupEditorButtons',
+        lambda editor: editor.iconsBox.addWidget(
+            gui.Button(
+                tooltip="Record and insert an audio clip here w/ AwesomeTTS",
+                sequence=sequences['editor_generator'],
+                target=Bundle(
+                    constructor=gui.EditorGenerator,
+                    args=(),
+                    kwargs=dict(editor=editor,
+                                addon=addon,
+                                alerts=aqt.utils.showWarning,
+                                parent=editor.parentWindow),
+                ),
+                style=editor.plastiqueStyle,
+            ),
+        ),
+    )
+
+    aqt.editor.Editor.enableButtons = anki.hooks.wrap(
+        aqt.editor.Editor.enableButtons,
+        lambda editor, val=True: (
+            editor.widget.findChild(gui.Button).setEnabled(val),
+
+            # Temporarily disable any AwesomeTTS menu shortcuts in the Browser
+            # window so that if a shortcut combination has been re-used
+            # between the editor button and those, the "local" shortcut works.
+            # Has no effect on "Add" window (the child list will be empty).
+            [action.muzzle(val) for action
+             in editor.parentWindow.findChildren(gui.Action)],
+        ),
+        'before',
+    )
+
+
 def on_the_fly():
     """
     Enables support for AwesomeTTS to automatically play text-to-speech
@@ -519,39 +561,6 @@ aqt.browser.Browser.updateTitle = anki.hooks.wrap(
     'before',
 )
 
-anki.hooks.addHook(
-    'setupEditorButtons',
-    lambda editor: editor.iconsBox.addWidget(
-        gui.Button(
-            tooltip="Record and insert an audio clip here w/ AwesomeTTS",
-            sequence=sequences['editor_generator'],
-            target=Bundle(
-                constructor=gui.EditorGenerator,
-                args=(),
-                kwargs=dict(
-                    editor=editor,
-                    addon=addon,
-                    alerts=aqt.utils.showWarning,
-                    parent=editor.parentWindow,
-                ),
-            ),
-            style=editor.plastiqueStyle,
-        ),
-    ),
-)
-aqt.editor.Editor.enableButtons = anki.hooks.wrap(
-    aqt.editor.Editor.enableButtons,
-    lambda editor, val=True: (
-        editor.widget.findChild(gui.Button).setEnabled(val),
-
-        # Temporarily disable shortcut to Browser window's "Add Audio to
-        # Selected Notes" menu so this more "local" shortcut works instead.
-        # Has no effect on "Add" as findChildren() returns empty list there.
-        [action.muzzle(val) for action
-         in editor.parentWindow.findChildren(gui.Action)],
-    ),
-    'before',
-)
 
 aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
     aqt.clayout.CardLayout.setupButtons,

@@ -114,6 +114,7 @@ import awesometts
 # TODO Test that there is no cross-component breakage by doing this.
 
 awesometts.config_menu()       # provides access to configuration dialog
+awesometts.editor_button()     # single audio clip generator button
 awesometts.on_the_fly()        # automatic on-the-fly playback and shortcuts
 awesometts.sound_tag_delays()  # delayed playing of stored [sound]s in review
 awesometts.update_checker()    # if enabled, runs the add-on update checker

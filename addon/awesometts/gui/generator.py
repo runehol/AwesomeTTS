@@ -424,6 +424,7 @@ class BrowserGenerator(ServiceDialog):
         proc = self._process
 
         if proc['aborted']:
+            proc['throttling']['timer'].stop()
             self._accept_done()
             return
 

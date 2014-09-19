@@ -47,7 +47,6 @@ if __name__ == "__main__":
 
 # Begin temporary migration code from Beta 10 and older (unless noted)
 
-
 import os
 
 
@@ -102,8 +101,20 @@ os_call(
     os.path.join(_PKG, 'config.db'),
 )
 
-
 # End temporary migration code
 
 
-import awesometts  # imported for side effects, pylint: disable=W0611
+import awesometts
+
+# If a specific component of AwesomeTTS that you do not need is causing a
+# problem (e.g. conflicting with another add-on), you can disable it here by
+# prefixing it with a hash (#) sign and restarting Anki.
+
+awesometts.browser_menus()     # mass generator and MP3 stripper
+awesometts.cards_button()      # on-the-fly templater helper in card view
+awesometts.config_menu()       # provides access to configuration dialog
+awesometts.editor_button()     # single audio clip generator button
+awesometts.on_the_fly()        # automatic on-the-fly playback and shortcuts
+awesometts.sound_tag_delays()  # delayed playing of stored [sound]s in review
+awesometts.update_checker()    # if enabled, runs the add-on update checker
+awesometts.window_shortcuts()  # enable/update shortcuts for add-on windows

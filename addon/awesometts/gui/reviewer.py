@@ -86,14 +86,12 @@ class Reviewer(object):
         '_addon',
         '_alerts',
         '_parent',
-        '_playback',
     ]
 
-    def __init__(self, addon, playback, alerts, parent):
+    def __init__(self, addon, alerts, parent):
         self._addon = addon
         self._alerts = alerts
         self._parent = parent
-        self._playback = playback
 
     def card_handler(self, state, card):
         """
@@ -103,11 +101,12 @@ class Reviewer(object):
         """
 
         if state == 'question' and self._addon.config['automatic_questions']:
-            self._play_html('front', card.q(), self._playback.auto_question)
+            self._play_html('front', card.q(),
+                            self._addon.player.otf_question)
 
         elif state == 'answer' and self._addon.config['automatic_answers']:
             self._play_html('back', self._get_answer(card),
-                            self._playback.auto_answer)
+                            self._addon.player.otf_answer)
 
     def key_handler(self, key_event, state, card, replay_audio):
         """
@@ -137,13 +136,14 @@ class Reviewer(object):
 
         question_combo = self._addon.config['tts_key_q']
         if question_combo and combo == question_combo:
-            self._play_html('front', card.q(), self._playback.shortcut)
+            self._play_html('front', card.q(),
+                            self._addon.player.otf_shortcut)
             handled = True
 
         answer_combo = self._addon.config['tts_key_a']
         if state == 'answer' and answer_combo and combo == answer_combo:
             self._play_html('back', self._get_answer(card),
-                            self._playback.shortcut)
+                            self._addon.player.otf_shortcut)
             handled = True
 
         return handled

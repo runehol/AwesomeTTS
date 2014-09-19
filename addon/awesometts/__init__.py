@@ -24,27 +24,27 @@
 Add-on package initialization
 """
 
-__all__ = []
+__all__ = ['browser_menus', 'cards_button', 'config_menu', 'editor_button',
+           'on_the_fly', 'sound_tag_delays', 'update_checker',
+           'window_shortcuts']
 
-import inspect
 import logging
 import platform
 import sys
-from time import time
 
-from PyQt4.QtCore import PYQT_VERSION_STR, Qt, QEvent
+from PyQt4.QtCore import PYQT_VERSION_STR, Qt
 from PyQt4.QtGui import QKeySequence
 
 import anki
 import aqt
-import aqt.clayout
 
 from . import conversion as to, gui, paths, service
 from .bundle import Bundle
 from .config import Config
 from .logger import Logger
+from .player import Player
 from .router import Router
-from .text import RE_FILENAMES, Sanitizer
+from .text import Sanitizer
 from .updates import Updates
 
 
@@ -53,16 +53,14 @@ VERSION = '1.1.0-dev'
 WEB = 'https://ankiatts.appspot.com'
 
 
-# Core class initialization and dependency setup, pylint:disable=C0103
+# Begin core class initialization and dependency setup, pylint:disable=C0103
 
 logger = Logger(
     name='AwesomeTTS',
     handlers=dict(
-        debug_file=logging.FileHandler(
-            paths.LOG,
-            encoding='utf-8',
-            delay=True,
-        ),
+        debug_file=logging.FileHandler(paths.LOG,
+                                       encoding='utf-8',
+                                       delay=True),
         debug_stdout=logging.StreamHandler(sys.stdout),
     ),
     formatter=logging.Formatter(
@@ -72,18 +70,14 @@ logger = Logger(
     ),
 )
 
-sequences = {
-    key: QKeySequence()
-    for key in ['browser_generator', 'browser_stripper', 'configurator',
-                'editor_generator', 'templater']
-}
+sequences = {key: QKeySequence()
+             for key in ['browser_generator', 'browser_stripper',
+                         'configurator', 'editor_generator', 'templater']}
 
 config = Config(
-    db=Bundle(
-        path=paths.CONFIG,
-        table='general',
-        normalize=to.normalized_ascii,
-    ),
+    db=Bundle(path=paths.CONFIG,
+              table='general',
+              normalize=to.normalized_ascii),
     cols=[
         ('automaticAnswers', 'integer', True, to.lax_bool, int),
         ('automaticQuestions', 'integer', True, to.lax_bool, int),
@@ -152,15 +146,18 @@ config = Config(
             ['debug_file', 'debug_stdout'],
             logger.activate,  # BufferedLogger instance, pylint: disable=E1103
         ),
-        (
-            ['launch_' + key for key in sequences.keys()],
-            lambda config: ([sequences[key].swap(config['launch_' + key] or 0)
-                             for key in sequences.keys()],
-                            [conf_menu.setShortcut(sequences['configurator'])
-                             for conf_menu in (aqt.mw.form.menuTools.
-                                               findChildren(gui.Action))])
-        ),
     ],
+)
+
+player = Player(
+    anki=Bundle(
+        mw=aqt.mw,
+        native=anki.sound.play,  # need direct reference, as this gets wrapped
+        sound=anki.sound,  # for accessing queue member, which is not wrapped
+    ),
+    blank=paths.BLANK,
+    config=config,
+    logger=logger,
 )
 
 router = Router(
@@ -182,12 +179,10 @@ router = Router(
         ],
         normalize=to.normalized_ascii,
         args=(),
-        kwargs=dict(
-            temp_dir=paths.TEMP,
-            lame_flags=lambda: config['lame_flags'],
-            normalize=to.normalized_ascii,
-            logger=logger,
-        ),
+        kwargs=dict(temp_dir=paths.TEMP,
+                    lame_flags=lambda: config['lame_flags'],
+                    normalize=to.normalized_ascii,
+                    logger=logger),
     ),
     cache_dir=paths.CACHE,
     logger=logger,
@@ -203,94 +198,6 @@ updates = Updates(
     logger=logger,
 )
 
-
-# GUI interaction with Anki, pylint:disable=C0103
-# n.b. be careful wrapping methods that have return values (see anki.hooks);
-#      in general, only the 'before' mode absolves us of responsibility
-
-PLAY_ANKI = anki.sound.play
-
-PLAY_BLANK = lambda seconds, reason, path: \
-    logger.debug("Ignoring %d-second delay (%s): %s", seconds, reason, path) \
-    if anki.sound.mplayerQueue \
-    else (
-        logger.debug("Need %d-second delay (%s): %s", seconds, reason, path),
-        [PLAY_ANKI(paths.BLANK) for i in range(seconds)],
-    )
-
-PLAY_PREVIEW = lambda path: (
-    PLAY_BLANK(0, "preview mode", path),
-    PLAY_ANKI(path),
-)
-
-PLAY_ONTHEFLY_QUESTION = lambda path: (
-    PLAY_BLANK(
-        config['delay_questions_onthefly'],
-        "on-the-fly automatic question",
-        path,
-    ),
-    PLAY_ANKI(path),
-)
-
-PLAY_ONTHEFLY_ANSWER = lambda path: (
-    PLAY_BLANK(
-        config['delay_answers_onthefly'],
-        "on-the-fly automatic answer",
-        path,
-    ),
-    PLAY_ANKI(path),
-)
-
-PLAY_ONTHEFLY_SHORTCUT = lambda path: (
-    PLAY_BLANK(0, "on-the-fly shortcut mode", path),
-    PLAY_ANKI(path),
-)
-
-PLAY_WRAPPED = lambda path: (
-    PLAY_BLANK(0, "wrapped, non-review", path) if aqt.mw.state != 'review'
-    else PLAY_BLANK(0, "wrapped, blacklisted caller", path) if next(
-        (
-            True
-            for frame in inspect.stack()
-            if frame[3] in [
-                'addMedia',     # if the user adds media in review
-                'replayAudio',  # if the user strikes R or F5
-            ]
-        ),
-        False,
-    )
-    else (
-        PLAY_BLANK(
-            config['delay_questions_stored_ours'],
-            "wrapped, AwesomeTTS sound on question side",
-            path,
-        ) if RE_FILENAMES.search(path)
-        else PLAY_BLANK(
-            config['delay_questions_stored_theirs'],
-            "wrapped, non-AwesomeTTS sound on question side",
-            path,
-        )
-    ) if aqt.mw.reviewer.state == 'question'
-    else (
-        PLAY_BLANK(
-            config['delay_answers_stored_ours'],
-            "wrapped, AwesomeTTS sound on answer side",
-            path,
-        ) if RE_FILENAMES.search(path)
-        else PLAY_BLANK(
-            config['delay_answers_stored_theirs'],
-            "wrapped, non-AwesomeTTS sound on answer side",
-            path,
-        )
-    ) if aqt.mw.reviewer.state == 'answer'
-    else PLAY_BLANK(0, "wrapped, unknown review state", path),
-
-    PLAY_ANKI(path),
-)
-
-anki.sound.play = PLAY_WRAPPED
-
-
 addon = Bundle(
     config=config,
     downloader=Bundle(
@@ -300,19 +207,16 @@ addon = Bundle(
         kwargs=dict(),
         attrs=dict(
             form=Bundle(
-                code=Bundle(
-                    text=lambda: '301952613',
-                ),
+                code=Bundle(text=lambda: '301952613'),
             ),
             mw=aqt.mw,
         ),
         fail=lambda message: aqt.utils.showCritical(message, aqt.mw),
     ),
     logger=logger,
-    paths=Bundle(
-        cache=paths.CACHE,
-        is_link=paths.ADDON_IS_LINKED,
-    ),
+    paths=Bundle(cache=paths.CACHE,
+                 is_link=paths.ADDON_IS_LINKED),
+    player=player,
     router=router,
     strip=Bundle(
         # n.b. cloze substitution logic happens first in both modes because:
@@ -427,190 +331,264 @@ addon = Bundle(
     web=WEB,
 )
 
-reviewer = gui.Reviewer(
-    addon=addon,
-    playback=Bundle(
-        auto_question=PLAY_ONTHEFLY_QUESTION,
-        auto_answer=PLAY_ONTHEFLY_ANSWER,
-        shortcut=PLAY_ONTHEFLY_SHORTCUT,
-    ),
-    alerts=aqt.utils.showWarning,
-    parent=aqt.mw,
-)
-anki.hooks.addHook(
-    'showQuestion',
-    lambda: reviewer.card_handler('question', aqt.mw.reviewer.card),
-)
-anki.hooks.addHook(
-    'showAnswer',
-    lambda: reviewer.card_handler('answer', aqt.mw.reviewer.card),
-)
-
-reviewer_filter = gui.Filter(
-    relay=lambda event: reviewer.key_handler(
-        key_event=event,
-        state=aqt.mw.reviewer.state,
-        card=aqt.mw.reviewer.card,
-        replay_audio=aqt.mw.reviewer.replayAudio,
-    ),
-    when=lambda event: (
-        aqt.mw.state == 'review' and
-        event.type() == QEvent.KeyPress and
-        not event.isAutoRepeat() and
-        not event.spontaneous()
-    ),
-)
-aqt.mw.installEventFilter(reviewer_filter)
-
-gui.Action(
-    target=Bundle(
-        constructor=gui.Configurator,
-        args=(),
-        kwargs=dict(addon=addon, sul_compiler=to.substitution_compiled,
-                    parent=aqt.mw),
-    ),
-    text="Awesome&TTS...",
-    sequence=sequences['configurator'],
-    parent=aqt.mw.form.menuTools,
-)
-
-anki.hooks.addHook(
-    'browser.setupMenus',
-    lambda browser: (
-        gui.Action(
-            target=Bundle(
-                constructor=gui.BrowserGenerator,
-                args=(),
-                kwargs=dict(
-                    browser=browser,
-                    addon=addon,
-                    playback=PLAY_PREVIEW,
-                    alerts=aqt.utils.showWarning,
-                    parent=browser,
-                ),
-            ),
-            text="Add Audio to Selected w/ Awesome&TTS...",
-            sequence=sequences['browser_generator'],
-            parent=browser.form.menuEdit,
-        ),
-        gui.Action(
-            target=Bundle(
-                constructor=gui.BrowserStripper,
-                args=(),
-                kwargs=dict(
-                    browser=browser,
-                    addon=addon,
-                    alerts=aqt.utils.showWarning,
-                    parent=browser,
-                ),
-            ),
-            text="Remove Audio from Selected w/ AwesomeTTS...",
-            sequence=sequences['browser_stripper'],
-            parent=browser.form.menuEdit,
-        ),
-    ),
-)
-aqt.browser.Browser.updateTitle = anki.hooks.wrap(
-    aqt.browser.Browser.updateTitle,
-    lambda browser: [
-        action.setEnabled(
-            bool(browser.form.tableView.selectionModel().selectedRows())
-        )
-        for action in browser.findChildren(gui.Action)
-    ],
-    'before',
-)
-
-anki.hooks.addHook(
-    'setupEditorButtons',
-    lambda editor: editor.iconsBox.addWidget(
-        gui.Button(
-            tooltip="Record and insert an audio clip here w/ AwesomeTTS",
-            sequence=sequences['editor_generator'],
-            target=Bundle(
-                constructor=gui.EditorGenerator,
-                args=(),
-                kwargs=dict(
-                    editor=editor,
-                    addon=addon,
-                    playback=PLAY_PREVIEW,
-                    alerts=aqt.utils.showWarning,
-                    parent=editor.parentWindow,
-                ),
-            ),
-            style=editor.plastiqueStyle,
-        ),
-    ),
-)
-aqt.editor.Editor.enableButtons = anki.hooks.wrap(
-    aqt.editor.Editor.enableButtons,
-    lambda editor, val=True: (
-        editor.widget.findChild(gui.Button).setEnabled(val),
-
-        # Temporarily disable shortcut to Browser window's "Add Audio to
-        # Selected Notes" menu so this more "local" shortcut works instead.
-        # Has no effect on "Add" as findChildren() returns empty list there.
-        [action.muzzle(val) for action
-         in editor.parentWindow.findChildren(gui.Action)],
-    ),
-    'before',
-)
-
-aqt.clayout.CardLayout.setupButtons = anki.hooks.wrap(
-    aqt.clayout.CardLayout.setupButtons,
-    lambda card_layout: card_layout.buttons.insertWidget(
-        # today, the card layout for regular notes has 7 buttons/stretchers
-        # and the one for cloze notes has 6 (as it lacks the "Flip" button);
-        # position 3 puts our button after "Add Field", but in the event that
-        # the form suddenly has a different number of buttons, let's just
-        # fallback to the far left position
-        3 if card_layout.buttons.count() in [6, 7] else 0,
-        gui.Button(
-            text="Add &TTS",
-            tooltip="Insert a tag for on-the-fly playback w/ AwesomeTTS",
-            sequence=sequences['templater'],
-            target=Bundle(
-                constructor=gui.Templater,
-                args=(),
-                kwargs=dict(
-                    card_layout=card_layout,
-                    addon=addon,
-                    playback=PLAY_PREVIEW,
-                    alerts=aqt.utils.showWarning,
-                    parent=card_layout,
-                ),
-            ),
-        ),
-    ),
-    'after',  # must use 'after' so that 'buttons' attribute is set
-)
+# End core class initialization and dependency setup, pylint:enable=C0103
 
 
-# Automatic check for new version, if enabled and not postponed/ignored
+# GUI interaction with Anki
+# n.b. be careful wrapping methods that have return values (see anki.hooks);
+#      in general, only the 'before' mode absolves us of responsibility
 
-# By using the profilesLoaded hook, we do not run the update until the user is
-# actually in a profile, which guarantees the main window has been loaded.
-# Without the main window, update components (e.g. aqt.downloader.download,
-# aqt.addons.GetAddons) that depend on it might fail unexpectedly.
+# These are all called manually from the AwesomeTTS.py loader so that if there
+# is some sort of breakage with a specific component, it could be possibly
+# disabled easily by users who are not utilizing that functionality.
 
-if config['updates_enabled'] and \
-   (not config['updates_postpone'] or config['updates_postpone'] <= time()):
+
+def browser_menus():
+    """
+    Gives user access to mass generator, MP3 stripper, and the hook that
+    disables and enables it upon selection of items.
+    """
+
     anki.hooks.addHook(
-        'profileLoaded',
-        lambda: updates.used() or updates.check(
-            callbacks=dict(
-                need=lambda version, info: (
-                    None if config['updates_ignore'] == version
-                    else [
-                        updater.show()
-                        for updater in [gui.Updater(
-                            version=version,
-                            info=info,
-                            addon=addon,
-                            parent=aqt.mw,
-                        )]
-                    ]
+        'browser.setupMenus',
+        lambda browser: (
+            gui.Action(
+                target=Bundle(
+                    constructor=gui.BrowserGenerator,
+                    args=(),
+                    kwargs=dict(browser=browser,
+                                addon=addon,
+                                alerts=aqt.utils.showWarning,
+                                parent=browser),
                 ),
+                text="Add Audio to Selected w/ Awesome&TTS...",
+                sequence=sequences['browser_generator'],
+                parent=browser.form.menuEdit,
+            ),
+            gui.Action(
+                target=Bundle(
+                    constructor=gui.BrowserStripper,
+                    args=(),
+                    kwargs=dict(browser=browser,
+                                addon=addon,
+                                alerts=aqt.utils.showWarning,
+                                parent=browser),
+                ),
+                text="Remove Audio from Selected w/ AwesomeTTS...",
+                sequence=sequences['browser_stripper'],
+                parent=browser.form.menuEdit,
             ),
         ),
     )
+
+    aqt.browser.Browser.updateTitle = anki.hooks.wrap(
+        aqt.browser.Browser.updateTitle,
+        lambda browser: [
+            action.setEnabled(
+                bool(browser.form.tableView.selectionModel().selectedRows())
+            )
+            for action in browser.findChildren(gui.Action)
+        ],
+        'before',
+    )
+
+
+def cards_button():
+    """Provides access to the templater helper."""
+
+    from aqt import clayout
+
+    clayout.CardLayout.setupButtons = anki.hooks.wrap(
+        clayout.CardLayout.setupButtons,
+        lambda card_layout: card_layout.buttons.insertWidget(
+            # Now, the card layout for regular notes has 7 buttons/stretchers
+            # and the one for cloze notes has 6 (as it lacks a "Flip" button);
+            # position 3 puts our button after "Add Field", but in the event
+            # that the form suddenly has a different number of buttons, let's
+            # just fallback to the far left position
+
+            3 if card_layout.buttons.count() in [6, 7] else 0,
+            gui.Button(
+                text="Add &TTS",
+                tooltip="Insert a tag for on-the-fly playback w/ AwesomeTTS",
+                sequence=sequences['templater'],
+                target=Bundle(
+                    constructor=gui.Templater,
+                    args=(),
+                    kwargs=dict(card_layout=card_layout,
+                                addon=addon,
+                                alerts=aqt.utils.showWarning,
+                                parent=card_layout),
+                ),
+            ),
+        ),
+        'after',  # must use 'after' so that 'buttons' attribute is set
+    )
+
+
+def config_menu():
+    """
+    Adds a menu item to the Tools menu in Anki's main window for
+    launching the configuration dialog.
+    """
+
+    gui.Action(
+        target=Bundle(
+            constructor=gui.Configurator,
+            args=(),
+            kwargs=dict(addon=addon, sul_compiler=to.substitution_compiled,
+                        parent=aqt.mw),
+        ),
+        text="Awesome&TTS...",
+        sequence=sequences['configurator'],
+        parent=aqt.mw.form.menuTools,
+    )
+
+
+def editor_button():
+    """
+    Enable the generation of a single audio clip through the editor,
+    which is present in the "Add" and browser windows.
+    """
+
+    anki.hooks.addHook(
+        'setupEditorButtons',
+        lambda editor: editor.iconsBox.addWidget(
+            gui.Button(
+                tooltip="Record and insert an audio clip here w/ AwesomeTTS",
+                sequence=sequences['editor_generator'],
+                target=Bundle(
+                    constructor=gui.EditorGenerator,
+                    args=(),
+                    kwargs=dict(editor=editor,
+                                addon=addon,
+                                alerts=aqt.utils.showWarning,
+                                parent=editor.parentWindow),
+                ),
+                style=editor.plastiqueStyle,
+            ),
+        ),
+    )
+
+    aqt.editor.Editor.enableButtons = anki.hooks.wrap(
+        aqt.editor.Editor.enableButtons,
+        lambda editor, val=True: (
+            editor.widget.findChild(gui.Button).setEnabled(val),
+
+            # Temporarily disable any AwesomeTTS menu shortcuts in the Browser
+            # window so that if a shortcut combination has been re-used
+            # between the editor button and those, the "local" shortcut works.
+            # Has no effect on "Add" window (the child list will be empty).
+            [action.muzzle(val) for action
+             in editor.parentWindow.findChildren(gui.Action)],
+        ),
+        'before',
+    )
+
+
+def on_the_fly():
+    """
+    Enables support for AwesomeTTS to automatically play text-to-speech
+    tags and to also play them on-demand via shortcut keys.
+    """
+
+    from PyQt4.QtCore import QEvent
+
+    reviewer = gui.Reviewer(addon=addon,
+                            alerts=aqt.utils.showWarning,
+                            parent=aqt.mw)
+
+    anki.hooks.addHook(
+        'showQuestion',
+        lambda: reviewer.card_handler('question', aqt.mw.reviewer.card),
+    )
+
+    anki.hooks.addHook(
+        'showAnswer',
+        lambda: reviewer.card_handler('answer', aqt.mw.reviewer.card),
+    )
+
+    reviewer_filter = gui.Filter(
+        relay=lambda event: reviewer.key_handler(
+            key_event=event,
+            state=aqt.mw.reviewer.state,
+            card=aqt.mw.reviewer.card,
+            replay_audio=aqt.mw.reviewer.replayAudio,
+        ),
+
+        when=lambda event: (aqt.mw.state == 'review' and
+                            event.type() == QEvent.KeyPress and
+                            not event.isAutoRepeat() and
+                            not event.spontaneous()),
+
+        parent=aqt.mw,  # prevents filter from being garbage collected
+    )
+
+    aqt.mw.installEventFilter(reviewer_filter)
+
+
+def sound_tag_delays():
+    """
+    Enables support for the following sound delay configuration options:
+
+    - delay_questions_stored_ours (AwesomeTTS MP3s on questions)
+    - delay_questions_stored_theirs (non-AwesomeTTS MP3s on questions)
+    - delay_answers_stored_ours (AwesomeTTS MP3s on answers)
+    - delay_answers_stored_theirs (non-AwesomeTTS MP3s on answers)
+    """
+
+    anki.sound.play = player.native_wrapper
+
+
+def update_checker():
+    """
+    Automatic check for new version, if neither postponed nor ignored.
+
+    With the profilesLoaded hook, we do not run the check until the user
+    is actually in a profile, which guarantees the main window has been
+    loaded. Without it, update components (e.g. aqt.downloader.download,
+    aqt.addons.GetAddons) that expect it might fail unexpectedly.
+    """
+
+    from time import time
+    if not config['updates_enabled'] or \
+       config['updates_postpone'] and config['updates_postpone'] > time():
+        return
+
+    def on_need(version, info):
+        """If not an ignored version, pop open the updater dialog."""
+
+        if config['updates_ignore'] == version:
+            return
+
+        gui.Updater(
+            version=version,
+            info=info,
+            addon=addon,
+            parent=aqt.mw,
+        ).show()
+
+    anki.hooks.addHook(
+        'profileLoaded',
+        lambda: updates.used() or updates.check(callbacks=dict(need=on_need)),
+    )
+
+
+def window_shortcuts():
+    """Enables shortcuts to launch windows."""
+
+    def on_sequence_change(new_config):
+        """Update sequences on configuration changes."""
+
+        for key, sequence in sequences.items():
+            sequence.swap(new_config['launch_' + key] or 0)
+
+        try:
+            aqt.mw.form.menuTools.findChild(gui.Action). \
+                setShortcut(sequences['configurator'])
+        except AttributeError:  # we do not have a config menu
+            pass
+
+    on_sequence_change(config)  # set config menu if created before we ran
+    config.bind(['launch_' + key for key in sequences.keys()],
+                on_sequence_change)

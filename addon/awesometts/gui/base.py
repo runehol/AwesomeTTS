@@ -220,11 +220,10 @@ class ServiceDialog(Dialog):
         '_alerts',       # API to display error messages
         '_panel_built',  # dict, svc_id to True if panel has been constructed
         '_panel_set',    # dict, svc_id to True if panel values have been set
-        '_playback',     # API to playback audio with Anki
         '_svc_id',       # active service ID
     ]
 
-    def __init__(self, playback, alerts, *args, **kwargs):
+    def __init__(self, alerts, *args, **kwargs):
         """
         Initialize the mechanism for keeping track of which panels are
         loaded.
@@ -233,7 +232,6 @@ class ServiceDialog(Dialog):
         self._alerts = alerts
         self._panel_built = {}
         self._panel_set = {}
-        self._playback = playback
         self._svc_id = None
 
         super(ServiceDialog, self).__init__(*args, **kwargs)
@@ -530,7 +528,7 @@ class ServiceDialog(Dialog):
             options=values,
             callbacks=dict(
                 done=lambda: self._disable_inputs(False),
-                okay=self._playback,
+                okay=self._addon.player.preview,
                 fail=lambda exception: self._alerts(
                     "The service could not playback the phrase.\n\n%s" %
                     exception.message,

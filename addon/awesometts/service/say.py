@@ -136,7 +136,7 @@ class Say(Service):
                 '-v', options['voice'],
                 '-r', options['speed'],
                 '-o', output_aiff,
-                text,
+                '--', text,
             )
 
             self.cli_transcode(

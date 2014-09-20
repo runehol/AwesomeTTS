@@ -76,9 +76,9 @@ key_event_combo.BLACKLIST = [
     Qt.Key_Dead_Macron, Qt.Key_Dead_Ogonek, Qt.Key_Dead_Semivoiced_Sound,
     Qt.Key_Dead_Tilde, Qt.Key_Dead_Voiced_Sound, Qt.Key_Delete, Qt.Key_Down,
     Qt.Key_End, Qt.Key_Enter, Qt.Key_Equal, Qt.Key_Escape, Qt.Key_Home,
-    Qt.Key_Insert, Qt.Key_Left, Qt.Key_Meta, Qt.Key_Minus, Qt.Key_Mode_switch,
-    Qt.Key_NumLock, Qt.Key_PageDown, Qt.Key_PageUp, Qt.Key_Plus,
-    Qt.Key_Return, Qt.Key_Right, Qt.Key_ScrollLock, Qt.Key_Shift,
+    Qt.Key_Insert, Qt.Key_Left, Qt.Key_Menu, Qt.Key_Meta, Qt.Key_Minus,
+    Qt.Key_Mode_switch, Qt.Key_NumLock, Qt.Key_PageDown, Qt.Key_PageUp,
+    Qt.Key_Plus, Qt.Key_Return, Qt.Key_Right, Qt.Key_ScrollLock, Qt.Key_Shift,
     Qt.Key_Space, Qt.Key_Tab, Qt.Key_Underscore, Qt.Key_Up,
 ]
 

@@ -40,6 +40,8 @@ main {
     a[rel~=child]:before { content: '\00a7\00a0' }
     a[rel~=prev]:before { content: '\21e6\00a0' }
     a[rel~=next]:after { content: '  \21e8\00a0' }
+
+    article li a[rel~=parent]:only-child:before { content: none }
 }
 
 

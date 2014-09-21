@@ -291,6 +291,7 @@ addon = Bundle(
             'hint_links',
             ('hint_content', 'otf_remove_hints'),
             'html',
+            'html',  # clipboards often have escaped HTML, so we run twice
             'sounds_univ',
             'filenames',
             ('within_parens', ['strip_note_parens', 'strip_template_parens']),

@@ -725,7 +725,7 @@ class EditorGenerator(ServiceDialog):
             from_unknown(QtGui.QApplication.clipboard().text(subtype)[0])
 
         for origin in [
-                lambda: web.hasSelection and from_note(web.selectedText()),
+                lambda: from_note(web.selectedText()),
                 lambda: from_note(web.page().mainFrame().evaluateJavaScript(
                     # for jQuery, this needs to be html() instead of text() as
                     # $('<div>hi<br>there</div>').text() yields "hithere"

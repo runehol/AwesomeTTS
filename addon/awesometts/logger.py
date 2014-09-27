@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -28,10 +27,8 @@ __all__ = ['Logger']
 import logging
 
 
-def Logger(  # function masquerading as factory, pylint: disable=C0103
-    name,
-    handlers, formatter=None,
-):
+def Logger(name,  # function masquerading as factory, pylint: disable=C0103
+           handlers, formatter=None):
     """
     Returns a logger with the given name after configuring it. Any given
     name may be used only once; successive calls with the same name will

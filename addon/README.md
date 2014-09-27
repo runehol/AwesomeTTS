@@ -4,12 +4,15 @@ Once loaded into the [Anki](http://ankisrs.net) `addons` directory, the
 AwesomeTTS add-on code adds text-to-speech functionality for the following
 services:
 
-- Ekho
-- eSpeak
-- Festival
+- Ekho (`ekho`)
+- eSpeak (`espeak`)
+- Festival (`festival`, `text2wave`)
 - Google Translate
-- OS X Speech Synthesis Manager
+- OS X Speech Synthesis Manager (`say`)
 - Microsoft Speech API
+- SpanishDict.com
+- SVOX Pico (`pico2wave`)
+- TTS-API.com
 - Yandex.Translate
 
 
@@ -30,6 +33,8 @@ The [develop branch](https://github.com/AwesomeTTS/AwesomeTTS/tree/develop),
 [hotfixes and previews](https://github.com/AwesomeTTS/AwesomeTTS/branches),
 and [specific releases](https://github.com/AwesomeTTS/AwesomeTTS/releases) can
 be downloaded from GitHub or pulled in and installed with `git` and a script.
+Please note that the script methods require access to a Unix-like shell, and
+the symlink method requires using a file system that supports it.
 
 - **Manually from GitHub:**
   Choose the specific branch or tagged release you want, and download the zip
@@ -71,5 +76,5 @@ be downloaded from GitHub or pulled in and installed with `git` and a script.
 
 ## License
 
-AwesomeTTS is free and open source software. The add-on code that runs within
+AwesomeTTS is free and open-source software. The add-on code that runs within
 Anki is released under the [GNU GPL v3](LICENSE.txt).

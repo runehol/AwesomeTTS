@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -25,9 +24,10 @@ Template generation dialog
 
 __all__ = ['Templater']
 
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtGui
 
 from .base import ServiceDialog
+from .common import Checkbox, Label, Note
 
 # all methods might need 'self' in the future, pylint:disable=R0201
 
@@ -69,31 +69,16 @@ class Templater(ServiceDialog):
         field input selector, then the base class's cancel/OK buttons.
         """
 
-        header = QtGui.QLabel("Tag Options")
+        header = Label("Tag Options")
         header.setFont(self._FONT_HEADER)
-
-        intro = QtGui.QLabel(
-            "In review mode, AwesomeTTS can automatically read the text from "
-            "any <tts> tags in the template, generating on-the-fly audio "
-            "playback. You can specify a specific note field to read from or "
-            "customize the text yourself."
-        )
-        intro.setTextFormat(QtCore.Qt.PlainText)
-        intro.setWordWrap(True)
-
-        hint = QtGui.QLabel(
-            "Normally, the content of <tts> tags are visible like any other "
-            "HTML tag, but you can alter their appearance with inline CSS or "
-            "the shared style rules."
-        )
-        hint.setTextFormat(QtCore.Qt.PlainText)
-        hint.setWordWrap(True)
 
         layout = super(Templater, self)._ui_control()
         layout.addWidget(header)
-        layout.addWidget(intro)
-        layout.addWidget(hint)
+        layout.addWidget(Note('AwesomeTTS can automatically play the content '
+                              'of <tts> tags in your cards on-the-fly.'))
+        layout.addStretch()
         layout.addLayout(self._ui_control_fields())
+        layout.addStretch()
         layout.addWidget(self._ui_buttons())
 
         return layout
@@ -107,30 +92,29 @@ class Templater(ServiceDialog):
         layout = QtGui.QGridLayout()
 
         for row, label, name, options in [
-            (0, "Field:", 'field', [
-                ('', "customize the tag's content"),
-            ] + [
-                (field, field)
-                for field in sorted({
-                    field['name']
-                    for field in self._card_layout.model['flds']
-                })
-            ]),
+                (0, "Field:", 'field', [
+                    ('', "customize the tag's content"),
+                ] + [
+                    (field, field)
+                    for field in sorted({field['name']
+                                         for field
+                                         in self._card_layout.model['flds']})
+                ]),
 
-            (1, "Visibility:", 'hide', [
-                ('normal', "insert the tag as-is"),
-                ('inline', "hide just this tag w/ inline CSS"),
-                ('global', "add rule to hide any TTS tag for this note type"),
-            ]),
+                (1, "Visibility:", 'hide', [
+                    ('normal', "insert the tag as-is"),
+                    ('inline', "hide just this tag w/ inline CSS"),
+                    ('global', "add rule to hide any TTS tag for note type"),
+                ]),
 
-            (2, "Add to:", 'target', [
-                ('front', "Front Template"),
-                ('back', "Back Template"),
-            ]),
+                (2, "Add to:", 'target', [
+                    ('front', "Front Template"),
+                    ('back', "Back Template"),
+                ]),
 
-            # row 3 is used below if self._is_cloze is True
+                # row 3 is used below if self._is_cloze is True
         ]:
-            label = QtGui.QLabel(label)
+            label = Label(label)
             label.setFont(self._FONT_LABEL)
 
             widgets[name] = self._ui_control_fields_dropdown(name, options)
@@ -138,11 +122,10 @@ class Templater(ServiceDialog):
             layout.addWidget(widgets[name], row, 1)
 
         if self._is_cloze:
-            cloze = QtGui.QCheckBox()
-            cloze.setObjectName('cloze')
+            cloze = Checkbox(object_name='cloze')
             cloze.setMinimumHeight(25)
 
-            warning = QtGui.QLabel("Remember 'cloze:' for any cloze fields.")
+            warning = Label("Remember 'cloze:' for any cloze fields.")
             warning.setMinimumHeight(25)
 
             layout.addWidget(cloze, 3, 1)
@@ -199,7 +182,7 @@ class Templater(ServiceDialog):
             ))
 
         if self._is_cloze:
-            self.findChild(QtGui.QCheckBox, 'cloze') \
+            self.findChild(Checkbox, 'cloze') \
                 .setChecked(self._addon.config['templater_cloze'])
 
         dropdown.setFocus()  # abuses fact that 'field' is last in the loop
@@ -222,12 +205,13 @@ class Templater(ServiceDialog):
 
                 ' '.join([
                     '%s="%s"' % (key, escape(str(value)))
-                    for key, value in
+                    for key, value in (
                         now['last_options'][now['last_service']].items()
                         + (
                             [('style', 'display: none')]
                             if now['templater_hide'] == 'inline' else []
                         )
+                    )
                 ]),
 
                 (
@@ -270,7 +254,7 @@ class Templater(ServiceDialog):
             (
                 [(
                     'templater_cloze',
-                    self.findChild(QtGui.QCheckBox, 'cloze').isChecked(),
+                    self.findChild(Checkbox, 'cloze').isChecked(),
                 )]
                 if self._is_cloze and combos['field']
                 else []

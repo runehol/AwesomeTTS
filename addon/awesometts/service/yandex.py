@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -145,12 +144,12 @@ class Yandex(Service):
                     format='mp3',
                     quality=options['quality'],
                     lang=options['voice'],
-                    text=text,
+                    text=subtext,
                 ))
 
                 # n.b. the limit seems to be much higher than 750, but this is
                 # a safe place to start (the web UI limits the user to 100)
-                for text in self.util_split(text, 750)
+                for subtext in self.util_split(text, 750)
             ],
             require=dict(mime='audio/mpeg', size=1024),
         )

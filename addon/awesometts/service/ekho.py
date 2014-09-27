@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -58,7 +57,16 @@ class Ekho(Service):
         re_voice = re.compile(r"'(\w+)'")
 
         self._voice_list = sorted({
-            (capture, capture)
+            (
+                # Workaround for Korean: in at least ekho v5.8.2, passing
+                # `--voice Hangul` fails, but `--voice hangul` works. This is
+                # different from the other voices that either only work when
+                # capitalized (e.g. Mandarin, Cantonese) or accept both forms
+                # (e.g. hakka/Hakka, ngangien/Ngangien, tibetan/Tibetan).
+
+                'hangul' if capture == 'Hangul' else capture,
+                capture,
+            )
             for line in output if re_list.search(line)
             for capture in re_voice.findall(line)
         }, key=lambda voice: voice[1].lower())
@@ -94,22 +102,32 @@ class Ekho(Service):
             return (
                 voice_lookup[normalized] if normalized in voice_lookup
 
-                else voice_lookup['mandarin'] if 'mandarin' in voice_lookup
-                    and normalized in ['cmn', 'cosc', 'goyu', 'huyu', 'mand',
-                        'zh', 'zhcn']
+                else voice_lookup['mandarin'] if (
+                    'mandarin' in voice_lookup and
+                    normalized in ['cmn', 'cosc', 'goyu', 'huyu', 'mand',
+                                   'zh', 'zhcn']
+                )
 
-                else voice_lookup['cantonese'] if 'cantonese' in voice_lookup
-                    and normalized in ['cant', 'guzh', 'yue', 'yyef', 'zhhk',
-                        'zhyue']
+                else voice_lookup['cantonese'] if (
+                    'cantonese' in voice_lookup and
+                    normalized in ['cant', 'guzh', 'yue', 'yyef', 'zhhk',
+                                   'zhyue']
+                )
 
-                else voice_lookup['hakka'] if 'hakka' in voice_lookup
-                    and normalized in ['hak', 'hakk', 'kejia']
+                else voice_lookup['hakka'] if (
+                    'hakka' in voice_lookup and
+                    normalized in ['hak', 'hakk', 'kejia']
+                )
 
-                else voice_lookup['tibetan'] if 'tibetan' in voice_lookup
-                    and normalized in ['cent', 'west']
+                else voice_lookup['tibetan'] if (
+                    'tibetan' in voice_lookup and
+                    normalized in ['cent', 'west']
+                )
 
-                else voice_lookup['hangul'] if 'hangul' in voice_lookup
-                    and normalized in ['ko', 'kor', 'kore', 'korean']
+                else voice_lookup['hangul'] if (
+                    'hangul' in voice_lookup and
+                    normalized in ['ko', 'kor', 'kore', 'korean']
+                )
 
                 else value
             )

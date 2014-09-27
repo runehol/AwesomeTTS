@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -249,8 +248,42 @@ class Service(object):
         returned = self._cli_exec(
             subprocess.check_output,
             args,
-            "to inspect output",
+            "to inspect stdout",
         )
+
+        return self._cli_decode(returned)
+
+    def cli_output_error(self, *args):
+        """
+        Like cli_output(), but lenient of errors. This means that not
+        only does the return code not matter, but stderr will be
+        included in the returned result.
+
+        Technically, *most* any call that works with cli_output() will
+        also work with cli_output_error() if the underlying CLI tool
+        does not write to stderr, but cli_output_error() should be
+        avoided unless using a CLI tool that you knowingly must read
+        stderr for.
+        """
+
+        try:
+            returned = self._cli_exec(
+                subprocess.check_output,
+                args,
+                "to inspect stdout/stderr",
+                redirect_stderr=True,
+            )
+
+        except subprocess.CalledProcessError as cpe:
+            returned = cpe.output
+
+        return self._cli_decode(returned)
+
+    def _cli_decode(self, returned):
+        """
+        Given the raw bytestring from the CLI tool, try to decode it and
+        return a usable string.
+        """
 
         if not returned:
             raise EnvironmentError("Call returned no output")
@@ -303,10 +336,8 @@ class Service(object):
                 "Please report this problem if it persists."
             )
 
-        if (
-            require and 'size_in' in require and
-            os.path.getsize(input_path) < require['size_in']
-        ):
+        if require and 'size_in' in require and \
+           os.path.getsize(input_path) < require['size_in']:
             raise ValueError(
                 "Input to transcoder was %d-byte stream; wanted %d+ bytes "
                 "(the service might not have liked your input text)" % (
@@ -344,10 +375,10 @@ class Service(object):
 
         shutil.move(intermediate_path, output_path)  # see note above
 
-    def _cli_exec(self, callee, args, purpose):
+    def _cli_exec(self, callee, args, purpose, redirect_stderr=False):
         """
         Handles the underlying system call, logging, and exceptions when
-        a call to cli_call() or cli_output() is made.
+        a call to one of the cli_xxx() methods is made.
         """
 
         args = [
@@ -362,7 +393,11 @@ class Service(object):
             purpose,
         )
 
-        return callee(args, startupinfo=self.CLI_SI)
+        return callee(
+            args,
+            stderr=subprocess.STDOUT if redirect_stderr else None,
+            startupinfo=self.CLI_SI,
+        )
 
     def net_download(self, path, targets, require=None):
         """

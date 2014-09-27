@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -29,16 +28,69 @@ As everything done from the add-on code has to do with AwesomeTTS, these
 all carry a speaker icon (if supported by the desktop environment).
 """
 
-__all__ = ['ICON', 'Action', 'Button', 'Filter']
+__all__ = ['ICON', 'Action', 'Button', 'Checkbox', 'Filter', 'Note']
 
 from PyQt4 import QtCore, QtGui
+from PyQt4.QtCore import Qt
 
 
 ICON = QtGui.QIcon(':/icons/speaker.png')
 
-SHORTCUT = QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_T)
 
-NO_SHORTCUT = QtGui.QKeySequence()
+def key_event_combo(event):
+    """
+    Given a key event, returns an integer representing the combination
+    of keys that was pressed or released.
+
+    Certain keys are blacklisted (see BLACKLIST) and key_event_combo()
+    will return None if it sees these keys in the primary key() slot for
+    an event. When used by themselves or exclusively with modifiers,
+    these keys cause various problems: gibberish strings returned from
+    QKeySequence#toString() and in menus, inability to capture the
+    keystroke because the window manager does not forward it to Qt,
+    ambiguous shortcuts where order would matter (e.g. Ctrl + Alt would
+    produce a different numerical value than Alt + Ctrl, because the
+    key codes for Alt and Ctrl are different from the modifier flag
+    codes for Alt and Ctrl), and clashes with input navigation.
+    """
+
+    key = event.key()
+    if key < 32 or key in key_event_combo.BLACKLIST:
+        return None
+
+    modifiers = event.modifiers()
+    return key + sum(flag
+                     for flag in key_event_combo.MOD_FLAGS
+                     if modifiers & flag)
+
+key_event_combo.MOD_FLAGS = [Qt.AltModifier, Qt.ControlModifier,
+                             Qt.MetaModifier, Qt.ShiftModifier]
+
+key_event_combo.BLACKLIST = [
+    Qt.Key_Alt, Qt.Key_AltGr, Qt.Key_Backspace, Qt.Key_Backtab,
+    Qt.Key_CapsLock, Qt.Key_Control, Qt.Key_Dead_Abovedot,
+    Qt.Key_Dead_Abovering, Qt.Key_Dead_Acute, Qt.Key_Dead_Belowdot,
+    Qt.Key_Dead_Breve, Qt.Key_Dead_Caron, Qt.Key_Dead_Cedilla,
+    Qt.Key_Dead_Circumflex, Qt.Key_Dead_Diaeresis, Qt.Key_Dead_Doubleacute,
+    Qt.Key_Dead_Grave, Qt.Key_Dead_Hook, Qt.Key_Dead_Horn, Qt.Key_Dead_Iota,
+    Qt.Key_Dead_Macron, Qt.Key_Dead_Ogonek, Qt.Key_Dead_Semivoiced_Sound,
+    Qt.Key_Dead_Tilde, Qt.Key_Dead_Voiced_Sound, Qt.Key_Delete, Qt.Key_Down,
+    Qt.Key_End, Qt.Key_Enter, Qt.Key_Equal, Qt.Key_Escape, Qt.Key_Home,
+    Qt.Key_Insert, Qt.Key_Left, Qt.Key_Menu, Qt.Key_Meta, Qt.Key_Minus,
+    Qt.Key_Mode_switch, Qt.Key_NumLock, Qt.Key_PageDown, Qt.Key_PageUp,
+    Qt.Key_Plus, Qt.Key_Return, Qt.Key_Right, Qt.Key_ScrollLock, Qt.Key_Shift,
+    Qt.Key_Space, Qt.Key_Tab, Qt.Key_Underscore, Qt.Key_Up,
+]
+
+
+def key_combo_desc(combo):
+    """
+    Given an key combination as returned by key_event_combo, returns a
+    human-readable description.
+    """
+
+    return QtGui.QKeySequence(combo).toString(QtGui.QKeySequence.NativeText) \
+        if combo else "unassigned"
 
 
 class _Connector(object):  # used like a mixin, pylint:disable=R0903
@@ -78,6 +130,12 @@ class Action(QtGui.QAction, _Connector):
     Provides a menu action to show a dialog when triggered.
     """
 
+    NO_SEQUENCE = QtGui.QKeySequence()
+
+    __slots__ = [
+        '_sequence',  # the key sequence that activates this action
+    ]
+
     def muzzle(self, disable):
         """
         If disable is True, then this shortcut will be temporarily
@@ -85,9 +143,9 @@ class Action(QtGui.QAction, _Connector):
         if it would normally be.
         """
 
-        self.setShortcut(NO_SHORTCUT if disable else SHORTCUT)
+        self.setShortcut(self.NO_SEQUENCE if disable else self._sequence)
 
-    def __init__(self, target, text, parent):
+    def __init__(self, target, text, sequence, parent):
         """
         Initializes the menu action and wires its 'triggered' event.
 
@@ -98,7 +156,8 @@ class Action(QtGui.QAction, _Connector):
         QtGui.QAction.__init__(self, ICON, text, parent)
         _Connector.__init__(self, self.triggered, target)
 
-        self.setShortcut(SHORTCUT)
+        self.setShortcut(sequence)
+        self._sequence = sequence
 
         if isinstance(parent, QtGui.QMenu):
             parent.addAction(self)
@@ -109,7 +168,7 @@ class Button(QtGui.QPushButton, _Connector):
     Provides a button to show a dialog when clicked.
     """
 
-    def __init__(self, target, tooltip, text=None, style=None):
+    def __init__(self, target, tooltip, sequence, text=None, style=None):
         """
         Initializes the button and wires its 'clicked' event.
 
@@ -126,16 +185,22 @@ class Button(QtGui.QPushButton, _Connector):
         else:
             self.setFixedWidth(20)
             self.setFixedHeight(20)
-            self.setFocusPolicy(QtCore.Qt.NoFocus)
+            self.setFocusPolicy(Qt.NoFocus)
 
-        self.setShortcut(SHORTCUT)
-        self.setToolTip(
-            "%s (%s)" %
-            (tooltip, SHORTCUT.toString(QtGui.QKeySequence.NativeText))
-        )
+        self.setShortcut(sequence)
+        self.setToolTip("%s (%s)" % (tooltip, key_combo_desc(sequence))
+                        if sequence else tooltip)
 
         if style:
             self.setStyle(style)
+
+
+class Checkbox(QtGui.QCheckBox):
+    """Provides a checkbox with a better constructor."""
+
+    def __init__(self, text=None, object_name=None, parent=None):
+        super(Checkbox, self).__init__(text, parent)
+        self.setObjectName(object_name)
 
 
 class Filter(QtCore.QObject):
@@ -165,3 +230,27 @@ class Filter(QtCore.QObject):
         """
 
         return bool(self._when(event) and self._relay(event))
+
+
+class HTML(QtGui.QLabel):
+    """Label with HTML enabled."""
+
+    def __init__(self, *args, **kwargs):
+        super(HTML, self).__init__(*args, **kwargs)
+        self.setTextFormat(QtCore.Qt.RichText)
+
+
+class Label(QtGui.QLabel):
+    """Label with HTML disabled."""
+
+    def __init__(self, *args, **kwargs):
+        super(Label, self).__init__(*args, **kwargs)
+        self.setTextFormat(QtCore.Qt.PlainText)
+
+
+class Note(Label):
+    """Label with wrapping enabled and HTML disabled."""
+
+    def __init__(self, *args, **kwargs):
+        super(Note, self).__init__(*args, **kwargs)
+        self.setWordWrap(True)

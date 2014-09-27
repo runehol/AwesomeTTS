@@ -1,7 +1,19 @@
 {
     "auto": true,
-    "intro": "This release reduces the size of some AwesomeTTS dialogs, which can relieve graphical rendering problems for some users.",
-    "synopsis": "Users with low screen resolutions are recommended to update.",
+    "intro": "This release introduces new TTS services, configuration options, improved text processing, and some bug fixes.",
+    "notes": [
+        "New online TTS services: SpanishDict, TTS-API.com",
+        "Support for the SVOX Pico engine software (Linux)",
+        "New option to playing only revealed cloze text in on-the-fly mode",
+        "User-configurable custom string replacements on input phrases",
+        "New options to customize the window shortcuts",
+        "Support for using modifier keys with on-the-fly shortcut keys",
+        "Improved text normalization and sanitization",
+        "Support for {{hint:xxx}} template tags",
+        "Fixed very long voice name detection in OS X Speech Synthesis",
+        "Fixed Korean speech in Ekho",
+        "Fixed crash when unsetting on-the-fly shortcut keys"
+    ],
     "update": true,
-    "version": "1.0.1"
+    "version": "1.1.0"
 }

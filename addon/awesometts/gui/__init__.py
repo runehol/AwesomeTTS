@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -33,6 +32,7 @@ __all__ = [
     'Configurator',
     'BrowserGenerator',
     'EditorGenerator',
+    'BrowserStripper',
     'Templater',
     'Updater',
 
@@ -52,6 +52,8 @@ from .generator import (
     BrowserGenerator,
     EditorGenerator,
 )
+
+from .stripper import BrowserStripper
 
 from .templater import Templater
 

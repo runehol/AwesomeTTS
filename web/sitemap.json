@@ -37,6 +37,18 @@
                 "title": "Microsoft Speech API (SAPI)",
                 "what": "Interface for desktop software to enable TTS playback, built into Windows"
             },
+            "spanishdict": {
+                "title": "SpanishDict",
+                "what": "English and Spanish speech, available over the Internet"
+            },
+            "pico2wave": {
+                "title": "SVOX Pico",
+                "what": "Voice synthesizer used in the Android operating system"
+            },
+            "ttsapicom": {
+                "title": "TTS-API.com",
+                "what": "English speech, available over the Internet"
+            },
             "yandex": {
                 "terse": "Yandex",
                 "title": "Yandex.Translate",
@@ -55,15 +67,20 @@
                 "title": "Templated On-the-Fly Playback",
                 "what": "Quickly enable audio via your card templates, with no file synchronization"
             },
+            "editor": {
+                "terse": "Note Editor",
+                "title": "Adding Audio Files in the Note Editor",
+                "what": "Generate audio as you add or edit a note, files stored with collection"
+            },
             "browser": {
                 "terse": "Card Browser",
                 "title": "Adding Audio in the Card Browser",
                 "what": "Mass generate audio for many cards at once, files stored with collection"
             },
-            "editor": {
-                "terse": "Note Editor",
-                "title": "Adding Audio Files in the Note Editor",
-                "what": "Generate audio as you add or edit a note, files stored with collection"
+            "removing": {
+                "terse": "Remove Audio",
+                "title": "Removing Stored Audio via the Card Browser",
+                "what": "Remove [sound] tags or AwesomeTTS audio filenames for many cards at once"
             }
         }
     },
@@ -87,6 +104,11 @@
                 "terse": "MP3s",
                 "title": "MP3 Generation Configuration",
                 "what": "Tune how the LAME transcoder gets called, control download rate limiting"
+            },
+            "windows": {
+                "terse": "Windows",
+                "title": "Window Configuration",
+                "what": "Change the shortcut keys used to open windows"
             },
             "advanced": {
                 "terse": "Advanced",

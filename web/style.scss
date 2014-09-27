@@ -40,6 +40,8 @@ main {
     a[rel~=child]:before { content: '\00a7\00a0' }
     a[rel~=prev]:before { content: '\21e6\00a0' }
     a[rel~=next]:after { content: '  \21e8\00a0' }
+
+    article li a[rel~=parent]:only-child:before { content: none }
 }
 
 
@@ -51,12 +53,14 @@ main {
 
 $blue: #08c;
 $gray: #333;
-$ocean: #005580;
+$ocean: #005580;  // n.b. also used as foreground for figure-loader.gif
 $sky: #c0deed;
-$white: #fff;
+$white: #fff;  // n.b. also used as background for figure-loader.gif
 
 $xPadding: 20px;
 $yPadding: 10px;
+
+$fixedWidthAfter: 1400px;
 
 @media screen {
     html {
@@ -69,7 +73,7 @@ $yPadding: 10px;
         background: $white;
         color: $gray;
         margin: 0 auto;
-        max-width: 1400px;
+        max-width: $fixedWidthAfter;
         padding: 0;
 
         :first-child { margin-top: 0 }
@@ -123,7 +127,7 @@ $yPadding: 10px;
     }
 
     article {
-        padding: $yPadding $xPadding;
+        padding: $yPadding $xPadding $yPadding*2;
 
         * { margin-top: 0 }
 
@@ -139,10 +143,14 @@ $yPadding: 10px;
         max-width: 90%;
         padding: 5px;
 
+        &, a, a:hover { color: $white }
+
         img {
+            background: url('figure-loader.gif') center no-repeat;
             display: block;
             height: auto;
             max-width: 100%;
+            min-height: 100px;
         }
     }
 
@@ -152,8 +160,6 @@ $yPadding: 10px;
         padding: $yPadding $xPadding - 5px $yPadding - 5px;
         text-align: center;
 
-        &, a, a:hover { color: $white }
-
         a { text-decoration: underline }
     }
 
@@ -161,6 +167,7 @@ $yPadding: 10px;
         background: $gray;
         border-collapse: collapse;
         margin: 0 0 1em;
+        white-space: nowrap;
         width: 100%;
 
         &, a { color: $white }
@@ -172,14 +179,17 @@ $yPadding: 10px;
         }
 
         td { padding: $yPadding/2 $xPadding/2 }
-
-        kbd, samp { white-space: nowrap }
     }
 
     div.grid {
         padding: 0 0 $yPadding;
 
         figure { margin: $yPadding auto 0 }
+    }
+
+    div.scroll {
+        margin: 0 0 1em;
+        overflow-x: auto;
     }
 
     article:after {
@@ -192,7 +202,7 @@ $yPadding: 10px;
         border-top: dotted 1px;
         line-height: 1.4;
         margin: 0 $xPadding;
-        padding: 0 0 $yPadding;
+        padding: $yPadding 0 $yPadding*2;
 
         li {
             display: block;
@@ -211,7 +221,8 @@ $yPadding: 10px;
 
 @media screen and (min-width: 800px) {
     header {
-        padding-left: $xPadding;
+        background: $gray url('/logo.png') no-repeat $xPadding center;
+        padding-left: 64px + $xPadding * 2;
         text-align: left;
     }
 
@@ -250,6 +261,13 @@ $yPadding: 10px;
             &:nth-child(odd) {
                 clear: left;
                 float: left;
+
+                &:last-child {
+                    float: none;
+                    margin: 0 auto 1em;
+                    position: relative;
+                    top: 1em;
+                }
             }
 
             &:nth-child(even) {
@@ -264,12 +282,15 @@ $yPadding: 10px;
     #plat {
         display: block;
         float: left;
-        padding: $yPadding 0;
+        padding: $yPadding 0 $yPadding*2;
         width: 20%;
 
         li, a { display: block }
 
-        a[rel~=me] { background: #005580; color: #fff }
+        a[rel~=me] {
+            background: $ocean;
+            color: #fff;
+        }
 
         h1 { display: none }
         h2 { margin-top: $yPadding }
@@ -283,6 +304,10 @@ $yPadding: 10px;
 
 @media screen and (min-width: 1100px) {
     article ul.cols { @include columns(4) }
+}
+
+@media screen and (min-width: $fixedWidthAfter) {
+    html { overflow-y: scroll }
 }
 
 @media print {

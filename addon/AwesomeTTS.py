@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=bad-continuation
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
@@ -50,6 +49,7 @@ if __name__ == "__main__":
 
 import os
 
+
 def os_call(callee, *args, **kwargs):
     """Call the function with the given arguments, ignoring OSError."""
 
@@ -60,36 +60,34 @@ def os_call(callee, *args, **kwargs):
 
 _PKG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'awesometts')
 
-for _filename in [
-    'main.py', 'main.pyc', 'main.pyo',
-    'util.py', 'util.pyc', 'util.pyo',
-]:
+for _filename in ['main.py', 'main.pyc', 'main.pyo',
+                  'util.py', 'util.pyc', 'util.pyo']:
     os_call(os.unlink, os.path.join(_PKG, _filename))
 
 for _directory, _rmdir, _filenames in [
-    ('designer', True, [
-        'configurator.ui', 'filegenerator.ui', 'massgenerator.ui',
-    ]),
-    ('forms', True, [
-        'configurator.py', 'configurator.pyc', 'configurator.pyo',
-        'filegenerator.py', 'filegenerator.pyc', 'filegenerator.pyo',
-        'massgenerator.py', 'massgenerator.pyc', 'massgenerator.pyo',
-        '__init__.py', '__init__.pyc', '__init__.pyo',
-    ]),
-    ('service', False, [
-        'sapi5.vbs',  # for Beta 11 and older
-    ]),
-    ('services', True, [
-        'ekho.py', 'ekho.pyc', 'ekho.pyo',
-        'espeak.py', 'espeak.pyc', 'espeak.pyo',
-        'Google.py', 'Google.pyc', 'Google.pyo',
-        'sapi5.py', 'sapi5.pyc', 'sapi5.pyo', 'sapi5.vbs',
-        'say.py', 'say.pyc', 'say.pyo',
-        '__init__.py', '__init__.pyc', '__init__.pyo',
-    ]),
-    ('tools', True, [
-        'build_ui.sh',
-    ]),
+        ('designer', True, [
+            'configurator.ui', 'filegenerator.ui', 'massgenerator.ui',
+        ]),
+        ('forms', True, [
+            'configurator.py', 'configurator.pyc', 'configurator.pyo',
+            'filegenerator.py', 'filegenerator.pyc', 'filegenerator.pyo',
+            'massgenerator.py', 'massgenerator.pyc', 'massgenerator.pyo',
+            '__init__.py', '__init__.pyc', '__init__.pyo',
+        ]),
+        ('service', False, [
+            'sapi5.vbs',  # for Beta 11 and older
+        ]),
+        ('services', True, [
+            'ekho.py', 'ekho.pyc', 'ekho.pyo',
+            'espeak.py', 'espeak.pyc', 'espeak.pyo',
+            'Google.py', 'Google.pyc', 'Google.pyo',
+            'sapi5.py', 'sapi5.pyc', 'sapi5.pyo', 'sapi5.vbs',
+            'say.py', 'say.pyc', 'say.pyo',
+            '__init__.py', '__init__.pyc', '__init__.pyo',
+        ]),
+        ('tools', True, [
+            'build_ui.sh',
+        ]),
 ]:
     for _filename in _filenames:
         os_call(os.unlink, os.path.join(_PKG, _directory, _filename))
@@ -106,4 +104,17 @@ os_call(
 # End temporary migration code
 
 
-import awesometts  # imported for side effects, pylint: disable=W0611
+import awesometts
+
+# If a specific component of AwesomeTTS that you do not need is causing a
+# problem (e.g. conflicting with another add-on), you can disable it here by
+# prefixing it with a hash (#) sign and restarting Anki.
+
+awesometts.browser_menus()     # mass generator and MP3 stripper
+awesometts.cards_button()      # on-the-fly templater helper in card view
+awesometts.config_menu()       # provides access to configuration dialog
+awesometts.editor_button()     # single audio clip generator button
+awesometts.on_the_fly()        # automatic on-the-fly playback and shortcuts
+awesometts.sound_tag_delays()  # delayed playing of stored [sound]s in review
+awesometts.update_checker()    # if enabled, runs the add-on update checker
+awesometts.window_shortcuts()  # enable/update shortcuts for add-on windows

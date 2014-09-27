@@ -30,6 +30,8 @@
 <ol>
     <li>From the card browser, highlight the cards whose notes for which you
       would like to generate audio.</li>
+    <li>From the &ldquo;Edit&rdquo; menu, select &ldquo;Add Audio to Selected
+      w/ AwesomeTTS&rdquo;</li>
     <li>Select your desired service and configure any options.</li>
     <li>Type a sample phrase and then click &ldquo;Preview&rdquo; to confirm
       that your audio is as you would like it to sound.</li>
@@ -75,13 +77,18 @@
       <kbd>Edit</kbd> menu and selecting the <kbd>Undo AwesomeTTS Batch
       Update</kbd> option.</li>
     <li>Please note that mass generation using an online service like
-      <a href="/services/google">Google Translate</a> or
-      <a href="/services/yandex">Yandex.Translate</a> is rate-limited. By
+      <a href="/services/google">Google Translate</a>,
+      <a href="/services/yandex">Yandex.Translate</a>,
+      <a href="/services/spanishdict">SpanishDict</a>, or
+      <a href="/services/ttsapicom">TTS-API.com</a> is rate-limited. By
       default, AwesomeTTS is very conservative about the number of requests it
       will send to these services at one time. If you do not share a public IP
       address with anyone else, you may choose to allow more requests at once
       by adjusting the throttling settings on the <a href="/config/mp3s">MP3s
       tab of the configuration screen</a>.</li>
+    <li>If you want to remove audio from several notes, that can <a rel="next"
+      href="removing">also be handled in the card browser</a> from the
+      menu.</li>
 </ul>
 
 <h3>Screenshots</h3>
@@ -89,14 +96,14 @@
 <div class="grid">
     <figure style="width: 758px">
         <img src="/usage.browser.action.png" width="758" height="518"
-          alt="Mouse hovers the &ldquo;Add Audio to Selected&rdquo; option">
+          alt="Mouse hovers &ldquo;Add Audio to Selected&rdquo; option">
 
         <figcaption>Card browser &ldquo;Edit&rdquo; menu</figcaption>
     </figure>
 
     <figure style="width: 758px">
         <img src="/usage.browser.screen.png" width="758" height="518"
-          alt="Mouse hovers the &ldquo;Generate&rdquo; button">
+          alt="Mouse hovers &ldquo;Generate&rdquo; button">
 
         <figcaption>Mass generator dialog</figcaption>
     </figure>

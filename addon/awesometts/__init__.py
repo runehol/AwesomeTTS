@@ -230,6 +230,7 @@ addon = Bundle(
         from_note=Sanitizer([
             ('clozes_braced', 'sub_note_cloze'),
             'html',
+            'whitespace',
             'sounds_univ',
             'filenames',
             ('within_parens', 'strip_note_parens'),
@@ -250,6 +251,7 @@ addon = Bundle(
             'hint_links',
             ('hint_content', 'otf_remove_hints'),
             'html',
+            'whitespace',
             'sounds_univ',
             'filenames',
             ('within_parens', 'strip_template_parens'),
@@ -269,6 +271,7 @@ addon = Bundle(
             'hint_links',
             ('hint_content', 'otf_remove_hints'),
             'html',
+            'whitespace',
             'sounds_univ',
             'filenames',
             ('within_parens', 'strip_template_parens'),
@@ -292,6 +295,7 @@ addon = Bundle(
             ('hint_content', 'otf_remove_hints'),
             'html',
             'html',  # clipboards often have escaped HTML, so we run twice
+            'whitespace',
             'sounds_univ',
             'filenames',
             ('within_parens', ['strip_note_parens', 'strip_template_parens']),

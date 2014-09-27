@@ -73,6 +73,10 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
         applied = []
 
         for rule in self._rules:
+            if not text:
+                self._log(applied + ["early exit"], '')
+                return ''
+
             if isinstance(rule, basestring):  # always run these rules
                 applied.append(rule)
                 text = getattr(self, '_rule_' + rule)(text)
@@ -115,10 +119,15 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
             else:
                 raise AssertionError("bad rule given to Sanitizer instance")
 
-        if self._logger:
-            self._logger.debug("Transformation using %s: %s", applied, text)
-
+        self._log(applied, text)
         return text
+
+    def _log(self, method, result):
+        """If we have a logger, send debug line for transformation."""
+
+        if self._logger:
+            self._logger.debug("Transformation using %s: %s", method,
+                               "(empty string)" if result == '' else result)
 
     def _rule_char_ellipsize(self, text, chars):
         """Ellipsizes given chars from the text."""
@@ -233,7 +242,12 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
 
         for rule in rules:
             text = self._rule_whitespace(self._rule_ellipses(text))
+            if not text:
+                return ''
+
             text = rule['compiled'].sub(rule['replace'], text)
+            if not text:
+                return ''
 
         return text
 

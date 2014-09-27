@@ -736,7 +736,11 @@ class EditorGenerator(ServiceDialog):
                 lambda: try_clipboard('html'),
                 lambda: try_clipboard('text'),
         ]:
-            prefill = origin()
+            try:
+                prefill = origin()
+            except BaseException:  # e.g. old Qt version, system errors
+                continue
+
             if prefill:
                 text.setPlainText(prefill)
                 text.selectAll()

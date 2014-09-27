@@ -139,7 +139,7 @@ class Pico2Wave(Service):
                 self._binary,
                 '--lang', options['voice'],
                 '--wave', output_wav,
-                text,
+                '--', text,
             )
 
             self.cli_transcode(

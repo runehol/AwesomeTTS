@@ -222,7 +222,7 @@ addon = Bundle(
         # n.b. cloze substitution logic happens first in both modes because:
         # - we need the <span>...</span> markup in on-the-fly to identify it
         # - Anki won't recognize cloze w/ HTML beginning/ending within braces
-        # - the following STRIP_HTML step will cleanse the HTML out anyway
+        # - the following 'html' rule will cleanse the HTML out anyway
 
         # for content directly from a note field (e.g. BrowserGenerator runs,
         # prepopulating a modal input based on some note field, where cloze
@@ -291,6 +291,7 @@ addon = Bundle(
             'hint_links',
             ('hint_content', 'otf_remove_hints'),
             'html',
+            'html',  # clipboards often have escaped HTML, so we run twice
             'sounds_univ',
             'filenames',
             ('within_parens', ['strip_note_parens', 'strip_template_parens']),

@@ -727,7 +727,11 @@ class EditorGenerator(ServiceDialog):
         for origin in [
                 lambda: web.hasSelection and from_note(web.selectedText()),
                 lambda: from_note(web.page().mainFrame().evaluateJavaScript(
-                    '$("#f%d").text()' % editor.currentField
+                    # for jQuery, this needs to be html() instead of text() as
+                    # $('<div>hi<br>there</div>').text() yields "hithere"
+                    # whereas if we have the original HTML, we can convert the
+                    # line break tag into whitespace during input sanitization
+                    '$("#f%d").html()' % editor.currentField
                 )),
                 lambda: try_clipboard('html'),
                 lambda: try_clipboard('text'),

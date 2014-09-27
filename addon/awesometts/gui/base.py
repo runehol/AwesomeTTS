@@ -211,10 +211,11 @@ class ServiceDialog(Dialog):
     generator, mass file generator, template tag builder).
     """
 
-    _INPUT_WIDGETS = (QtGui.QAbstractButton, QtGui.QComboBox, QtGui.QLineEdit,
-                      QtGui.QPlainTextEdit)
-
     _OPTIONS_WIDGETS = (QtGui.QComboBox, QtGui.QAbstractSpinBox)
+
+    _INPUT_WIDGETS = _OPTIONS_WIDGETS + (QtGui.QAbstractButton,
+                                         QtGui.QLineEdit,
+                                         QtGui.QPlainTextEdit)
 
     __slots__ = [
         '_alerts',       # API to display error messages

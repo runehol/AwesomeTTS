@@ -582,7 +582,10 @@ def window_shortcuts():
         """Update sequences on configuration changes."""
 
         for key, sequence in sequences.items():
-            sequence.swap(new_config['launch_' + key] or 0)
+            try:
+                sequence.swap(new_config['launch_' + key] or 0)
+            except AttributeError:  # support for PyQt 4.7 and below
+                sequences[key] = QKeySequence(new_config['launch_' + key] or 0)
 
         try:
             aqt.mw.form.menuTools.findChild(gui.Action). \

@@ -425,8 +425,8 @@ class Service(object):
         If multiple targets are specified, their resulting payloads are
         glued together.
 
-        Each "target" is a tuple containing an address and a dict for
-        what to tack onto the query string.
+        Each "target" is a bare URL string or a tuple containing an
+        address and a dict for what to tack onto the query string.
 
         Finally, a require dict may be passed to enforce a Content-Type
         using key 'mime' and/or a minimum payload size using key 'size'.
@@ -443,7 +443,7 @@ class Service(object):
         targets = targets if isinstance(targets, list) else [targets]
         targets = [
             '?'.join([
-                url,
+                target[0],
                 '&'.join(
                     '='.join([
                         key,
@@ -454,10 +454,11 @@ class Service(object):
                             safe='',
                         ),
                     ])
-                    for key, val in query.items()
+                    for key, val in target[1].items()
                 ),
             ])
-            for url, query in targets
+            if isinstance(target, tuple) else target
+            for target in targets
         ]
 
         require = require or {}

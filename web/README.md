@@ -15,3 +15,7 @@ task automation tool that runs under [Node.js](http://nodejs.org).
 
 AwesomeTTS is free and open-source software. First-party web code is released
 under the [GNU AGPL v3](LICENSE.txt).
+
+The speaker icon/logo used on the website is a high-resolution version of the
+one bundled with Anki. The icon is originally from the Oxygen Icon Theme,
+which was also originally released under the GNU AGPL v3.

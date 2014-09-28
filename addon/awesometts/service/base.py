@@ -198,6 +198,14 @@ class Service(object):
 
         return {}
 
+    def modify(self, text):  # allows overriding, pylint:disable=no-self-use
+        """
+        Allows a service to modify the phrase before it is hashed for
+        caching and before it is passed to run().
+        """
+
+        return text
+
     @abc.abstractmethod
     def run(self, text, options, path):
         """

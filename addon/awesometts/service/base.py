@@ -83,6 +83,18 @@ class Service(object):
     # will be set to True if user is running Windows
     IS_WINDOWS = False
 
+    # work-in-progress
+    APPROX_MAPPER = {
+        u'\u00c1': 'A', u'\u00c4': 'A', u'\u00c5': 'A', u'\u00c9': 'E',
+        u'\u00cb': 'E', u'\u00cd': 'I', u'\u00d1': 'N', u'\u00d3': 'O',
+        u'\u00d6': 'O', u'\u00da': 'U', u'\u00dc': 'U', u'\u00df': 'ss',
+        u'\u00e1': 'a', u'\u00e4': 'a', u'\u00e5': 'a', u'\u00e9': 'e',
+        u'\u00eb': 'e', u'\u00ed': 'i', u'\u00cf': 'I', u'\u00ef': 'i',
+        u'\u0152': 'OE', u'\u0153': 'oe', u'\u00d8': 'O', u'\u00f8': 'o',
+        u'\u00c7': 'C', u'\u00e7': 'c', u'\u00f1': 'n', u'\u00f3': 'o',
+        u'\u00f6': 'o', u'\u00fa': 'u', u'\u00fc': 'u', u'\u212b': 'A',
+    }
+
     SPLIT_PRIORITY = [
         ['.', '?', '!', u'\u3002'],
         [',', ';', ':', u'\u3001'],
@@ -594,6 +606,17 @@ class Service(object):
         with wr.ConnectRegistry(None, wr.HKEY_LOCAL_MACHINE) as hklm:
             with wr.OpenKey(hklm, key) as subkey:
                 return wr.QueryValueEx(subkey, name)[0]
+
+    def util_approx(self, text):
+        """
+        Given a unicode string, returns an ASCII string with diacritics
+        stripped off.
+        """
+
+        return ''.join(self.APPROX_MAPPER.get(char, char)
+                       for char in text).encode('ascii', 'ignore') \
+               if isinstance(text, unicode) \
+               else text
 
     def util_split(self, text, limit):
         """

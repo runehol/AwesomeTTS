@@ -64,22 +64,22 @@
         "children": {
             "on-the-fly": {
                 "terse": "On-the-Fly",
-                "title": "Templated On-the-Fly Playback",
+                "title": "Enabling On-the-Fly Playback via Card Templates",
                 "what": "Quickly enable audio via your card templates, with no file synchronization"
             },
             "editor": {
                 "terse": "Note Editor",
-                "title": "Adding Audio Files in the Note Editor",
+                "title": "Storing MP3 Audio Files from the Note Editor",
                 "what": "Generate audio as you add or edit a note, files stored with collection"
             },
             "browser": {
                 "terse": "Card Browser",
-                "title": "Adding Audio in the Card Browser",
+                "title": "Storing MP3 Audio Files from the Card Browser",
                 "what": "Mass generate audio for many cards at once, files stored with collection"
             },
             "removing": {
                 "terse": "Remove Audio",
-                "title": "Removing Stored Audio via the Card Browser",
+                "title": "Removing Audio via the Card Browser",
                 "what": "Remove [sound] tags or AwesomeTTS audio filenames for many cards at once"
             }
         }

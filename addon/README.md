@@ -8,6 +8,7 @@ services:
 - eSpeak (`espeak`)
 - Festival (`festival`, `text2wave`)
 - Google Translate
+- Howjsay
 - OS X Speech Synthesis Manager (`say`)
 - Microsoft Speech API
 - SpanishDict.com

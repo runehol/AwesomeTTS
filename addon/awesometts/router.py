@@ -252,7 +252,7 @@ class Router(object):
                 callbacks['then']()
 
         else:
-            service['instance'].net_download_reset()
+            service['instance'].net_reset()
             self._busy.append(path)
             self._pool.spawn(
                 task=lambda: service['instance'].run(text, options, path),
@@ -262,7 +262,7 @@ class Router(object):
                     'done' in callbacks and callbacks['done'](),
 
                     'miss' in callbacks and callbacks['miss'](
-                        service['instance'].net_download_count()
+                        service['instance'].net_count()
                     ),
 
                     callbacks['fail'](exception) if exception

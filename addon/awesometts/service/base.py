@@ -83,6 +83,19 @@ class Service(object):
     # will be set to True if user is running Windows
     IS_WINDOWS = False
 
+    # work-in-progress
+    APPROX_MAPPER = {
+        u'\u00c1': 'A', u'\u00c4': 'A', u'\u00c5': 'A', u'\u00c9': 'E',
+        u'\u00cb': 'E', u'\u00cd': 'I', u'\u00d1': 'N', u'\u00d3': 'O',
+        u'\u00d6': 'O', u'\u00da': 'U', u'\u00dc': 'U', u'\u00df': 'ss',
+        u'\u00e1': 'a', u'\u00e4': 'a', u'\u00e5': 'a', u'\u00e9': 'e',
+        u'\u00eb': 'e', u'\u00ed': 'i', u'\u00cf': 'I', u'\u00ef': 'i',
+        u'\u0152': 'OE', u'\u0153': 'oe', u'\u00d8': 'O', u'\u00f8': 'o',
+        u'\u00c7': 'C', u'\u00e7': 'c', u'\u00f1': 'n', u'\u00f3': 'o',
+        u'\u00f6': 'o', u'\u00fa': 'u', u'\u00fc': 'u', u'\u2018': "'",
+        u'\u2019': "'", u'\u201c': '"', u'\u201d': '"', u'\u212b': 'A',
+    }
+
     SPLIT_PRIORITY = [
         ['.', '?', '!', u'\u3002'],
         [',', ';', ':', u'\u3001'],
@@ -197,6 +210,14 @@ class Service(object):
         """
 
         return {}
+
+    def modify(self, text):  # allows overriding, pylint:disable=no-self-use
+        """
+        Allows a service to modify the phrase before it is hashed for
+        caching and before it is passed to run().
+        """
+
+        return text
 
     @abc.abstractmethod
     def run(self, text, options, path):
@@ -405,8 +426,8 @@ class Service(object):
         If multiple targets are specified, their resulting payloads are
         glued together.
 
-        Each "target" is a tuple containing an address and a dict for
-        what to tack onto the query string.
+        Each "target" is a bare URL string or a tuple containing an
+        address and a dict for what to tack onto the query string.
 
         Finally, a require dict may be passed to enforce a Content-Type
         using key 'mime' and/or a minimum payload size using key 'size'.
@@ -423,7 +444,7 @@ class Service(object):
         targets = targets if isinstance(targets, list) else [targets]
         targets = [
             '?'.join([
-                url,
+                target[0],
                 '&'.join(
                     '='.join([
                         key,
@@ -434,10 +455,11 @@ class Service(object):
                             safe='',
                         ),
                     ])
-                    for key, val in query.items()
+                    for key, val in target[1].items()
                 ),
             ])
-            for url, query in targets
+            if isinstance(target, tuple) else target
+            for target in targets
         ]
 
         require = require or {}
@@ -586,6 +608,17 @@ class Service(object):
         with wr.ConnectRegistry(None, wr.HKEY_LOCAL_MACHINE) as hklm:
             with wr.OpenKey(hklm, key) as subkey:
                 return wr.QueryValueEx(subkey, name)[0]
+
+    def util_approx(self, text):
+        """
+        Given a unicode string, returns an ASCII string with diacritics
+        stripped off.
+        """
+
+        return ''.join(self.APPROX_MAPPER.get(char, char)
+                       for char in text).encode('ascii', 'ignore') \
+               if isinstance(text, unicode) \
+               else text
 
     def util_split(self, text, limit):
         """

@@ -178,7 +178,9 @@ class Router(object):
         Note that it is the caller who has the context of how the text
         is being used (e.g. if it's from a database field, an on-the-fly
         tag, or from user input). Therefore, it is the responsibility of
-        the caller to normalize the text before passing it.
+        the caller to normalize the text before passing it. The service
+        MAY apply additional normalization afterward, however, if it has
+        implemented as modify() method.
 
         On the other hand, the passed service ID and options are indeed
         normalized, since this does not vary from context to context,
@@ -222,6 +224,9 @@ class Router(object):
             if not text:
                 raise ValueError("No speakable text is present")
             svc_id, service, options = self._validate_service(svc_id, options)
+            text = service['instance'].modify(text)
+            if not text:
+                raise ValueError("Text not usable by " + service['class'].NAME)
             path = self._validate_path(svc_id, text, options)
             cache_hit = os.path.exists(path)
 

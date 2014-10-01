@@ -27,6 +27,10 @@
                 "title": "Google Translate",
                 "what": "Many high-quality languages, available over the Internet"
             },
+            "howjsay": {
+                "title": "Howjsay",
+                "what": "High-quality pronunciations of most common English words"
+            },
             "say": {
                 "terse": "OS X",
                 "title": "OS X Speech Synthesis Manager",

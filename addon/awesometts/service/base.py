@@ -92,7 +92,8 @@ class Service(object):
         u'\u00eb': 'e', u'\u00ed': 'i', u'\u00cf': 'I', u'\u00ef': 'i',
         u'\u0152': 'OE', u'\u0153': 'oe', u'\u00d8': 'O', u'\u00f8': 'o',
         u'\u00c7': 'C', u'\u00e7': 'c', u'\u00f1': 'n', u'\u00f3': 'o',
-        u'\u00f6': 'o', u'\u00fa': 'u', u'\u00fc': 'u', u'\u212b': 'A',
+        u'\u00f6': 'o', u'\u00fa': 'u', u'\u00fc': 'u', u'\u2018': "'",
+        u'\u2019': "'", u'\u201c': '"', u'\u201d': '"', u'\u212b': 'A',
     }
 
     SPLIT_PRIORITY = [

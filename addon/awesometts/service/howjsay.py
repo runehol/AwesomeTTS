@@ -69,12 +69,15 @@ class Howjsay(Service):
 
     def modify(self, text):
         """
-        Ignore case and symbols (except hyphens) for Howjsay.
+        Approximate all accented characters as ASCII ones and then drop
+        non-alphanumeric characters (except certain symbols).
         """
 
-        return ''.join(char
-                       for char in self.util_approx(text)
-                       if char.isalpha() or char in ' -').lower().strip()
+        return ''.join(
+            char
+            for char in self.util_approx(text)
+            if char.isalpha() or char.isdigit() or char in " '-.@"
+        ).lower().strip()
 
     def run(self, text, options, path):
         """
@@ -82,12 +85,13 @@ class Howjsay(Service):
         """
 
         assert options['voice'] == 'en', "Only English is supported"
-        filename = text.replace(' ', '%20') + '.mp3'  # safe after modify()
+
+        from urllib2 import quote
 
         try:
             self.net_download(
                 path,
-                'http://www.howjsay.com/mp3/' + filename,
+                'http://www.howjsay.com/mp3/' + quote(text) + '.mp3',
                 require=dict(mime='audio/mpeg', size=512),
             )
 

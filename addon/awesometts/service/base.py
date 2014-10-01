@@ -420,9 +420,9 @@ class Service(object):
             startupinfo=self.CLI_SI,
         )
 
-    def net_download(self, path, targets, require=None):
+    def net_stream(self, targets, require=None):
         """
-        Downloads a file to the given path from the specified target(s).
+        Returns the raw payload string from the specified target(s).
         If multiple targets are specified, their resulting payloads are
         glued together.
 
@@ -505,8 +505,17 @@ class Service(object):
 
             payloads.append(payload)
 
+        return ''.join(payloads)
+
+    def net_download(self, path, *args, **kwargs):
+        """
+        Downloads a file to the given path from the specified target(s).
+        See net_stream() for information about available options.
+        """
+
+        payload = self.net_stream(*args, **kwargs)
         with open(path, 'wb') as response_output:
-            response_output.write(''.join(payloads))
+            response_output.write(payload)
 
     def net_count(self):
         """

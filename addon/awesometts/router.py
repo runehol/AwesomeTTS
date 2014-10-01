@@ -225,6 +225,8 @@ class Router(object):
                 raise ValueError("No speakable text is present")
             svc_id, service, options = self._validate_service(svc_id, options)
             text = service['instance'].modify(text)
+            if not text:
+                raise ValueError("Text not usable by " + service['class'].NAME)
             path = self._validate_path(svc_id, text, options)
             cache_hit = os.path.exists(path)
 

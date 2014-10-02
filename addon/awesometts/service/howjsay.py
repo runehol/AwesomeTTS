@@ -86,6 +86,9 @@ class Howjsay(Service):
 
         assert options['voice'] == 'en', "Only English is supported"
 
+        if len(text) > 100:
+            raise IOError("Input text is too long for Howjsay")
+
         from urllib2 import quote
 
         try:

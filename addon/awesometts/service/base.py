@@ -423,7 +423,7 @@ class Service(object):
             startupinfo=self.CLI_SI,
         )
 
-    def net_stream(self, targets, require=None):
+    def net_stream(self, targets, require=None, method='GET'):
         """
         Returns the raw payload string from the specified target(s).
         If multiple targets are specified, their resulting payloads are
@@ -442,11 +442,13 @@ class Service(object):
         not need to do anything extra for that.
         """
 
+        assert method in ['GET', 'POST'], "method must be GET or POST"
         from urllib2 import urlopen, Request, quote
 
         targets = targets if isinstance(targets, list) else [targets]
         targets = [
-            '?'.join([
+            (target, None) if isinstance(target, basestring)
+            else (
                 target[0],
                 '&'.join(
                     '='.join([
@@ -460,8 +462,7 @@ class Service(object):
                     ])
                     for key, val in target[1].items()
                 ),
-            ])
-            if isinstance(target, tuple) else target
+            )
             for target in targets
         ]
 
@@ -469,15 +470,21 @@ class Service(object):
 
         payloads = []
 
-        for number, url in enumerate(targets, 1):
+        for number, (url, params) in enumerate(targets, 1):
             desc = "web request" if len(targets) == 1 \
                 else "web request (%d of %d)" % (number, len(targets))
 
-            self._logger.debug("Fetching %s for %s", url, desc)
+            self._logger.debug("%s %s%s%s for %s", method, url,
+                               "?" if params else "", params or "", desc)
 
             self._netops += 1
             response = urlopen(
-                Request(url=url, headers={'User-Agent': 'Mozilla/5.0'}),
+                Request(
+                    url=('?'.join([url, params]) if params and method == 'GET'
+                         else url),
+                    headers={'User-Agent': 'Mozilla/5.0'},
+                ),
+                data=params if params and method == 'POST' else None,
                 timeout=15,
             )
 

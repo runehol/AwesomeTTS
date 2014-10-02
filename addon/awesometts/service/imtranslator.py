@@ -125,11 +125,12 @@ class ImTranslator(Service):
 
         payload = self.net_stream(
             ('http://imtranslator.net/translate-and-speak/sockets/tts.asp',
-             dict(text=text,  # FIXME ideally, these would go over POST
+             dict(text=text,
                   vc=options['voice'],
                   speed=options['speed'],
                   FA=1)),
             require=dict(mime='text/html', size=256),
+            method='POST',
         )
 
         match = self._RE_SWF.search(payload)

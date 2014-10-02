@@ -71,6 +71,9 @@ class Service(object):
     # where we can find the lame transcoder
     CLI_LAME = 'lame'
 
+    # where we can find the mplayer binary
+    CLI_MPLAYER = 'mplayer'
+
     # startup information for Windows to keep command window hidden
     CLI_SI = None
 
@@ -517,6 +520,40 @@ class Service(object):
         with open(path, 'wb') as response_output:
             response_output.write(payload)
 
+    def net_dump(self, output_path, url):
+        """
+        Use `mplayer` to retrieve an audio stream and dump it to a raw
+        wave audio file.
+
+        Note that output_path must be a safe ASCII one (i.e. generated
+        by path_temp()); this method does NOT have the non-ASCII home
+        directory workaround like cli_transcode() does.
+        """
+
+        self._netops += 1
+
+        try:
+            self.cli_call(
+                self.CLI_MPLAYER,
+                '-benchmark',  # supposedly speeds up dump
+                '-vc', 'null',
+                '-vo', 'null',
+                '-ao', 'pcm:fast:file=' + output_path,
+                url,
+            )
+
+        except OSError as os_error:
+            from errno import ENOENT
+            if os_error.errno == ENOENT:
+                raise OSError(ENOENT,
+                              "Unable to find mplayer to dump audio stream. "
+                              "It might not have been installed.")
+            else:
+                raise
+
+        if not os.path.exists(output_path):
+            raise RuntimeError("Dumping the audio stream w/ mplayer failed.")
+
     def net_count(self):
         """
         Returns the number of downloads the last run required. Intended
@@ -696,6 +733,7 @@ class Service(object):
 if subprocess.mswindows:
     Service.CLI_DECODINGS.append('mbcs')
     Service.CLI_LAME = 'lame.exe'
+    Service.CLI_MPLAYER = 'mplayer.exe'
     Service.CLI_SI = subprocess.STARTUPINFO()
     Service.IS_WINDOWS = True
 

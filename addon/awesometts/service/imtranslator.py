@@ -111,8 +111,11 @@ class ImTranslator(Service):
             dict(
                 key='speed',
                 label="Speed",
-                values=(-10, 10),
-                transform=int,
+                values=[(10, "fastest"), (6, "faster"), (3, "fast"),
+                        (0, "normal"),
+                        (-3, "slow"), (-6, "slower"), (-10, "slowest")],
+                transform=lambda v: min([10, 6, 3, 0, -3, -6, -10],
+                                        key=lambda i: abs(i - float(v))),
                 default=0,
             ),
         ]

@@ -123,27 +123,41 @@ class ImTranslator(Service):
         the returned SWF, and transcodes to MP3.
         """
 
-        payload = self.net_stream(
-            ('http://imtranslator.net/translate-and-speak/sockets/tts.asp',
-             dict(text=text,
-                  vc=options['voice'],
-                  speed=options['speed'],
-                  FA=1)),
-            require=dict(mime='text/html', size=256),
-            method='POST',
-        )
-
-        match = self._RE_SWF.search(payload)
-        if not match or not match.group():
-            raise EnvironmentError("Cannot find audio SWF in response from "
-                                   "ImTranslator")
-        swf = match.group()
-
-        output_wav = self.path_temp('wav')
+        output_wavs = []
+        output_mp3s = []
+        require = dict(size_in=4096)
 
         try:
-            self.net_dump(output_wav, swf)
-            self.cli_transcode(output_wav, path, require=dict(size_in=4096))
+            for subtext in self.util_split(text, 400):
+                result = self.net_stream(
+                    ('http://imtranslator.net/translate-and-speak/'
+                     'sockets/tts.asp',
+                     dict(text=subtext, vc=options['voice'],
+                          speed=options['speed'], FA=1)),
+                    require=dict(mime='text/html', size=256),
+                    method='POST',
+                )
+
+                result = self._RE_SWF.search(result)
+                if not result or not result.group():
+                    raise EnvironmentError("Cannot find audio SWF in "
+                                           "response from ImTranslator")
+                result = result.group()
+
+                output_wav = self.path_temp('wav')
+                output_wavs.append(output_wav)
+                self.net_dump(output_wav, result)
+
+            if len(output_wavs) > 1:
+                for output_wav in output_wavs:
+                    output_mp3 = self.path_temp('mp3')
+                    output_mp3s.append(output_mp3)
+                    self.cli_transcode(output_wav, output_mp3, require=require)
+
+                self.util_merge(output_mp3s, path)
+
+            else:
+                self.cli_transcode(output_wavs[0], path, require=require)
 
         finally:
-            self.path_unlink(output_wav)
+            self.path_unlink(output_wavs, output_mp3s)

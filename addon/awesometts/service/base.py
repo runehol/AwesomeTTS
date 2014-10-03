@@ -673,6 +673,18 @@ class Service(object):
                if isinstance(text, unicode) \
                else text
 
+    def util_merge(self, input_files, output_file):
+        """
+        Given several input files, dumbly merge together into a single
+        output file.
+        """
+
+        self._logger.debug("Merging %s into %s", input_files, output_file)
+        with open(output_file, 'wb') as output_stream:
+            for input_file in input_files:
+                with open(input_file, 'rb') as input_stream:
+                    output_stream.write(input_stream.read())
+
     def util_split(self, text, limit):
         """
         Intelligently split a string into smaller bits based on the

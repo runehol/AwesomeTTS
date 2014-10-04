@@ -50,6 +50,16 @@ class ImTranslator(Service):
 
     _RE_SWF = re.compile(r'https?:[\w:/\.]+\.swf\?\w+=\w+', re.IGNORECASE)
 
+    def __init__(self, *args, **kwargs):
+        if self.IS_MACOSX:
+            raise EnvironmentError(
+                "ImTranslator cannot be used on Mac OS X due to mplayer "
+                "crashes while dumping the audio. If you are able to fix "
+                "this, please send a pull request."
+            )
+
+        super(ImTranslator, self).__init__(*args, **kwargs)
+
     def desc(self):
         """
         Returns a short, static description.

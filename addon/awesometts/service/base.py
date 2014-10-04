@@ -544,8 +544,8 @@ class Service(object):
                 self.CLI_MPLAYER,
                 '-benchmark',  # supposedly speeds up dump
                 '-vc', 'null',
-                '-vo', 'null',
-                '-ao', 'pcm:fast:file=' + output_path,
+                '-vo', 'dummy' if self.IS_WINDOWS else 'null',
+                '-ao', 'pcm:fast:file="%s"' % output_path,
                 url,
             )
 

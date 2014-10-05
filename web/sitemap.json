@@ -31,6 +31,10 @@
                 "title": "Howjsay",
                 "what": "High-quality pronunciations of most common English words"
             },
+            "imtranslator": {
+                "title": "ImTranslator",
+                "what": "Asian and European languages, available over the Internet"
+            },
             "say": {
                 "terse": "OS X",
                 "title": "OS X Speech Synthesis Manager",

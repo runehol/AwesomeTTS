@@ -378,7 +378,7 @@ class Configurator(Dialog):
         threshold.setObjectName('throttle_threshold')
         threshold.setRange(5, 1000)
         threshold.setSingleStep(5)
-        threshold.setSuffix(" files")
+        threshold.setSuffix(" operations")
 
         sleep = QtGui.QSpinBox()
         sleep.setObjectName('throttle_sleep')
@@ -387,7 +387,7 @@ class Configurator(Dialog):
         sleep.setSuffix(" seconds")
 
         hor = QtGui.QHBoxLayout()
-        hor.addWidget(Label("After downloading "))
+        hor.addWidget(Label("After "))
         hor.addWidget(threshold)
         hor.addWidget(Label(" sleep for "))
         hor.addWidget(sleep)

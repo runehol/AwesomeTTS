@@ -168,6 +168,7 @@ router = Router(
             ('festival', service.Festival),
             ('google', service.Google),
             ('howjsay', service.Howjsay),
+            ('imtranslator', service.ImTranslator),
             ('pico2wave', service.Pico2Wave),
             ('sapi5', service.SAPI5),
             ('say', service.Say),

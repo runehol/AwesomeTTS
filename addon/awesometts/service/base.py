@@ -58,7 +58,7 @@ class Service(object):
     __metaclass__ = abc.ABCMeta
 
     __slots__ = [
-        '_downloads',   # number of downloads required by the last run
+        '_netops',      # number of network ops required by the last run
         '_lame_flags',  # callable to get flag string for LAME transcoder
         '_logger',      # logging interface with debug(), info(), etc.
         'normalize',    # callable for standardizing string values
@@ -70,6 +70,9 @@ class Service(object):
 
     # where we can find the lame transcoder
     CLI_LAME = 'lame'
+
+    # where we can find the mplayer binary
+    CLI_MPLAYER = 'mplayer'
 
     # startup information for Windows to keep command window hidden
     CLI_SI = None
@@ -146,7 +149,7 @@ class Service(object):
         assert self.NAME, "Please specify a NAME for the service"
         assert self.TRAITS, "Please specify a TRAITS list for the service"
 
-        self._downloads = None
+        self._netops = None
         self._lame_flags = lame_flags
         self._logger = logger
         self.normalize = normalize
@@ -420,9 +423,9 @@ class Service(object):
             startupinfo=self.CLI_SI,
         )
 
-    def net_download(self, path, targets, require=None):
+    def net_stream(self, targets, require=None, method='GET'):
         """
-        Downloads a file to the given path from the specified target(s).
+        Returns the raw payload string from the specified target(s).
         If multiple targets are specified, their resulting payloads are
         glued together.
 
@@ -439,11 +442,13 @@ class Service(object):
         not need to do anything extra for that.
         """
 
+        assert method in ['GET', 'POST'], "method must be GET or POST"
         from urllib2 import urlopen, Request, quote
 
         targets = targets if isinstance(targets, list) else [targets]
         targets = [
-            '?'.join([
+            (target, None) if isinstance(target, basestring)
+            else (
                 target[0],
                 '&'.join(
                     '='.join([
@@ -457,8 +462,7 @@ class Service(object):
                     ])
                     for key, val in target[1].items()
                 ),
-            ])
-            if isinstance(target, tuple) else target
+            )
             for target in targets
         ]
 
@@ -466,15 +470,21 @@ class Service(object):
 
         payloads = []
 
-        for number, url in enumerate(targets, 1):
+        for number, (url, params) in enumerate(targets, 1):
             desc = "web request" if len(targets) == 1 \
                 else "web request (%d of %d)" % (number, len(targets))
 
-            self._logger.debug("Fetching %s for %s", url, desc)
+            self._logger.debug("%s %s%s%s for %s", method, url,
+                               "?" if params else "", params or "", desc)
 
-            self._downloads += 1
+            self._netops += 1
             response = urlopen(
-                Request(url=url, headers={'User-Agent': 'Mozilla/5.0'}),
+                Request(
+                    url=('?'.join([url, params]) if params and method == 'GET'
+                         else url),
+                    headers={'User-Agent': 'Mozilla/5.0'},
+                ),
+                data=params if params and method == 'POST' else None,
                 timeout=15,
             )
 
@@ -505,24 +515,67 @@ class Service(object):
 
             payloads.append(payload)
 
-        with open(path, 'wb') as response_output:
-            response_output.write(''.join(payloads))
+        return ''.join(payloads)
 
-    def net_download_count(self):
+    def net_download(self, path, *args, **kwargs):
+        """
+        Downloads a file to the given path from the specified target(s).
+        See net_stream() for information about available options.
+        """
+
+        payload = self.net_stream(*args, **kwargs)
+        with open(path, 'wb') as response_output:
+            response_output.write(payload)
+
+    def net_dump(self, output_path, url):
+        """
+        Use `mplayer` to retrieve an audio stream and dump it to a raw
+        wave audio file.
+
+        Note that output_path must be a safe ASCII one (i.e. generated
+        by path_temp()); this method does NOT have the non-ASCII home
+        directory workaround like cli_transcode() does.
+        """
+
+        self._netops += 1
+
+        try:
+            self.cli_call(
+                self.CLI_MPLAYER,
+                '-benchmark',  # supposedly speeds up dump
+                '-vc', 'null',
+                '-vo', 'dummy' if self.IS_WINDOWS else 'null',
+                '-ao', 'pcm:fast:file="%s"' % output_path,
+                url,
+            )
+
+        except OSError as os_error:
+            from errno import ENOENT
+            if os_error.errno == ENOENT:
+                raise OSError(ENOENT,
+                              "Unable to find mplayer to dump audio stream. "
+                              "It might not have been installed.")
+            else:
+                raise
+
+        if not os.path.exists(output_path):
+            raise RuntimeError("Dumping the audio stream w/ mplayer failed.")
+
+    def net_count(self):
         """
         Returns the number of downloads the last run required. Intended
         for use by the router to query after a run.
         """
 
-        return self._downloads
+        return self._netops
 
-    def net_download_reset(self):
+    def net_reset(self):
         """
         Resets the download count back to zero. Intended for use by the
         router before a run.
         """
 
-        self._downloads = 0
+        self._netops = 0
 
     def path_temp(self, extension):
         """
@@ -620,6 +673,18 @@ class Service(object):
                if isinstance(text, unicode) \
                else text
 
+    def util_merge(self, input_files, output_file):
+        """
+        Given several input files, dumbly merge together into a single
+        output file.
+        """
+
+        self._logger.debug("Merging %s into %s", input_files, output_file)
+        with open(output_file, 'wb') as output_stream:
+            for input_file in input_files:
+                with open(input_file, 'rb') as input_stream:
+                    output_stream.write(input_stream.read())
+
     def util_split(self, text, limit):
         """
         Intelligently split a string into smaller bits based on the
@@ -687,6 +752,7 @@ class Service(object):
 if subprocess.mswindows:
     Service.CLI_DECODINGS.append('mbcs')
     Service.CLI_LAME = 'lame.exe'
+    Service.CLI_MPLAYER = 'mplayer.exe'
     Service.CLI_SI = subprocess.STARTUPINFO()
     Service.IS_WINDOWS = True
 

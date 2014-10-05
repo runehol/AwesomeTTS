@@ -9,6 +9,7 @@ services:
 - Festival (`festival`, `text2wave`)
 - Google Translate
 - Howjsay
+- ImTranslator
 - OS X Speech Synthesis Manager (`say`)
 - Microsoft Speech API
 - SpanishDict.com

@@ -156,7 +156,10 @@ class Router(object):
                 "Retrieving the description for %s",
                 service['name'],
             )
-            service['desc'] = service['instance'].desc()
+            try:
+                service['desc'] = service['instance'].desc()
+            except Exception:  # catch all, pylint:disable=broad-except
+                service['desc'] = svc_id + " service"
 
         return service['desc']
 

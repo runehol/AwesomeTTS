@@ -88,6 +88,7 @@ class ESpeak(Service):
                 output[alt] = []
 
         import re
+        from os.path import basename
 
         re_voice = re.compile(
             r'\s*(\d+)'               # priority; lower numbers preferred
@@ -109,7 +110,8 @@ class ESpeak(Service):
                     'age': int(match.group(3)) if match.group(3) else None,
                     'gender': match.group(4).upper(),
                     'name': match.group(5),
-                    'file': match.group(6),
+                    'file': (basename(match.group(6)) if key == 'variant'
+                             else match.group(6)),
                     'others': [
                         code
                         for code in [
@@ -180,6 +182,20 @@ class ESpeak(Service):
             for voice in lookup['voices']
         ])
 
+        variant_lookup = dict([
+            # variant name given for each
+            (self.normalize(variant['name']), variant['file'])
+            for variant in lookup['variant']
+        ] + [
+            # official file name for each
+            (self.normalize(variant['file']), variant['file'])
+            for variant in lookup['variant']
+        ] + [
+            # helpful aliases for "normal"
+            ('', 'normal'),
+            ('none', 'normal'),
+        ])
+
         def transform_voice(value):
             """Normalize and attempt to convert to official voice."""
 
@@ -201,6 +217,15 @@ class ESpeak(Service):
 
             return value
 
+        def transform_variant(value):
+            """Normalize and attempt to convert to official variant."""
+
+            normalized = self.normalize(value)
+            return (
+                variant_lookup[normalized] if normalized in variant_lookup
+                else value
+            )
+
         return [
             dict(
                 key='voice',
@@ -211,7 +236,7 @@ class ESpeak(Service):
                         "%s (%s%s%s)" % (
                             voice['name'],
 
-                            voice['age'] + "-year-old " if
+                            str(voice['age']) + "-year-old " if
                             voice['age'] else "",
 
                             "male " if voice['gender'] == 'M'
@@ -225,11 +250,40 @@ class ESpeak(Service):
                         lookup['voices'],
                         key=lambda voice: (voice['code'],
                                            voice['type'] == 'mbrola',
+                                           voice['gender'] not in 'MF',
                                            voice['gender'] == 'F',
-                                           voice['name'])
+                                           voice['name']),
                     )
                 ],
                 transform=transform_voice,
+            ),
+
+            dict(
+                key='variant',
+                label="Variant",
+                values=[('normal', "normal")] + [
+                    (
+                        variant['file'],
+                        "%s (%s%s)" % (
+                            variant['name'],
+
+                            str(variant['age']) + "-year-old " if
+                            variant['age'] else "",
+
+                            "male" if variant['gender'] == 'M'
+                            else "female" if variant['gender'] == 'F'
+                            else "other",
+                        ),
+                    )
+                    for variant in sorted(
+                        lookup['variant'],
+                        key=lambda variant: (variant['gender'] not in 'MF',
+                                             variant['gender'] == 'F',
+                                             variant['name']),
+                    )
+                ],
+                transform=transform_variant,
+                default="normal"
             ),
 
             dict(
@@ -274,11 +328,15 @@ class ESpeak(Service):
         input_file = self.path_workaround(text)
         output_wav = self.path_temp('wav')
 
+        voice = ('+'.join([options['voice'], options['variant']])
+                 if options['variant'] and options['variant'] != "normal"
+                 else options['voice'])
+
         try:
             self.cli_call(
                 [
                     self._binary,
-                    '-v', options['voice'],
+                    '-v', voice,
                     '-s', options['speed'],
                     '-g', int(options['gap'] * 100.0),
                     '-p', options['pitch'],

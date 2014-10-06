@@ -94,7 +94,7 @@ class ESpeak(Service):
             r'\s+([-\w]+)'            # language code (or "variant")
             r'\s+(\d+)?([-\w])'       # age, gender
             r'\s+([-\w]+)'            # voice name
-            r'\s+([-!/\w]+)'          # file name
+            r'\s+([-!/\\\w]+)'        # file name
             r'(\s+\(([- ()\w]+)\))?'  # other languages
         )
 

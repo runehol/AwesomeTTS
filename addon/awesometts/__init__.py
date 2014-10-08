@@ -356,46 +356,56 @@ def browser_menus():
     disables and enables it upon selection of items.
     """
 
+    from PyQt4 import QtGui
+
+    def on_setup_menus(browser):
+        """Create an AwesomeTTS menu and add browser actions to it."""
+
+        menu = QtGui.QMenu("Awesome&TTS", browser.form.menubar)
+        browser.form.menubar.addMenu(menu)
+
+        gui.Action(
+            target=Bundle(
+                constructor=gui.BrowserGenerator,
+                args=(),
+                kwargs=dict(browser=browser,
+                            addon=addon,
+                            alerts=aqt.utils.showWarning,
+                            parent=browser),
+            ),
+            text="&Add Audio to Selected...",
+            sequence=sequences['browser_generator'],
+            parent=menu,
+        )
+        gui.Action(
+            target=Bundle(
+                constructor=gui.BrowserStripper,
+                args=(),
+                kwargs=dict(browser=browser,
+                            addon=addon,
+                            alerts=aqt.utils.showWarning,
+                            parent=browser),
+            ),
+            text="&Remove Audio from Selected...",
+            sequence=sequences['browser_stripper'],
+            parent=menu,
+        )
+
+    def update_title_wrapper(browser):
+        """Enable/disable AwesomeTTS menu items upon selection."""
+
+        enabled = bool(browser.form.tableView.selectionModel().selectedRows())
+        for action in browser.findChildren(gui.Action):
+            action.setEnabled(enabled)
+
     anki.hooks.addHook(
         'browser.setupMenus',
-        lambda browser: (
-            gui.Action(
-                target=Bundle(
-                    constructor=gui.BrowserGenerator,
-                    args=(),
-                    kwargs=dict(browser=browser,
-                                addon=addon,
-                                alerts=aqt.utils.showWarning,
-                                parent=browser),
-                ),
-                text="Add Audio to Selected w/ Awesome&TTS...",
-                sequence=sequences['browser_generator'],
-                parent=browser.form.menuEdit,
-            ),
-            gui.Action(
-                target=Bundle(
-                    constructor=gui.BrowserStripper,
-                    args=(),
-                    kwargs=dict(browser=browser,
-                                addon=addon,
-                                alerts=aqt.utils.showWarning,
-                                parent=browser),
-                ),
-                text="Remove Audio from Selected w/ AwesomeTTS...",
-                sequence=sequences['browser_stripper'],
-                parent=browser.form.menuEdit,
-            ),
-        ),
+        on_setup_menus,
     )
 
     aqt.browser.Browser.updateTitle = anki.hooks.wrap(
         aqt.browser.Browser.updateTitle,
-        lambda browser: [
-            action.setEnabled(
-                bool(browser.form.tableView.selectionModel().selectedRows())
-            )
-            for action in browser.findChildren(gui.Action)
-        ],
+        update_title_wrapper,
         'before',
     )
 

@@ -373,7 +373,7 @@ def browser_menus():
                             alerts=aqt.utils.showWarning,
                             parent=browser),
             ),
-            text="Add Audio to Selected...",
+            text="&Add Audio to Selected...",
             sequence=sequences['browser_generator'],
             parent=menu,
         )
@@ -386,7 +386,7 @@ def browser_menus():
                             alerts=aqt.utils.showWarning,
                             parent=browser),
             ),
-            text="Remove Audio from Selected...",
+            text="&Remove Audio from Selected...",
             sequence=sequences['browser_stripper'],
             parent=menu,
         )

@@ -671,7 +671,8 @@ class EditorGenerator(ServiceDialog):
         header = Label("Preview and Record")
         header.setFont(self._FONT_HEADER)
 
-        text = QtGui.QPlainTextEdit()
+        text = QtGui.QTextEdit()
+        text.setAcceptRichText(False)
         text.setObjectName('text')
         text.setTabChangesFocus(True)
         text.keyPressEvent = lambda key_event: \
@@ -679,7 +680,7 @@ class EditorGenerator(ServiceDialog):
                 key_event.modifiers() & QtCore.Qt.ControlModifier and
                 key_event.key() in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter]
             ) \
-            else QtGui.QPlainTextEdit.keyPressEvent(text, key_event)
+            else QtGui.QTextEdit.keyPressEvent(text, key_event)
 
         button = QtGui.QPushButton("&Preview")
         button.setObjectName('preview')
@@ -714,7 +715,7 @@ class EditorGenerator(ServiceDialog):
 
         super(EditorGenerator, self).show(*args, **kwargs)
 
-        text = self.findChild(QtGui.QPlainTextEdit, 'text')
+        text = self.findChild(QtGui.QTextEdit, 'text')
         text.setFocus()
 
         editor = self._editor

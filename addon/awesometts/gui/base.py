@@ -214,8 +214,7 @@ class ServiceDialog(Dialog):
     _OPTIONS_WIDGETS = (QtGui.QComboBox, QtGui.QAbstractSpinBox)
 
     _INPUT_WIDGETS = _OPTIONS_WIDGETS + (QtGui.QAbstractButton,
-                                         QtGui.QLineEdit,
-                                         QtGui.QPlainTextEdit)
+                                         QtGui.QLineEdit, QtGui.QTextEdit)
 
     __slots__ = [
         '_alerts',       # API to display error messages

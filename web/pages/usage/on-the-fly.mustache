@@ -77,6 +77,27 @@
       placeholders can also be adjusted depending on your needs. To see these
       settings, go to the <a href="/config/text">Text tab of the configuration
       screen</a>.</li>
+    <li>
+        You may nest your <kbd>&lt;tts&gt;</kbd> tags to play the same input
+        through multiple services. For example:
+
+<pre>&lt;tts service="google" voice="en-US"&gt;
+    This will be read by the American voice only.
+
+    &lt;tts service="google" voice="en-AU"&gt;
+        This will be read by the American and Australian voices.
+    &lt;/tts&gt;
+
+    This will be read by the American voice only.
+
+    &lt;tts service="google" voice="en-GB"&gt;
+        This will be read by the American and British voices.
+    &lt;/tts&gt;
+
+    This will be read by the American voice only.
+&lt;/tts&gt;</pre>
+
+    </li>
 </ul>
 
 <h3>Screenshots</h3>

@@ -193,7 +193,7 @@ class Reviewer(object):
         from_template = (self._addon.strip.from_template_back if side == 'back'
                          else self._addon.strip.from_template_front)
 
-        for tag in BeautifulSoup(html)('tts'):
+        for tag in BeautifulTTS(html)('tts'):
             self._play_html_tag(tag, from_template, playback)
 
         for legacy in self.RE_LEGACY_TAGS.findall(html):
@@ -202,8 +202,7 @@ class Reviewer(object):
     def _play_html_tag(self, tag, from_template, playback):
         """Helper method for _play_html()."""
 
-        text = ''.join(unicode(content) for content in tag.contents)
-        text = from_template(text)
+        text = from_template(unicode(tag))
         if not text:
             return
 
@@ -296,3 +295,13 @@ class Reviewer(object):
             (legacy[0], legacy[1], message),
             self._parent,
         )
+
+
+class BeautifulTTS(BeautifulSoup):  # pylint:disable=too-many-public-methods
+    """
+    Provides a customized version of the BeautifulSoup parser that
+    treats TTS tags as nestable.
+    """
+
+    NESTABLE_TAGS = dict(BeautifulSoup.NESTABLE_TAGS.items() +
+                         [('tts', [])])

@@ -414,8 +414,8 @@ class Router(object):
                 assert 'key' in option, "missing option key for %s" % svc_id
                 assert self._services.normalize(option['key']) == \
                     option['key'], "bad %s key %s" % (svc_id, option['key'])
-                assert option['key'] != 'service', "service is reserved"
-                assert option['key'] != 'style', "style is reserved for user"
+                assert option['key'] not in ['preset', 'service', 'style'], \
+                    option['key'] + " is reserved for use in TTS tags"
                 assert 'label' in option, \
                     "missing %s label for %s" % (option['key'], svc_id)
                 assert 'values' in option, \

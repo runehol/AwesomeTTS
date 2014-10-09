@@ -293,6 +293,46 @@ class ServiceDialog(Dialog):
         layout.addWidget(header)
         layout.addLayout(hor)
         layout.addWidget(stack)
+        layout.addStretch()
+        layout.addLayout(self._ui_services_presets())
+
+        return layout
+
+    def _ui_services_presets(self):
+        """Returns the preset controls as a horizontal layout."""
+
+        label = Label("Quickly access this service later?")
+        label.setObjectName('presets_label')
+
+        dropdown = QtGui.QComboBox()
+        dropdown.setObjectName('presets_dropdown')
+        dropdown.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,
+                               QtGui.QSizePolicy.Preferred)
+        # TODO dropdown.activated.connect(...)
+        # need to load preset and activate/deactivate delete button
+
+        delete = QtGui.QPushButton(QtGui.QIcon(':/icons/editdelete.png'), "")
+        delete.setObjectName('presets_delete')
+        delete.setIconSize(QtCore.QSize(16, 16))
+        delete.setFixedSize(18, 18)
+        delete.setFlat(True)
+        delete.setToolTip("Remove this service configuration from\n"
+                          "the list of remembered services.")
+        # TODO delete.clicked.connect(...)
+
+        save = QtGui.QPushButton("Save")
+        save.setObjectName('presets_save')
+        save.setFixedWidth(save.fontMetrics().width(save.text()) + 20)
+        save.setToolTip("Remember the selected service and its input\n"
+                        "settings so that you can quickly access it later.")
+        # TODO save.clicked.connect(...)
+
+        layout = QtGui.QHBoxLayout()
+        layout.addWidget(label)
+        layout.addWidget(dropdown)
+        layout.addWidget(delete)
+        layout.addSpacing(self._SPACING)
+        layout.addWidget(save)
 
         return layout
 
@@ -460,7 +500,7 @@ class ServiceDialog(Dialog):
         label = Note(self._addon.router.get_desc(svc_id))
         label.setFont(self._FONT_INFO)
 
-        panel.addWidget(label, row, 0, 1, 2, QtCore.Qt.AlignBottom)
+        panel.addWidget(label, row, 0, 1, 2, QtCore.Qt.AlignTop)
         panel.setRowStretch(row, 1)
 
     def _on_service_activated_set(self, svc_id, widget, options):

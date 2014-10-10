@@ -30,6 +30,8 @@ __all__ = ['Dialog', 'ServiceDialog']
 from PyQt4 import QtCore, QtGui
 from .common import Label, Note, ICON
 
+import inspect
+
 # all methods might need 'self' in the future, pylint:disable=R0201
 
 
@@ -282,6 +284,7 @@ class ServiceDialog(Dialog):
             stack.addWidget(widget)
 
         dropdown.activated.connect(self._on_service_activated)
+        dropdown.currentIndexChanged.connect(self._on_preset_reset)
 
         hor = QtGui.QHBoxLayout()
         hor.addWidget(Label("Generate using"))
@@ -310,8 +313,7 @@ class ServiceDialog(Dialog):
         dropdown.setObjectName('presets_dropdown')
         dropdown.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,
                                QtGui.QSizePolicy.Preferred)
-        # TODO dropdown.activated.connect(...)
-        # need to load preset and activate/deactivate delete button
+        dropdown.activated.connect(self._on_preset_activated)
 
         delete = QtGui.QPushButton(QtGui.QIcon(':/icons/editdelete.png'), "")
         delete.setObjectName('presets_delete')
@@ -320,7 +322,7 @@ class ServiceDialog(Dialog):
         delete.setFlat(True)
         delete.setToolTip("Remove this service configuration from\n"
                           "the list of remembered services.")
-        # TODO delete.clicked.connect(...)
+        delete.clicked.connect(self._on_preset_delete)
 
         save = QtGui.QPushButton("Save")
         save.setObjectName('presets_save')
@@ -391,7 +393,7 @@ class ServiceDialog(Dialog):
         dropdown = self.findChild(QtGui.QComboBox, 'service')
         idx = max(dropdown.findData(self._addon.config['last_service']), 0)
         dropdown.setCurrentIndex(idx)
-        self._on_service_activated(idx, True)
+        self._on_service_activated(idx, initial=True)
         self._on_preset_refresh()
 
         text = self.findChild(QtGui.QWidget, 'text')
@@ -429,7 +431,7 @@ class ServiceDialog(Dialog):
         )
         return menu
 
-    def _on_service_activated(self, idx, initial=False):
+    def _on_service_activated(self, idx, initial=False, use_options=None):
         """
         Construct the target widget if it has not already been built,
         recall the last-used values for the options, and then switch the
@@ -443,7 +445,7 @@ class ServiceDialog(Dialog):
         panel_unbuilt = svc_id not in self._panel_built
         panel_unset = svc_id not in self._panel_set
 
-        if panel_unbuilt or panel_unset:
+        if panel_unbuilt or panel_unset or use_options:
             widget = stack.widget(idx)
             options = self._addon.router.get_options(svc_id)
 
@@ -451,9 +453,10 @@ class ServiceDialog(Dialog):
                 self._panel_built[svc_id] = True
                 self._on_service_activated_build(svc_id, widget, options)
 
-            if panel_unset:
+            if panel_unset or use_options:
                 self._panel_set[svc_id] = True
-                self._on_service_activated_set(svc_id, widget, options)
+                self._on_service_activated_set(svc_id, widget, options,
+                                               use_options)
 
         stack.setCurrentIndex(idx)
 
@@ -491,6 +494,7 @@ class ServiceDialog(Dialog):
                 vinput.setRange(start, end)
                 if len(option['values']) > 2:
                     vinput.setSuffix(" " + option['values'][2])
+                vinput.valueChanged.connect(self._on_preset_reset)
 
             else:  # list of tuples
                 vinput = QtGui.QComboBox()
@@ -499,6 +503,7 @@ class ServiceDialog(Dialog):
 
                 if len(option['values']) == 1:
                     vinput.setDisabled(True)
+                vinput.currentIndexChanged.connect(self._on_preset_reset)
 
             panel.addWidget(label, row, 0)
             panel.addWidget(vinput, row, 1)
@@ -511,7 +516,8 @@ class ServiceDialog(Dialog):
         panel.addWidget(label, row, 0, 1, 2, QtCore.Qt.AlignTop)
         panel.setRowStretch(row, 1)
 
-    def _on_service_activated_set(self, svc_id, widget, options):
+    def _on_service_activated_set(self, svc_id, widget, options,
+                                  use_options=None):
         """
         Based on the list of options and the user's last known options,
         restore the values of all input controls.
@@ -519,7 +525,8 @@ class ServiceDialog(Dialog):
 
         self._addon.logger.debug("Restoring options for %s", svc_id)
 
-        last_options = self._addon.config['last_options'].get(svc_id, {})
+        last_options = (use_options or
+                        self._addon.config['last_options'].get(svc_id, {}))
         vinputs = widget.findChildren(self._OPTIONS_WIDGETS)
 
         assert len(vinputs) == len(options)
@@ -577,19 +584,30 @@ class ServiceDialog(Dialog):
         if presets:
             label.hide()
             dropdown.show()
-            dropdown.addItems(sorted(presets.keys()))
+            dropdown.addItems(sorted(presets.keys(),
+                                     key=lambda key: key.lower()))
             if select:
                 idx = dropdown.findText(select)
                 if idx > 0:
                     dropdown.setCurrentIndex(idx)
-                    # I assume that setCurrentIndex() does not trigger the
-                    # activated event and I will need this...
-                    # FIXME: delete.setDisabled(False)
+                    delete.setDisabled(False)
             delete.show()
         else:
             label.show()
             dropdown.hide()
             delete.hide()
+
+    def _on_preset_reset(self):
+        """Sets preset dropdown back and disables delete button."""
+
+        if next((True
+                 for frame in inspect.stack()
+                 if frame[3] == '_on_preset_activated'),
+                False):
+            return  # ignore value change events triggered by preset loads
+
+        self.findChild(QtGui.QPushButton, 'presets_delete').setDisabled(True)
+        self.findChild(QtGui.QComboBox, 'presets_dropdown').setCurrentIndex(0)
 
     def _on_preset_save(self):
         """Saves the current service state back as a preset."""
@@ -624,12 +642,53 @@ class ServiceDialog(Dialog):
             parent=self,
         )
 
-        if okay:
+        if name and okay:
             self._addon.config['presets'] = dict(
                 self._addon.config['presets'].items() +
                 [(name, dict([('service', svc_id)] + options.items()))]
             )
             self._on_preset_refresh(select=name)
+
+    def _on_preset_activated(self, idx):
+        """Loads preset at given index and toggles delete button."""
+
+        delete = self.findChild(QtGui.QPushButton, 'presets_delete')
+
+        if idx > 0:
+            delete.setEnabled(True)
+            name = self.findChild(QtGui.QComboBox,
+                                  'presets_dropdown').currentText()
+            try:
+                preset = self._addon.config['presets'][name]
+                svc_id = preset['service']
+            except KeyError:
+                self._alerts("%s preset is invalid." % name, self)
+                return
+
+            dropdown = self.findChild(QtGui.QComboBox, 'service')
+            idx = dropdown.findData(svc_id)
+            if idx < 0:
+                self._alerts("%s service is not available." % svc_id, self)
+                return
+
+            dropdown.setCurrentIndex(idx)
+            self._on_service_activated(idx, use_options=preset)
+        else:
+            delete.setEnabled(False)
+
+    def _on_preset_delete(self):
+        """Removes the currently selected preset from configuration."""
+
+        presets = dict(self._addon.config['presets'])
+        try:
+            del presets[self.findChild(QtGui.QComboBox,
+                                       'presets_dropdown').currentText()]
+        except KeyError:
+            pass
+        else:
+            self._addon.config['presets'] = presets
+
+        self._on_preset_refresh()
 
     def _on_preview(self):
         """
@@ -645,10 +704,7 @@ class ServiceDialog(Dialog):
             text=self._addon.strip.from_user(text_value),
             options=values,
             callbacks=dict(
-                done=lambda: (
-                    self._disable_inputs(False),
-                    self._on_preset_refresh(),
-                ),
+                done=lambda: self._disable_inputs(False),
                 okay=self._addon.player.preview,
                 fail=lambda exception: self._alerts(
                     "The service could not playback the phrase.\n\n%s" %
@@ -675,6 +731,12 @@ class ServiceDialog(Dialog):
                      len(widget) > 1)
         ):
             widget.setDisabled(flag)
+
+        if not flag:
+            self.findChild(QtGui.QPushButton, 'presets_delete').setEnabled(
+                self.findChild(QtGui.QComboBox,
+                               'presets_dropdown').currentIndex() > 0
+            )
 
     def _get_service_values(self):
         """

@@ -218,18 +218,20 @@ class ServiceDialog(Dialog):
 
     __slots__ = [
         '_alerts',       # API to display error messages
+        '_ask',          # API to ask for text input
         '_panel_built',  # dict, svc_id to True if panel has been constructed
         '_panel_set',    # dict, svc_id to True if panel values have been set
         '_svc_id',       # active service ID
     ]
 
-    def __init__(self, alerts, *args, **kwargs):
+    def __init__(self, alerts, ask, *args, **kwargs):
         """
         Initialize the mechanism for keeping track of which panels are
         loaded.
         """
 
         self._alerts = alerts
+        self._ask = ask
         self._panel_built = {}
         self._panel_set = {}
         self._svc_id = None
@@ -325,7 +327,7 @@ class ServiceDialog(Dialog):
         save.setFixedWidth(save.fontMetrics().width(save.text()) + 20)
         save.setToolTip("Remember the selected service and its input\n"
                         "settings so that you can quickly access it later.")
-        # TODO save.clicked.connect(...)
+        save.clicked.connect(self._on_preset_save)
 
         layout = QtGui.QHBoxLayout()
         layout.addWidget(label)
@@ -380,7 +382,8 @@ class ServiceDialog(Dialog):
     def show(self, *args, **kwargs):
         """
         Recall the last used (or default) service and call in to
-        activate its panel, then clear the input text box.
+        activate its panel, populate presets, and then clear the input
+        text box.
         """
 
         self._panel_set = {}  # these must be reloaded with each window open
@@ -389,6 +392,7 @@ class ServiceDialog(Dialog):
         idx = max(dropdown.findData(self._addon.config['last_service']), 0)
         dropdown.setCurrentIndex(idx)
         self._on_service_activated(idx, True)
+        self._on_preset_refresh()
 
         text = self.findChild(QtGui.QWidget, 'text')
         try:
@@ -415,6 +419,10 @@ class ServiceDialog(Dialog):
             lambda: self._launch_link('usage/' + self.HELP_USAGE_SLUG),
         )
         menu.addAction(help_svc)
+        menu.addAction(
+            "Configuring service presets",
+            lambda: self._launch_link('usage/presets'),
+        )
         menu.addAction(
             "Enabling other TTS services",
             lambda: self._launch_link('services'),
@@ -553,6 +561,76 @@ class ServiceDialog(Dialog):
 
                 vinput.setCurrentIndex(idx)
 
+    def _on_preset_refresh(self, select=None):
+        """Updates the view of the preset controls."""
+
+        label = self.findChild(Label, 'presets_label')
+        dropdown = self.findChild(QtGui.QComboBox, 'presets_dropdown')
+        delete = self.findChild(QtGui.QPushButton, 'presets_delete')
+        presets = self._addon.config['presets']
+
+        dropdown.clear()
+        dropdown.addItem("Load Preset...    ")
+        dropdown.insertSeparator(1)
+        delete.setDisabled(True)
+
+        if presets:
+            label.hide()
+            dropdown.show()
+            dropdown.addItems(sorted(presets.keys()))
+            if select:
+                idx = dropdown.findText(select)
+                if idx > 0:
+                    dropdown.setCurrentIndex(idx)
+                    # I assume that setCurrentIndex() does not trigger the
+                    # activated event and I will need this...
+                    # FIXME: delete.setDisabled(False)
+            delete.show()
+        else:
+            label.show()
+            dropdown.hide()
+            delete.hide()
+
+    def _on_preset_save(self):
+        """Saves the current service state back as a preset."""
+
+        svc_id, options = self._get_service_values()
+        svc_name = self.findChild(QtGui.QComboBox, 'service').currentText()
+
+        name, okay = self._ask(
+            title="Save a Preset Service Configuration",
+            prompt=(
+                "Please enter a name for <strong>%s</strong> with "
+                "<strong>%s</strong> set to <kbd>%s</kbd>." %
+                ((svc_name,) + options.items()[0])
+
+                if len(options) == 1 else
+
+                "Please enter a name for <strong>%s</strong> with the "
+                "following:<br>%s" % (
+                    svc_name,
+                    "<br>".join(
+                        "- <strong>%s:</strong> <kbd>%s</kbd>" % item
+                        for item in sorted(options.items())
+                    )
+                )
+
+                if len(options) > 1 else
+
+                "Please enter a name for <strong>%s</strong>." % svc_name
+            ),
+            default=(svc_name if not options.get('voice')
+                     else "%s (%s)" % (svc_name, options['voice'])),
+            parent=self,
+        )
+
+        if okay:
+            self._addon.config['presets'] = dict(
+                self._addon.config['presets'].items() +
+                [(name, dict([('service', svc_id)] + options.items()))]
+            )
+            self._on_preset_refresh(select=name)
+
     def _on_preview(self):
         """
         Handle parsing the inputs and passing onto the router.
@@ -567,7 +645,10 @@ class ServiceDialog(Dialog):
             text=self._addon.strip.from_user(text_value),
             options=values,
             callbacks=dict(
-                done=lambda: self._disable_inputs(False),
+                done=lambda: (
+                    self._disable_inputs(False),
+                    self._on_preset_refresh(),
+                ),
                 okay=self._addon.player.preview,
                 fail=lambda exception: self._alerts(
                     "The service could not playback the phrase.\n\n%s" %

@@ -322,6 +322,19 @@ class Reviewer(object):
             self._play_html('back', self._get_answer(card),
                             self._addon.player.menu_click)
 
+    def has_tts(self, state, card):
+        """
+        Does a relatively fast, but inaccurate, check to see if the
+        specified card side might have playable TTS on it.
+        """
+
+        html = (card.q() if state == 'question'
+                else self._get_answer(card) if state == 'answer'
+                else None)
+
+        return html and (BeautifulTTS(html)('tts') or
+                         self.RE_LEGACY_TAGS.search(html))
+
 
 class BeautifulTTS(BeautifulSoup):  # pylint:disable=too-many-public-methods
     """

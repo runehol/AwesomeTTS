@@ -571,8 +571,11 @@ def reviewer_hooks():
                             else None)
         except Exception:  # just in case, pylint:disable=broad-except
             pass
-        tts_question = tts_card and tts_side
-        tts_answer = tts_card and tts_side == 'answer'
+
+        tts_question = tts_card and tts_side and \
+            reviewer.has_tts('question', tts_card)
+        tts_answer = tts_card and tts_side == 'answer' and \
+            reviewer.has_tts('answer', tts_card)
 
         if not (atts_button or say_text or tts_question or tts_answer):
             return
@@ -595,8 +598,7 @@ def reviewer_hooks():
 
         if tts_question:
             submenu.addAction(
-                "Play On-the-Fly TTS from Question Side" if tts_answer
-                else "Play On-the-Fly TTS",
+                "Play On-the-Fly TTS from Question Side",
                 lambda: reviewer.nonselection_handler('question', tts_card)
             )
 

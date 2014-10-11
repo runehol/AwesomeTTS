@@ -557,9 +557,19 @@ def reviewer_hooks():
             atts_button = None
 
         say_text = config['presets'] and strip(web_view.selectedText())
-        tts_tags = False  # TODO
 
-        if not (atts_button or say_text or tts_tags):
+        tts_card = tts_side = None
+        try:  # this works for web views in the reviewer
+            if web_view.parentWidget().parentWidget() == aqt.mw and \
+               aqt.mw.state == 'review':
+                tts_card = aqt.mw.reviewer.card
+                tts_side = aqt.mw.reviewer.state
+        except Exception:  # just in case, pylint:disable=broad-except
+            pass
+        tts_question = tts_card and tts_side
+        tts_answer = tts_card and tts_side == 'answer'
+
+        if not (atts_button or say_text or tts_question or tts_answer):
             return
 
         submenu = QMenu("Awesome&TTS", menu)
@@ -578,8 +588,18 @@ def reviewer_hooks():
             for item in config['presets'].items():
                 glue(item)
 
-        if tts_tags:
-            pass  # TODO
+        if tts_question:
+            submenu.addAction(
+                "Play On-the-Fly TTS from Question Side" if tts_answer
+                else "Play On-the-Fly TTS",
+                lambda: reviewer.nonselection_handler('question', tts_card)
+            )
+
+        if tts_answer:
+            submenu.addAction(
+                "Play On-the-Fly TTS from Answer Side",
+                lambda: reviewer.nonselection_handler('answer', tts_card)
+            )
 
         menu.addMenu(submenu)
 

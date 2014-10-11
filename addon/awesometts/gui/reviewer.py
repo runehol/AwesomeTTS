@@ -312,6 +312,16 @@ class Reviewer(object):
             ),
         )
 
+    def nonselection_handler(self, state, card):
+        """Play on-the-fly text from the specified card side."""
+
+        if state == 'question':
+            self._play_html('front', card.q(), self._addon.player.menu_click)
+
+        elif state == 'answer':
+            self._play_html('back', self._get_answer(card),
+                            self._addon.player.menu_click)
+
 
 class BeautifulTTS(BeautifulSoup):  # pylint:disable=too-many-public-methods
     """

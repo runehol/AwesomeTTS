@@ -296,6 +296,22 @@ class Reviewer(object):
             self._parent,
         )
 
+    def selection_handler(self, text, preset):
+        """Play the selected text using the preset."""
+
+        self._addon.router(
+            svc_id=preset['service'],
+            text=text,
+            options=preset,
+            callbacks=dict(
+                okay=self._addon.player.menu_click,
+                fail=lambda exception: (
+                    isinstance(exception, self._addon.router.BusyError) or
+                    self._alerts(exception.message, self._parent)
+                ),
+            ),
+        )
+
 
 class BeautifulTTS(BeautifulSoup):  # pylint:disable=too-many-public-methods
     """

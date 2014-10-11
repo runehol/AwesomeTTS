@@ -169,7 +169,7 @@ class Configurator(Dialog):
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self._ui_tabs_text_mode(
             '_template_',
-            "Handling Template Text (e.g. On-the-Fly)",
+            "Handling Template Text (e.g. On-the-Fly, Context Menus)",
             "For a front-side rendered cloze,",
             [('anki', "read however Anki displayed it"),
              ('wrap', "read w/ hint wrapped in ellipses"),

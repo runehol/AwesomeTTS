@@ -394,7 +394,7 @@ class ServiceDialog(Dialog):
         idx = max(dropdown.findData(self._addon.config['last_service']), 0)
         dropdown.setCurrentIndex(idx)
         self._on_service_activated(idx, initial=True)
-        self._on_preset_refresh()
+        self._on_preset_refresh(select=True)
 
         text = self.findChild(QtGui.QWidget, 'text')
         try:
@@ -587,10 +587,30 @@ class ServiceDialog(Dialog):
             dropdown.addItems(sorted(presets.keys(),
                                      key=lambda key: key.lower()))
             if select:
-                idx = dropdown.findText(select)
-                if idx > 0:
-                    dropdown.setCurrentIndex(idx)
-                    delete.setDisabled(False)
+                if select is True:
+                    # if one of the presets exactly match the svc_id and
+                    # options that were just deserialized, then we want to
+                    # select that one in the dropdown (this makes getting the
+                    # same "preset" in the template helper dialog easier)
+                    svc_id, options = self._get_service_values()
+                    select = next(
+                        (
+                            name for name, preset in presets.items()
+                            if svc_id == preset.get('service')
+                            and not next(
+                                (True for key, value in options.items()
+                                 if preset.get(key) != options.get(key)),
+                                False,
+                            )
+                        ),
+                        None,
+                    )
+
+                if select:
+                    idx = dropdown.findText(select)
+                    if idx > 0:
+                        dropdown.setCurrentIndex(idx)
+                        delete.setDisabled(False)
             delete.show()
         else:
             label.show()

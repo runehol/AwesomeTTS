@@ -510,7 +510,7 @@ def reviewer_hooks():
 
     reviewer = gui.Reviewer(addon=addon,
                             alerts=aqt.utils.showWarning,
-                            parent=aqt.mw)
+                            mw=aqt.mw)
 
     # automatic playback
 
@@ -551,6 +551,8 @@ def reviewer_hooks():
     def on_context_menu(web_view, menu):
         """Populate context menu, given the context/configuration."""
 
+        window = web_view.window()
+
         try:  # this works for web views embedded in editor windows
             atts_button = web_view.editor.widget.findChild(gui.Button)
         except AttributeError:
@@ -560,12 +562,12 @@ def reviewer_hooks():
 
         tts_card = tts_side = None
         try:  # this works for web views in the reviewer and template dialog
-            if web_view.window() is aqt.mw and aqt.mw.state == 'review':
+            if window is aqt.mw and aqt.mw.state == 'review':
                 tts_card = aqt.mw.reviewer.card
                 tts_side = aqt.mw.reviewer.state
             elif web_view.objectName() == 'mainText':  # card template dialog
                 parent_name = web_view.parentWidget().objectName()
-                tts_card = web_view.window().card
+                tts_card = window.card
                 tts_side = ('question' if parent_name == 'groupBox'
                             else 'answer' if parent_name == 'groupBox_2'
                             else None)
@@ -591,7 +593,7 @@ def reviewer_hooks():
                            else say_text[0:20].rstrip(' .') + "...")
             glue = lambda (name, preset): submenu.addAction(
                 'Say "%s" w/ %s' % (say_display, name),
-                lambda: reviewer.selection_handler(say_text, preset),
+                lambda: reviewer.selection_handler(say_text, preset, window),
             )
             for item in config['presets'].items():
                 glue(item)
@@ -599,13 +601,15 @@ def reviewer_hooks():
         if tts_question:
             submenu.addAction(
                 "Play On-the-Fly TTS from Question Side",
-                lambda: reviewer.nonselection_handler('question', tts_card)
+                lambda: reviewer.nonselection_handler('question', tts_card,
+                                                      window)
             )
 
         if tts_answer:
             submenu.addAction(
                 "Play On-the-Fly TTS from Answer Side",
-                lambda: reviewer.nonselection_handler('answer', tts_card)
+                lambda: reviewer.nonselection_handler('answer', tts_card,
+                                                      window)
             )
 
         menu.addMenu(submenu)

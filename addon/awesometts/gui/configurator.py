@@ -30,7 +30,7 @@ from sys import platform
 
 from PyQt4 import QtCore, QtGui
 
-from .base import Dialog
+from .base import Dialog, ServiceDialog
 from .common import Checkbox, Label, Note
 from .common import key_event_combo, key_combo_desc
 from .listviews import SubListView as _SubListView
@@ -61,10 +61,14 @@ class Configurator(Dialog):
     _PROPERTY_WIDGETS = (Checkbox, QtGui.QComboBox, QtGui.QLineEdit,
                          QtGui.QPushButton, QtGui.QSpinBox, QtGui.QListView)
 
-    __slots__ = ['_sul_compiler']
+    __slots__ = ['_alerts', '_ask', '_preset_editor', '_sul_compiler']
 
-    def __init__(self, sul_compiler, *args, **kwargs):
+    def __init__(self, alerts, ask, sul_compiler, *args, **kwargs):
+        self._alerts = alerts
+        self._ask = ask
+        self._preset_editor = None
         self._sul_compiler = sul_compiler
+
         super(Configurator, self).__init__(title="Configuration",
                                            *args, **kwargs)
 
@@ -450,6 +454,7 @@ class Configurator(Dialog):
         """Returns the "Advanced" tab."""
 
         layout = QtGui.QVBoxLayout()
+        layout.addWidget(self._ui_tabs_advanced_presets())
         layout.addWidget(self._ui_tabs_advanced_update())
         layout.addWidget(self._ui_tabs_advanced_debug())
         layout.addWidget(self._ui_tabs_advanced_cache())
@@ -458,6 +463,23 @@ class Configurator(Dialog):
         tab = QtGui.QWidget()
         tab.setLayout(layout)
         return tab
+
+    def _ui_tabs_advanced_presets(self):
+        """Returns the "Presets" input group."""
+
+        button = QtGui.QPushButton("Manage...")
+        button.clicked.connect(self._on_presets)
+
+        hor = QtGui.QHBoxLayout()
+        hor.addWidget(Label("Save services for quick access or side-click "
+                            "playback."))
+        hor.addSpacing(self._SPACING)
+        hor.addWidget(button)
+        hor.addStretch()
+
+        group = QtGui.QGroupBox("Service Presets")
+        group.setLayout(hor)
+        return group
 
     def _ui_tabs_advanced_update(self):
         """Returns the "Updates" input group."""
@@ -660,6 +682,16 @@ class Configurator(Dialog):
                     (button.objectName().startswith('launch_') or
                      button.objectName().startswith('tts_key_')))]
 
+    def _on_presets(self):
+        """Opens the presets editor."""
+
+        if not self._preset_editor:
+            self._preset_editor = _PresetEditor(addon=self._addon,
+                                                alerts=self._alerts,
+                                                ask=self._ask,
+                                                parent=self)
+        self._preset_editor.show()
+
     def _on_update_request(self):
         """Attempts update request w/ add-on updates interface."""
 
@@ -715,3 +747,56 @@ class Configurator(Dialog):
                 button.setText("unable to empty cache")
         else:
             button.setText("successfully emptied cache")
+
+
+class _PresetEditor(ServiceDialog):
+    """Provides a dialog for editing presets."""
+
+    __slots__ = []
+
+    def __init__(self, *args, **kwargs):
+        super(_PresetEditor, self).__init__(title="Manage Service Presets",
+                                            *args, **kwargs)
+
+    # UI Construction ########################################################
+
+    def _ui_control(self):
+        """Add explanation of the preset functionality."""
+
+        header = Label("About Service Presets")
+        header.setFont(self._FONT_HEADER)
+
+        layout = super(_PresetEditor, self)._ui_control()
+        layout.addWidget(header)
+        layout.addWidget(Note(
+            'Once saved, your service option presets can be easily recalled '
+            'in most AwesomeTTS dialog windows and/or used for on-the-fly '
+            'playback with <tts preset="..."> ... </tts> template tags.'
+        ))
+        layout.addWidget(Note(
+            "Selecting text and then side-clicking in some Anki panels (e.g. "
+            "review mode, card layout editor, note editor fields) will also "
+            "allow playback of the selected text using any of your presets."
+        ))
+        layout.addSpacing(self._SPACING)
+        layout.addStretch()
+        layout.addWidget(self._ui_buttons())
+
+        return layout
+
+    def _ui_buttons(self):
+        """Removes the "Cancel" button."""
+
+        buttons = super(_PresetEditor, self)._ui_buttons()
+        for btn in buttons.buttons():
+            if buttons.buttonRole(btn) == QtGui.QDialogButtonBox.RejectRole:
+                buttons.removeButton(btn)
+        return buttons
+
+    # Events #################################################################
+
+    def accept(self):
+        """Remember the user's options if they hit "Okay"."""
+
+        self._addon.config.update(self._get_all())
+        super(_PresetEditor, self).accept()

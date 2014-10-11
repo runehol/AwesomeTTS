@@ -416,13 +416,17 @@ class ServiceDialog(Dialog):
             .connect(lambda: self._launch_link('services/' + self._svc_id))
         help_svc.setObjectName('help_svc')
 
-        menu.addAction(
-            self.HELP_USAGE_DESC,
-            lambda: self._launch_link('usage/' + self.HELP_USAGE_SLUG),
-        )
+        try:
+            menu.addAction(
+                self.HELP_USAGE_DESC,
+                lambda: self._launch_link('usage/' + self.HELP_USAGE_SLUG),
+            )
+        except AttributeError:
+            pass
+
         menu.addAction(help_svc)
         menu.addAction(
-            "Configuring service presets",
+            "Managing service presets",
             lambda: self._launch_link('usage/presets'),
         )
         menu.addAction(

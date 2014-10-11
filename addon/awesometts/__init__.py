@@ -448,6 +448,8 @@ def config_menu():
             constructor=gui.Configurator,
             args=(),
             kwargs=dict(addon=addon, sul_compiler=to.substitution_compiled,
+                        alerts=aqt.utils.showWarning,
+                        ask=aqt.utils.getText,
                         parent=aqt.mw),
         ),
         text="Awesome&TTS...",

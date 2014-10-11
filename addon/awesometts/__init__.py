@@ -559,11 +559,16 @@ def reviewer_hooks():
         say_text = config['presets'] and strip(web_view.selectedText())
 
         tts_card = tts_side = None
-        try:  # this works for web views in the reviewer
-            if web_view.parentWidget().parentWidget() == aqt.mw and \
-               aqt.mw.state == 'review':
+        try:  # this works for web views in the reviewer and template dialog
+            if web_view.window() is aqt.mw and aqt.mw.state == 'review':
                 tts_card = aqt.mw.reviewer.card
                 tts_side = aqt.mw.reviewer.state
+            elif web_view.objectName() == 'mainText':  # card template dialog
+                parent_name = web_view.parentWidget().objectName()
+                tts_card = web_view.window().card
+                tts_side = ('question' if parent_name == 'groupBox'
+                            else 'answer' if parent_name == 'groupBox_2'
+                            else None)
         except Exception:  # just in case, pylint:disable=broad-except
             pass
         tts_question = tts_card and tts_side

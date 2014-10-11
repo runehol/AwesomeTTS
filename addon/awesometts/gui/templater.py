@@ -193,36 +193,32 @@ class Templater(ServiceDialog):
         tag and then remembers the options.
         """
 
+        from cgi import escape
+
         now = self._get_all()
         tform = self._card_layout.tab['tform']
-
-        from cgi import escape
         target = getattr(tform, now['templater_target'])
-        target.setPlainText('\n'.join([
-            target.toPlainText(),
-            '<tts service="%s" %s>%s</tts>' % (
-                now['last_service'],
+        presets = self.findChild(QtGui.QComboBox, 'presets_dropdown')
 
-                ' '.join([
-                    '%s="%s"' % (key, escape(str(value)))
-                    for key, value in (
-                        now['last_options'][now['last_service']].items()
-                        + (
-                            [('style', 'display: none')]
-                            if now['templater_hide'] == 'inline' else []
-                        )
-                    )
-                ]),
+        last_service = now['last_service']
+        attrs = (
+            [('preset', presets.currentText())] if presets.currentIndex() > 0
+            else ([('service', last_service)] +
+                  sorted(now['last_options'][last_service].items()))
+        )
+        if now['templater_hide'] == 'inline':
+            attrs.append(('style', 'display: none'))
+        attrs = ' '.join('%s="%s"' % (key, escape(unicode(value), quote=True))
+                         for key, value in attrs)
 
-                (
-                    (
-                        '{{cloze:%s}}' if now.get('templater_cloze')
-                        else '{{%s}}'
-                    ) % now['templater_field']
-                ) if now['templater_field']
-                else '',
-            ),
-        ]))
+        cloze = now.get('templater_cloze')
+        field = now['templater_field']
+        html = ('' if not field
+                else '{{cloze:%s}}' % field if cloze
+                else '{{%s}}' % field)
+
+        target.setPlainText('\n'.join([target.toPlainText(),
+                                       '<tts %s>%s</tts>' % (attrs, html)]))
 
         if now['templater_hide'] == 'global':
             existing_css = tform.css.toPlainText()

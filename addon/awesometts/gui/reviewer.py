@@ -208,6 +208,22 @@ class Reviewer(object):
 
         attr = dict(tag.attrs)
 
+        if 'preset' in attr:
+            preset = attr['preset']
+            presets = self._addon.config['presets']
+            try:
+                attr = dict(presets[preset])
+            except KeyError:
+                try:
+                    preset = preset.strip().lower()
+                    attr = dict(next(value for key, value in presets.items()
+                                     if key.strip().lower() == preset))
+                except StopIteration:
+                    self._alerts("'preset' for this tag does not exist:\n%s" %
+                                 tag.prettify().decode('utf-8'),
+                                 parent)
+                    return
+
         try:
             svc_id = attr.pop('service')
         except KeyError:

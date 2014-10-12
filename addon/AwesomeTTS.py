@@ -114,7 +114,7 @@ awesometts.browser_menus()     # mass generator and MP3 stripper
 awesometts.cards_button()      # on-the-fly templater helper in card view
 awesometts.config_menu()       # provides access to configuration dialog
 awesometts.editor_button()     # single audio clip generator button
-awesometts.on_the_fly()        # automatic on-the-fly playback and shortcuts
+awesometts.reviewer_hooks()    # on-the-fly playback/shortcuts, context menus
 awesometts.sound_tag_delays()  # delayed playing of stored [sound]s in review
 awesometts.update_checker()    # if enabled, runs the add-on update checker
 awesometts.window_shortcuts()  # enable/update shortcuts for add-on windows

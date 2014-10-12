@@ -25,7 +25,7 @@ Add-on package initialization
 """
 
 __all__ = ['browser_menus', 'cards_button', 'config_menu', 'editor_button',
-           'on_the_fly', 'sound_tag_delays', 'update_checker',
+           'reviewer_hooks', 'sound_tag_delays', 'update_checker',
            'window_shortcuts']
 
 import logging
@@ -109,6 +109,7 @@ config = Config(
          to.nullable_key, to.nullable_int),
         ('otf_only_revealed_cloze', 'integer', False, to.lax_bool, int),
         ('otf_remove_hints', 'integer', False, to.lax_bool, int),
+        ('presets', 'text', {}, to.deserialized_dict, to.compact_json),
         ('spec_note_count', 'text', '', unicode, unicode),
         ('spec_note_count_wrap', 'integer', True, to.lax_bool, int),
         ('spec_note_ellipsize', 'text', '', unicode, unicode),
@@ -200,6 +201,21 @@ updates = Updates(
     logger=logger,
 )
 
+STRIP_TEMPLATE_POSTHTML = [
+    'whitespace',
+    'sounds_univ',
+    'filenames',
+    ('within_parens', 'strip_template_parens'),
+    ('within_brackets', 'strip_template_brackets'),
+    ('within_braces', 'strip_template_braces'),
+    ('char_remove', 'spec_template_strip'),
+    ('counter', 'spec_template_count', 'spec_template_count_wrap'),
+    ('char_ellipsize', 'spec_template_ellipsize'),
+    ('custom_sub', 'sul_template'),
+    'ellipses',
+    'whitespace',
+]
+
 addon = Bundle(
     config=config,
     downloader=Bundle(
@@ -253,19 +269,7 @@ addon = Bundle(
             'hint_links',
             ('hint_content', 'otf_remove_hints'),
             'html',
-            'whitespace',
-            'sounds_univ',
-            'filenames',
-            ('within_parens', 'strip_template_parens'),
-            ('within_brackets', 'strip_template_brackets'),
-            ('within_braces', 'strip_template_braces'),
-            ('char_remove', 'spec_template_strip'),
-            ('counter', 'spec_template_count', 'spec_template_count_wrap'),
-            ('char_ellipsize', 'spec_template_ellipsize'),
-            ('custom_sub', 'sul_template'),
-            'ellipses',
-            'whitespace',
-        ], config=config, logger=logger),
+        ] + STRIP_TEMPLATE_POSTHTML, config=config, logger=logger),
 
         # like the previous, but for the back sides of cards
         from_template_back=Sanitizer([
@@ -273,19 +277,7 @@ addon = Bundle(
             'hint_links',
             ('hint_content', 'otf_remove_hints'),
             'html',
-            'whitespace',
-            'sounds_univ',
-            'filenames',
-            ('within_parens', 'strip_template_parens'),
-            ('within_brackets', 'strip_template_brackets'),
-            ('within_braces', 'strip_template_braces'),
-            ('char_remove', 'spec_template_strip'),
-            ('counter', 'spec_template_count', 'spec_template_count_wrap'),
-            ('char_ellipsize', 'spec_template_ellipsize'),
-            ('custom_sub', 'sul_template'),
-            'ellipses',
-            'whitespace',
-        ], config=config, logger=logger),
+        ] + STRIP_TEMPLATE_POSTHTML, config=config, logger=logger),
 
         # for cleaning up text from unknown sources (e.g. system clipboard);
         # n.b. clozes_revealed is not used here without the card context and
@@ -371,6 +363,7 @@ def browser_menus():
                 kwargs=dict(browser=browser,
                             addon=addon,
                             alerts=aqt.utils.showWarning,
+                            ask=aqt.utils.getText,
                             parent=browser),
             ),
             text="&Add Audio to Selected...",
@@ -435,6 +428,7 @@ def cards_button():
                     kwargs=dict(card_layout=card_layout,
                                 addon=addon,
                                 alerts=aqt.utils.showWarning,
+                                ask=aqt.utils.getText,
                                 parent=card_layout),
                 ),
             ),
@@ -454,6 +448,8 @@ def config_menu():
             constructor=gui.Configurator,
             args=(),
             kwargs=dict(addon=addon, sul_compiler=to.substitution_compiled,
+                        alerts=aqt.utils.showWarning,
+                        ask=aqt.utils.getText,
                         parent=aqt.mw),
         ),
         text="Awesome&TTS...",
@@ -480,6 +476,7 @@ def editor_button():
                     kwargs=dict(editor=editor,
                                 addon=addon,
                                 alerts=aqt.utils.showWarning,
+                                ask=aqt.utils.getText,
                                 parent=editor.parentWindow),
                 ),
                 style=editor.plastiqueStyle,
@@ -503,17 +500,21 @@ def editor_button():
     )
 
 
-def on_the_fly():
+def reviewer_hooks():
     """
     Enables support for AwesomeTTS to automatically play text-to-speech
-    tags and to also play them on-demand via shortcut keys.
+    tags and to also do playback on-demand via shortcut keys and the
+    context menu.
     """
 
     from PyQt4.QtCore import QEvent
+    from PyQt4.QtGui import QMenu
 
     reviewer = gui.Reviewer(addon=addon,
                             alerts=aqt.utils.showWarning,
-                            parent=aqt.mw)
+                            mw=aqt.mw)
+
+    # automatic playback
 
     anki.hooks.addHook(
         'showQuestion',
@@ -524,6 +525,8 @@ def on_the_fly():
         'showAnswer',
         lambda: reviewer.card_handler('answer', aqt.mw.reviewer.card),
     )
+
+    # shortcut-triggered playback
 
     reviewer_filter = gui.Filter(
         relay=lambda event: reviewer.key_handler(
@@ -542,6 +545,82 @@ def on_the_fly():
     )
 
     aqt.mw.installEventFilter(reviewer_filter)
+
+    # context menu playback
+
+    strip = Sanitizer(STRIP_TEMPLATE_POSTHTML, config=config, logger=logger)
+
+    def on_context_menu(web_view, menu):
+        """Populate context menu, given the context/configuration."""
+
+        window = web_view.window()
+
+        try:  # this works for web views embedded in editor windows
+            atts_button = web_view.editor.widget.findChild(gui.Button)
+        except AttributeError:
+            atts_button = None
+
+        say_text = config['presets'] and strip(web_view.selectedText())
+
+        tts_card = tts_side = None
+        try:  # this works for web views in the reviewer and template dialog
+            if window is aqt.mw and aqt.mw.state == 'review':
+                tts_card = aqt.mw.reviewer.card
+                tts_side = aqt.mw.reviewer.state
+            elif web_view.objectName() == 'mainText':  # card template dialog
+                parent_name = web_view.parentWidget().objectName()
+                tts_card = window.card
+                tts_side = ('question' if parent_name == 'groupBox'
+                            else 'answer' if parent_name == 'groupBox_2'
+                            else None)
+        except Exception:  # just in case, pylint:disable=broad-except
+            pass
+
+        tts_question = tts_card and tts_side and \
+            reviewer.has_tts('question', tts_card)
+        tts_answer = tts_card and tts_side == 'answer' and \
+            reviewer.has_tts('answer', tts_card)
+
+        if not (atts_button or say_text or tts_question or tts_answer):
+            return
+
+        submenu = QMenu("Awesome&TTS", menu)
+        submenu.setIcon(gui.ICON)
+
+        if atts_button:
+            submenu.addAction("Add MP3 to the Note", atts_button.click)
+
+        if say_text:
+            say_display = (say_text if len(say_text) < 25
+                           else say_text[0:20].rstrip(' .') + "...")
+            glue = lambda (name, preset): submenu.addAction(
+                'Say "%s" w/ %s' % (say_display, name),
+                lambda: reviewer.selection_handler(say_text, preset, window),
+            )
+            for item in config['presets'].items():
+                glue(item)
+
+        if tts_question:
+            submenu.addAction(
+                "Play On-the-Fly TTS from Question Side",
+                lambda: reviewer.nonselection_handler('question', tts_card,
+                                                      window)
+            )
+
+        if tts_answer:
+            submenu.addAction(
+                "Play On-the-Fly TTS from Answer Side",
+                lambda: reviewer.nonselection_handler('answer', tts_card,
+                                                      window)
+            )
+
+        menu.addMenu(submenu)
+
+    anki.hooks.addHook('AnkiWebView.contextMenuEvent', on_context_menu)
+    anki.hooks.addHook('EditorWebView.contextMenuEvent', on_context_menu)
+    anki.hooks.addHook('Reviewer.contextMenuEvent',
+                       lambda reviewer, menu:
+                       on_context_menu(reviewer.web, menu))
 
 
 def sound_tag_delays():

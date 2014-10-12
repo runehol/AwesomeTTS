@@ -85,13 +85,13 @@ class Reviewer(object):
     __slots__ = [
         '_addon',
         '_alerts',
-        '_parent',
+        '_mw',
     ]
 
-    def __init__(self, addon, alerts, parent):
+    def __init__(self, addon, alerts, mw):
         self._addon = addon
         self._alerts = alerts
-        self._parent = parent
+        self._mw = mw
 
     def card_handler(self, state, card):
         """
@@ -102,11 +102,11 @@ class Reviewer(object):
 
         if state == 'question' and self._addon.config['automatic_questions']:
             self._play_html('front', card.q(),
-                            self._addon.player.otf_question)
+                            self._addon.player.otf_question, self._mw)
 
         elif state == 'answer' and self._addon.config['automatic_answers']:
             self._play_html('back', self._get_answer(card),
-                            self._addon.player.otf_answer)
+                            self._addon.player.otf_answer, self._mw)
 
     def key_handler(self, key_event, state, card, replay_audio):
         """
@@ -137,13 +137,13 @@ class Reviewer(object):
         question_combo = self._addon.config['tts_key_q']
         if question_combo and combo == question_combo:
             self._play_html('front', card.q(),
-                            self._addon.player.otf_shortcut)
+                            self._addon.player.otf_shortcut, self._mw)
             handled = True
 
         answer_combo = self._addon.config['tts_key_a']
         if state == 'answer' and answer_combo and combo == answer_combo:
             self._play_html('back', self._get_answer(card),
-                            self._addon.player.otf_shortcut)
+                            self._addon.player.otf_shortcut, self._mw)
             handled = True
 
         return handled
@@ -177,7 +177,7 @@ class Reviewer(object):
 
         return answer_html
 
-    def _play_html(self, side, html, playback):
+    def _play_html(self, side, html, playback, parent):
         """
         Read in the passed HTML, attempt to discover <tts> tags in it,
         and pass them to the router for processing.
@@ -194,12 +194,12 @@ class Reviewer(object):
                          else self._addon.strip.from_template_front)
 
         for tag in BeautifulTTS(html)('tts'):
-            self._play_html_tag(tag, from_template, playback)
+            self._play_html_tag(tag, from_template, playback, parent)
 
         for legacy in self.RE_LEGACY_TAGS.findall(html):
-            self._play_html_legacy(legacy, from_template, playback)
+            self._play_html_legacy(legacy, from_template, playback, parent)
 
-    def _play_html_tag(self, tag, from_template, playback):
+    def _play_html_tag(self, tag, from_template, playback, parent):
         """Helper method for _play_html()."""
 
         text = from_template(unicode(tag))
@@ -208,13 +208,29 @@ class Reviewer(object):
 
         attr = dict(tag.attrs)
 
+        if 'preset' in attr:
+            preset = attr['preset']
+            presets = self._addon.config['presets']
+            try:
+                attr = dict(presets[preset])
+            except KeyError:
+                try:
+                    preset = preset.strip().lower()
+                    attr = dict(next(value for key, value in presets.items()
+                                     if key.strip().lower() == preset))
+                except StopIteration:
+                    self._alerts("'preset' for this tag does not exist:\n%s" %
+                                 tag.prettify().decode('utf-8'),
+                                 parent)
+                    return
+
         try:
             svc_id = attr.pop('service')
         except KeyError:
             self._alerts(
                 "This tag needs a 'service' attribute:\n%s" %
                 tag.prettify().decode('utf-8'),
-                self._parent,
+                parent,
             )
             return
 
@@ -232,13 +248,13 @@ class Reviewer(object):
                             tag.prettify().decode('utf-8').strip(),
                             exception.message,
                         ),
-                        self._parent,
+                        parent,
                     )
                 ),
             ),
         )
 
-    def _play_html_legacy(self, legacy, from_template, playback):
+    def _play_html_legacy(self, legacy, from_template, playback, parent):
         """Helper method for _play_html()."""
 
         components = legacy[1].split(':')
@@ -250,6 +266,7 @@ class Reviewer(object):
                     "Old-style GTTS bracket tags must specify the "
                     "voice, e.g. [GTTS:es:hola], [GTTS:es:{{Front}}], "
                     "[GTTS:en:{{text:Back}}]",
+                    parent,
                 )
                 return
 
@@ -262,6 +279,7 @@ class Reviewer(object):
                     "Old-style TTS bracket tags must specify service and "
                     "voice, e.g. [TTS:g:es:mundo], [TTS:g:es:{{Front}}], "
                     "[TTS:g:en:{{text:Back}}]",
+                    parent,
                 )
                 return
 
@@ -282,19 +300,60 @@ class Reviewer(object):
                 okay=playback,
                 fail=lambda exception: (
                     isinstance(exception, self._addon.router.BusyError) or
-                    self._play_html_legacy_bad(legacy, exception.message)
+                    self._play_html_legacy_bad(legacy, exception.message,
+                                               parent)
                 ),
             ),
         )
 
-    def _play_html_legacy_bad(self, legacy, message):
+    def _play_html_legacy_bad(self, legacy, message, parent):
         """Reassembles the legacy given tag and displays an alert."""
 
         self._alerts(
             "Unable to play this tag:\n[%sTTS:%s]\n\n%s" %
             (legacy[0], legacy[1], message),
-            self._parent,
+            parent,
         )
+
+    def selection_handler(self, text, preset, parent):
+        """Play the selected text using the preset."""
+
+        self._addon.router(
+            svc_id=preset['service'],
+            text=text,
+            options=preset,
+            callbacks=dict(
+                okay=self._addon.player.menu_click,
+                fail=lambda exception: (
+                    isinstance(exception, self._addon.router.BusyError) or
+                    self._alerts(exception.message, parent)
+                ),
+            ),
+        )
+
+    def nonselection_handler(self, state, card, parent):
+        """Play on-the-fly text from the specified card side."""
+
+        if state == 'question':
+            self._play_html('front', card.q(),
+                            self._addon.player.menu_click, parent)
+
+        elif state == 'answer':
+            self._play_html('back', self._get_answer(card),
+                            self._addon.player.menu_click, parent)
+
+    def has_tts(self, state, card):
+        """
+        Does a relatively fast, but inaccurate, check to see if the
+        specified card side might have playable TTS on it.
+        """
+
+        html = (card.q() if state == 'question'
+                else self._get_answer(card) if state == 'answer'
+                else None)
+
+        return html and (BeautifulTTS(html)('tts') or
+                         self.RE_LEGACY_TAGS.search(html))
 
 
 class BeautifulTTS(BeautifulSoup):  # pylint:disable=too-many-public-methods

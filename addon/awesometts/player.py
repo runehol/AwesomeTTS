@@ -46,9 +46,15 @@ class Player(object):
         self._logger = logger
 
     def preview(self, path):
-        """Play path with no delay."""
+        """Play path with no delay, from preview button."""
 
         self._insert_blanks(0, "preview mode", path)
+        self._anki.native(path)
+
+    def menu_click(self, path):
+        """Play path with no delay, from context menu."""
+
+        self._insert_blanks(0, "context menu", path)
         self._anki.native(path)
 
     def otf_question(self, path):

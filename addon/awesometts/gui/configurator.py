@@ -26,14 +26,14 @@ __all__ = ['Configurator']
 from locale import format as locale
 import os
 import os.path
-import re
 from sys import platform
 
 from PyQt4 import QtCore, QtGui
 
-from .base import Dialog
-from .common import Checkbox, HTML, Label, Note
+from .base import Dialog, ServiceDialog
+from .common import Checkbox, Label, Note
 from .common import key_event_combo, key_combo_desc
+from .listviews import SubListView as _SubListView
 
 # all methods might need 'self' in the future, pylint:disable=R0201
 
@@ -61,10 +61,14 @@ class Configurator(Dialog):
     _PROPERTY_WIDGETS = (Checkbox, QtGui.QComboBox, QtGui.QLineEdit,
                          QtGui.QPushButton, QtGui.QSpinBox, QtGui.QListView)
 
-    __slots__ = ['_sul_compiler']
+    __slots__ = ['_alerts', '_ask', '_preset_editor', '_sul_compiler']
 
-    def __init__(self, sul_compiler, *args, **kwargs):
+    def __init__(self, alerts, ask, sul_compiler, *args, **kwargs):
+        self._alerts = alerts
+        self._ask = ask
+        self._preset_editor = None
         self._sul_compiler = sul_compiler
+
         super(Configurator, self).__init__(title="Configuration",
                                            *args, **kwargs)
 
@@ -169,7 +173,7 @@ class Configurator(Dialog):
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self._ui_tabs_text_mode(
             '_template_',
-            "Handling Template Text (e.g. On-the-Fly)",
+            "Handling Template Text (e.g. On-the-Fly, Context Menus)",
             "For a front-side rendered cloze,",
             [('anki', "read however Anki displayed it"),
              ('wrap', "read w/ hint wrapped in ellipses"),
@@ -450,6 +454,7 @@ class Configurator(Dialog):
         """Returns the "Advanced" tab."""
 
         layout = QtGui.QVBoxLayout()
+        layout.addWidget(self._ui_tabs_advanced_presets())
         layout.addWidget(self._ui_tabs_advanced_update())
         layout.addWidget(self._ui_tabs_advanced_debug())
         layout.addWidget(self._ui_tabs_advanced_cache())
@@ -458,6 +463,23 @@ class Configurator(Dialog):
         tab = QtGui.QWidget()
         tab.setLayout(layout)
         return tab
+
+    def _ui_tabs_advanced_presets(self):
+        """Returns the "Presets" input group."""
+
+        button = QtGui.QPushButton("Manage...")
+        button.clicked.connect(self._on_presets)
+
+        hor = QtGui.QHBoxLayout()
+        hor.addWidget(Label("Save services for quick access or side-click "
+                            "playback."))
+        hor.addSpacing(self._SPACING)
+        hor.addWidget(button)
+        hor.addStretch()
+
+        group = QtGui.QGroupBox("Service Presets")
+        group.setLayout(hor)
+        return group
 
     def _ui_tabs_advanced_update(self):
         """Returns the "Updates" input group."""
@@ -660,6 +682,16 @@ class Configurator(Dialog):
                     (button.objectName().startswith('launch_') or
                      button.objectName().startswith('tts_key_')))]
 
+    def _on_presets(self):
+        """Opens the presets editor."""
+
+        if not self._preset_editor:
+            self._preset_editor = _PresetEditor(addon=self._addon,
+                                                alerts=self._alerts,
+                                                ask=self._ask,
+                                                parent=self)
+        self._preset_editor.show()
+
     def _on_update_request(self):
         """Attempts update request w/ add-on updates interface."""
 
@@ -717,283 +749,54 @@ class Configurator(Dialog):
             button.setText("successfully emptied cache")
 
 
-class _SubRuleDelegate(QtGui.QItemDelegate):
-    """Item view specifically for a substitution rule."""
+class _PresetEditor(ServiceDialog):
+    """Provides a dialog for editing presets."""
 
-    sizeHint = lambda self, option, index: self.sizeHint.SIZE
-    sizeHint.SIZE = QtCore.QSize(-1, 40)
+    __slots__ = []
 
-    __slots__ = ['_sul_compiler']
+    def __init__(self, *args, **kwargs):
+        super(_PresetEditor, self).__init__(title="Manage Service Presets",
+                                            *args, **kwargs)
 
-    def __init__(self, sul_compiler, *args, **kwargs):
-        super(_SubRuleDelegate, self).__init__(*args, **kwargs)
-        self._sul_compiler = sul_compiler
+    # UI Construction ########################################################
 
-    def createEditor(self, parent,    # pylint:disable=C0103
-                     option, index):  # pylint:disable=W0613
-        """Return a panel to change rule values."""
+    def _ui_control(self):
+        """Add explanation of the preset functionality."""
 
-        edits = QtGui.QHBoxLayout()
-        edits.addWidget(QtGui.QLineEdit())
-        edits.addWidget(HTML("&nbsp;<strong>&rarr;</strong>&nbsp;"))
-        edits.addWidget(QtGui.QLineEdit())
+        header = Label("About Service Presets")
+        header.setFont(self._FONT_HEADER)
 
-        checkboxes = QtGui.QHBoxLayout()
-        for label in ["regex", "case-insensitive", "unicode"]:
-            checkboxes.addStretch()
-            checkboxes.addWidget(Checkbox(label))
-        checkboxes.addStretch()
-
-        layout = QtGui.QVBoxLayout()
+        layout = super(_PresetEditor, self)._ui_control()
+        layout.addWidget(header)
+        layout.addWidget(Note(
+            'Once saved, your service option presets can be easily recalled '
+            'in most AwesomeTTS dialog windows and/or used for on-the-fly '
+            'playback with <tts preset="..."> ... </tts> template tags.'
+        ))
+        layout.addWidget(Note(
+            "Selecting text and then side-clicking in some Anki panels (e.g. "
+            "review mode, card layout editor, note editor fields) will also "
+            "allow playback of the selected text using any of your presets."
+        ))
+        layout.addSpacing(self._SPACING)
         layout.addStretch()
-        layout.addLayout(edits)
-        layout.addLayout(checkboxes)
-        layout.addStretch()
+        layout.addWidget(self._ui_buttons())
 
-        panel = QtGui.QWidget(parent)
-        panel.setObjectName('editor')
-        panel.setAutoFillBackground(True)
-        panel.setFocusPolicy(QtCore.Qt.StrongFocus)
-        panel.setLayout(layout)
+        return layout
 
-        for layout in [edits, checkboxes, layout]:
-            layout.setContentsMargins(0, 0, 0, 0)
-            layout.setMargin(0)
-            layout.setSpacing(0)
+    def _ui_buttons(self):
+        """Removes the "Cancel" button."""
 
-        for widget in [panel] + panel.findChildren(QtGui.QWidget):
-            widget.setContentsMargins(0, 0, 0, 0)
+        buttons = super(_PresetEditor, self)._ui_buttons()
+        for btn in buttons.buttons():
+            if buttons.buttonRole(btn) == QtGui.QDialogButtonBox.RejectRole:
+                buttons.removeButton(btn)
+        return buttons
 
-        return panel
+    # Events #################################################################
 
-    def setEditorData(self, editor, index):  # pylint:disable=C0103
-        """Populate controls and focus the first edit box."""
+    def accept(self):
+        """Remember the user's options if they hit "Okay"."""
 
-        rule = index.data(QtCore.Qt.EditRole)
-
-        edits = editor.findChildren(QtGui.QLineEdit)
-        edits[0].setText(rule['input'])
-        edits[1].setText(rule['replace'])
-
-        checkboxes = editor.findChildren(Checkbox)
-        checkboxes[0].setChecked(rule['regex'])
-        checkboxes[1].setChecked(rule['ignore_case'])
-        checkboxes[2].setChecked(rule['unicode'])
-
-        QtCore.QTimer.singleShot(0, edits[0].setFocus)
-
-    def setModelData(self, editor, model, index):  # pylint:disable=C0103
-        """Update the underlying model after edit."""
-
-        edits = editor.findChildren(QtGui.QLineEdit)
-        checkboxes = editor.findChildren(Checkbox)
-        obj = {'input': edits[0].text(), 'compiled': None,
-               'replace': edits[1].text(), 'regex': checkboxes[0].isChecked(),
-               'ignore_case': checkboxes[1].isChecked(),
-               'unicode': checkboxes[2].isChecked()}
-
-        input_len = len(obj['input'])
-        if input_len > 2 and obj['input'].startswith('/'):
-            input_ends = obj['input'].endswith
-            if input_ends('/'):
-                obj['input'] = obj['input'][1:-1]
-                obj['regex'] = True
-            elif input_len > 3:
-                if input_ends('/i'):
-                    obj['input'] = obj['input'][1:-2]
-                    obj['regex'] = True
-                    obj['ignore_case'] = True
-                elif input_ends('/g'):
-                    obj['input'] = obj['input'][1:-2]
-                    obj['regex'] = True
-                elif input_len > 4 and (input_ends('/ig') or
-                                        input_ends('/gi')):
-                    obj['input'] = obj['input'][1:-3]
-                    obj['regex'] = True
-                    obj['ignore_case'] = True
-
-        try:
-            obj['compiled'] = self._sul_compiler(obj)
-        except Exception:  # sre_constants.error, pylint:disable=W0703
-            pass
-
-        if obj['compiled'] and obj['regex']:
-            groups = obj['compiled'].groups
-            for group in self.setModelData.RE_SLASH.findall(obj['replace']):
-                group = int(group)
-                if not group or group > groups:
-                    obj['bad_replace'] = True
-                    break
-
-        model.setData(index, obj)
-
-    setModelData.RE_SLASH = re.compile(r'\\(\d+)')
-
-
-class _SubListView(QtGui.QListView):
-    """List view specifically for substitution lists."""
-
-    __slots__ = ['_add_btn', '_up_btn', '_down_btn', '_del_btn']
-
-    def __init__(self, sul_compiler, buttons, *args, **kwargs):
-        super(_SubListView, self).__init__(*args, **kwargs)
-
-        self._add_btn, self._up_btn, self._down_btn, self._del_btn = buttons
-        self._add_btn.clicked.connect(self._add_rule)
-        self._up_btn.clicked.connect(lambda: self._reorder_rules('up'))
-        self._down_btn.clicked.connect(lambda: self._reorder_rules('down'))
-        self._del_btn.clicked.connect(self._del_rules)
-
-        self.setItemDelegate(_SubRuleDelegate(sul_compiler))
-        self.setSelectionMode(self.ExtendedSelection)
-
-    def setModel(self, model):  # pylint:disable=C0103
-        """Configures model and sets up event handling."""
-
-        super(_SubListView, self).setModel(_SubListModel(model))
-        self._on_selection()
-        self.selectionModel().selectionChanged.connect(self._on_selection)
-
-    def _on_selection(self):
-        """Enable/disable buttons as selection changes."""
-
-        indexes = self.selectionModel().selectedIndexes()
-
-        some = len(indexes) > 0
-        rows = sorted(index.row() for index in indexes) if some else []
-        contiguous = some and rows[-1] == rows[0] + len(rows) - 1
-        allow_up = contiguous and rows[0] > 0
-        allow_down = contiguous and rows[-1] < self.model().rowCount() - 1
-
-        if not allow_down and self._down_btn.hasFocus():
-            self._up_btn.setFocus()  # avoid refocus going to delete button
-        self._up_btn.setEnabled(allow_up)
-        self._down_btn.setEnabled(allow_down)
-        self._del_btn.setEnabled(some)
-
-    def _add_rule(self):
-        """Add a new rule and trigger an edit."""
-
-        model = self.model()
-        model.insertRow()
-        index = model.index(model.rowCount(self) - 1)
-
-        self.scrollToBottom()
-        self.setCurrentIndex(index)
-        self.edit(index)
-
-    def _del_rules(self):
-        """Remove the selected rule(s)."""
-
-        model = self.model()
-        indexes = self.selectionModel().selectedIndexes()
-        for row in reversed(sorted(index.row() for index in indexes)):
-            model.removeRows(row)
-
-    def _reorder_rules(self, direction):
-        """Move the selected rule(s) up or down."""
-
-        indexes = self.selectionModel().selectedIndexes()
-        rows = sorted(index.row() for index in indexes)
-        if direction == 'up':
-            self.model().moveRowsUp(rows[0], len(rows))
-        else:
-            self.model().moveRowsDown(rows[0], len(rows))
-        self._on_selection()
-
-
-class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
-    """Provides glue to/from the underlying substitution list."""
-
-    __slots__ = ['raw_data']
-
-    flags = lambda self, index: self.flags.LIST_ITEM
-    flags.LIST_ITEM = (QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable |
-                       QtCore.Qt.ItemIsEnabled)
-
-    rowCount = lambda self, parent=None: len(self.raw_data)
-
-    def __init__(self, sublist, *args, **kwargs):
-        super(_SubListModel, self).__init__(*args, **kwargs)
-        self.raw_data = [dict(obj) for obj in sublist]  # deep copy
-
-    def data(self, index, role=QtCore.Qt.DisplayRole):
-        """Return display or edit data for the indexed rule."""
-
-        if role == QtCore.Qt.DisplayRole:
-            rule = self.raw_data[index.row()]
-            if not rule['input']:
-                return "empty match pattern"
-            elif not rule['compiled']:
-                return "invalid match pattern: " + rule['input']
-            elif 'bad_replace' in rule:
-                return "bad replacement string: " + rule['replace']
-
-            text = '/%s/%s' % (rule['input'],
-                               'i' if rule['ignore_case'] else '') \
-                   if rule['regex'] else '"%s"' % rule['input']
-            action = ('replace it with "%s"' % rule['replace']
-                      if rule['replace'] else "remove it")
-            attr = ", ".join([
-                "regex pattern" if rule['regex'] else "plain text",
-                "case-insensitive" if rule['ignore_case'] else "case matters",
-                "unicode enabled" if rule['unicode'] else "unicode disabled",
-            ])
-            return "match " + text + " and " + action + "\n(" + attr + ")"
-
-        elif role == QtCore.Qt.EditRole:
-            return self.raw_data[index.row()]
-
-    def insertRow(self, row=None, parent=None):  # pylint:disable=C0103
-        """Inserts a new row at the given position (default end)."""
-
-        if not row:
-            row = len(self.raw_data)  # defaults to end
-
-        self.beginInsertRows(parent or QtCore.QModelIndex(), row, row)
-        self.raw_data.insert(row, {'input': '', 'compiled': None,
-                                   'replace': '', 'regex': False,
-                                   'ignore_case': True, 'unicode': True})
-        self.endInsertRows()
-        return True
-
-    def moveRowsDown(self, row, count):  # pylint:disable=C0103
-        """Moves the given count of records at the given row down."""
-
-        parent = QtCore.QModelIndex()
-        self.beginMoveRows(parent, row, row + count - 1,
-                           parent, row + count + 1)
-        self.raw_data = (self.raw_data[0:row] +
-                         self.raw_data[row + count:row + count + 1] +
-                         self.raw_data[row:row + count] +
-                         self.raw_data[row + count + 1:])
-        self.endMoveRows()
-        return True
-
-    def moveRowsUp(self, row, count):  # pylint:disable=C0103
-        """Moves the given count of records at the given row up."""
-
-        parent = QtCore.QModelIndex()
-        self.beginMoveRows(parent, row, row + count - 1, parent, row - 1)
-        self.raw_data = (self.raw_data[0:row - 1] +
-                         self.raw_data[row:row + count] +
-                         self.raw_data[row - 1:row] +
-                         self.raw_data[row + count:])
-        self.endMoveRows()
-        return True
-
-    def removeRows(self, row, count=1, parent=None):  # pylint:disable=C0103
-        """Removes the given count of records at the given row."""
-
-        self.beginRemoveRows(parent or QtCore.QModelIndex(),
-                             row, row + count - 1)
-        self.raw_data = self.raw_data[0:row] + self.raw_data[row + count:]
-        self.endRemoveRows()
-        return True
-
-    def setData(self, index, value,        # pylint:disable=C0103
-                role=QtCore.Qt.EditRole):  # pylint:disable=W0613
-        """Update the new value into the raw list."""
-
-        self.raw_data[index.row()] = value
-        return True
+        self._addon.config.update(self._get_all())
+        super(_PresetEditor, self).accept()

@@ -563,10 +563,12 @@ def reviewer_hooks():
         say_text = config['presets'] and strip(web_view.selectedText())
 
         tts_card = tts_side = None
+        tts_shortcuts = False
         try:  # this works for web views in the reviewer and template dialog
             if window is aqt.mw and aqt.mw.state == 'review':
                 tts_card = aqt.mw.reviewer.card
                 tts_side = aqt.mw.reviewer.state
+                tts_shortcuts = True
             elif web_view.objectName() == 'mainText':  # card template dialog
                 parent_name = web_view.parentWidget().objectName()
                 tts_card = window.card
@@ -604,14 +606,16 @@ def reviewer_hooks():
             submenu.addAction(
                 "Play On-the-Fly TTS from Question Side",
                 lambda: reviewer.nonselection_handler('question', tts_card,
-                                                      window)
+                                                      window),
+                tts_shortcuts and config['tts_key_q'] or 0,
             )
 
         if tts_answer:
             submenu.addAction(
                 "Play On-the-Fly TTS from Answer Side",
                 lambda: reviewer.nonselection_handler('answer', tts_card,
-                                                      window)
+                                                      window),
+                tts_shortcuts and config['tts_key_a'] or 0,
             )
 
         menu.addMenu(submenu)

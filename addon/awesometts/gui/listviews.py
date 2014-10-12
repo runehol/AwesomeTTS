@@ -75,11 +75,15 @@ class SubListView(QtGui.QListView):
         allow_up = contiguous and rows[0] > 0
         allow_down = contiguous and rows[-1] < self.model().rowCount() - 1
 
-        if not allow_down and self._down_btn.hasFocus():
-            self._up_btn.setFocus()  # avoid refocus going to delete button
         self._up_btn.setEnabled(allow_up)
         self._down_btn.setEnabled(allow_down)
         self._del_btn.setEnabled(some)
+
+        if self._del_btn.hasFocus():  # avoid refocus going to delete button
+            if allow_down:
+                self._down_btn.setFocus()
+            elif allow_up:
+                self._up_btn.setFocus()
 
     def _add_rule(self):
         """Add a new rule and trigger an edit."""

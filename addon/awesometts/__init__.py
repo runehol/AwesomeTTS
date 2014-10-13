@@ -599,7 +599,8 @@ def reviewer_hooks():
                 'Say "%s" w/ %s' % (say_display, name),
                 lambda: reviewer.selection_handler(say_text, preset, window),
             )
-            for item in config['presets'].items():
+            for item in sorted(config['presets'].items(),
+                               key=lambda item: item[0].lower()):
                 glue(item)
 
         if tts_question:

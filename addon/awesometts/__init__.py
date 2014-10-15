@@ -590,7 +590,14 @@ def reviewer_hooks():
         submenu.setIcon(gui.ICON)
 
         if atts_button:
-            submenu.addAction("Add MP3 to the Note", atts_button.click)
+            submenu.addAction(
+                "Add MP3 to the Note",
+                lambda: atts_button.click() if atts_button.isEnabled()
+                else aqt.utils.showWarning(
+                    "Select the note field to which you want to add an MP3.",
+                    window,
+                )
+            )
 
         if say_text:
             say_display = (say_text if len(say_text) < 25

@@ -666,7 +666,8 @@ class ServiceDialog(Dialog):
             parent=self,
         )
 
-        if name and okay:
+        name = okay and name.strip()
+        if name:
             self._addon.config['presets'] = dict(
                 self._addon.config['presets'].items() +
                 [(name, dict([('service', svc_id)] + options.items()))]

@@ -510,8 +510,16 @@ class Configurator(Dialog):
         """Returns the "Write Debugging Output" input group."""
 
         vert = QtGui.QVBoxLayout()
-        vert.addWidget(Checkbox("standard output (stdout)", 'debug_stdout'))
-        vert.addWidget(Checkbox("log file in add-on directory", 'debug_file'))
+
+        if self._addon.paths.in_ascii:
+            vert.addWidget(Checkbox("standard output (stdout)",
+                                    'debug_stdout'))
+            vert.addWidget(Checkbox("log file in add-on directory",
+                                    'debug_file'))
+        else:
+            vert.addWidget(Note("Unfortunately, logging is not available "
+                                "when running AwesomeTTS from a directory "
+                                "with non-ASCII characters."))
 
         group = QtGui.QGroupBox("Write Debugging Output")
         group.setLayout(vert)

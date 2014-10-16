@@ -25,6 +25,7 @@ Path and directory initialization
 
 __all__ = [
     'ADDON',
+    'ADDON_IN_ASCII',
     'ADDON_IS_LINKED',
     'CACHE',
     'CONFIG',
@@ -42,6 +43,13 @@ import tempfile
 
 ADDON = os.path.dirname(os.path.abspath(__file__)) \
     .decode(sys.getfilesystemencoding())  # sqlite (and others?) needs unicode
+
+try:
+    ADDON.encode('ascii')
+except UnicodeError:
+    ADDON_IN_ASCII = False
+else:
+    ADDON_IN_ASCII = True
 
 ADDON_IS_LINKED = os.path.islink(ADDON)
 

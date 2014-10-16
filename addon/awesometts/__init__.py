@@ -62,6 +62,9 @@ logger = Logger(
                                        encoding='utf-8',
                                        delay=True),
         debug_stdout=logging.StreamHandler(sys.stdout),
+    ) if paths.ADDON_IN_ASCII else dict(
+        debug_file=logging.NullHandler(),
+        debug_stdout=logging.NullHandler(),
     ),
     formatter=logging.Formatter(
         "[%(threadName)s %(asctime)s] %(pathname)s@%(lineno)d %(levelname)s\n"
@@ -233,6 +236,7 @@ addon = Bundle(
     ),
     logger=logger,
     paths=Bundle(cache=paths.CACHE,
+                 in_ascii=paths.ADDON_IN_ASCII,
                  is_link=paths.ADDON_IS_LINKED),
     player=player,
     router=router,

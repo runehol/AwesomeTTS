@@ -66,15 +66,15 @@ class Say(Service):
         import re
         re_voice = re.compile(r'^\s*([-\w]+( [-\w]+)*)\s+([-\w]+)')
 
-        self._voice_list = sorted([
-            (match.group(1),
-             "%s (%s)" % (match.group(1), match.group(3).replace('_', '-')))
-            for match in [
-                re_voice.match(line)
-                for line in self.cli_output('say', '-v', '?')
-            ]
-            if match
-        ], key=lambda voice: voice[1].lower())
+        self._voice_list = [
+            (name, "%s (%s)" % (name, code.replace('_', '-')))
+            for code, name in sorted(
+                (match.group(3), match.group(1))
+                for match in [re_voice.match(line)
+                              for line in self.cli_output('say', '-v', '?')]
+                if match
+            )
+        ]
 
         if not self._voice_list:
             raise EnvironmentError("No usable output from call to `say -v ?`")

@@ -69,11 +69,6 @@ class Yandex(Service):
         Provides access to voice and quality.
         """
 
-        voice_list = sorted([
-            (code, "%s (%s)" % (name, code.replace('_', '-')))
-            for code, name in self._VOICE_CODES.items()
-        ], key=lambda voice: voice[1])
-
         voice_lookup = dict([
             # two-character language codes
             (self.normalize(code[:2]), code)
@@ -117,7 +112,8 @@ class Yandex(Service):
             dict(
                 key='voice',
                 label="Voice",
-                values=voice_list,
+                values=[(code, "%s (%s)" % (name, code.replace('_', '-')))
+                        for code, name in sorted(self._VOICE_CODES.items())],
                 transform=transform_voice,
             ),
             dict(

@@ -1,19 +1,20 @@
 {
     "auto": true,
-    "intro": "This release introduces new TTS services, configuration options, improved text processing, and some bug fixes.",
+    "intro": "This release adds two new TTS services, user-defined presets, side-click menu functionality, templating improvements, and some bug fixes.",
     "notes": [
-        "New online TTS services: SpanishDict, TTS-API.com",
-        "Support for the SVOX Pico engine software (Linux)",
-        "New option to playing only revealed cloze text in on-the-fly mode",
-        "User-configurable custom string replacements on input phrases",
-        "New options to customize the window shortcuts",
-        "Support for using modifier keys with on-the-fly shortcut keys",
-        "Improved text normalization and sanitization",
-        "Support for {{hint:xxx}} template tags",
-        "Fixed very long voice name detection in OS X Speech Synthesis",
-        "Fixed Korean speech in Ekho",
-        "Fixed crash when unsetting on-the-fly shortcut keys"
+        "adds Howjsay (English words and short phrases)",
+        "adds ImTranslator (Windows and Linux only; Chinese, English, French, German, Italian, Japanese, Korean, Portuguese, Russian)",
+        "adds eSpeak voice variant support (e.g. male, female)",
+        "adds support for nesting TTS tags in card templates",
+        "adds ability to save and recall TTS services as \"presets\"",
+        "adds AwesomeTTS functionality to side-click menus: play selected text, activate on-the-fly playback in review mode, test on-the-fly tags in the template editor",
+        "moves AwesomeTTS menu in the card browser to a top-level menu",
+        "fixes eSpeak support for Mandarin",
+        "fixes right-to-left language display of the \"Preview and Record\" input box in the note editor's single MP3 generator",
+        "improves performance for users with many custom text substitutions",
+        "avoids a crash if user uninstalls local TTS software while AwesomeTTS is running",
+        "avoids a crash if user enables logging inside a non-ASCII path"
     ],
     "update": true,
-    "version": "1.1.2"
+    "version": "1.2.0"
 }

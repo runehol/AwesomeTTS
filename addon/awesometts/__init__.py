@@ -180,9 +180,10 @@ router = Router(
             ('ttsapicom', service.TTSAPICom),
             ('yandex', service.Yandex),
         ],
-        aliases=[
-            ('g', 'google'),
-        ],
+        aliases=[('g', 'google'), ('macosx', 'say'), ('microsoft', 'sapi5'),
+                 ('osx', 'say'), ('sapi', 'sapi5'), ('svox', 'pico2wave'),
+                 ('svoxpico', 'pico2wave'), ('ttsapi', 'ttsapicom'),
+                 ('windows', 'sapi5'), ('y', 'yandex')],
         normalize=to.normalized_ascii,
         args=(),
         kwargs=dict(temp_dir=paths.TEMP,

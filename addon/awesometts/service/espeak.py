@@ -35,9 +35,8 @@ class ESpeak(Service):
     """
 
     __slots__ = [
-        '_binary',        # path to the eSpeak binary
-        '_voice_list',    # list of installed voices as a list of tuples
-        '_voice_lookup',  # map of normalized voice names to official names
+        '_binary',  # name of or path to the eSpeak binary
+        '_lookup',  # dict mapping 'voices' and 'variant' lists
     ]
 
     NAME = "eSpeak"
@@ -57,17 +56,16 @@ class ESpeak(Service):
         name (e.g. mexican-mbrola-1). It is also unique in that it has
         one list of native voices and another list of MBROLA voices.
 
-        For our purposes, we use the voice names as the official driver
-        of the 'voice' option, but we accept and remap the top-level and
+        For our purposes, we use the file name as the official driver of
+        the 'voice' option, but we accept and remap the top-level and
         country-specific language codes to the "official" voice names.
         """
 
         super(ESpeak, self).__init__(*args, **kwargs)
 
-        self._binary = 'espeak'
-
         try:
-            es_output = self.cli_output(self._binary, '--voices')
+            self._binary = 'espeak'
+            output = {'native': self.cli_output(self._binary, '--voices')}
 
         except OSError:
             if self.IS_WINDOWS:
@@ -78,70 +76,74 @@ class ESpeak(Service):
                     ),
                     self._binary,
                 )
-                es_output = self.cli_output(self._binary, '--voices')
+                output = {'native': self.cli_output(self._binary, '--voices')}
 
             else:
                 raise
 
-        mb_output = self.cli_output(self._binary, '--voices=mb')
+        for alt in ['mbrola', 'variant']:
+            try:
+                output[alt] = self.cli_output(self._binary, '--voices=' + alt)
+            except Exception:  # catch-all, pylint:disable=broad-except
+                output[alt] = []
 
         import re
-        re_voice = re.compile(r'^\s*\d+\s+((\w+)[-\w]*)\s+([-\w])\s+([-\w]+)')
+        from os.path import basename
 
-        es_matches = [
-            match
-            for match in [re_voice.match(line) for line in es_output]
-            if match
-        ]
+        re_voice = re.compile(
+            r'\s*(\d+)'               # priority; lower numbers preferred
+            r'\s+([-\w]+)'            # language code (or "variant")
+            r'\s+(\d+)?([-\w])'       # age, gender
+            r'\s+([-\w]+)'            # voice name
+            r'\s+([-!/\\\w]+)'        # file name
+            r'(\s+\(([- ()\w]+)\))?'  # other languages
+        )
 
-        mb_matches = [
-            match
-            for match in [re_voice.match(line) for line in mb_output]
-            if match
-        ]
+        re_lang_filter = re.compile(r'[^-a-z]', re.IGNORECASE)
 
-        self._voice_list = sorted([
-            (
-                match.group(4),
+        self._lookup = {
+            key: [
+                {
+                    'type': key,
+                    'priority': int(match.group(1)),
+                    'code': match.group(2),
+                    'age': int(match.group(3)) if match.group(3) else None,
+                    'gender': match.group(4).upper(),
+                    'name': match.group(5),
+                    'file': (basename(match.group(6)) if key == 'variant'
+                             else match.group(6)),
+                    'others': [
+                        code
+                        for code in [
+                            re_lang_filter.sub('', code)
+                            for code in match.group(8).split(')(')
+                        ]
+                        if code
+                    ] if match.group(8) else [],
+                }
+                for match in [re_voice.match(line) for line in lines]
+                if match
+            ]
+            for key, lines in output.items()
+        }
 
-                "%s (%s%s)" % (
-                    match.group(4),
-                    'male ' if match.group(3).upper() == 'M'
-                    else 'female ' if match.group(3).upper() == 'F'
-                    else '',
-                    match.group(1),
-                ),
-            )
-            for match in es_matches + mb_matches
-        ], key=lambda voice: voice[1].lower())
+        self._lookup['voices'] = (
+            # this puts this list into a "last one wins" ordering where native
+            # voices are preferred over MBROLA ones and where lesser priority
+            # numbers win out over greater ones (native voices are preferred
+            # over MBROLA ones since the MBROLA ones do not always work)
 
-        if not self._voice_list:
+            sorted(self._lookup['mbrola'],
+                   key=lambda voice: -voice['priority']) +
+            sorted(self._lookup['native'],
+                   key=lambda voice: -voice['priority'])
+        )
+
+        del self._lookup['mbrola']
+        del self._lookup['native']
+
+        if not self._lookup['voices']:
             raise EnvironmentError("No usable output from `espeak --voices`")
-
-        # provide various alternative voice inputs; unlike most other
-        # services, we handle this setup in init so that we have access to the
-        # regex match objects, which dictate the relative precedence
-        self._voice_lookup = dict([
-            # start with aliases for MBROLA top-level languages (e.g. es)
-            (self.normalize(match.group(2)), match.group(4))
-            for match in mb_matches
-        ] + [
-            # then add/override for MBROLA country languages (e.g. es-mx)
-            (self.normalize(match.group(1)), match.group(4))
-            for match in mb_matches
-        ] + [
-            # then add/override with native top-level languages (e.g. es)
-            (self.normalize(match.group(2)), match.group(4))
-            for match in es_matches
-        ] + [
-            # then add/override for native country languages (e.g. es-mx)
-            (self.normalize(match.group(1)), match.group(4))
-            for match in es_matches
-        ] + [
-            # then add/override for official voices (e.g. mexican-mbrola-1)
-            (self.normalize(voice[0]), voice[0])
-            for voice in self._voice_list
-        ])
 
     def desc(self):
         """
@@ -151,7 +153,7 @@ class ESpeak(Service):
 
         return "%s (%d voices)" % (
             self.cli_output(self._binary, '--version').pop(0),
-            len(self._voice_list),
+            len(self._lookup['voices']),
         )
 
     def options(self):
@@ -159,7 +161,40 @@ class ESpeak(Service):
         Provides access to voice, speed, word gap, pitch, and volume.
         """
 
-        voice_lookup = self._voice_lookup
+        lookup = self._lookup
+
+        voice_lookup = dict([
+            # language codes from each "others" list
+            (self.normalize(other), voice['file'])
+            for voice in lookup['voices']
+            for other in voice['others']
+        ] + [
+            # language code listed as the primary for each
+            (self.normalize(voice['code']), voice['file'])
+            for voice in lookup['voices']
+        ] + [
+            # voice name given for each
+            (self.normalize(voice['name']), voice['file'])
+            for voice in lookup['voices']
+        ] + [
+            # official file name for each
+            (self.normalize(voice['file']), voice['file'])
+            for voice in lookup['voices']
+        ])
+
+        variant_lookup = dict([
+            # variant name given for each
+            (self.normalize(variant['name']), variant['file'])
+            for variant in lookup['variant']
+        ] + [
+            # official file name for each
+            (self.normalize(variant['file']), variant['file'])
+            for variant in lookup['variant']
+        ] + [
+            # helpful aliases for "normal"
+            ('', 'normal'),
+            ('none', 'normal'),
+        ])
 
         def transform_voice(value):
             """Normalize and attempt to convert to official voice."""
@@ -182,12 +217,73 @@ class ESpeak(Service):
 
             return value
 
+        def transform_variant(value):
+            """Normalize and attempt to convert to official variant."""
+
+            normalized = self.normalize(value)
+            return (
+                variant_lookup[normalized] if normalized in variant_lookup
+                else value
+            )
+
         return [
             dict(
                 key='voice',
                 label="Voice",
-                values=self._voice_list,
+                values=[
+                    (
+                        voice['file'],
+                        "%s (%s%s%s)" % (
+                            voice['name'],
+
+                            str(voice['age']) + "-year-old " if
+                            voice['age'] else "",
+
+                            "male " if voice['gender'] == 'M'
+                            else "female " if voice['gender'] == 'F'
+                            else "",
+
+                            voice['code'],
+                        ),
+                    )
+                    for voice in sorted(
+                        lookup['voices'],
+                        key=lambda voice: (voice['code'],
+                                           voice['type'] == 'mbrola',
+                                           voice['gender'] not in 'MF',
+                                           voice['gender'] == 'F',
+                                           voice['name']),
+                    )
+                ],
                 transform=transform_voice,
+            ),
+
+            dict(
+                key='variant',
+                label="Variant",
+                values=[('normal', "normal")] + [
+                    (
+                        variant['file'],
+                        "%s (%s%s)" % (
+                            variant['name'],
+
+                            str(variant['age']) + "-year-old " if
+                            variant['age'] else "",
+
+                            "male" if variant['gender'] == 'M'
+                            else "female" if variant['gender'] == 'F'
+                            else "other",
+                        ),
+                    )
+                    for variant in sorted(
+                        lookup['variant'],
+                        key=lambda variant: (variant['gender'] not in 'MF',
+                                             variant['gender'] == 'F',
+                                             variant['name']),
+                    )
+                ],
+                transform=transform_variant,
+                default="normal"
             ),
 
             dict(
@@ -232,11 +328,15 @@ class ESpeak(Service):
         input_file = self.path_workaround(text)
         output_wav = self.path_temp('wav')
 
+        voice = ('+'.join([options['voice'], options['variant']])
+                 if options['variant'] and options['variant'] != "normal"
+                 else options['voice'])
+
         try:
             self.cli_call(
                 [
                     self._binary,
-                    '-v', options['voice'],
+                    '-v', voice,
                     '-s', options['speed'],
                     '-g', int(options['gap'] * 100.0),
                     '-p', options['pitch'],

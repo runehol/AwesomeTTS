@@ -32,6 +32,8 @@ __all__ = [
     'ESpeak',
     'Festival',
     'Google',
+    'Howjsay',
+    'ImTranslator',
     'Pico2Wave',
     'SAPI5',
     'Say',
@@ -46,6 +48,8 @@ from .ekho import Ekho
 from .espeak import ESpeak
 from .festival import Festival
 from .google import Google
+from .howjsay import Howjsay
+from .imtranslator import ImTranslator
 from .pico2wave import Pico2Wave
 from .sapi5 import SAPI5
 from .say import Say

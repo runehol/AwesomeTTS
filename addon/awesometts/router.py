@@ -156,7 +156,10 @@ class Router(object):
                 "Retrieving the description for %s",
                 service['name'],
             )
-            service['desc'] = service['instance'].desc()
+            try:
+                service['desc'] = service['instance'].desc()
+            except Exception:  # catch all, pylint:disable=broad-except
+                service['desc'] = svc_id + " service"
 
         return service['desc']
 
@@ -178,7 +181,9 @@ class Router(object):
         Note that it is the caller who has the context of how the text
         is being used (e.g. if it's from a database field, an on-the-fly
         tag, or from user input). Therefore, it is the responsibility of
-        the caller to normalize the text before passing it.
+        the caller to normalize the text before passing it. The service
+        MAY apply additional normalization afterward, however, if it has
+        implemented as modify() method.
 
         On the other hand, the passed service ID and options are indeed
         normalized, since this does not vary from context to context,
@@ -222,6 +227,9 @@ class Router(object):
             if not text:
                 raise ValueError("No speakable text is present")
             svc_id, service, options = self._validate_service(svc_id, options)
+            text = service['instance'].modify(text)
+            if not text:
+                raise ValueError("Text not usable by " + service['class'].NAME)
             path = self._validate_path(svc_id, text, options)
             cache_hit = os.path.exists(path)
 
@@ -247,7 +255,7 @@ class Router(object):
                 callbacks['then']()
 
         else:
-            service['instance'].net_download_reset()
+            service['instance'].net_reset()
             self._busy.append(path)
             self._pool.spawn(
                 task=lambda: service['instance'].run(text, options, path),
@@ -257,7 +265,7 @@ class Router(object):
                     'done' in callbacks and callbacks['done'](),
 
                     'miss' in callbacks and callbacks['miss'](
-                        service['instance'].net_download_count()
+                        service['instance'].net_count()
                     ),
 
                     callbacks['fail'](exception) if exception
@@ -406,8 +414,8 @@ class Router(object):
                 assert 'key' in option, "missing option key for %s" % svc_id
                 assert self._services.normalize(option['key']) == \
                     option['key'], "bad %s key %s" % (svc_id, option['key'])
-                assert option['key'] != 'service', "service is reserved"
-                assert option['key'] != 'style', "style is reserved for user"
+                assert option['key'] not in ['preset', 'service', 'style'], \
+                    option['key'] + " is reserved for use in TTS tags"
                 assert 'label' in option, \
                     "missing %s label for %s" % (option['key'], svc_id)
                 assert 'values' in option, \

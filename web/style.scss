@@ -134,6 +134,15 @@ $fixedWidthAfter: 1400px;
         h2, h3 { margin-bottom: 0 }
 
         ul.cols { @include columns(2) }
+
+        pre {
+            background: $gray;
+            border: solid 5px $ocean;
+            border-radius: 5px;
+            color: $white;
+            padding: 1em;
+            overflow: auto;
+        }
     }
 
     figure {

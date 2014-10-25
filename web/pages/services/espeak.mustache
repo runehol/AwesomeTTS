@@ -120,7 +120,7 @@
 <h2>Options</h2>
 
 <figure style="width: 608px">
-    <img src="/services.espeak.png" width="608" height="364"
+    <img src="/services.espeak.png" width="608" height="426"
       alt="AwesomeTTS note editor dialog with the eSpeak service activated">
 
     <figcaption>&ldquo;Add TTS Audio to Note&rdquo; dialog with the eSpeak
@@ -131,6 +131,8 @@
   output produced.</p>
 
 <ul>
+    <li><strong>Variant</strong>: alters the base voice in some way, such as
+      by gender, age, or speech affect</li>
     <li><strong>Speed</strong></li>
     <li><strong>Word Gap</strong>: the pause placed in-between words, which
       can be tweaked separately from the speed for listeners who need help
@@ -141,6 +143,9 @@
 
 <p>Note that if you are accessing eSpeak via the Microsoft Speech API on
   Windows, then only <strong>Speed</strong> and <strong>Volume</strong> will
-  be available.</p>
+  be available. <strong>Variant</strong> <em>can</em> be made available
+  through SAPI if you specify it during the eSpeak installation as part of the
+  language code (e.g. <kbd>en-us+whisper</kbd> for American English using the
+  &ldquo;whisper&rdquo; variant).</p>
 
 {{> below}}

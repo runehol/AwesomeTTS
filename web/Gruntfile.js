@@ -415,7 +415,7 @@ module.exports = function (grunt) {
 
         var BASICS = {application: 'ankiatts', version: 'local',
           runtime: 'python27', api_version: '1', threadsafe: true,
-          default_expiration: '12h'};
+          default_expiration: '1d'};
 
         var INDICES = '/' + gaeRegex(
             SITEMAP.
@@ -466,25 +466,26 @@ module.exports = function (grunt) {
               upload: ['pages', LEAVES, '\\.html'].join(''),
               mime_type: MIME_HTML, http_headers: HEADERS_HTML},
             {url: GIF_IMAGES + '\\.gif', static_files: 'images/\\1.gif',
-              upload: 'images/.+\\.gif'},
+              upload: 'images/.+\\.gif', expiration: '35d'},
             {url: PNG_IMAGES + '\\.png', static_files: 'images/\\1.png',
-              upload: 'images/.+\\.png'},
+              upload: 'images/.+\\.png', expiration: '35d'},
 
             {url: '/style\\.css', static_files: 'style.css',
-              upload: 'style\\.css'},
+              upload: 'style\\.css', expiration: '35d'},
             {url: '/favicon\\.ico', static_files: 'favicon.ico',
-              upload: 'favicon\\.ico', expiration: '35d'},
+              upload: 'favicon\\.ico', expiration: '70d'},
             {url: '/robots\\.txt', static_files: 'robots.txt',
-              upload: 'robots\\.txt', expiration: '35d'},
+              upload: 'robots\\.txt', expiration: '70d'},
 
             {url: '/api/update/[a-z\\d]+-' + gaeRegex([
-                '1.1.2', '1.1.2-pre', '1.1.1', '1.1.1-pre', '1.1.0',
+                '1.2.0',
               ]),
               static_files: 'api/update/good-version.json',
               upload: 'api/update/good-version\\.json'},
             {url: '/api/update/[a-z\\d]+-' + gaeRegex([
-                '1.1.0-pre', '1.1.0-dev', '1.0.1', '1.0.1-pre', '1.0.0',
-                '1.0.0-pre', '1.0.0-dev',
+                '1.2.0-pre', '1.2.0-dev', '1.1.2', '1.1.2-pre', '1.1.1',
+                '1.1.1-pre', '1.1.0', '1.1.0-pre', '1.1.0-dev', '1.0.1',
+                '1.0.1-pre', '1.0.0', '1.0.0-pre', '1.0.0-dev',
               ]),
               static_files: 'api/update/need-newer.json',
               upload: 'api/update/need-newer\\.json'},
@@ -493,9 +494,9 @@ module.exports = function (grunt) {
               upload: 'api/update/unreleased\\.json'},
 
             {url: '/api/update', static_files: 'api/update/index.json',
-              upload: 'api/update/index\\.json', expiration: '35d'},
+              upload: 'api/update/index\\.json', expiration: '70d'},
             {url: '/api', static_files: 'api/index.json',
-              upload: 'api/index\\.json', expiration: '35d'},
+              upload: 'api/index\\.json', expiration: '70d'},
 
             {url: '/[aA][pP][iI](/.*)?', script: 'unresolved.api'},
             {url: '.*', script: 'unresolved.other'},

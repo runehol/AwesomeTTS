@@ -20,8 +20,30 @@
 
 {{> above}}
 
-<p>AwesomeTTS supports both on-the-fly playback where you edit your card
-  templates to enable text-to-speech and also storing audio files with your
-  collection where synchronization between different devices is possible.</p>
+<p>AwesomeTTS supports three methods for text-to-speech playback:</p>
+
+<ul>
+    <li><strong>&ldquo;On-the-Fly&rdquo; Playback</strong>, where you insert
+      special <code>&lt;tts&gt;</code> tags into your <em>card templates</em>.
+      These special tags are understood by any <em>desktop</em> Anki client
+      with AwesomeTTS installed. No media files are stored or synchronized
+      with your collection, and audio is produced on-demand as you review your
+      cards.</li>
+    <li><strong>Speaking Selected Text w/ Preset Services</strong>, where you
+      save a list of service configurations that you want to use ahead of
+      time, and then playback specific highlighted text using the AwesomeTTS
+      context menu, on-demand and when you want it. This method will work with
+      the <em>desktop</em> version of Anki with AwesomeTTS installed.</li>
+    <li><strong>Stored MP3 Audio Files</strong>, where you record the speech
+      for your cards ahead of time, inserting <code>[sound]</code> tags into
+      your <em>note fields</em>. Once generated, these tags are natively
+      understood by <em>all versions</em> of Anki, even without AwesomeTTS
+      installed.</li>
+</ul>
+
+<p>Most users will pick one method or another, but some users may choose to
+  combine them. Which method(s) you choose will depend on where and how you
+  use Anki, how complex your collection is, how much fine-tuning you like to
+  do, and possibly other factors.</p>
 
 {{> below}}

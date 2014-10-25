@@ -28,7 +28,8 @@ As everything done from the add-on code has to do with AwesomeTTS, these
 all carry a speaker icon (if supported by the desktop environment).
 """
 
-__all__ = ['ICON', 'Action', 'Button', 'Checkbox', 'Filter', 'Note']
+__all__ = ['ICON', 'key_event_combo', 'key_combo_desc', 'Action', 'Button',
+           'Checkbox', 'Filter', 'HTML', 'Label', 'Note']
 
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import Qt

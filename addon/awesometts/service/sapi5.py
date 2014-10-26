@@ -91,10 +91,13 @@ class SAPI5(Service):
             )
         ]
 
+        output = output[output.index('__AWESOMETTS_VOICE_LIST__') + 1:]
+        hex2uni = lambda string: ''.join(unichr(int(string[i:i + 4], 16))
+                                         for i in range(0, len(string), 4))
         self._voice_list = sorted({
-            (voice.strip(), voice.strip())
-            for voice in output[output.index('__AWESOMETTS_VOICE_LIST__') + 1:]
-            if voice.strip()
+            (voice, voice)
+            for voice in [hex2uni(voice).strip() for voice in output]
+            if voice
         }, key=lambda voice: voice[1].lower())
 
         if not self._voice_list:
@@ -105,17 +108,24 @@ class SAPI5(Service):
         Returns a short, static description.
         """
 
-        return "SAPI 5.0 via JScript (%d voices)" % len(self._voice_list)
+        count = len(self._voice_list)
+        return ("SAPI 5.0 via JScript (%d %s)" %
+                (count, "voice" if count == 1 else "voices"))
 
     def options(self):
         """
         Provides access to voice, speed, and volume.
         """
 
-        voice_lookup = {
-            self.normalize(voice[0]): voice[0]
+        voice_lookup = dict([
+            # normalized with characters w/ diacritics stripped
+            (self.normalize(voice[0]), voice[0])
             for voice in self._voice_list
-        }
+        ] + [
+            # normalized with diacritics converted
+            (self.normalize(self.util_approx(voice[0])), voice[0])
+            for voice in self._voice_list
+        ])
 
         def transform_voice(value):
             """Normalize and attempt to convert to official voice."""

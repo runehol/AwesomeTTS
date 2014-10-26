@@ -125,8 +125,31 @@ var i;
 if (command === 'voice-list') {
     WScript.echo('__AWESOMETTS_VOICE_LIST__');
 
+    var getHexFromUnicode = function (unicode) {
+        if (typeof unicode !== 'string' || !unicode.length) { return ''; }
+
+        var i = 0;
+        var chunk;
+        var hex = [];
+
+        for (i = 0; i < unicode.length; ++i) {
+            chunk = unicode.charCodeAt(i).toString(16);
+            switch (chunk.length) {
+                case 4:  break;
+                case 3:  chunk = '0' + chunk;   break;
+                case 2:  chunk = '00' + chunk;  break;
+                case 1:  chunk = '000' + chunk; break;
+                default: throw new Error("Bad chunk from toString(16) call");
+            }
+
+            hex.push(chunk);
+        }
+
+        return hex.join('');
+    };
+
     for (i = 0; i < voices.count; ++i) {
-        WScript.echo(voices.item(i).getAttribute('name'));
+        WScript.echo(getHexFromUnicode(voices.item(i).getAttribute('name')));
     }
 } else if (command === 'speech-output') {
     var found = false;

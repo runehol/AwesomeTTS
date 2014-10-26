@@ -516,7 +516,10 @@ class Router(object):
             text,
             svc_id,
             ';'.join(
-                '='.join([key, str(value)])
+                '='.join([
+                    key,
+                    value if isinstance(value, basestring) else str(value),
+                ])
                 for key, value
                 in sorted(options.items())
             )

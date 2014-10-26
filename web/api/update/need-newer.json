@@ -10,11 +10,12 @@
         "adds AwesomeTTS functionality to side-click menus: play selected text, activate on-the-fly playback in review mode, test on-the-fly tags in the template editor",
         "moves AwesomeTTS menu in the card browser to a top-level menu",
         "fixes eSpeak support for Mandarin",
+        "fixes for SAPI 5 with some IVONA voices",
         "fixes right-to-left language display of the \"Preview and Record\" input box in the note editor's single MP3 generator",
         "improves performance for users with many custom text substitutions",
         "avoids a crash if user uninstalls local TTS software while AwesomeTTS is running",
         "avoids a crash if user enables logging inside a non-ASCII path"
     ],
     "update": true,
-    "version": "1.2.0"
+    "version": "1.2.1"
 }

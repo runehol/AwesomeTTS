@@ -117,10 +117,15 @@ class SAPI5(Service):
         Provides access to voice, speed, and volume.
         """
 
-        voice_lookup = {
-            self.normalize(voice[0]): voice[0]
+        voice_lookup = dict([
+            # normalized with characters w/ diacritics stripped
+            (self.normalize(voice[0]), voice[0])
             for voice in self._voice_list
-        }
+        ] + [
+            # normalized with diacritics converted
+            (self.normalize(self.util_approx(voice[0])), voice[0])
+            for voice in self._voice_list
+        ])
 
         def transform_voice(value):
             """Normalize and attempt to convert to official voice."""

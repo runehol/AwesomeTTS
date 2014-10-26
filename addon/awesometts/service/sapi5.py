@@ -91,10 +91,13 @@ class SAPI5(Service):
             )
         ]
 
+        output = output[output.index('__AWESOMETTS_VOICE_LIST__') + 1:]
+        hex2uni = lambda string: ''.join(unichr(int(string[i:i + 4], 16))
+                                         for i in range(0, len(string), 4))
         self._voice_list = sorted({
-            (voice.strip(), voice.strip())
-            for voice in output[output.index('__AWESOMETTS_VOICE_LIST__') + 1:]
-            if voice.strip()
+            (voice, voice)
+            for voice in [hex2uni(voice).strip() for voice in output]
+            if voice
         }, key=lambda voice: voice[1].lower())
 
         if not self._voice_list:

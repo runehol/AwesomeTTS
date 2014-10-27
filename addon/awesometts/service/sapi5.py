@@ -59,7 +59,17 @@ class SAPI5(Service):
 
         # win32com and pythoncom are Windows only, pylint:disable=import-error
 
-        import win32com.client
+        try:
+            import win32com.client
+        except IOError:  # some Anki packages have an unwritable cache path
+            self._logger.warn("win32com.client import failed; trying again "
+                              "with alternate __gen_path__ set")
+            import win32com
+            import os.path
+            import tempfile
+            win32com.__gen_path__ = os.path.join(tempfile.gettempdir(),
+                                                 'gen_py')
+            import win32com.client
         self._client = win32com.client
 
         import pythoncom

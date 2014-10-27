@@ -75,6 +75,7 @@ for _directory, _rmdir, _filenames in [
             '__init__.py', '__init__.pyc', '__init__.pyo',
         ]),
         ('service', False, [
+            'sapi5.js',   # for 1.0 thru 1.2
             'sapi5.vbs',  # for Beta 11 and older
         ]),
         ('services', True, [

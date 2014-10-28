@@ -84,6 +84,7 @@ config = Config(
     cols=[
         ('automaticAnswers', 'integer', True, to.lax_bool, int),
         ('automaticQuestions', 'integer', True, to.lax_bool, int),
+        ('cache_days', 'integer', 70, int, int),
         ('debug_file', 'integer', False, to.lax_bool, int),
         ('debug_stdout', 'integer', False, to.lax_bool, int),
         ('delay_answers_onthefly', 'integer', 0, int, int),

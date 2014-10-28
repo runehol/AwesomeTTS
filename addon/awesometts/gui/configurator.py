@@ -42,7 +42,7 @@ class Configurator(Dialog):
     """Provides a dialog for configuring the add-on."""
 
     _PROPERTY_KEYS = [
-        'automatic_answers', 'automatic_questions', 'debug_file',
+        'automatic_answers', 'automatic_questions', 'cache_days', 'debug_file',
         'debug_stdout', 'delay_answers_onthefly', 'delay_answers_stored_ours',
         'delay_answers_stored_theirs', 'delay_questions_onthefly',
         'delay_questions_stored_ours', 'delay_questions_stored_theirs',
@@ -532,12 +532,22 @@ class Configurator(Dialog):
         button.setObjectName('on_cache')
         button.clicked.connect(lambda: self._on_cache_clear(button))
 
+        days = QtGui.QSpinBox()
+        days.setObjectName('cache_days')
+        days.setRange(0, 9999)
+        days.setSuffix(" days")
+
+        hor = QtGui.QHBoxLayout()
+        hor.addWidget(Label("Remove cache files older than"))
+        hor.addWidget(days)
+        hor.addWidget(Label("at exit (zero clears everything)"))
+        hor.addStretch()
+
         layout = QtGui.QVBoxLayout()
+        layout.addWidget(Note("AwesomeTTS caches generated audio to speed up "
+                              "repeated playback."))
+        layout.addLayout(hor)
         layout.addWidget(button)
-        layout.addWidget(Note("Audio is cached for successive playback and "
-                              "recording. This improves performance, notably "
-                              "when using on-the-fly playback, but you may "
-                              "want to clear it from time to time."))
 
         group = QtGui.QGroupBox("Media Cache")
         group.setLayout(layout)

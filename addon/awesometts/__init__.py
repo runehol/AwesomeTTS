@@ -409,6 +409,48 @@ def browser_menus():
     )
 
 
+def cache_control():
+    """Registers a hook to handle cache control on session exits."""
+
+    def on_unload_profile():
+        """
+        Finds MP3s in the cache directory older than the user's
+        configured cache limit and attempts to remove them.
+        """
+
+        from os import listdir, unlink
+        from os.path import join
+
+        cache = paths.CACHE
+
+        try:
+            filenames = listdir(cache)
+        except:  # allow silent failure, pylint:disable=bare-except
+            return
+        if not filenames:
+            return
+
+        prospects = (join(cache, filename) for filename in filenames)
+
+        if config['cache_days']:
+            from os.path import getmtime
+            from time import time
+
+            limit = time() - 86400 * config['cache_days']
+            targets = (prospect for prospect in prospects
+                       if getmtime(prospect) < limit)
+        else:
+            targets = prospects
+
+        for target in targets:
+            try:
+                unlink(target)
+            except:  # skip broken files, pylint:disable=bare-except
+                pass
+
+    anki.hooks.addHook('unloadProfile', on_unload_profile)
+
+
 def cards_button():
     """Provides access to the templater helper."""
 

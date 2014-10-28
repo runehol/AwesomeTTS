@@ -111,6 +111,7 @@ import awesometts
 # prefixing it with a hash (#) sign and restarting Anki.
 
 awesometts.browser_menus()     # mass generator and MP3 stripper
+awesometts.cache_control()     # automatically clear the media cache regularly
 awesometts.cards_button()      # on-the-fly templater helper in card view
 awesometts.config_menu()       # provides access to configuration dialog
 awesometts.editor_button()     # single audio clip generator button

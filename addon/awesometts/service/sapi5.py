@@ -21,15 +21,9 @@
 
 """
 Service implementation for SAPI 5 on the Windows platform
-
-This module functions with the help of a JScript gateway script. See
-also the sapi5.js file in this directory.
 """
 
 __all__ = 'SAPI5'
-
-import os
-import os.path
 
 from .base import Service
 from .common import Trait
@@ -41,23 +35,18 @@ class SAPI5(Service):
     """
 
     __slots__ = [
-        '_binary',        # path to the cscript binary
-        '_voice_list',    # list of installed voices as a list of tuples
+        '_client',     # reference to the win32com.client module
+        '_pythoncom',  # reference to the pythoncom module
+        '_voice_map',  # dict of voice names to their SAPI objects
     ]
 
     NAME = "Microsoft Speech API"
 
     TRAITS = [Trait.TRANSCODING]
 
-    _SCRIPT = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        'sapi5.js',
-    )
-
     def __init__(self, *args, **kwargs):
         """
-        Attempts to locate the cscript binary and read the list of
-        voices from the `cscript.exe sapi5.js voice-list` output.
+        Attempts to retrieve list of voices from the SAPI.SpVoice API.
 
         However, if not running on Windows, no environment inspection is
         attempted and an exception is immediately raised.
@@ -68,48 +57,42 @@ class SAPI5(Service):
 
         super(SAPI5, self).__init__(*args, **kwargs)
 
-        self._binary = next(
-            fullpath
-            for windows in [
-                os.environ.get('SYSTEMROOT', None),
-                r'C:\Windows',
-                r'C:\WinNT',
-            ]
-            if windows and os.path.exists(windows)
-            for subdirectory in ['syswow64', 'system32', 'system']
-            for filename in ['cscript.exe']
-            for fullpath in [os.path.join(windows, subdirectory, filename)]
-            if os.path.exists(fullpath)
-        )
+        # win32com and pythoncom are Windows only, pylint:disable=import-error
 
-        output = [
-            line.strip()
-            for line in self.cli_output(
-                self._binary,
-                self._SCRIPT,
-                'voice-list',
-            )
-        ]
+        try:
+            import win32com.client
+        except IOError:  # some Anki packages have an unwritable cache path
+            self._logger.warn("win32com.client import failed; trying again "
+                              "with alternate __gen_path__ set")
+            import win32com
+            import os.path
+            import tempfile
+            win32com.__gen_path__ = os.path.join(tempfile.gettempdir(),
+                                                 'gen_py')
+            import win32com.client
+        self._client = win32com.client
 
-        output = output[output.index('__AWESOMETTS_VOICE_LIST__') + 1:]
-        hex2uni = lambda string: ''.join(unichr(int(string[i:i + 4], 16))
-                                         for i in range(0, len(string), 4))
-        self._voice_list = sorted({
-            (voice, voice)
-            for voice in [hex2uni(voice).strip() for voice in output]
-            if voice
-        }, key=lambda voice: voice[1].lower())
+        import pythoncom
+        self._pythoncom = pythoncom
 
-        if not self._voice_list:
-            raise EnvironmentError("No voices in `sapi5.js voice-list`")
+        # pylint:enable=import-error
+
+        voices = self._client.Dispatch('SAPI.SpVoice').getVoices()
+        self._voice_map = {
+            voice.getAttribute('name'): voice
+            for voice in [voices.item(i) for i in range(voices.count)]
+        }
+
+        if not self._voice_map:
+            raise EnvironmentError("No voices returned by SAPI 5")
 
     def desc(self):
         """
         Returns a short, static description.
         """
 
-        count = len(self._voice_list)
-        return ("SAPI 5.0 via JScript (%d %s)" %
+        count = len(self._voice_map)
+        return ("SAPI 5.0 via win32com (%d %s)" %
                 (count, "voice" if count == 1 else "voices"))
 
     def options(self):
@@ -120,11 +103,11 @@ class SAPI5(Service):
         voice_lookup = dict([
             # normalized with characters w/ diacritics stripped
             (self.normalize(voice[0]), voice[0])
-            for voice in self._voice_list
+            for voice in self._voice_map.keys()
         ] + [
             # normalized with diacritics converted
             (self.normalize(self.util_approx(voice[0])), voice[0])
-            for voice in self._voice_list
+            for voice in self._voice_map.keys()
         ])
 
         def transform_voice(value):
@@ -138,12 +121,11 @@ class SAPI5(Service):
             )
 
         return [
-            # See also sapi5.js when adjusting any of these
-
             dict(
                 key='voice',
                 label="Voice",
-                values=self._voice_list,
+                values=[(voice, voice)
+                        for voice in sorted(self._voice_map.keys())],
                 transform=transform_voice,
             ),
 
@@ -166,25 +148,25 @@ class SAPI5(Service):
 
     def run(self, text, options, path):
         """
-        Converts input voice and text into hex strings, writes a
-        temporary wave file, and then transcodes to MP3.
+        Writes a temporary wave file, and then transcodes to MP3.
         """
 
-        hexstr = lambda value: ''.join(['%04X' % ord(char) for char in value])
-
         output_wav = self.path_temp('wav')
+        self._pythoncom.CoInitializeEx(self._pythoncom.COINIT_MULTITHREADED)
 
         try:
-            self.cli_call(
-                self._binary,
-                self._SCRIPT,
-                'speech-output',
-                output_wav,
-                options['speed'],
-                options['volume'],
-                hexstr(options['voice']),
-                hexstr(text),  # double dash unnecessary due to hex encoding
-            )
+            stream = self._client.Dispatch('SAPI.SpFileStream')
+            stream.open(output_wav, 3)  # 3=SSFMCreateForWrite
+
+            try:
+                speech = self._client.Dispatch('SAPI.SpVoice')
+                speech.AudioOutputStream = stream
+                speech.Rate = options['speed']
+                speech.Voice = self._voice_map[options['voice']]
+                speech.Volume = options['volume']
+                speech.speak(text)
+            finally:
+                stream.close()
 
             self.cli_transcode(
                 output_wav,
@@ -195,4 +177,5 @@ class SAPI5(Service):
             )
 
         finally:
+            self._pythoncom.CoUninitialize()
             self.path_unlink(output_wav)

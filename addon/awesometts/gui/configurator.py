@@ -30,10 +30,11 @@ from sys import platform
 
 from PyQt4 import QtCore, QtGui
 
-from .base import Dialog, ServiceDialog
+from .base import Dialog
 from .common import Checkbox, Label, Note
 from .common import key_event_combo, key_combo_desc
 from .listviews import SubListView as _SubListView
+from .presets import Presets
 
 # all methods might need 'self' in the future, pylint:disable=R0201
 
@@ -710,10 +711,10 @@ class Configurator(Dialog):
         """Opens the presets editor."""
 
         if not self._preset_editor:
-            self._preset_editor = _PresetEditor(addon=self._addon,
-                                                alerts=self._alerts,
-                                                ask=self._ask,
-                                                parent=self)
+            self._preset_editor = Presets(addon=self._addon,
+                                          alerts=self._alerts,
+                                          ask=self._ask,
+                                          parent=self)
         self._preset_editor.show()
 
     def _on_groups(self):
@@ -784,56 +785,3 @@ class Configurator(Dialog):
                 button.setText("unable to empty cache")
         else:
             button.setText("successfully emptied cache")
-
-
-class _PresetEditor(ServiceDialog):
-    """Provides a dialog for editing presets."""
-
-    __slots__ = []
-
-    def __init__(self, *args, **kwargs):
-        super(_PresetEditor, self).__init__(title="Manage Service Presets",
-                                            *args, **kwargs)
-
-    # UI Construction ########################################################
-
-    def _ui_control(self):
-        """Add explanation of the preset functionality."""
-
-        header = Label("About Service Presets")
-        header.setFont(self._FONT_HEADER)
-
-        layout = super(_PresetEditor, self)._ui_control()
-        layout.addWidget(header)
-        layout.addWidget(Note(
-            'Once saved, your service option presets can be easily recalled '
-            'in most AwesomeTTS dialog windows and/or used for on-the-fly '
-            'playback with <tts preset="..."> ... </tts> template tags.'
-        ))
-        layout.addWidget(Note(
-            "Selecting text and then side-clicking in some Anki panels (e.g. "
-            "review mode, card layout editor, note editor fields) will also "
-            "allow playback of the selected text using any of your presets."
-        ))
-        layout.addSpacing(self._SPACING)
-        layout.addStretch()
-        layout.addWidget(self._ui_buttons())
-
-        return layout
-
-    def _ui_buttons(self):
-        """Removes the "Cancel" button."""
-
-        buttons = super(_PresetEditor, self)._ui_buttons()
-        for btn in buttons.buttons():
-            if buttons.buttonRole(btn) == QtGui.QDialogButtonBox.RejectRole:
-                buttons.removeButton(btn)
-        return buttons
-
-    # Events #################################################################
-
-    def accept(self):
-        """Remember the user's options if they hit "Okay"."""
-
-        self._addon.config.update(self._get_all())
-        super(_PresetEditor, self).accept()

@@ -31,9 +31,9 @@ from sys import platform
 from PyQt4 import QtCore, QtGui
 
 from .base import Dialog
-from .common import Checkbox, Label, Note
+from .common import Checkbox, Label, Note, Slate
 from .common import key_event_combo, key_combo_desc
-from .listviews import SubListView as _SubListView
+from .listviews import SubListView
 from .presets import Presets
 from .groups import Groups
 
@@ -317,31 +317,8 @@ class Configurator(Dialog):
         panel for manipulating text from the given context.
         """
 
-        buttons = []
-        for tooltip, icon in [("Add New Rule", 'list-add'),
-                              ("Move Selected Up", 'arrow-up'),
-                              ("Move Selected Down", 'arrow-down'),
-                              ("Remove Selected", 'editdelete')]:
-            btn = QtGui.QPushButton(QtGui.QIcon(':/icons/%s.png' % icon), "")
-            btn.setIconSize(QtCore.QSize(16, 16))
-            btn.setFlat(True)
-            btn.setToolTip(tooltip)
-            buttons.append(btn)
-
-        list_view = _SubListView(self._sul_compiler, buttons)
-        list_view.setObjectName('sul' + infix.rstrip('_'))
-        list_view.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,
-                                QtGui.QSizePolicy.Ignored)
-
-        vert = QtGui.QVBoxLayout()
-        for btn in buttons:
-            vert.addWidget(btn)
-        vert.insertStretch(len(buttons) - 1)
-
-        hor = QtGui.QHBoxLayout()
-        hor.addWidget(list_view)
-        hor.addLayout(vert)
-        return hor
+        return Slate("Rule", SubListView, self._sul_compiler,
+                     'sul' + infix.rstrip('_'))
 
     def _ui_tabs_mp3gen(self):
         """Returns the "MP3s" tab."""

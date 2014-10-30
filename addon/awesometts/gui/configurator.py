@@ -35,6 +35,7 @@ from .common import Checkbox, Label, Note
 from .common import key_event_combo, key_combo_desc
 from .listviews import SubListView as _SubListView
 from .presets import Presets
+from .groups import Groups
 
 # all methods might need 'self' in the future, pylint:disable=R0201
 
@@ -62,12 +63,14 @@ class Configurator(Dialog):
     _PROPERTY_WIDGETS = (Checkbox, QtGui.QComboBox, QtGui.QLineEdit,
                          QtGui.QPushButton, QtGui.QSpinBox, QtGui.QListView)
 
-    __slots__ = ['_alerts', '_ask', '_preset_editor', '_sul_compiler']
+    __slots__ = ['_alerts', '_ask', '_preset_editor', '_group_editor',
+                 '_sul_compiler']
 
     def __init__(self, alerts, ask, sul_compiler, *args, **kwargs):
         self._alerts = alerts
         self._ask = ask
         self._preset_editor = None
+        self._group_editor = None
         self._sul_compiler = sul_compiler
 
         super(Configurator, self).__init__(title="Configuration",
@@ -728,7 +731,10 @@ class Configurator(Dialog):
                          "create a group.", parent=self)
             return
 
-        # TODO
+        if not self._group_editor:
+            self._group_editor = Groups(addon=self._addon, parent=self)
+
+        self._group_editor.show()
 
     def _on_update_request(self):
         """Attempts update request w/ add-on updates interface."""

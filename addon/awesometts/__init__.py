@@ -93,6 +93,7 @@ config = Config(
         ('delay_questions_onthefly', 'integer', 0, int, int),
         ('delay_questions_stored_ours', 'integer', 0, int, int),
         ('delay_questions_stored_theirs', 'integer', 0, int, int),
+        ('groups', 'text', {}, to.deserialized_dict, to.compact_json),
         ('lame_flags', 'text', '--quiet -q 2', str, str),
         ('last_mass_append', 'integer', True, to.lax_bool, int),
         ('last_mass_behavior', 'integer', True, to.lax_bool, int),

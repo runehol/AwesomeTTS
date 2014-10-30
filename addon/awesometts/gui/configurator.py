@@ -467,18 +467,24 @@ class Configurator(Dialog):
     def _ui_tabs_advanced_presets(self):
         """Returns the "Presets" input group."""
 
-        button = QtGui.QPushButton("Manage...")
-        button.clicked.connect(self._on_presets)
+        presets_button = QtGui.QPushButton("Manage Presets...")
+        presets_button.clicked.connect(self._on_presets)
+
+        groups_button = QtGui.QPushButton("Manage Groups...")
+        groups_button.clicked.connect(self._on_groups)
 
         hor = QtGui.QHBoxLayout()
-        hor.addWidget(Label("Save services for quick access or side-click "
-                            "playback."))
-        hor.addSpacing(self._SPACING)
-        hor.addWidget(button)
+        hor.addWidget(presets_button)
+        hor.addWidget(groups_button)
         hor.addStretch()
 
-        group = QtGui.QGroupBox("Service Presets")
-        group.setLayout(hor)
+        vert = QtGui.QVBoxLayout()
+        vert.addWidget(Note("Setup services for easy access, menu playback, "
+                            "randomization, or fallbacks."))
+        vert.addLayout(hor)
+
+        group = QtGui.QGroupBox("Service Presets and Groups")
+        group.setLayout(vert)
         return group
 
     def _ui_tabs_advanced_update(self):
@@ -709,6 +715,19 @@ class Configurator(Dialog):
                                                 ask=self._ask,
                                                 parent=self)
         self._preset_editor.show()
+
+    def _on_groups(self):
+        """
+        Check to make sure the user as at least two presets, and if so,
+        launch the Groups management window.
+        """
+
+        if len(self._addon.config['presets']) < 2:
+            self._alerts("You must have at least two presets before you can "
+                         "create a group.", parent=self)
+            return
+
+        # TODO
 
     def _on_update_request(self):
         """Attempts update request w/ add-on updates interface."""

@@ -23,15 +23,9 @@ Data list views
 
 This module currently exposes a SubListView for manipulating lists of
 substitution rules.
-
-TODO: In the future, it is likely that 'SubListView' might be broken up
-into an abstract '_ListView' and various concrete classes ('SubListView'
-and others). The concrete classes would differ from each other in that
-they would use different delegates/models, but most of the logic would
-be in the abstract class.
 """
 
-__all__ = ['SubListView']
+__all__ = ['GroupListView', 'SubListView']
 
 import re
 from PyQt4 import QtCore, QtGui
@@ -40,27 +34,27 @@ from .common import Checkbox, HTML
 # all methods might need 'self' in the future, pylint:disable=R0201
 
 
-class SubListView(QtGui.QListView):
-    """List view specifically for substitution lists."""
+class _ListView(QtGui.QListView):
+    """Abstract list view for use throughout AwesomeTTS."""
 
     __slots__ = ['_add_btn', '_up_btn', '_down_btn', '_del_btn']
 
-    def __init__(self, sul_compiler, buttons, *args, **kwargs):
-        super(SubListView, self).__init__(*args, **kwargs)
+    def __init__(self, buttons, *args, **kwargs):
+        super(_ListView, self).__init__(*args, **kwargs)
 
         self._add_btn, self._up_btn, self._down_btn, self._del_btn = buttons
+
         self._add_btn.clicked.connect(self._add_rule)
         self._up_btn.clicked.connect(lambda: self._reorder_rules('up'))
         self._down_btn.clicked.connect(lambda: self._reorder_rules('down'))
         self._del_btn.clicked.connect(self._del_rules)
 
-        self.setItemDelegate(_SubRuleDelegate(sul_compiler))
         self.setSelectionMode(self.ExtendedSelection)
 
-    def setModel(self, model):  # pylint:disable=C0103
-        """Configures model and sets up event handling."""
+    def setModel(self, *args, **kwargs):  # pylint:disable=C0103
+        """Passes on model and sets up event handling."""
 
-        super(SubListView, self).setModel(_SubListModel(model))
+        super(_ListView, self).setModel(*args, **kwargs)
         self._on_selection()
         self.selectionModel().selectionChanged.connect(self._on_selection)
 
@@ -114,6 +108,24 @@ class SubListView(QtGui.QListView):
         else:
             self.model().moveRowsDown(rows[0], len(rows))
         self._on_selection()
+
+
+class SubListView(_ListView):
+    """List view specifically for substitution lists."""
+
+    def __init__(self, sul_compiler, *args, **kwargs):
+        super(SubListView, self).__init__(*args, **kwargs)
+        self.setItemDelegate(_SubRuleDelegate(sul_compiler))
+
+    def setModel(self, model, *args, **kwargs):  # pylint:disable=C0103
+        """Configures model."""
+
+        super(SubListView, self).setModel(_SubListModel(model),
+                                          *args, **kwargs)
+
+
+class GroupListView(_ListView):
+    """List view specifically for lists of presets."""
 
 
 class _SubRuleDelegate(QtGui.QItemDelegate):

@@ -317,7 +317,7 @@ class Configurator(Dialog):
         panel for manipulating text from the given context.
         """
 
-        return Slate("Rule", SubListView, self._sul_compiler,
+        return Slate("Rule", SubListView, [self._sul_compiler],
                      'sul' + infix.rstrip('_'))
 
     def _ui_tabs_mp3gen(self):

@@ -260,7 +260,7 @@ class Note(Label):
 class Slate(QtGui.QHBoxLayout):  # pylint:disable=too-few-public-methods
     """Horizontal panel for dealing with lists of things."""
 
-    def __init__(self, thing, ListViewClass, list_view_validator, list_name,
+    def __init__(self, thing, ListViewClass, list_view_args, list_name,
                  *args, **kwargs):
         super(Slate, self).__init__(*args, **kwargs)
 
@@ -275,7 +275,8 @@ class Slate(QtGui.QHBoxLayout):  # pylint:disable=too-few-public-methods
             btn.setToolTip(tooltip)
             buttons.append(btn)
 
-        list_view = ListViewClass(list_view_validator, buttons)
+        list_view_args.append(buttons)
+        list_view = ListViewClass(*list_view_args)  # pylint:disable=star-args
         list_view.setObjectName(list_name)
         list_view.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,
                                 QtGui.QSizePolicy.Ignored)

@@ -709,7 +709,8 @@ class Configurator(Dialog):
             return
 
         if not self._group_editor:
-            self._group_editor = Groups(addon=self._addon, parent=self)
+            self._group_editor = Groups(ask=self._ask, addon=self._addon,
+                                        parent=self)
 
         self._group_editor.show()
 

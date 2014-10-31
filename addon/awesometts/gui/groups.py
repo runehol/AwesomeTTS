@@ -25,7 +25,8 @@ __all__ = ['Groups']
 from PyQt4 import QtCore, QtGui
 
 from .base import Dialog
-from .common import Label, Note
+from .common import Label, Note, Slate
+from .listviews import GroupListView
 
 
 class Groups(Dialog):
@@ -116,6 +117,39 @@ class Groups(Dialog):
 
         if idx > 0:
             delete.setEnabled(True)
+
+            name = self.findChild(QtGui.QComboBox, 'groups').currentText()
+            group = self._groups[name]
+
+            header = Label(name)
+            header.setFont(self._FONT_HEADER)
+
+            randomize = QtGui.QRadioButton("randomized")
+            randomize.setChecked(group['mode'] == 'random')
+            randomize.clicked.connect(lambda: group.update({'mode': 'random'}))
+
+            in_order = QtGui.QRadioButton("in-order")
+            in_order.setChecked(group['mode'] == 'ordered')
+            in_order.clicked.connect(lambda: group.update({'mode': 'ordered'}))
+
+            hor = QtGui.QHBoxLayout()
+            hor.addWidget(Label("Mode:"))
+            hor.addWidget(randomize)
+            hor.addWidget(in_order)
+            hor.addStretch()
+
+            inner = QtGui.QVBoxLayout()
+            inner.addLayout(hor)
+            inner.addLayout(Slate("Preset", GroupListView, [], 'presets'))
+
+            slate = QtGui.QWidget()
+            slate.setLayout(inner)
+
+            vert.addWidget(header)
+            vert.addWidget(slate)
+
+            self.findChild(QtGui.QListView,
+                           'presets').setModel(group['presets'])
 
         else:
             delete.setEnabled(False)

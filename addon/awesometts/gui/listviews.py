@@ -127,6 +127,19 @@ class SubListView(_ListView):
 class GroupListView(_ListView):
     """List view specifically for lists of presets."""
 
+    def __init__(self, *args, **kwargs):
+        super(GroupListView, self).__init__(*args, **kwargs)
+
+        # TODO
+        # self.setItemDelegate(_GroupPresetDelegate())
+
+    def setModel(self, model, *args, **kwargs):  # pylint:disable=C0103
+        """Configures model."""
+
+        # TODO
+        # super(GroupListView, self).setModel(_GroupListModel(model),
+        #                                     *args, **kwargs)
+
 
 class _SubRuleDelegate(QtGui.QItemDelegate):
     """Item view specifically for a substitution rule."""
@@ -240,6 +253,11 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
 
     setModelData.RE_SLASH = re.compile(r'\\(\d+)')
 
+
+# TODO Introduce: GroupPresetDelegate
+
+
+# TODO Split this up: _ListModel, _SubListModel, _GroupListModel
 
 class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
     """Provides glue to/from the underlying substitution list."""

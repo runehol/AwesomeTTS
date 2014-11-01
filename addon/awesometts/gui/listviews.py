@@ -257,10 +257,8 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
 # TODO Introduce: GroupPresetDelegate
 
 
-# TODO Split this up: _ListModel, _SubListModel, _GroupListModel
-
-class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
-    """Provides glue to/from the underlying substitution list."""
+class _ListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
+    """Abstract class for list models."""
 
     __slots__ = ['raw_data']
 
@@ -270,49 +268,9 @@ class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
 
     rowCount = lambda self, parent=None: len(self.raw_data)
 
-    def __init__(self, sublist, *args, **kwargs):
-        super(_SubListModel, self).__init__(*args, **kwargs)
-        self.raw_data = [dict(obj) for obj in sublist]  # deep copy
-
-    def data(self, index, role=QtCore.Qt.DisplayRole):
-        """Return display or edit data for the indexed rule."""
-
-        if role == QtCore.Qt.DisplayRole:
-            rule = self.raw_data[index.row()]
-            if not rule['input']:
-                return "empty match pattern"
-            elif not rule['compiled']:
-                return "invalid match pattern: " + rule['input']
-            elif 'bad_replace' in rule:
-                return "bad replacement string: " + rule['replace']
-
-            text = '/%s/%s' % (rule['input'],
-                               'i' if rule['ignore_case'] else '') \
-                   if rule['regex'] else '"%s"' % rule['input']
-            action = ('replace it with "%s"' % rule['replace']
-                      if rule['replace'] else "remove it")
-            attr = ", ".join([
-                "regex pattern" if rule['regex'] else "plain text",
-                "case-insensitive" if rule['ignore_case'] else "case matters",
-                "unicode enabled" if rule['unicode'] else "unicode disabled",
-            ])
-            return "match " + text + " and " + action + "\n(" + attr + ")"
-
-        elif role == QtCore.Qt.EditRole:
-            return self.raw_data[index.row()]
-
-    def insertRow(self, row=None, parent=None):  # pylint:disable=C0103
-        """Inserts a new row at the given position (default end)."""
-
-        if not row:
-            row = len(self.raw_data)  # defaults to end
-
-        self.beginInsertRows(parent or QtCore.QModelIndex(), row, row)
-        self.raw_data.insert(row, {'input': '', 'compiled': None,
-                                   'replace': '', 'regex': False,
-                                   'ignore_case': True, 'unicode': True})
-        self.endInsertRows()
-        return True
+    def __init__(self, raw_data, *args, **kwargs):
+        super(_ListModel, self).__init__(*args, **kwargs)
+        self.raw_data = raw_data
 
     def moveRowsDown(self, row, count):  # pylint:disable=C0103
         """Moves the given count of records at the given row down."""
@@ -354,3 +312,54 @@ class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
 
         self.raw_data[index.row()] = value
         return True
+
+
+class _SubListModel(_ListModel):  # pylint:disable=R0904
+    """Provides glue to/from the underlying substitution list."""
+
+    def __init__(self, *args, **kwargs):
+        super(_SubListModel, self).__init__(*args, **kwargs)
+        self.raw_data = [dict(obj) for obj in self.raw_data]  # deep copy
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        """Return display or edit data for the indexed rule."""
+
+        if role == QtCore.Qt.DisplayRole:
+            rule = self.raw_data[index.row()]
+            if not rule['input']:
+                return "empty match pattern"
+            elif not rule['compiled']:
+                return "invalid match pattern: " + rule['input']
+            elif 'bad_replace' in rule:
+                return "bad replacement string: " + rule['replace']
+
+            text = '/%s/%s' % (rule['input'],
+                               'i' if rule['ignore_case'] else '') \
+                   if rule['regex'] else '"%s"' % rule['input']
+            action = ('replace it with "%s"' % rule['replace']
+                      if rule['replace'] else "remove it")
+            attr = ", ".join([
+                "regex pattern" if rule['regex'] else "plain text",
+                "case-insensitive" if rule['ignore_case'] else "case matters",
+                "unicode enabled" if rule['unicode'] else "unicode disabled",
+            ])
+            return "match " + text + " and " + action + "\n(" + attr + ")"
+
+        elif role == QtCore.Qt.EditRole:
+            return self.raw_data[index.row()]
+
+    def insertRow(self, row=None, parent=None):  # pylint:disable=C0103
+        """Inserts a new row at the given position (default end)."""
+
+        if not row:
+            row = len(self.raw_data)  # defaults to end
+
+        self.beginInsertRows(parent or QtCore.QModelIndex(), row, row)
+        self.raw_data.insert(row, {'input': '', 'compiled': None,
+                                   'replace': '', 'regex': False,
+                                   'ignore_case': True, 'unicode': True})
+        self.endInsertRows()
+        return True
+
+
+# TODO: Introduce _GroupListModel

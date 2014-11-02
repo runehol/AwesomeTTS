@@ -127,11 +127,10 @@ class SubListView(_ListView):
 class GroupListView(_ListView):
     """List view specifically for lists of presets."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, presets, *args, **kwargs):
         super(GroupListView, self).__init__(*args, **kwargs)
 
-        # TODO
-        # self.setItemDelegate(_GroupPresetDelegate())
+        self.setItemDelegate(_GroupPresetDelegate(presets))
 
     def setModel(self, model, *args, **kwargs):  # pylint:disable=C0103
         """Configures model."""
@@ -254,7 +253,53 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
     setModelData.RE_SLASH = re.compile(r'\\(\d+)')
 
 
-# TODO Introduce: GroupPresetDelegate
+class _GroupPresetDelegate(QtGui.QItemDelegate):
+    """Item view specifically for a group preset."""
+
+    sizeHint = lambda self, option, index: self.sizeHint.SIZE
+    sizeHint.SIZE = QtCore.QSize(-1, 40)
+
+    __slots__ = ['_presets']
+
+    def __init__(self, presets, *args, **kwargs):
+        super(_GroupPresetDelegate, self).__init__(*args, **kwargs)
+        self._presets = presets
+
+    def createEditor(self, parent,    # pylint:disable=C0103
+                     option, index):  # pylint:disable=W0613
+        """Return a panel to change selected preset."""
+
+        dropdown = QtGui.QComboBox()
+        dropdown.addItem("(select preset)")
+        dropdown.addItems(self._presets)
+
+        hor = QtGui.QHBoxLayout()
+        hor.addWidget(dropdown)
+
+        panel = QtGui.QWidget(parent)
+        panel.setObjectName('editor')
+        panel.setAutoFillBackground(True)
+        panel.setFocusPolicy(QtCore.Qt.StrongFocus)
+        panel.setLayout(hor)
+        return panel
+
+    def setEditorData(self, editor, index):  # pylint:disable=C0103
+        """Changes the preset in the dropdown."""
+
+        dropdown = editor.findChild(QtGui.QComboBox)
+        value = index.data(QtCore.Qt.EditRole)
+        dropdown.setCurrentIndex(dropdown.findText(value) if value else 0)
+
+        QtCore.QTimer.singleShot(0, dropdown.setFocus)
+
+    def setModelData(self, editor, model, index):  # pylint:disable=C0103
+        """Update the underlying model after edit."""
+
+        dropdown = editor.findChild(QtGui.QComboBox)
+        model.setData(
+            index,
+            dropdown.currentText() if dropdown.currentIndex() > 0 else ""
+        )
 
 
 class _ListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904

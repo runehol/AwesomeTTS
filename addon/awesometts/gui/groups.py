@@ -140,7 +140,15 @@ class Groups(Dialog):
 
             inner = QtGui.QVBoxLayout()
             inner.addLayout(hor)
-            inner.addLayout(Slate("Preset", GroupListView, [], 'presets'))
+            inner.addLayout(Slate(
+                "Preset",
+                GroupListView,
+                [sorted(
+                    self._addon.config['presets'].keys(),
+                    key=lambda preset: preset.lower(),
+                )],
+                'presets',
+            ))
 
             slate = QtGui.QWidget()
             slate.setLayout(inner)

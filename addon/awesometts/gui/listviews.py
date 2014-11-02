@@ -135,9 +135,8 @@ class GroupListView(_ListView):
     def setModel(self, model, *args, **kwargs):  # pylint:disable=C0103
         """Configures model."""
 
-        # TODO
-        # super(GroupListView, self).setModel(_GroupListModel(model),
-        #                                     *args, **kwargs)
+        super(GroupListView, self).setModel(_GroupListModel(model),
+                                            *args, **kwargs)
 
 
 class _SubRuleDelegate(QtGui.QItemDelegate):
@@ -407,4 +406,24 @@ class _SubListModel(_ListModel):  # pylint:disable=R0904
         return True
 
 
-# TODO: Introduce _GroupListModel
+class _GroupListModel(_ListModel):  # pylint:disable=R0904
+    """Provides glue to/from the underlying preset list."""
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        """Return display or edit data for the indexed preset."""
+
+        if role == QtCore.Qt.DisplayRole:
+            return self.raw_data[index.row()] or "(not selected)"
+        elif role == QtCore.Qt.EditRole:
+            return self.raw_data[index.row()]
+
+    def insertRow(self, row=None, parent=None):  # pylint:disable=C0103
+        """Inserts a new row at the given position (default end)."""
+
+        if not row:
+            row = len(self.raw_data)  # defaults to end
+
+        self.beginInsertRows(parent or QtCore.QModelIndex(), row, row)
+        self.raw_data.insert(row, "")
+        self.endInsertRows()
+        return True

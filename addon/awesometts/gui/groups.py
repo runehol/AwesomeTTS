@@ -232,5 +232,9 @@ class Groups(Dialog):
     def accept(self):
         """Saves groups back to user configuration."""
 
+        for list_view in self.findChildren(QtGui.QListView):
+            for editor in list_view.findChildren(QtGui.QWidget, 'editor'):
+                list_view.commitData(editor)  # if an editor is open, save it
+
         self._addon.config['groups'] = self._groups
         super(Groups, self).accept()

@@ -121,9 +121,6 @@ class Groups(Dialog):
             name = self.findChild(QtGui.QComboBox, 'groups').currentText()
             group = self._groups[name]
 
-            header = Label(name)
-            header.setFont(self._FONT_HEADER)
-
             randomize = QtGui.QRadioButton("randomized")
             randomize.setChecked(group['mode'] == 'random')
             randomize.clicked.connect(lambda: group.update({'mode': 'random'}))
@@ -153,7 +150,6 @@ class Groups(Dialog):
             slate = QtGui.QWidget()
             slate.setLayout(inner)
 
-            vert.addWidget(header)
             vert.addWidget(slate)
 
             self.findChild(QtGui.QListView,

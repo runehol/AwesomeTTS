@@ -207,22 +207,15 @@ class Reviewer(object):
             return
 
         attr = dict(tag.attrs)
+        config = self._addon.config
 
         if 'preset' in attr:
-            preset = attr['preset']
-            presets = self._addon.config['presets']
             try:
-                attr = dict(presets[preset])
+                attr = dict(lax_dict_lookup(config['presets'], attr['preset']))
             except KeyError:
-                try:
-                    preset = preset.strip().lower()
-                    attr = dict(next(value for key, value in presets.items()
-                                     if key.strip().lower() == preset))
-                except StopIteration:
-                    self._alerts("'preset' for this tag does not exist:\n%s" %
-                                 tag.prettify().decode('utf-8'),
-                                 parent)
-                    return
+                self._alerts("'preset' for this tag does not exist:\n%s" %
+                             tag.prettify().decode('utf-8'), parent)
+                return
 
         try:
             svc_id = attr.pop('service')
@@ -364,3 +357,24 @@ class BeautifulTTS(BeautifulSoup):  # pylint:disable=too-many-public-methods
 
     NESTABLE_TAGS = dict(BeautifulSoup.NESTABLE_TAGS.items() +
                          [('tts', [])])
+
+
+def lax_dict_lookup(src, key, return_none=False):
+    """
+    Try to get a value out of the passed source dict with the passed
+    key. If unsuccessful, normalize the keys and try again.
+
+    Raises KeyError if both attempts fail, unless return_none is set.
+    """
+
+    try:
+        return src[key]
+    except KeyError:
+        try:
+            key = key.strip().lower()
+            return next(v for k, v in src.items() if k.strip().lower() == key)
+        except StopIteration:
+            if return_none:
+                return None
+            else:
+                raise KeyError

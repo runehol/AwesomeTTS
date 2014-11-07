@@ -76,8 +76,8 @@ class Groups(Dialog):
         hor = QtGui.QHBoxLayout()
         hor.addWidget(groups)
         hor.addWidget(delete)
-        hor.addStretch()
         hor.addWidget(add)
+        hor.addStretch()
 
         vert = QtGui.QVBoxLayout()
         vert.setObjectName('child')
@@ -172,6 +172,7 @@ class Groups(Dialog):
                                 "to fallback to another preset if your first "
                                 "choice does not have audio for your input "
                                 "phrase."))
+            vert.addWidget(Label(""), 1)
 
     def _on_group_delete(self):
         """Delete the selected group."""

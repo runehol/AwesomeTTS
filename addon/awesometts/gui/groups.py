@@ -33,14 +33,16 @@ class Groups(Dialog):
     """Provides a dialog for editing groups of presets."""
 
     __slots__ = [
-        '_ask',     # dialog interface for asking for user input
-        '_groups',  # deep copy from config['groups']
+        '_ask',            # dialog interface for asking for user input
+        '_current_group',  # current group name
+        '_groups',         # deep copy from config['groups']
     ]
 
     def __init__(self, ask, *args, **kwargs):
         super(Groups, self).__init__(title="Manage Preset Groups",
                                      *args, **kwargs)
         self._ask = ask
+        self._current_group = None
         self._groups = None  # set in show()
 
     # UI Construction ########################################################
@@ -109,6 +111,7 @@ class Groups(Dialog):
     def _on_group_activated(self, idx):
         """Show the correct panel for the selected group."""
 
+        self._pull_presets()
         delete = self.findChild(QtGui.QPushButton, 'delete')
         vert = self.findChild(QtGui.QLayout, 'child')
 
@@ -119,6 +122,7 @@ class Groups(Dialog):
             delete.setEnabled(True)
 
             name = self.findChild(QtGui.QComboBox, 'groups').currentText()
+            self._current_group = name
             group = self._groups[name]
 
             randomize = QtGui.QRadioButton("randomized")
@@ -157,6 +161,8 @@ class Groups(Dialog):
 
         else:
             delete.setEnabled(False)
+
+            self._current_group = None
 
             header = Label("About Preset Groups")
             header.setFont(self._FONT_HEADER)
@@ -229,9 +235,22 @@ class Groups(Dialog):
     def accept(self):
         """Saves groups back to user configuration."""
 
-        for list_view in self.findChildren(QtGui.QListView):
-            for editor in list_view.findChildren(QtGui.QWidget, 'editor'):
-                list_view.commitData(editor)  # if an editor is open, save it
-
-        self._addon.config['groups'] = self._groups
+        self._pull_presets()
+        self._addon.config['groups'] = {
+            name: {'mode': group['mode'], 'presets': group['presets'][:]}
+            for name, group in self._groups.items()
+        }
         super(Groups, self).accept()
+
+    def _pull_presets(self):
+        """Update current group's presets."""
+
+        name = self._current_group
+        if not name or name not in self._groups:
+            return
+
+        list_view = self.findChild(QtGui.QListView, 'presets')
+        for editor in list_view.findChildren(QtGui.QWidget, 'editor'):
+            list_view.commitData(editor)  # if an editor is open, save it
+
+        self._groups[name]['presets'] = list_view.model().raw_data

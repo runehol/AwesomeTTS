@@ -191,19 +191,18 @@ class Router(object):
         try:
             mode = group['mode']
             if mode not in ['ordered', 'random']:
-                raise ValueError("invalid group mode")
+                raise ValueError("Invalid group mode")
 
             presets = [presets.get(preset) for preset in group.get('presets')]
+            if not presets:
+                raise ValueError("Group has no presets defined")
             presets = [preset for preset in presets if preset]
             if not presets:
-                raise ValueError("none of the group presets exist")
+                raise ValueError("None of the group presets exist")
 
-            if mode == 'random':  # copy/shuffle (allow duplicates to weight)
-                presets = list(presets)
+            presets = [dict(preset) for preset in presets]  # deep copy
+            if mode == 'random':  # shuffle (but allow duplicates to weight)
                 shuffle(presets)
-
-            print text, mode, presets
-            # TODO need to pass back "busy service" immediately?
 
         except Exception as exception:  # all, pylint:disable=broad-except
             if 'done' in callbacks:
@@ -211,7 +210,51 @@ class Router(object):
             callbacks['fail'](exception)
             if 'then' in callbacks:
                 callbacks['then']()
-            return
+
+        else:
+            def on_okay(path):
+                """Executes caller callbacks with path."""
+                if 'done' in callbacks:
+                    callbacks['done']()
+                callbacks['okay'](path)
+                if 'then' in callbacks:
+                    callbacks['then']()
+
+            def on_fail(exception):
+                """Go to next, unless playback already queued."""
+                if isinstance(exception, self.BusyError):
+                    if 'done' in callbacks:
+                        callbacks['done']()
+                    callbacks['fail'](exception)
+                    if 'then' in callbacks:
+                        callbacks['then']()
+                else:
+                    try_next()
+
+            internal_callbacks = dict(okay=on_okay, fail=on_fail)
+            if 'miss' in callbacks:
+                internal_callbacks['miss'] = callbacks['miss']
+
+            def try_next():
+                """Pop next preset off and try playing text with it."""
+
+                try:
+                    preset = presets.pop(0)
+                except IndexError:
+                    if 'done' in callbacks:
+                        callbacks['done']()
+                    callbacks['fail'](IndexError(
+                        "None of the presets in this group were able to play "
+                        "the input text."
+                    ))
+                    if 'then' in callbacks:
+                        callbacks['then']()
+                else:
+                    svc_id = preset.pop('service')
+                    self(svc_id=svc_id, text=text, options=preset,
+                         callbacks=internal_callbacks)
+
+            try_next()
 
     def __call__(self, svc_id, text, options, callbacks):
         """

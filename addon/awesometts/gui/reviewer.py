@@ -29,8 +29,6 @@ alert windows. It also may have more visual components in the future.
 
 __all__ = ['Reviewer']
 
-from collections import OrderedDict
-from random import shuffle
 import re
 
 from BeautifulSoup import BeautifulSoup
@@ -218,30 +216,25 @@ class Reviewer(object):
                 self._alerts("'group' for this tag does not exist:\n%s" %
                              tag.prettify().decode('utf-8'), parent)
             else:
-                mode = ('ordered' if group.get('mode') == 'ordered'
-                        else 'random')
-                presets = group.get('presets')
-
-                if isinstance(presets, list) and len(presets):
-                    if mode == 'ordered':  # copy and deduplicate
-                        presets = OrderedDict.fromkeys(presets).keys()
-                    else:  # copy and shuffle (but allow duplicates to weight)
-                        presets = list(presets)
-                        shuffle(presets)
-
-                    presets = [lax_dict_lookup(config['presets'], preset, True)
-                               for preset in presets]
-                    presets = [preset for preset in presets if preset]
-
-                    if presets:
-                        print mode, presets  # TODO
-                    else:
-                        self._alerts("This group's presets are invalid:\n%s" %
-                                     tag.prettify().decode('utf-8'), parent)
-
-                else:
-                    self._alerts("This group does not have presets:\n%s" %
-                                 tag.prettify().decode('utf-8'), parent)
+                self._addon.router.group(
+                    text=text,
+                    group=group,
+                    presets=config['presets'],
+                    callbacks=dict(
+                        okay=playback,
+                        fail=lambda exception: (
+                            isinstance(exception,
+                                       self._addon.router.BusyError) or
+                            self._alerts(
+                                "Unable to play this group tag:\n%s\n\n%s" % (
+                                    tag.prettify().decode('utf-8').strip(),
+                                    exception.message,
+                                ),
+                                parent,
+                            )
+                        ),
+                    ),
+                )
             return
 
         if 'preset' in attr:

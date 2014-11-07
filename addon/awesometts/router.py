@@ -25,6 +25,8 @@ Dispatch management of available services
 __all__ = ['Router']
 
 import os.path
+from random import shuffle
+
 from PyQt4 import QtCore, QtGui
 
 from .service import Trait as BaseTrait
@@ -175,6 +177,42 @@ class Router(object):
 
         return service['options']
 
+    def group(self, text, group, presets, callbacks):
+        """
+        Execute a group playback request using the passed group to be
+        looked up using the passed presets.
+
+        The callbacks follow the same rules as in the regular bare call
+        method.
+        """
+
+        self._call_assert_callbacks(callbacks)
+
+        try:
+            mode = group['mode']
+            if mode not in ['ordered', 'random']:
+                raise ValueError("invalid group mode")
+
+            presets = [presets.get(preset) for preset in group.get('presets')]
+            presets = [preset for preset in presets if preset]
+            if not presets:
+                raise ValueError("none of the group presets exist")
+
+            if mode == 'random':  # copy/shuffle (allow duplicates to weight)
+                presets = list(presets)
+                shuffle(presets)
+
+            print text, mode, presets
+            # TODO need to pass back "busy service" immediately?
+
+        except Exception as exception:  # all, pylint:disable=broad-except
+            if 'done' in callbacks:
+                callbacks['done']()
+            callbacks['fail'](exception)
+            if 'then' in callbacks:
+                callbacks['then']()
+            return
+
     def __call__(self, svc_id, text, options, callbacks):
         """
         Given the service ID and associated options, pass the text into
@@ -217,11 +255,7 @@ class Router(object):
               not recall the 'fail' handler again
         """
 
-        assert 'done' not in callbacks or callable(callbacks['done'])
-        assert 'miss' not in callbacks or callable(callbacks['miss'])
-        assert 'okay' in callbacks and callable(callbacks['okay'])
-        assert 'fail' in callbacks and callable(callbacks['fail'])
-        assert 'then' not in callbacks or callable(callbacks['then'])
+        self._call_assert_callbacks(callbacks)
 
         try:
             self._logger.debug("Call for '%s' w/ %s", svc_id, options)
@@ -292,6 +326,15 @@ class Router(object):
                     'then' in callbacks and callbacks['then'](),
                 )
             )
+
+    def _call_assert_callbacks(self, callbacks):
+        """Checks the callbacks argument for validity."""
+
+        assert 'done' not in callbacks or callable(callbacks['done'])
+        assert 'miss' not in callbacks or callable(callbacks['miss'])
+        assert 'okay' in callbacks and callable(callbacks['okay'])
+        assert 'fail' in callbacks and callable(callbacks['fail'])
+        assert 'then' not in callbacks or callable(callbacks['then'])
 
     def _validate_service(self, svc_id, options):
         """

@@ -56,6 +56,7 @@ class Router(object):
     __slots__ = [
         '_busy',       # list of file paths that are in-progress
         '_cache_dir',  # path for writing cached media files
+        '_failures',   # lookup of file paths that raised exceptions
         '_logger',     # logger-like interface with debug(), info(), etc.
         '_pool',       # instance of the _Pool class for managing threads
         '_services',   # bundle with aliases, avail, lookup
@@ -97,6 +98,7 @@ class Router(object):
 
         self._busy = []
         self._cache_dir = cache_dir
+        self._failures = {}
         self._logger = logger
         self._pool = _Pool(logger)
         self._services = services
@@ -254,7 +256,19 @@ class Router(object):
             if 'then' in callbacks:
                 callbacks['then']()
 
+        elif path in self._failures:
+            if 'done' in callbacks:
+                callbacks['done']()
+            callbacks['fail'](self._failures[path])
+            if 'then' in callbacks:
+                callbacks['then']()
+
         else:
+            def on_error(exception):
+                """Cache errors and pass back to fail handler."""
+                self._failures[path] = exception
+                callbacks['fail'](exception)
+
             service['instance'].net_reset()
             self._busy.append(path)
             self._pool.spawn(
@@ -268,9 +282,9 @@ class Router(object):
                         service['instance'].net_count()
                     ),
 
-                    callbacks['fail'](exception) if exception
+                    on_error(exception) if exception
                     else callbacks['okay'](path) if os.path.exists(path)
-                    else callbacks['fail'](RuntimeError(
+                    else on_error(RuntimeError(
                         "The %s service did not successfully write out "
                         "an MP3." % service['name']
                     )),

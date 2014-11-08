@@ -139,11 +139,15 @@ class GroupListView(_ListView):
                                             *args, **kwargs)
 
 
-class _SubRuleDelegate(QtGui.QItemDelegate):
-    """Item view specifically for a substitution rule."""
+class _Delegate(QtGui.QItemDelegate):
+    """Abstract delegate view for use throughout AwesomeTTS."""
 
     sizeHint = lambda self, option, index: self.sizeHint.SIZE
     sizeHint.SIZE = QtCore.QSize(-1, 40)
+
+
+class _SubRuleDelegate(_Delegate):
+    """Item view specifically for a substitution rule."""
 
     __slots__ = ['_sul_compiler']
 
@@ -252,11 +256,8 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
     setModelData.RE_SLASH = re.compile(r'\\(\d+)')
 
 
-class _GroupPresetDelegate(QtGui.QItemDelegate):
+class _GroupPresetDelegate(_Delegate):
     """Item view specifically for a group preset."""
-
-    sizeHint = lambda self, option, index: self.sizeHint.SIZE
-    sizeHint.SIZE = QtCore.QSize(-1, 40)
 
     __slots__ = ['_presets']
 

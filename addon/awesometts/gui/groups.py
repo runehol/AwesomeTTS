@@ -240,7 +240,14 @@ class Groups(Dialog):
             name: {'mode': group['mode'], 'presets': group['presets'][:]}
             for name, group in self._groups.items()
         }
+        self._current_group = None
         super(Groups, self).accept()
+
+    def reject(self):
+        """Unset the current group."""
+
+        self._current_group = None
+        super(Groups, self).reject()
 
     def _pull_presets(self):
         """Update current group's presets."""

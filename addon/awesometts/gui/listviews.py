@@ -127,16 +127,21 @@ class SubListView(_ListView):
 class GroupListView(_ListView):
     """List view specifically for lists of presets."""
 
+    __slots__ = ['_presets']
+
     def __init__(self, presets, *args, **kwargs):
         super(GroupListView, self).__init__(*args, **kwargs)
 
         self.setItemDelegate(_GroupPresetDelegate(presets))
+        self._presets = presets
 
     def setModel(self, model, *args, **kwargs):  # pylint:disable=C0103
         """Configures model."""
 
-        super(GroupListView, self).setModel(_GroupListModel(model),
-                                            *args, **kwargs)
+        super(GroupListView, self).setModel(
+            _GroupListModel(self._presets, model),
+            *args, **kwargs
+        )
 
 
 class _Delegate(QtGui.QItemDelegate):
@@ -410,13 +415,22 @@ class _SubListModel(_ListModel):  # pylint:disable=R0904
 class _GroupListModel(_ListModel):  # pylint:disable=R0904
     """Provides glue to/from the underlying preset list."""
 
+    __slots__ = ['_presets']
+
+    def __init__(self, presets, *args, **kwargs):
+        super(_GroupListModel, self).__init__(*args, **kwargs)
+        self._presets = presets
+
     def data(self, index, role=QtCore.Qt.DisplayRole):
         """Return display or edit data for the indexed preset."""
 
+        preset = self.raw_data[index.row()]
         if role == QtCore.Qt.DisplayRole:
-            return self.raw_data[index.row()] or "(not selected)"
+            return ("(not selected)" if not preset
+                    else preset if preset in self._presets
+                    else preset + " [deleted]")
         elif role == QtCore.Qt.EditRole:
-            return self.raw_data[index.row()]
+            return preset
 
     def insertRow(self, row=None, parent=None):  # pylint:disable=C0103
         """Inserts a new row at the given position (default end)."""

@@ -56,7 +56,9 @@
     <li><strong>Automatically play on-the-fly <code>&lt;tts&gt;</code>
       tags:</strong> If checked, AwesomeTTS will playback any
       <code>&lt;tts&gt;</code> tag found on the front side of your
-      card&rsquo;s template when initially displaying the card.</li>
+      card&rsquo;s template when initially displaying the card. <strong>Show
+      errors</strong> controls whether AwesomeTTS will alert you about errors
+      that occur from automatic on-the-fly playback.</li>
 
     <li><strong>Wait <samp>&hellip; seconds</samp> before automatically
       playing <samp>&hellip;</samp> tags:</strong> If set to a positive value
@@ -80,7 +82,9 @@
     <li><strong>Automatically play on-the-fly <code>&lt;tts&gt;</code>
       tags:</strong> If checked, AwesomeTTS will playback any
       <code>&lt;tts&gt;</code> tag found on the back side of your card&rsquo;s
-      template once you reveal the answer to the card.</li>
+      template once you reveal the answer to the card. <strong>Show
+      errors</strong> controls whether AwesomeTTS will alert you about errors
+      that occur from automatic on-the-fly playback.</li>
 
     <li><strong>Wait <samp>&hellip; seconds</samp> before automatically
       playing <samp>&hellip;</samp> tags:</strong> If set to a positive value
@@ -141,6 +145,10 @@
     <li>If you strike the shortcut to manually play a sound, it will be played
       immediately without a delay unless other sounds are waiting in queue
       (including any delays imposed by an automatic playback).</li>
+    <li>If you have unchecked <strong>Show errors</strong> for automatic
+      playback but would like to know why a particular card's audio is not
+      working, any manually-trigger playback (e.g. shortcut key or context
+      menu) will display the error.</li>
 </ul>
 
 {{> below}}

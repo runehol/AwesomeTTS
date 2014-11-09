@@ -44,7 +44,8 @@ class Configurator(Dialog):
     """Provides a dialog for configuring the add-on."""
 
     _PROPERTY_KEYS = [
-        'automatic_answers', 'automatic_questions', 'cache_days', 'debug_file',
+        'automatic_answers', 'automatic_answers_errors', 'automatic_questions',
+        'automatic_questions_errors', 'cache_days', 'debug_file',
         'debug_stdout', 'delay_answers_onthefly', 'delay_answers_stored_ours',
         'delay_answers_stored_theirs', 'delay_questions_onthefly',
         'delay_questions_stored_ours', 'delay_questions_stored_theirs',
@@ -137,10 +138,16 @@ class Configurator(Dialog):
         of Cards" input groups.
         """
 
+        hor = QtGui.QHBoxLayout()
         automatic = Checkbox("Automatically play on-the-fly <tts> tags",
                              automatic_key)
+        errors = Checkbox("Show errors", automatic_key + '_errors')
+        hor.addWidget(automatic)
+        hor.addWidget(errors)
+        hor.addStretch()
+
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(automatic)
+        layout.addLayout(hor)
 
         wait_widgets = {}
         for subkey, desc in [('onthefly', "on-the-fly <tts> tags"),
@@ -159,7 +166,11 @@ class Configurator(Dialog):
             hor.addWidget(Label("before automatically playing " + desc))
             hor.addStretch()
             layout.addLayout(hor)
-        automatic.stateChanged.connect(wait_widgets['onthefly'].setEnabled)
+
+        automatic.stateChanged.connect(lambda enabled: (
+            errors.setEnabled(enabled),
+            wait_widgets['onthefly'].setEnabled(enabled),
+        ))
 
         hor = QtGui.QHBoxLayout()
         hor.addWidget(Label("To manually play on-the-fly <tts> tags, strike"))

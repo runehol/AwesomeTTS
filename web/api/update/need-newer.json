@@ -8,6 +8,7 @@
         "adds support for nesting TTS tags in card templates",
         "adds ability to save and recall TTS services as \"presets\"",
         "adds AwesomeTTS functionality to side-click menus: play selected text, activate on-the-fly playback in review mode, test on-the-fly tags in the template editor",
+        "allow user to disable error messages from automatic on-the-fly playback",
         "moves AwesomeTTS menu in the card browser to a top-level menu",
         "fixes eSpeak support for Mandarin",
         "fixes for SAPI 5 with some IVONA voices",
@@ -17,5 +18,5 @@
         "avoids a crash if user enables logging inside a non-ASCII path"
     ],
     "update": true,
-    "version": "1.2.1"
+    "version": "1.2.2"
 }

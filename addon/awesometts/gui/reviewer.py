@@ -100,13 +100,17 @@ class Reviewer(object):
         playback method if so.
         """
 
-        if state == 'question' and self._addon.config['automatic_questions']:
-            self._play_html('front', card.q(),
-                            self._addon.player.otf_question, self._mw)
+        config = self._addon.config
 
-        elif state == 'answer' and self._addon.config['automatic_answers']:
+        if state == 'question' and config['automatic_questions']:
+            self._play_html('front', card.q(),
+                            self._addon.player.otf_question, self._mw,
+                            show_errors=config['automatic_questions_errors'])
+
+        elif state == 'answer' and config['automatic_answers']:
             self._play_html('back', self._get_answer(card),
-                            self._addon.player.otf_answer, self._mw)
+                            self._addon.player.otf_answer, self._mw,
+                            show_errors=config['automatic_answers_errors'])
 
     def key_handler(self, key_event, state, card, replay_audio):
         """
@@ -177,7 +181,7 @@ class Reviewer(object):
 
         return answer_html
 
-    def _play_html(self, side, html, playback, parent):
+    def _play_html(self, side, html, playback, parent, show_errors=True):
         """
         Read in the passed HTML, attempt to discover <tts> tags in it,
         and pass them to the router for processing.
@@ -194,12 +198,15 @@ class Reviewer(object):
                          else self._addon.strip.from_template_front)
 
         for tag in BeautifulTTS(html)('tts'):
-            self._play_html_tag(tag, from_template, playback, parent)
+            self._play_html_tag(tag, from_template, playback, parent,
+                                show_errors)
 
         for legacy in self.RE_LEGACY_TAGS.findall(html):
-            self._play_html_legacy(legacy, from_template, playback, parent)
+            self._play_html_legacy(legacy, from_template, playback, parent,
+                                   show_errors)
 
-    def _play_html_tag(self, tag, from_template, playback, parent):
+    def _play_html_tag(self, tag, from_template, playback, parent,
+                       show_errors=True):
         """Helper method for _play_html()."""
 
         text = from_template(unicode(tag))
@@ -219,19 +226,21 @@ class Reviewer(object):
                     attr = dict(next(value for key, value in presets.items()
                                      if key.strip().lower() == preset))
                 except StopIteration:
-                    self._alerts("'preset' for this tag does not exist:\n%s" %
-                                 tag.prettify().decode('utf-8'),
-                                 parent)
+                    if show_errors:
+                        self._alerts("This 'preset' does not exist:\n%s" %
+                                     tag.prettify().decode('utf-8'),
+                                     parent)
                     return
 
         try:
             svc_id = attr.pop('service')
         except KeyError:
-            self._alerts(
-                "This tag needs a 'service' attribute:\n%s" %
-                tag.prettify().decode('utf-8'),
-                parent,
-            )
+            if show_errors:
+                self._alerts(
+                    "This tag needs a 'service' attribute:\n%s" %
+                    tag.prettify().decode('utf-8'),
+                    parent,
+                )
             return
 
         self._addon.router(
@@ -243,6 +252,7 @@ class Reviewer(object):
                 fail=lambda exception: (
                     # we can safely ignore "service busy" errors in review
                     isinstance(exception, self._addon.router.BusyError) or
+                    not show_errors or
                     self._alerts(
                         "Unable to play this tag:\n%s\n\n%s" % (
                             tag.prettify().decode('utf-8').strip(),
@@ -254,33 +264,36 @@ class Reviewer(object):
             ),
         )
 
-    def _play_html_legacy(self, legacy, from_template, playback, parent):
+    def _play_html_legacy(self, legacy, from_template, playback, parent,
+                          show_errors=True):
         """Helper method for _play_html()."""
 
         components = legacy[1].split(':')
 
         if legacy[0] and legacy[0].strip().lower() == 'g':
             if len(components) < 2:
-                self._play_html_legacy_bad(
-                    legacy,
-                    "Old-style GTTS bracket tags must specify the "
-                    "voice, e.g. [GTTS:es:hola], [GTTS:es:{{Front}}], "
-                    "[GTTS:en:{{text:Back}}]",
-                    parent,
-                )
+                if show_errors:
+                    self._play_html_legacy_bad(
+                        legacy,
+                        "Old-style GTTS bracket tags must specify the "
+                        "voice, e.g. [GTTS:es:hola], [GTTS:es:{{Front}}], "
+                        "[GTTS:en:{{text:Back}}]",
+                        parent,
+                    )
                 return
 
             svc_id = 'google'
 
         else:
             if len(components) < 3:
-                self._play_html_legacy_bad(
-                    legacy,
-                    "Old-style TTS bracket tags must specify service and "
-                    "voice, e.g. [TTS:g:es:mundo], [TTS:g:es:{{Front}}], "
-                    "[TTS:g:en:{{text:Back}}]",
-                    parent,
-                )
+                if show_errors:
+                    self._play_html_legacy_bad(
+                        legacy,
+                        "Old-style TTS bracket tags must specify service and "
+                        "voice, e.g. [TTS:g:es:mundo], [TTS:g:es:{{Front}}], "
+                        "[TTS:g:en:{{text:Back}}]",
+                        parent,
+                    )
                 return
 
             svc_id = components.pop(0)
@@ -300,6 +313,7 @@ class Reviewer(object):
                 okay=playback,
                 fail=lambda exception: (
                     isinstance(exception, self._addon.router.BusyError) or
+                    not show_errors or
                     self._play_html_legacy_bad(legacy, exception.message,
                                                parent)
                 ),

@@ -48,7 +48,7 @@ from .text import Sanitizer
 from .updates import Updates
 
 
-VERSION = '1.2.1'
+VERSION = '1.2.2'
 
 WEB = 'https://ankiatts.appspot.com'
 
@@ -83,7 +83,9 @@ config = Config(
               normalize=to.normalized_ascii),
     cols=[
         ('automaticAnswers', 'integer', True, to.lax_bool, int),
+        ('automatic_answers_errors', 'integer', True, to.lax_bool, int),
         ('automaticQuestions', 'integer', True, to.lax_bool, int),
+        ('automatic_questions_errors', 'integer', True, to.lax_bool, int),
         ('debug_file', 'integer', False, to.lax_bool, int),
         ('debug_stdout', 'integer', False, to.lax_bool, int),
         ('delay_answers_onthefly', 'integer', 0, int, int),

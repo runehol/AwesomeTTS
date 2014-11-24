@@ -135,9 +135,12 @@ class Yandex(Service):
     def run(self, text, options, path):
         """
         Downloads from Yandex directly to an MP3.
+
+        Yandex will occasionally fail by returning a tiny MP3 file. If this
+        happens, we retry the download (for a total of five tries).
         """
 
-        self.net_download(
+        download = lambda: self.net_download(
             path,
             [
                 ('http://tts.voicetech.yandex.net/tts', dict(
@@ -153,3 +156,16 @@ class Yandex(Service):
             ],
             require=dict(mime='audio/mpeg', size=1024),
         )
+
+        # TODO: This workaround is just fine for now, but it would be nice if
+        # it were part of the net_download() call. That way, net_download()
+        # could retry just the single segment that failed if the user is
+        # playing back a long multi-segment phrase.
+
+        for _ in range(5):
+            try:
+                download()
+            except self.TinyDownloadError:
+                pass
+            else:
+                break

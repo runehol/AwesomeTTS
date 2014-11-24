@@ -48,7 +48,7 @@ from .text import Sanitizer
 from .updates import Updates
 
 
-VERSION = '1.2.2'
+VERSION = '1.2.3-pre'
 
 WEB = 'https://ankiatts.appspot.com'
 

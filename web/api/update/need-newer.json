@@ -14,9 +14,10 @@
         "fixes for SAPI 5 with some IVONA voices",
         "fixes right-to-left language display of the \"Preview and Record\" input box in the note editor's single MP3 generator",
         "improves performance for users with many custom text substitutions",
+        "works around a Yandex server issue for playback in certain voices",
         "avoids a crash if user uninstalls local TTS software while AwesomeTTS is running",
         "avoids a crash if user enables logging inside a non-ASCII path"
     ],
     "update": true,
-    "version": "1.2.2"
+    "version": "1.2.3"
 }

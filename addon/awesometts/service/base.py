@@ -57,6 +57,9 @@ class Service(object):
 
     __metaclass__ = abc.ABCMeta
 
+    class TinyDownloadError(ValueError):
+        """Raises when a download is too small."""
+
     __slots__ = [
         '_netops',      # number of network ops required by the last run
         '_lame_flags',  # callable to get flag string for LAME transcoder
@@ -508,7 +511,7 @@ class Service(object):
             response.close()
 
             if 'size' in require and len(payload) < require['size']:
-                raise ValueError(
+                raise self.TinyDownloadError(
                     "Request got %d-byte stream for %s; wanted %d+ bytes" %
                     (len(payload), desc, require['size'])
                 )

@@ -478,7 +478,8 @@ module.exports = function (grunt) {
               upload: 'robots\\.txt', expiration: '70d'},
 
             {url: '/api/update/[a-z\\d]+-' + gaeRegex([
-                '1.2.2', '1.2.2-pre', '1.2.1', '1.2.1-pre', '1.2.0',
+                '1.2.3', '1.2.3-pre', '1.2.2', '1.2.2-pre', '1.2.1',
+                '1.2.1-pre', '1.2.0',
               ]),
               static_files: 'api/update/good-version.json',
               upload: 'api/update/good-version\\.json'},

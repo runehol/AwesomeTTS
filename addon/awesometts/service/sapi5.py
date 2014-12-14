@@ -144,6 +144,51 @@ class SAPI5(Service):
                 transform=int,
                 default=100,
             ),
+
+            dict(
+                key='quality',
+                label="Quality",
+                values=[
+                    (4, "8 kHz, 8-bit, Mono"),
+                    (5, "8 kHz, 8-bit, Stereo"),
+                    (6, "8 kHz, 16-bit, Mono"),
+                    (7, "8 kHz, 16-bit, Stereo"),
+                    (8, "11 kHz, 8-bit, Mono"),
+                    (9, "11 kHz, 8-bit, Stereo"),
+                    (10, "11 kHz, 16-bit, Mono"),
+                    (11, "11 kHz, 16-bit, Stereo"),
+                    (12, "12 kHz, 8-bit, Mono"),
+                    (13, "12 kHz, 8-bit, Stereo"),
+                    (14, "12 kHz, 16-bit, Mono"),
+                    (15, "12 kHz, 16-bit, Stereo"),
+                    (16, "16 kHz, 8-bit, Mono"),
+                    (17, "16 kHz, 8-bit, Stereo"),
+                    (18, "16 kHz, 16-bit, Mono"),
+                    (19, "16 kHz, 16-bit, Stereo"),
+                    (20, "22 kHz, 8-bit, Mono"),
+                    (21, "22 kHz, 8-bit, Stereo"),
+                    (22, "22 kHz, 16-bit, Mono"),
+                    (23, "22 kHz, 16-bit, Stereo"),
+                    (24, "24 kHz, 8-bit, Mono"),
+                    (25, "24 kHz, 8-bit, Stereo"),
+                    (26, "24 kHz, 16-bit, Mono"),
+                    (27, "24 kHz, 16-bit, Stereo"),
+                    (28, "32 kHz, 8-bit, Mono"),
+                    (29, "32 kHz, 8-bit, Stereo"),
+                    (30, "32 kHz, 16-bit, Mono"),
+                    (31, "32 kHz, 16-bit, Stereo"),
+                    (32, "44 kHz, 8-bit, Mono"),
+                    (33, "44 kHz, 8-bit, Stereo"),
+                    (34, "44 kHz, 16-bit, Mono"),
+                    (35, "44 kHz, 16-bit, Stereo"),
+                    (36, "48 kHz, 8-bit, Mono"),
+                    (37, "48 kHz, 8-bit, Stereo"),
+                    (38, "48 kHz, 16-bit, Mono"),
+                    (39, "48 kHz, 16-bit, Stereo"),
+                ],
+                transform=int,
+                default=39,
+            ),
         ]
 
     def run(self, text, options, path):
@@ -156,6 +201,7 @@ class SAPI5(Service):
 
         try:
             stream = self._client.Dispatch('SAPI.SpFileStream')
+            stream.Format.Type = options['quality']
             stream.open(output_wav, 3)  # 3=SSFMCreateForWrite
 
             try:

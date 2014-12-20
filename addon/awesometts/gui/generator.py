@@ -756,29 +756,36 @@ class EditorGenerator(ServiceDialog):
 
         now = self._get_all()
         text_input, text_value = self._get_service_text()
-        self._disable_inputs()
 
-        self._addon.router(
-            svc_id=now['last_service'],
-            text=self._addon.strip.from_user(text_value),
-            options=now['last_options'][now['last_service']],
-            callbacks=dict(
-                done=lambda: self._disable_inputs(False),
-                okay=lambda path: (
-                    self._addon.config.update(now),
-                    super(EditorGenerator, self).accept(),
-                    self._editor.addMedia(path),
-                ),
-                fail=lambda exception: (
-                    self._alerts(
-                        "The service could not record the phrase.\n\n%s" %
-                        exception.message,
-                        self,
-                    ),
-                    text_input.setFocus(),
-                ),
+        svc_id = now['last_service']
+        text_value = self._addon.strip.from_user(text_value)
+        callbacks = dict(
+            done=lambda: self._disable_inputs(False),
+            okay=lambda path: (
+                self._addon.config.update(now),
+                super(EditorGenerator, self).accept(),
+                self._editor.addMedia(path),
+            ),
+            fail=lambda exception: (
+                self._alerts("Cannot record the input phrase with these "
+                             "settings.\n\n%s" % exception.message, self),
+                text_input.setFocus(),
             ),
         )
+
+        self._disable_inputs()
+        if svc_id.startswith('group:'):
+            config = self._addon.config
+            self._addon.router.group(text=text_value,
+                                     group=config['groups'][svc_id[6:]],
+                                     presets=config['presets'],
+                                     callbacks=callbacks)
+        else:
+            options = now['last_options'][now['last_service']]
+            self._addon.router(svc_id=svc_id,
+                               text=text_value,
+                               options=options,
+                               callbacks=callbacks)
 
 
 class _Progress(Dialog):

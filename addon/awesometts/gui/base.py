@@ -810,9 +810,12 @@ class ServiceDialog(Dialog):
 
         dropdown = self.findChild(QtGui.QComboBox, 'service')
         idx = dropdown.currentIndex()
+        svc_id = dropdown.itemData(idx)
+        if svc_id.startswith('group:'):
+            return svc_id, None
+
         vinputs = self.findChild(QtGui.QStackedWidget, 'panels') \
             .widget(idx).findChildren(self._OPTIONS_WIDGETS)
-        svc_id = dropdown.itemData(idx)
         options = self._addon.router.get_options(svc_id)
 
         assert len(options) == len(vinputs)

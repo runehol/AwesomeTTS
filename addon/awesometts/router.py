@@ -263,8 +263,8 @@ class Router(object):
         The callbacks parameter is a dict and contains the following:
 
             - 'done' (optional): called before the okay/fail callback
-            - 'miss' (optional): called after done with a download count
-               if a cache miss occurred running the service
+            - 'miss' (optional): called after done with a svc_id and download
+               count if a cache miss occurred running the service
             - 'okay' (required): called with a path to the media file
             - 'fail' (required): called with an exception for validation
                errors or failed service calls occurs
@@ -344,6 +344,7 @@ class Router(object):
                     'done' in callbacks and callbacks['done'](),
 
                     'miss' in callbacks and callbacks['miss'](
+                        svc_id,
                         service['instance'].net_count()
                     ),
 

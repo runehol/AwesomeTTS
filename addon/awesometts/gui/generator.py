@@ -377,7 +377,7 @@ class BrowserGenerator(ServiceDialog):
         )
 
         if proc['throttling']:
-            def miss(count):
+            def miss(svc_id, count):
                 """Count the cache miss."""
 
                 proc['throttling']['calls'] += count

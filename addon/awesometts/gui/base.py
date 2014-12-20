@@ -648,7 +648,7 @@ class ServiceDialog(Dialog):
                             )
                         ),
                         None,
-                    )
+                    ) if options else None
 
                 if select:
                     idx = dropdown.findText(select)

@@ -50,7 +50,7 @@ class Yandex(Service):
         'ar_AE': "Arabic", 'ca_ES': "Catalan", 'cs_CZ': "Czech",
         'da_DK': "Danish", 'de_DE': "German", 'el_GR': "Greek",
         'en_GB': "English, British", 'es_ES': "Spanish, European",
-        'fi_FI': "Finish", 'fr_FR': "French", 'it_IT': "Italian",
+        'fi_FI': "Finnish", 'fr_FR': "French", 'it_IT': "Italian",
         'nl_NL': "Dutch", 'no_NO': "Norwegian", 'pl_PL': "Polish",
         'pt_PT': "Portuguese, European", 'ru_RU': "Russian",
         'sv_SE': "Swedish", 'tr_TR': "Turkish",

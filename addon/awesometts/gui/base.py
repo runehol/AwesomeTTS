@@ -866,4 +866,4 @@ class ServiceDialog(Dialog):
                 self._addon.config['last_options'].items() +
                 [(svc_id, values)]
             ),
-        }
+        } if values else dict(last_service=svc_id)

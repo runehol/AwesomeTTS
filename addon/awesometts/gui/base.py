@@ -477,7 +477,10 @@ class ServiceDialog(Dialog):
                           else " tries in-order") +
                 " from:\n -" + "\n -".join(group['presets'][0:15]) +
                 ("\n    (... and %d more)" % (len(group['presets']) - 15)
-                 if len(group['presets']) > 15 else "")
+                 if len(group['presets']) > 15 else "") +
+                "\n\n"
+                "Go to AwesomeTTS config for group setup.\n"
+                "Access preset options in dropdown below."
             )
             save.setEnabled(False)
             return

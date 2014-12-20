@@ -466,6 +466,7 @@ class ServiceDialog(Dialog):
         combo = self.findChild(QtGui.QComboBox, 'service')
         svc_id = combo.itemData(idx)
         stack = self.findChild(QtGui.QStackedWidget, 'panels')
+        save = self.findChild(QtGui.QPushButton, 'presets_save')
 
         if svc_id.startswith('group:'):  # we handle groups differently
             svc_id = svc_id[6:]
@@ -478,8 +479,10 @@ class ServiceDialog(Dialog):
                 ("\n    (... and %d more)" % (len(group['presets']) - 15)
                  if len(group['presets']) > 15 else "")
             )
+            save.setEnabled(False)
             return
 
+        save.setEnabled(True)
         panel_unbuilt = svc_id not in self._panel_built
         panel_unset = svc_id not in self._panel_set
 

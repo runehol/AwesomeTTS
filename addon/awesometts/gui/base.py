@@ -808,6 +808,10 @@ class ServiceDialog(Dialog):
                 self.findChild(QtGui.QComboBox,
                                'presets_dropdown').currentIndex() > 0
             )
+            self.findChild(QtGui.QPushButton, 'presets_save').setEnabled(
+                self.findChild(QtGui.QComboBox,
+                               'service').currentIndex() < self._svc_count
+            )
 
     def _get_service_values(self):
         """

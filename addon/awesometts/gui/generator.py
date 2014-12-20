@@ -252,7 +252,8 @@ class BrowserGenerator(ServiceDialog):
         self._disable_inputs()
 
         svc_id = now['last_service']
-        options = now['last_options'][now['last_service']]
+        options = (None if svc_id.startswith('group:') else
+                   now['last_options'][now['last_service']])
 
         self._process = {
             'all': now,
@@ -383,12 +384,19 @@ class BrowserGenerator(ServiceDialog):
 
             callbacks['miss'] = miss
 
-        self._addon.router(
-            svc_id=proc['service']['id'],
-            text=phrase,
-            options=proc['service']['options'],
-            callbacks=callbacks,
-        )
+        svc_id = proc['service']['id']
+
+        if svc_id.startswith('group:'):
+            config = self._addon.config
+            self._addon.router.group(text=phrase,
+                                     group=config['groups'][svc_id[6:]],
+                                     presets=config['presets'],
+                                     callbacks=callbacks)
+        else:
+            self._addon.router(svc_id=svc_id,
+                               text=phrase,
+                               options=proc['service']['options'],
+                               callbacks=callbacks)
 
     def _accept_next_output(self, old_value, filename):
         """

@@ -224,6 +224,7 @@ class ServiceDialog(Dialog):
         '_panel_built',  # dict, svc_id to True if panel has been constructed
         '_panel_set',    # dict, svc_id to True if panel values have been set
         '_svc_id',       # active service ID
+        '_svc_count',    # how many services this dialog has access to
     ]
 
     def __init__(self, alerts, ask, *args, **kwargs):
@@ -237,6 +238,7 @@ class ServiceDialog(Dialog):
         self._panel_built = {}
         self._panel_set = {}
         self._svc_id = None
+        self._svc_count = 0
 
         super(ServiceDialog, self).__init__(*args, **kwargs)
 
@@ -282,6 +284,7 @@ class ServiceDialog(Dialog):
             widget.setLayout(panel)
 
             stack.addWidget(widget)
+        self._svc_count = dropdown.count()
 
         dropdown.activated.connect(self._on_service_activated)
         dropdown.currentIndexChanged.connect(self._on_preset_reset)
@@ -391,6 +394,16 @@ class ServiceDialog(Dialog):
         self._panel_set = {}  # these must be reloaded with each window open
 
         dropdown = self.findChild(QtGui.QComboBox, 'service')
+
+        # refresh the list of groups
+        while dropdown.count() > self._svc_count:
+            dropdown.removeItem(dropdown.count() - 1)
+        groups = self._addon.config['groups'].keys()
+        if groups:
+            dropdown.insertSeparator(dropdown.count())
+            for group in groups:
+                dropdown.addItem(group, 'group:' + group)
+
         idx = max(dropdown.findData(self._addon.config['last_service']), 0)
         dropdown.setCurrentIndex(idx)
         self._on_service_activated(idx, initial=True)

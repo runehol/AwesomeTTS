@@ -764,21 +764,27 @@ class ServiceDialog(Dialog):
         text_input, text_value = self._get_service_text()
         self._disable_inputs()
 
-        self._addon.router(
-            svc_id=svc_id,
-            text=self._addon.strip.from_user(text_value),
-            options=values,
-            callbacks=dict(
-                done=lambda: self._disable_inputs(False),
-                okay=self._addon.player.preview,
-                fail=lambda exception: self._alerts(
-                    "The service could not playback the phrase.\n\n%s" %
-                    exception.message,
-                    self,
-                ),
-                then=text_input.setFocus,
+        text_value = self._addon.strip.from_user(text_value)
+        callbacks = dict(
+            done=lambda: self._disable_inputs(False),
+            okay=self._addon.player.preview,
+            fail=lambda exception: self._alerts(
+                "Cannot preview the input phrase with these settings.\n\n%s" %
+                exception.message,
+                self,
             ),
+            then=text_input.setFocus,
         )
+
+        if svc_id.startswith('group:'):
+            config = self._addon.config
+            self._addon.router.group(text=text_value,
+                                     group=config['groups'][svc_id[6:]],
+                                     presets=config['presets'],
+                                     callbacks=callbacks)
+        else:
+            self._addon.router(svc_id=svc_id, text=text_value,
+                               options=values, callbacks=callbacks)
 
     # Auxiliary ##############################################################
 

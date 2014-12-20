@@ -117,18 +117,6 @@ class Router(object):
             if trait in service['traits']
         ], key=lambda name: name.lower())
 
-    def has_trait(self, svc_id, trait):
-        """
-        Returns True if the service identified by svc_id has the given
-        trait. Raises a KeyError for a bad svc_id.
-        """
-
-        svc_id = self._services.normalize(svc_id)
-        if svc_id in self._services.aliases:
-            svc_id = self._services.aliases[svc_id]
-
-        return trait in self._services.lookup[svc_id]['traits']
-
     def get_services(self):
         """
         Returns available services.
@@ -275,8 +263,8 @@ class Router(object):
         The callbacks parameter is a dict and contains the following:
 
             - 'done' (optional): called before the okay/fail callback
-            - 'miss' (optional): called after done with a download count
-               if a cache miss occurred running the service
+            - 'miss' (optional): called after done with a svc_id and download
+               count if a cache miss occurred running the service
             - 'okay' (required): called with a path to the media file
             - 'fail' (required): called with an exception for validation
                errors or failed service calls occurs
@@ -356,6 +344,7 @@ class Router(object):
                     'done' in callbacks and callbacks['done'](),
 
                     'miss' in callbacks and callbacks['miss'](
+                        svc_id,
                         service['instance'].net_count()
                     ),
 

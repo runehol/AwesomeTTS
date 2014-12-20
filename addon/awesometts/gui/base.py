@@ -677,6 +677,8 @@ class ServiceDialog(Dialog):
         """Saves the current service state back as a preset."""
 
         svc_id, options = self._get_service_values()
+        assert "bad get_service_values() value", \
+               not svc_id.startswith('group:') and options
         svc_name = self.findChild(QtGui.QComboBox, 'service').currentText()
 
         name, okay = self._ask(

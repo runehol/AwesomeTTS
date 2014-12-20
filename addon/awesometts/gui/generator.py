@@ -288,10 +288,10 @@ class BrowserGenerator(ServiceDialog):
             },
             'exceptions': {},
             'throttling': {
-                'calls': 0,  # number of cache misses in this batch
+                'calls': {},  # unthrottled download calls made per service
                 'sleep': self._addon.config['throttle_sleep'],
                 'threshold': self._addon.config['throttle_threshold'],
-            } if False else False,  # FIXME throttling is broken with groups
+            },
         }
 
         self._browser.mw.checkpoint("AwesomeTTS Batch Update")
@@ -315,18 +315,19 @@ class BrowserGenerator(ServiceDialog):
         self._accept_update()
 
         proc = self._process
+        throttling = proc['throttling']
 
         if proc['aborted'] or not proc['queue']:
             self._accept_done()
             return
 
-        if proc['throttling'] and \
-           proc['throttling']['calls'] >= proc['throttling']['threshold']:
-            proc['throttling']['countdown'] = \
-                proc['throttling']['sleep']
+        if throttling['calls'] and \
+           max(throttling['calls'].values()) >= throttling['threshold']:
+            # at least one service needs a break
 
             timer = QtCore.QTimer()
-            proc['throttling']['timer'] = timer
+            throttling['timer'] = timer
+            throttling['countdown'] = throttling['sleep']
 
             timer.timeout.connect(self._accept_throttled)
             timer.setInterval(1000)
@@ -366,8 +367,16 @@ class BrowserGenerator(ServiceDialog):
             except KeyError:
                 proc['exceptions'][message] = 1
 
+        def miss(svc_id, count):
+            """Count the cache miss."""
+
+            try:
+                throttling['calls'][svc_id] += count
+            except KeyError:
+                throttling['calls'][svc_id] = count
+
         callbacks = dict(
-            done=done, okay=okay, fail=fail,
+            done=done, okay=okay, fail=fail, miss=miss,
 
             # The call to _accept_next() is done via a single-shot QTimer for
             # a few reasons: keep the UI responsive, avoid a "maximum
@@ -375,14 +384,6 @@ class BrowserGenerator(ServiceDialog):
             # files, and allow time to respond to a "cancel".
             then=lambda: QtCore.QTimer.singleShot(0, self._accept_next),
         )
-
-        if proc['throttling']:
-            def miss(svc_id, count):
-                """Count the cache miss."""
-
-                proc['throttling']['calls'] += count
-
-            callbacks['miss'] = miss
 
         svc_id = proc['service']['id']
 
@@ -440,7 +441,7 @@ class BrowserGenerator(ServiceDialog):
             proc['throttling']['timer'].stop()
             del proc['throttling']['countdown']
             del proc['throttling']['timer']
-            proc['throttling']['calls'] = 0
+            proc['throttling']['calls'] = {}
             self._accept_next()
 
     def _accept_update(self, detail=None):

@@ -286,6 +286,13 @@ class ServiceDialog(Dialog):
             stack.addWidget(widget)
         self._svc_count = dropdown.count()
 
+        # one extra widget for displaying a group
+        panel = QtGui.QVBoxLayout()
+        panel.addWidget(Note())
+        widget = QtGui.QWidget()
+        widget.setLayout(panel)
+        stack.addWidget(widget)
+
         dropdown.activated.connect(self._on_service_activated)
         dropdown.currentIndexChanged.connect(self._on_preset_reset)
 
@@ -458,6 +465,19 @@ class ServiceDialog(Dialog):
         combo = self.findChild(QtGui.QComboBox, 'service')
         svc_id = combo.itemData(idx)
         stack = self.findChild(QtGui.QStackedWidget, 'panels')
+
+        if svc_id.startswith('group:'):  # we handle groups differently
+            svc_id = svc_id[6:]
+            group = self._addon.config['groups'][svc_id]
+            stack.setCurrentIndex(stack.count() - 1)
+            stack.widget(stack.count() - 1).findChild(QtGui.QLabel).setText(
+                svc_id + (" randomly selects" if group['mode'] == 'random'
+                          else " tries in-order") +
+                " from:\n -" + "\n -".join(group['presets'][0:15]) +
+                ("\n    (... and %d more)" % (len(group['presets']) - 15)
+                 if len(group['presets']) > 15 else "")
+            )
+            return
 
         panel_unbuilt = svc_id not in self._panel_built
         panel_unset = svc_id not in self._panel_set

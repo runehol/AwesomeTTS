@@ -290,10 +290,7 @@ class BrowserGenerator(ServiceDialog):
                 'calls': 0,  # number of cache misses in this batch
                 'sleep': self._addon.config['throttle_sleep'],
                 'threshold': self._addon.config['throttle_threshold'],
-            } if self._addon.router.has_trait(
-                svc_id,
-                self._addon.router.Trait.INTERNET,
-            ) else False,
+            } if False else False,  # FIXME throttling is broken with groups
         }
 
         self._browser.mw.checkpoint("AwesomeTTS Batch Update")

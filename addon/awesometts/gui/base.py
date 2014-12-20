@@ -289,6 +289,7 @@ class ServiceDialog(Dialog):
         # one extra widget for displaying a group
         panel = QtGui.QVBoxLayout()
         panel.addWidget(Note())
+        panel.addStretch()
         widget = QtGui.QWidget()
         widget.setLayout(panel)
         stack.addWidget(widget)

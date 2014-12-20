@@ -90,6 +90,11 @@
                 "title": "Storing MP3 Audio Files from the Card Browser",
                 "what": "Mass generate audio for many cards at once, files stored with collection"
             },
+            "groups": {
+                "terse": "Groups",
+                "title": "Playback and Recording w/ Groups of Service Presets",
+                "what": "Create a list of different service configurations, then use it for randomized or first-success-wins playback/recording"
+            },
             "removing": {
                 "terse": "Remove Audio",
                 "title": "Removing Audio via the Card Browser",

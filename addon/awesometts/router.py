@@ -165,6 +165,16 @@ class Router(object):
 
         return service['options']
 
+    def get_failure_count(self):
+        """Returns the number of cached failures."""
+
+        return len(self._failures)
+
+    def forget_failures(self):
+        """Delete the cache of remembered failures."""
+
+        self._failures = {}
+
     def group(self, text, group, presets, callbacks):
         """
         Execute a group playback request using the passed group to be

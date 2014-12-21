@@ -507,7 +507,7 @@ class Configurator(Dialog):
     def _ui_tabs_advanced_debug(self):
         """Returns the "Write Debugging Output" input group."""
 
-        vert = QtGui.QVBoxLayout()
+        vert = QtGui.QHBoxLayout()
 
         if self._addon.paths.in_ascii:
             vert.addWidget(Checkbox("standard output (stdout)",

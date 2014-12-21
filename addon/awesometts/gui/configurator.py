@@ -524,11 +524,7 @@ class Configurator(Dialog):
         return group
 
     def _ui_tabs_advanced_cache(self):
-        """Returns the "Media Cache" input group."""
-
-        button = QtGui.QPushButton("Clear Cache")
-        button.setObjectName('on_cache')
-        button.clicked.connect(lambda: self._on_cache_clear(button))
+        """Returns the "Caching" input group."""
 
         days = QtGui.QSpinBox()
         days.setObjectName('cache_days')
@@ -536,18 +532,26 @@ class Configurator(Dialog):
         days.setSuffix(" days")
 
         hor = QtGui.QHBoxLayout()
-        hor.addWidget(Label("Remove cache files older than"))
+        hor.addWidget(Label("Delete files older than"))
         hor.addWidget(days)
         hor.addWidget(Label("at exit (zero clears everything)"))
         hor.addStretch()
 
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(Note("AwesomeTTS caches generated audio to speed up "
-                              "repeated playback."))
+        layout.addWidget(Note("AwesomeTTS caches generated audio files and "
+                              "remembers failures during each session to "
+                              "speed up repeated playback."))
         layout.addLayout(hor)
-        layout.addWidget(button)
 
-        group = QtGui.QGroupBox("Media Cache")
+        abutton = QtGui.QPushButton("Delete Files")
+        abutton.setObjectName('on_cache')
+        abutton.clicked.connect(lambda: self._on_cache_clear(abutton))
+
+        hor = QtGui.QHBoxLayout()
+        hor.addWidget(abutton)
+        layout.addLayout(hor)
+
+        group = QtGui.QGroupBox("Caching")
         group.setLayout(layout)
         return group
 
@@ -603,13 +607,12 @@ class Configurator(Dialog):
 
             if len(widget.atts_list):
                 widget.setEnabled(True)
-                widget.setText("Clear Cache (%s item%s)" % (
-                    locale("%d", len(widget.atts_list), grouping=True),
-                    "" if len(widget.atts_list) == 1 else "s",
-                ))
+                widget.setText("Delete Files (%s)" %
+                               locale("%d", len(widget.atts_list),
+                                      grouping=True))
             else:
                 widget.setEnabled(False)
-                widget.setText("Clear Cache (no items)")
+                widget.setText("Delete Files")
 
         super(Configurator, self).show(*args, **kwargs)
 
@@ -772,11 +775,9 @@ class Configurator(Dialog):
 
         if count_error:
             if count_success:
-                button.setText("partially emptied cache (%s item%s left)" % (
-                    locale("%d", count_error, grouping=True),
-                    "" if count_error == 1 else "s",
-                ))
+                button.setText("partially emptied (%s left)" %
+                               locale("%d", count_error, grouping=True))
             else:
-                button.setText("unable to empty cache")
+                button.setText("unable to empty")
         else:
-            button.setText("successfully emptied cache")
+            button.setText("emptied cache")

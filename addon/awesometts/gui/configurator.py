@@ -507,7 +507,7 @@ class Configurator(Dialog):
     def _ui_tabs_advanced_debug(self):
         """Returns the "Write Debugging Output" input group."""
 
-        vert = QtGui.QVBoxLayout()
+        vert = QtGui.QHBoxLayout()
 
         if self._addon.paths.in_ascii:
             vert.addWidget(Checkbox("standard output (stdout)",
@@ -524,11 +524,7 @@ class Configurator(Dialog):
         return group
 
     def _ui_tabs_advanced_cache(self):
-        """Returns the "Media Cache" input group."""
-
-        button = QtGui.QPushButton("Clear Cache")
-        button.setObjectName('on_cache')
-        button.clicked.connect(lambda: self._on_cache_clear(button))
+        """Returns the "Caching" input group."""
 
         days = QtGui.QSpinBox()
         days.setObjectName('cache_days')
@@ -536,18 +532,31 @@ class Configurator(Dialog):
         days.setSuffix(" days")
 
         hor = QtGui.QHBoxLayout()
-        hor.addWidget(Label("Remove cache files older than"))
+        hor.addWidget(Label("Delete files older than"))
         hor.addWidget(days)
         hor.addWidget(Label("at exit (zero clears everything)"))
         hor.addStretch()
 
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(Note("AwesomeTTS caches generated audio to speed up "
-                              "repeated playback."))
+        layout.addWidget(Note("AwesomeTTS caches generated audio files and "
+                              "remembers failures during each session to "
+                              "speed up repeated playback."))
         layout.addLayout(hor)
-        layout.addWidget(button)
 
-        group = QtGui.QGroupBox("Media Cache")
+        abutton = QtGui.QPushButton("Delete Files")
+        abutton.setObjectName('on_cache')
+        abutton.clicked.connect(lambda: self._on_cache_clear(abutton))
+
+        fbutton = QtGui.QPushButton("Forget Failures")
+        fbutton.setObjectName('on_forget')
+        fbutton.clicked.connect(lambda: self._on_forget_failures(fbutton))
+
+        hor = QtGui.QHBoxLayout()
+        hor.addWidget(abutton)
+        hor.addWidget(fbutton)
+        layout.addLayout(hor)
+
+        group = QtGui.QGroupBox("Caching")
         group.setLayout(layout)
         return group
 
@@ -595,21 +604,27 @@ class Configurator(Dialog):
                 widget.setModel(value)
 
         widget = self.findChild(QtGui.QPushButton, 'on_cache')
-        if widget:
-            widget.atts_list = (
-                [filename for filename in os.listdir(self._addon.paths.cache)]
-                if os.path.isdir(self._addon.paths.cache) else []
-            )
+        widget.atts_list = (
+            [filename for filename in os.listdir(self._addon.paths.cache)]
+            if os.path.isdir(self._addon.paths.cache) else []
+        )
+        if widget.atts_list:
+            widget.setEnabled(True)
+            widget.setText("Delete Files (%s)" %
+                           locale("%d", len(widget.atts_list), grouping=True))
+        else:
+            widget.setEnabled(False)
+            widget.setText("Delete Files")
 
-            if len(widget.atts_list):
-                widget.setEnabled(True)
-                widget.setText("Clear Cache (%s item%s)" % (
-                    locale("%d", len(widget.atts_list), grouping=True),
-                    "" if len(widget.atts_list) == 1 else "s",
-                ))
-            else:
-                widget.setEnabled(False)
-                widget.setText("Clear Cache (no items)")
+        widget = self.findChild(QtGui.QPushButton, 'on_forget')
+        fail_count = self._addon.router.get_failure_count()
+        if fail_count:
+            widget.setEnabled(True)
+            widget.setText("Forget Failures (%s)" %
+                           locale("%d", fail_count, grouping=True))
+        else:
+            widget.setEnabled(False)
+            widget.setText("Forget Failures")
 
         super(Configurator, self).show(*args, **kwargs)
 
@@ -772,11 +787,16 @@ class Configurator(Dialog):
 
         if count_error:
             if count_success:
-                button.setText("partially emptied cache (%s item%s left)" % (
-                    locale("%d", count_error, grouping=True),
-                    "" if count_error == 1 else "s",
-                ))
+                button.setText("partially emptied (%s left)" %
+                               locale("%d", count_error, grouping=True))
             else:
-                button.setText("unable to empty cache")
+                button.setText("unable to empty")
         else:
-            button.setText("successfully emptied cache")
+            button.setText("emptied cache")
+
+    def _on_forget_failures(self, button):
+        """Tells the router to forget all cached failures."""
+
+        button.setEnabled(False)
+        self._addon.router.forget_failures()
+        button.setText("forgot failures")

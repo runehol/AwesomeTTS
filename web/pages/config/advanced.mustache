@@ -56,20 +56,32 @@
 <p>The output of this can be helpful for troubleshooting issues with the
   add-on or simply if you&rsquo;re curious how it works.</p>
 
-<h2>Media Cache</h2>
+<h2>Caching</h2>
+
+<h3>Audio Files</h3>
 
 <p>Whenever AwesomeTTS records or plays audio, it caches the resulting MP3
-  locally in your user profile. The cache improves the speed and performance
-  of successive playback of the same audio, particularly when using the
-  <a href="/usage/on-the-fly">on-the-fly mode</a> of the add-on.</p>
+  locally. This improves the speed and performance of successive requests for
+  the same audio, notably when using <a href="/usage/on-the-fly">on-the-fly
+  mode</a>.</p>
 
 <p>AwesomeTTS will only cache one MP3 file for a given combination of service,
-  input text, and service options. The MP3 files are relatively small.</p>
+  input text, and service options. The MP3 files are relatively small. They
+  are stored in <code>Anki/addons/awesometts/.cache</code> as part of your
+  Anki user profile.</p>
 
 <p>You can set how long you want files in your cache to remain before they are
-  automatically deleted at the end of your Anki session.</p>
+  automatically deleted at the end of your Anki session. You can also delete
+  the entire cache at any time by clicking &ldquo;Delete Files&rdquo;.</p>
 
-<p>By going to <code>Anki/addons/awesometts/.cache</code> on your file system,
-  you can see the raw cache.</p>
+<h3>Failures</h3>
+
+<p>Whenever AwesomeTTS tries to play or record audio from a service but is
+  unable to do so, it remembers the failure for the remainder of your session.
+  This improves the performance of large <a href="/usage/groups">groups</a>
+  when some service presets in the group cannot always produce audio.</p>
+
+<p>You can tell AwesomeTTS to forget failures at any time by clicking
+  &ldquo;Forget Failures&rdquo;.</p>
 
 {{> below}}

@@ -252,7 +252,8 @@ class BrowserGenerator(ServiceDialog):
         self._disable_inputs()
 
         svc_id = now['last_service']
-        options = now['last_options'][now['last_service']]
+        options = (None if svc_id.startswith('group:') else
+                   now['last_options'][now['last_service']])
 
         self._process = {
             'all': now,
@@ -287,13 +288,10 @@ class BrowserGenerator(ServiceDialog):
             },
             'exceptions': {},
             'throttling': {
-                'calls': 0,  # number of cache misses in this batch
+                'calls': {},  # unthrottled download calls made per service
                 'sleep': self._addon.config['throttle_sleep'],
                 'threshold': self._addon.config['throttle_threshold'],
-            } if self._addon.router.has_trait(
-                svc_id,
-                self._addon.router.Trait.INTERNET,
-            ) else False,
+            },
         }
 
         self._browser.mw.checkpoint("AwesomeTTS Batch Update")
@@ -317,18 +315,19 @@ class BrowserGenerator(ServiceDialog):
         self._accept_update()
 
         proc = self._process
+        throttling = proc['throttling']
 
         if proc['aborted'] or not proc['queue']:
             self._accept_done()
             return
 
-        if proc['throttling'] and \
-           proc['throttling']['calls'] >= proc['throttling']['threshold']:
-            proc['throttling']['countdown'] = \
-                proc['throttling']['sleep']
+        if throttling['calls'] and \
+           max(throttling['calls'].values()) >= throttling['threshold']:
+            # at least one service needs a break
 
             timer = QtCore.QTimer()
-            proc['throttling']['timer'] = timer
+            throttling['timer'] = timer
+            throttling['countdown'] = throttling['sleep']
 
             timer.timeout.connect(self._accept_throttled)
             timer.setInterval(1000)
@@ -368,8 +367,16 @@ class BrowserGenerator(ServiceDialog):
             except KeyError:
                 proc['exceptions'][message] = 1
 
+        def miss(svc_id, count):
+            """Count the cache miss."""
+
+            try:
+                throttling['calls'][svc_id] += count
+            except KeyError:
+                throttling['calls'][svc_id] = count
+
         callbacks = dict(
-            done=done, okay=okay, fail=fail,
+            done=done, okay=okay, fail=fail, miss=miss,
 
             # The call to _accept_next() is done via a single-shot QTimer for
             # a few reasons: keep the UI responsive, avoid a "maximum
@@ -378,20 +385,19 @@ class BrowserGenerator(ServiceDialog):
             then=lambda: QtCore.QTimer.singleShot(0, self._accept_next),
         )
 
-        if proc['throttling']:
-            def miss(count):
-                """Count the cache miss."""
+        svc_id = proc['service']['id']
 
-                proc['throttling']['calls'] += count
-
-            callbacks['miss'] = miss
-
-        self._addon.router(
-            svc_id=proc['service']['id'],
-            text=phrase,
-            options=proc['service']['options'],
-            callbacks=callbacks,
-        )
+        if svc_id.startswith('group:'):
+            config = self._addon.config
+            self._addon.router.group(text=phrase,
+                                     group=config['groups'][svc_id[6:]],
+                                     presets=config['presets'],
+                                     callbacks=callbacks)
+        else:
+            self._addon.router(svc_id=svc_id,
+                               text=phrase,
+                               options=proc['service']['options'],
+                               callbacks=callbacks)
 
     def _accept_next_output(self, old_value, filename):
         """
@@ -435,7 +441,7 @@ class BrowserGenerator(ServiceDialog):
             proc['throttling']['timer'].stop()
             del proc['throttling']['countdown']
             del proc['throttling']['timer']
-            proc['throttling']['calls'] = 0
+            proc['throttling']['calls'] = {}
             self._accept_next()
 
     def _accept_update(self, detail=None):
@@ -756,29 +762,36 @@ class EditorGenerator(ServiceDialog):
 
         now = self._get_all()
         text_input, text_value = self._get_service_text()
-        self._disable_inputs()
 
-        self._addon.router(
-            svc_id=now['last_service'],
-            text=self._addon.strip.from_user(text_value),
-            options=now['last_options'][now['last_service']],
-            callbacks=dict(
-                done=lambda: self._disable_inputs(False),
-                okay=lambda path: (
-                    self._addon.config.update(now),
-                    super(EditorGenerator, self).accept(),
-                    self._editor.addMedia(path),
-                ),
-                fail=lambda exception: (
-                    self._alerts(
-                        "The service could not record the phrase.\n\n%s" %
-                        exception.message,
-                        self,
-                    ),
-                    text_input.setFocus(),
-                ),
+        svc_id = now['last_service']
+        text_value = self._addon.strip.from_user(text_value)
+        callbacks = dict(
+            done=lambda: self._disable_inputs(False),
+            okay=lambda path: (
+                self._addon.config.update(now),
+                super(EditorGenerator, self).accept(),
+                self._editor.addMedia(path),
+            ),
+            fail=lambda exception: (
+                self._alerts("Cannot record the input phrase with these "
+                             "settings.\n\n%s" % exception.message, self),
+                text_input.setFocus(),
             ),
         )
+
+        self._disable_inputs()
+        if svc_id.startswith('group:'):
+            config = self._addon.config
+            self._addon.router.group(text=text_value,
+                                     group=config['groups'][svc_id[6:]],
+                                     presets=config['presets'],
+                                     callbacks=callbacks)
+        else:
+            options = now['last_options'][now['last_service']]
+            self._addon.router(svc_id=svc_id,
+                               text=text_value,
+                               options=options,
+                               callbacks=callbacks)
 
 
 class _Progress(Dialog):

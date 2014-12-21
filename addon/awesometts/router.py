@@ -25,6 +25,8 @@ Dispatch management of available services
 __all__ = ['Router']
 
 import os.path
+from random import shuffle
+
 from PyQt4 import QtCore, QtGui
 
 from .service import Trait as BaseTrait
@@ -56,6 +58,7 @@ class Router(object):
     __slots__ = [
         '_busy',       # list of file paths that are in-progress
         '_cache_dir',  # path for writing cached media files
+        '_failures',   # lookup of file paths that raised exceptions
         '_logger',     # logger-like interface with debug(), info(), etc.
         '_pool',       # instance of the _Pool class for managing threads
         '_services',   # bundle with aliases, avail, lookup
@@ -97,6 +100,7 @@ class Router(object):
 
         self._busy = []
         self._cache_dir = cache_dir
+        self._failures = {}
         self._logger = logger
         self._pool = _Pool(logger)
         self._services = services
@@ -112,18 +116,6 @@ class Router(object):
             in self._services.lookup.values()
             if trait in service['traits']
         ], key=lambda name: name.lower())
-
-    def has_trait(self, svc_id, trait):
-        """
-        Returns True if the service identified by svc_id has the given
-        trait. Raises a KeyError for a bad svc_id.
-        """
-
-        svc_id = self._services.normalize(svc_id)
-        if svc_id in self._services.aliases:
-            svc_id = self._services.aliases[svc_id]
-
-        return trait in self._services.lookup[svc_id]['traits']
 
     def get_services(self):
         """
@@ -173,6 +165,85 @@ class Router(object):
 
         return service['options']
 
+    def group(self, text, group, presets, callbacks):
+        """
+        Execute a group playback request using the passed group to be
+        looked up using the passed presets.
+
+        The callbacks follow the same rules as in the regular bare call
+        method.
+        """
+
+        self._call_assert_callbacks(callbacks)
+
+        try:
+            mode = group['mode']
+            if mode not in ['ordered', 'random']:
+                raise ValueError("Invalid group mode")
+
+            presets = [presets.get(preset) for preset in group.get('presets')]
+            if not presets:
+                raise ValueError("Group has no presets defined")
+            presets = [preset for preset in presets if preset]
+            if not presets:
+                raise ValueError("None of the group presets exist")
+
+            presets = [dict(preset) for preset in presets]  # deep copy
+            if mode == 'random':  # shuffle (but allow duplicates to weight)
+                shuffle(presets)
+
+        except Exception as exception:  # all, pylint:disable=broad-except
+            if 'done' in callbacks:
+                callbacks['done']()
+            callbacks['fail'](exception)
+            if 'then' in callbacks:
+                callbacks['then']()
+
+        else:
+            def on_okay(path):
+                """Executes caller callbacks with path."""
+                if 'done' in callbacks:
+                    callbacks['done']()
+                callbacks['okay'](path)
+                if 'then' in callbacks:
+                    callbacks['then']()
+
+            def on_fail(exception):
+                """Go to next, unless playback already queued."""
+                if isinstance(exception, self.BusyError):
+                    if 'done' in callbacks:
+                        callbacks['done']()
+                    callbacks['fail'](exception)
+                    if 'then' in callbacks:
+                        callbacks['then']()
+                else:
+                    try_next()
+
+            internal_callbacks = dict(okay=on_okay, fail=on_fail)
+            if 'miss' in callbacks:
+                internal_callbacks['miss'] = callbacks['miss']
+
+            def try_next():
+                """Pop next preset off and try playing text with it."""
+
+                try:
+                    preset = presets.pop(0)
+                except IndexError:
+                    if 'done' in callbacks:
+                        callbacks['done']()
+                    callbacks['fail'](IndexError(
+                        "None of the presets in this group were able to play "
+                        "the input text."
+                    ))
+                    if 'then' in callbacks:
+                        callbacks['then']()
+                else:
+                    svc_id = preset.pop('service')
+                    self(svc_id=svc_id, text=text, options=preset,
+                         callbacks=internal_callbacks)
+
+            try_next()
+
     def __call__(self, svc_id, text, options, callbacks):
         """
         Given the service ID and associated options, pass the text into
@@ -192,8 +263,8 @@ class Router(object):
         The callbacks parameter is a dict and contains the following:
 
             - 'done' (optional): called before the okay/fail callback
-            - 'miss' (optional): called after done with a download count
-               if a cache miss occurred running the service
+            - 'miss' (optional): called after done with a svc_id and download
+               count if a cache miss occurred running the service
             - 'okay' (required): called with a path to the media file
             - 'fail' (required): called with an exception for validation
                errors or failed service calls occurs
@@ -215,11 +286,7 @@ class Router(object):
               not recall the 'fail' handler again
         """
 
-        assert 'done' not in callbacks or callable(callbacks['done'])
-        assert 'miss' not in callbacks or callable(callbacks['miss'])
-        assert 'okay' in callbacks and callable(callbacks['okay'])
-        assert 'fail' in callbacks and callable(callbacks['fail'])
-        assert 'then' not in callbacks or callable(callbacks['then'])
+        self._call_assert_callbacks(callbacks)
 
         try:
             self._logger.debug("Call for '%s' w/ %s", svc_id, options)
@@ -254,7 +321,19 @@ class Router(object):
             if 'then' in callbacks:
                 callbacks['then']()
 
+        elif path in self._failures:
+            if 'done' in callbacks:
+                callbacks['done']()
+            callbacks['fail'](self._failures[path])
+            if 'then' in callbacks:
+                callbacks['then']()
+
         else:
+            def on_error(exception):
+                """Cache errors and pass back to fail handler."""
+                self._failures[path] = exception
+                callbacks['fail'](exception)
+
             service['instance'].net_reset()
             self._busy.append(path)
             self._pool.spawn(
@@ -265,12 +344,13 @@ class Router(object):
                     'done' in callbacks and callbacks['done'](),
 
                     'miss' in callbacks and callbacks['miss'](
+                        svc_id,
                         service['instance'].net_count()
                     ),
 
-                    callbacks['fail'](exception) if exception
+                    on_error(exception) if exception
                     else callbacks['okay'](path) if os.path.exists(path)
-                    else callbacks['fail'](RuntimeError(
+                    else on_error(RuntimeError(
                         "The %s service did not successfully write out "
                         "an MP3." % service['name']
                     )),
@@ -278,6 +358,15 @@ class Router(object):
                     'then' in callbacks and callbacks['then'](),
                 )
             )
+
+    def _call_assert_callbacks(self, callbacks):
+        """Checks the callbacks argument for validity."""
+
+        assert 'done' not in callbacks or callable(callbacks['done'])
+        assert 'miss' not in callbacks or callable(callbacks['miss'])
+        assert 'okay' in callbacks and callable(callbacks['okay'])
+        assert 'fail' in callbacks and callable(callbacks['fail'])
+        assert 'then' not in callbacks or callable(callbacks['then'])
 
     def _validate_service(self, svc_id, options):
         """
@@ -414,7 +503,8 @@ class Router(object):
                 assert 'key' in option, "missing option key for %s" % svc_id
                 assert self._services.normalize(option['key']) == \
                     option['key'], "bad %s key %s" % (svc_id, option['key'])
-                assert option['key'] not in ['preset', 'service', 'style'], \
+                assert option['key'] not in ['group', 'preset', 'service',
+                                             'style'], \
                     option['key'] + " is reserved for use in TTS tags"
                 assert 'label' in option, \
                     "missing %s label for %s" % (option['key'], svc_id)

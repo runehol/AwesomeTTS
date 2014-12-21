@@ -23,15 +23,9 @@ Data list views
 
 This module currently exposes a SubListView for manipulating lists of
 substitution rules.
-
-TODO: In the future, it is likely that 'SubListView' might be broken up
-into an abstract '_ListView' and various concrete classes ('SubListView'
-and others). The concrete classes would differ from each other in that
-they would use different delegates/models, but most of the logic would
-be in the abstract class.
 """
 
-__all__ = ['SubListView']
+__all__ = ['GroupListView', 'SubListView']
 
 import re
 from PyQt4 import QtCore, QtGui
@@ -40,27 +34,27 @@ from .common import Checkbox, HTML
 # all methods might need 'self' in the future, pylint:disable=R0201
 
 
-class SubListView(QtGui.QListView):
-    """List view specifically for substitution lists."""
+class _ListView(QtGui.QListView):
+    """Abstract list view for use throughout AwesomeTTS."""
 
     __slots__ = ['_add_btn', '_up_btn', '_down_btn', '_del_btn']
 
-    def __init__(self, sul_compiler, buttons, *args, **kwargs):
-        super(SubListView, self).__init__(*args, **kwargs)
+    def __init__(self, buttons, *args, **kwargs):
+        super(_ListView, self).__init__(*args, **kwargs)
 
         self._add_btn, self._up_btn, self._down_btn, self._del_btn = buttons
+
         self._add_btn.clicked.connect(self._add_rule)
         self._up_btn.clicked.connect(lambda: self._reorder_rules('up'))
         self._down_btn.clicked.connect(lambda: self._reorder_rules('down'))
         self._del_btn.clicked.connect(self._del_rules)
 
-        self.setItemDelegate(_SubRuleDelegate(sul_compiler))
         self.setSelectionMode(self.ExtendedSelection)
 
-    def setModel(self, model):  # pylint:disable=C0103
-        """Configures model and sets up event handling."""
+    def setModel(self, *args, **kwargs):  # pylint:disable=C0103
+        """Passes on model and sets up event handling."""
 
-        super(SubListView, self).setModel(_SubListModel(model))
+        super(_ListView, self).setModel(*args, **kwargs)
         self._on_selection()
         self.selectionModel().selectionChanged.connect(self._on_selection)
 
@@ -116,11 +110,49 @@ class SubListView(QtGui.QListView):
         self._on_selection()
 
 
-class _SubRuleDelegate(QtGui.QItemDelegate):
-    """Item view specifically for a substitution rule."""
+class SubListView(_ListView):
+    """List view specifically for substitution lists."""
+
+    def __init__(self, sul_compiler, *args, **kwargs):
+        super(SubListView, self).__init__(*args, **kwargs)
+        self.setItemDelegate(_SubRuleDelegate(sul_compiler))
+
+    def setModel(self, model, *args, **kwargs):  # pylint:disable=C0103
+        """Configures model."""
+
+        super(SubListView, self).setModel(_SubListModel(model),
+                                          *args, **kwargs)
+
+
+class GroupListView(_ListView):
+    """List view specifically for lists of presets."""
+
+    __slots__ = ['_presets']
+
+    def __init__(self, presets, *args, **kwargs):
+        super(GroupListView, self).__init__(*args, **kwargs)
+
+        self.setItemDelegate(_GroupPresetDelegate(presets))
+        self._presets = presets
+
+    def setModel(self, model, *args, **kwargs):  # pylint:disable=C0103
+        """Configures model."""
+
+        super(GroupListView, self).setModel(
+            _GroupListModel(self._presets, model),
+            *args, **kwargs
+        )
+
+
+class _Delegate(QtGui.QItemDelegate):
+    """Abstract delegate view for use throughout AwesomeTTS."""
 
     sizeHint = lambda self, option, index: self.sizeHint.SIZE
     sizeHint.SIZE = QtCore.QSize(-1, 40)
+
+
+class _SubRuleDelegate(_Delegate):
+    """Item view specifically for a substitution rule."""
 
     __slots__ = ['_sul_compiler']
 
@@ -229,8 +261,54 @@ class _SubRuleDelegate(QtGui.QItemDelegate):
     setModelData.RE_SLASH = re.compile(r'\\(\d+)')
 
 
-class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
-    """Provides glue to/from the underlying substitution list."""
+class _GroupPresetDelegate(_Delegate):
+    """Item view specifically for a group preset."""
+
+    __slots__ = ['_presets']
+
+    def __init__(self, presets, *args, **kwargs):
+        super(_GroupPresetDelegate, self).__init__(*args, **kwargs)
+        self._presets = presets
+
+    def createEditor(self, parent,    # pylint:disable=C0103
+                     option, index):  # pylint:disable=W0613
+        """Return a panel to change selected preset."""
+
+        dropdown = QtGui.QComboBox()
+        dropdown.addItem("(select preset)")
+        dropdown.addItems(self._presets)
+
+        hor = QtGui.QHBoxLayout()
+        hor.addWidget(dropdown)
+
+        panel = QtGui.QWidget(parent)
+        panel.setObjectName('editor')
+        panel.setAutoFillBackground(True)
+        panel.setFocusPolicy(QtCore.Qt.StrongFocus)
+        panel.setLayout(hor)
+        return panel
+
+    def setEditorData(self, editor, index):  # pylint:disable=C0103
+        """Changes the preset in the dropdown."""
+
+        dropdown = editor.findChild(QtGui.QComboBox)
+        value = index.data(QtCore.Qt.EditRole)
+        dropdown.setCurrentIndex(dropdown.findText(value) if value else 0)
+
+        QtCore.QTimer.singleShot(0, dropdown.setFocus)
+
+    def setModelData(self, editor, model, index):  # pylint:disable=C0103
+        """Update the underlying model after edit."""
+
+        dropdown = editor.findChild(QtGui.QComboBox)
+        model.setData(
+            index,
+            dropdown.currentText() if dropdown.currentIndex() > 0 else ""
+        )
+
+
+class _ListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
+    """Abstract class for list models."""
 
     __slots__ = ['raw_data']
 
@@ -240,9 +318,58 @@ class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
 
     rowCount = lambda self, parent=None: len(self.raw_data)
 
-    def __init__(self, sublist, *args, **kwargs):
+    def __init__(self, raw_data, *args, **kwargs):
+        super(_ListModel, self).__init__(*args, **kwargs)
+        self.raw_data = raw_data
+
+    def moveRowsDown(self, row, count):  # pylint:disable=C0103
+        """Moves the given count of records at the given row down."""
+
+        parent = QtCore.QModelIndex()
+        self.beginMoveRows(parent, row, row + count - 1,
+                           parent, row + count + 1)
+        self.raw_data = (self.raw_data[0:row] +
+                         self.raw_data[row + count:row + count + 1] +
+                         self.raw_data[row:row + count] +
+                         self.raw_data[row + count + 1:])
+        self.endMoveRows()
+        return True
+
+    def moveRowsUp(self, row, count):  # pylint:disable=C0103
+        """Moves the given count of records at the given row up."""
+
+        parent = QtCore.QModelIndex()
+        self.beginMoveRows(parent, row, row + count - 1, parent, row - 1)
+        self.raw_data = (self.raw_data[0:row - 1] +
+                         self.raw_data[row:row + count] +
+                         self.raw_data[row - 1:row] +
+                         self.raw_data[row + count:])
+        self.endMoveRows()
+        return True
+
+    def removeRows(self, row, count=1, parent=None):  # pylint:disable=C0103
+        """Removes the given count of records at the given row."""
+
+        self.beginRemoveRows(parent or QtCore.QModelIndex(),
+                             row, row + count - 1)
+        self.raw_data = self.raw_data[0:row] + self.raw_data[row + count:]
+        self.endRemoveRows()
+        return True
+
+    def setData(self, index, value,        # pylint:disable=C0103
+                role=QtCore.Qt.EditRole):  # pylint:disable=W0613
+        """Update the new value into the raw list."""
+
+        self.raw_data[index.row()] = value
+        return True
+
+
+class _SubListModel(_ListModel):  # pylint:disable=R0904
+    """Provides glue to/from the underlying substitution list."""
+
+    def __init__(self, *args, **kwargs):
         super(_SubListModel, self).__init__(*args, **kwargs)
-        self.raw_data = [dict(obj) for obj in sublist]  # deep copy
+        self.raw_data = [dict(obj) for obj in self.raw_data]  # deep copy
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         """Return display or edit data for the indexed rule."""
@@ -284,43 +411,34 @@ class _SubListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
         self.endInsertRows()
         return True
 
-    def moveRowsDown(self, row, count):  # pylint:disable=C0103
-        """Moves the given count of records at the given row down."""
 
-        parent = QtCore.QModelIndex()
-        self.beginMoveRows(parent, row, row + count - 1,
-                           parent, row + count + 1)
-        self.raw_data = (self.raw_data[0:row] +
-                         self.raw_data[row + count:row + count + 1] +
-                         self.raw_data[row:row + count] +
-                         self.raw_data[row + count + 1:])
-        self.endMoveRows()
-        return True
+class _GroupListModel(_ListModel):  # pylint:disable=R0904
+    """Provides glue to/from the underlying preset list."""
 
-    def moveRowsUp(self, row, count):  # pylint:disable=C0103
-        """Moves the given count of records at the given row up."""
+    __slots__ = ['_presets']
 
-        parent = QtCore.QModelIndex()
-        self.beginMoveRows(parent, row, row + count - 1, parent, row - 1)
-        self.raw_data = (self.raw_data[0:row - 1] +
-                         self.raw_data[row:row + count] +
-                         self.raw_data[row - 1:row] +
-                         self.raw_data[row + count:])
-        self.endMoveRows()
-        return True
+    def __init__(self, presets, *args, **kwargs):
+        super(_GroupListModel, self).__init__(*args, **kwargs)
+        self._presets = presets
 
-    def removeRows(self, row, count=1, parent=None):  # pylint:disable=C0103
-        """Removes the given count of records at the given row."""
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        """Return display or edit data for the indexed preset."""
 
-        self.beginRemoveRows(parent or QtCore.QModelIndex(),
-                             row, row + count - 1)
-        self.raw_data = self.raw_data[0:row] + self.raw_data[row + count:]
-        self.endRemoveRows()
-        return True
+        preset = self.raw_data[index.row()]
+        if role == QtCore.Qt.DisplayRole:
+            return ("(not selected)" if not preset
+                    else preset if preset in self._presets
+                    else preset + " [deleted]")
+        elif role == QtCore.Qt.EditRole:
+            return preset
 
-    def setData(self, index, value,        # pylint:disable=C0103
-                role=QtCore.Qt.EditRole):  # pylint:disable=W0613
-        """Update the new value into the raw list."""
+    def insertRow(self, row=None, parent=None):  # pylint:disable=C0103
+        """Inserts a new row at the given position (default end)."""
 
-        self.raw_data[index.row()] = value
+        if not row:
+            row = len(self.raw_data)  # defaults to end
+
+        self.beginInsertRows(parent or QtCore.QModelIndex(), row, row)
+        self.raw_data.insert(row, "")
+        self.endInsertRows()
         return True

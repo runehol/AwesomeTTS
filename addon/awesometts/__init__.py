@@ -95,6 +95,7 @@ config = Config(
         ('delay_questions_onthefly', 'integer', 0, int, int),
         ('delay_questions_stored_ours', 'integer', 0, int, int),
         ('delay_questions_stored_theirs', 'integer', 0, int, int),
+        ('groups', 'text', {}, to.deserialized_dict, to.compact_json),
         ('lame_flags', 'text', '--quiet -q 2', str, str),
         ('last_mass_append', 'integer', True, to.lax_bool, int),
         ('last_mass_behavior', 'integer', True, to.lax_bool, int),
@@ -659,6 +660,21 @@ def reviewer_hooks():
             for item in sorted(config['presets'].items(),
                                key=lambda item: item[0].lower()):
                 glue(item)
+
+            if config['groups']:
+                submenu.addSeparator()
+
+                glue = lambda (name, group): submenu.addAction(
+                    'Say "%s" w/ %s' % (say_display, name),
+                    lambda: reviewer.selection_handler_group(say_text, group,
+                                                             window),
+                )
+                for item in sorted(config['groups'].items(),
+                                   key=lambda item: item[0].lower()):
+                    glue(item)
+
+            if tts_question or tts_answer:
+                submenu.addSeparator()
 
         if tts_question:
             submenu.addAction(

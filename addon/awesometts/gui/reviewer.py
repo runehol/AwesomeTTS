@@ -214,23 +214,46 @@ class Reviewer(object):
             return
 
         attr = dict(tag.attrs)
+        config = self._addon.config
+
+        if 'group' in attr:
+            try:
+                group = lax_dict_lookup(config['groups'], attr['group'])
+            except KeyError:
+                if show_errors:
+                    self._alerts("'group' for this tag does not exist:\n%s" %
+                                 tag.prettify().decode('utf-8'), parent)
+            else:
+                self._addon.router.group(
+                    text=text,
+                    group=group,
+                    presets=config['presets'],
+                    callbacks=dict(
+                        okay=playback,
+                        fail=lambda exception: (
+                            isinstance(exception,
+                                       self._addon.router.BusyError) or
+                            not show_errors or
+                            self._alerts(
+                                "Unable to play this group tag:\n%s\n\n%s" % (
+                                    tag.prettify().decode('utf-8').strip(),
+                                    exception.message,
+                                ),
+                                parent,
+                            )
+                        ),
+                    ),
+                )
+            return
 
         if 'preset' in attr:
-            preset = attr['preset']
-            presets = self._addon.config['presets']
             try:
-                attr = dict(presets[preset])
+                attr = dict(lax_dict_lookup(config['presets'], attr['preset']))
             except KeyError:
-                try:
-                    preset = preset.strip().lower()
-                    attr = dict(next(value for key, value in presets.items()
-                                     if key.strip().lower() == preset))
-                except StopIteration:
-                    if show_errors:
-                        self._alerts("This 'preset' does not exist:\n%s" %
-                                     tag.prettify().decode('utf-8'),
-                                     parent)
-                    return
+                if show_errors:
+                    self._alerts("'preset' for this tag does not exist:\n%s" %
+                                 tag.prettify().decode('utf-8'), parent)
+                return
 
         try:
             svc_id = attr.pop('service')
@@ -345,6 +368,22 @@ class Reviewer(object):
             ),
         )
 
+    def selection_handler_group(self, text, group, parent):
+        """Play the selected text using the group."""
+
+        self._addon.router.group(
+            text=text,
+            group=group,
+            presets=self._addon.config['presets'],
+            callbacks=dict(
+                okay=self._addon.player.menu_click,
+                fail=lambda exception: (
+                    isinstance(exception, self._addon.router.BusyError) or
+                    self._alerts(exception.message, parent)
+                ),
+            ),
+        )
+
     def nonselection_handler(self, state, card, parent):
         """Play on-the-fly text from the specified card side."""
 
@@ -378,3 +417,24 @@ class BeautifulTTS(BeautifulSoup):  # pylint:disable=too-many-public-methods
 
     NESTABLE_TAGS = dict(BeautifulSoup.NESTABLE_TAGS.items() +
                          [('tts', [])])
+
+
+def lax_dict_lookup(src, key, return_none=False):
+    """
+    Try to get a value out of the passed source dict with the passed
+    key. If unsuccessful, normalize the keys and try again.
+
+    Raises KeyError if both attempts fail, unless return_none is set.
+    """
+
+    try:
+        return src[key]
+    except KeyError:
+        try:
+            key = key.strip().lower()
+            return next(v for k, v in src.items() if k.strip().lower() == key)
+        except StopIteration:
+            if return_none:
+                return None
+            else:
+                raise KeyError

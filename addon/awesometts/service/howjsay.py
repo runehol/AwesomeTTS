@@ -34,7 +34,6 @@ class Howjsay(Service):
     """
 
     __slots__ = [
-        '_text404s',  # dict of text inputs that caused a 404 this session
     ]
 
     NAME = "Howjsay"
@@ -42,7 +41,6 @@ class Howjsay(Service):
     TRAITS = [Trait.INTERNET]
 
     def __init__(self, *args, **kwargs):
-        self._text404s = {}
         super(Howjsay, self).__init__(*args, **kwargs)
 
     def desc(self):
@@ -94,14 +92,6 @@ class Howjsay(Service):
         if len(text) > 100:
             raise IOError("Input text is too long for Howjsay")
 
-        msg404 = ("Howjsay does not have recorded audio for this phrase. "
-                  "While most words have recordings, most phrases do not."
-                  if text.count(' ')
-                  else "Howjsay does not have recorded audio for this word.")
-
-        if text in self._text404s:
-            raise IOError(msg404)
-
         from urllib2 import quote
 
         try:
@@ -113,7 +103,11 @@ class Howjsay(Service):
 
         except IOError as io_error:
             if hasattr(io_error, 'code') and io_error.code == 404:
-                self._text404s[text] = True
-                raise IOError(msg404)
+                raise IOError(
+                    "Howjsay does not have recorded audio for this phrase. "
+                    "While most words have recordings, most phrases do not."
+                    if text.count(' ')
+                    else "Howjsay does not have recorded audio for this word."
+                )
             else:
                 raise

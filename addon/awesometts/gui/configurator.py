@@ -30,10 +30,12 @@ from sys import platform
 
 from PyQt4 import QtCore, QtGui
 
-from .base import Dialog, ServiceDialog
-from .common import Checkbox, Label, Note
+from .base import Dialog
+from .common import Checkbox, Label, Note, Slate
 from .common import key_event_combo, key_combo_desc
-from .listviews import SubListView as _SubListView
+from .listviews import SubListView
+from .presets import Presets
+from .groups import Groups
 
 # all methods might need 'self' in the future, pylint:disable=R0201
 
@@ -62,12 +64,14 @@ class Configurator(Dialog):
     _PROPERTY_WIDGETS = (Checkbox, QtGui.QComboBox, QtGui.QLineEdit,
                          QtGui.QPushButton, QtGui.QSpinBox, QtGui.QListView)
 
-    __slots__ = ['_alerts', '_ask', '_preset_editor', '_sul_compiler']
+    __slots__ = ['_alerts', '_ask', '_preset_editor', '_group_editor',
+                 '_sul_compiler']
 
     def __init__(self, alerts, ask, sul_compiler, *args, **kwargs):
         self._alerts = alerts
         self._ask = ask
         self._preset_editor = None
+        self._group_editor = None
         self._sul_compiler = sul_compiler
 
         super(Configurator, self).__init__(title="Configuration",
@@ -324,31 +328,8 @@ class Configurator(Dialog):
         panel for manipulating text from the given context.
         """
 
-        buttons = []
-        for tooltip, icon in [("Add New Rule", 'list-add'),
-                              ("Move Selected Up", 'arrow-up'),
-                              ("Move Selected Down", 'arrow-down'),
-                              ("Remove Selected", 'editdelete')]:
-            btn = QtGui.QPushButton(QtGui.QIcon(':/icons/%s.png' % icon), "")
-            btn.setIconSize(QtCore.QSize(16, 16))
-            btn.setFlat(True)
-            btn.setToolTip(tooltip)
-            buttons.append(btn)
-
-        list_view = _SubListView(self._sul_compiler, buttons)
-        list_view.setObjectName('sul' + infix.rstrip('_'))
-        list_view.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,
-                                QtGui.QSizePolicy.Ignored)
-
-        vert = QtGui.QVBoxLayout()
-        for btn in buttons:
-            vert.addWidget(btn)
-        vert.insertStretch(len(buttons) - 1)
-
-        hor = QtGui.QHBoxLayout()
-        hor.addWidget(list_view)
-        hor.addLayout(vert)
-        return hor
+        return Slate("Rule", SubListView, [self._sul_compiler],
+                     'sul' + infix.rstrip('_'))
 
     def _ui_tabs_mp3gen(self):
         """Returns the "MP3s" tab."""
@@ -478,18 +459,24 @@ class Configurator(Dialog):
     def _ui_tabs_advanced_presets(self):
         """Returns the "Presets" input group."""
 
-        button = QtGui.QPushButton("Manage...")
-        button.clicked.connect(self._on_presets)
+        presets_button = QtGui.QPushButton("Manage Presets...")
+        presets_button.clicked.connect(self._on_presets)
+
+        groups_button = QtGui.QPushButton("Manage Groups...")
+        groups_button.clicked.connect(self._on_groups)
 
         hor = QtGui.QHBoxLayout()
-        hor.addWidget(Label("Save services for quick access or side-click "
-                            "playback."))
-        hor.addSpacing(self._SPACING)
-        hor.addWidget(button)
+        hor.addWidget(presets_button)
+        hor.addWidget(groups_button)
         hor.addStretch()
 
-        group = QtGui.QGroupBox("Service Presets")
-        group.setLayout(hor)
+        vert = QtGui.QVBoxLayout()
+        vert.addWidget(Note("Setup services for easy access, menu playback, "
+                            "randomization, or fallbacks."))
+        vert.addLayout(hor)
+
+        group = QtGui.QGroupBox("Service Presets and Groups")
+        group.setLayout(vert)
         return group
 
     def _ui_tabs_advanced_update(self):
@@ -715,11 +702,28 @@ class Configurator(Dialog):
         """Opens the presets editor."""
 
         if not self._preset_editor:
-            self._preset_editor = _PresetEditor(addon=self._addon,
-                                                alerts=self._alerts,
-                                                ask=self._ask,
-                                                parent=self)
+            self._preset_editor = Presets(addon=self._addon,
+                                          alerts=self._alerts,
+                                          ask=self._ask,
+                                          parent=self)
         self._preset_editor.show()
+
+    def _on_groups(self):
+        """
+        Check to make sure the user as at least two presets, and if so,
+        launch the Groups management window.
+        """
+
+        if len(self._addon.config['presets']) < 2:
+            self._alerts("You must have at least two presets before you can "
+                         "create a group.", parent=self)
+            return
+
+        if not self._group_editor:
+            self._group_editor = Groups(ask=self._ask, addon=self._addon,
+                                        parent=self)
+
+        self._group_editor.show()
 
     def _on_update_request(self):
         """Attempts update request w/ add-on updates interface."""
@@ -776,56 +780,3 @@ class Configurator(Dialog):
                 button.setText("unable to empty cache")
         else:
             button.setText("successfully emptied cache")
-
-
-class _PresetEditor(ServiceDialog):
-    """Provides a dialog for editing presets."""
-
-    __slots__ = []
-
-    def __init__(self, *args, **kwargs):
-        super(_PresetEditor, self).__init__(title="Manage Service Presets",
-                                            *args, **kwargs)
-
-    # UI Construction ########################################################
-
-    def _ui_control(self):
-        """Add explanation of the preset functionality."""
-
-        header = Label("About Service Presets")
-        header.setFont(self._FONT_HEADER)
-
-        layout = super(_PresetEditor, self)._ui_control()
-        layout.addWidget(header)
-        layout.addWidget(Note(
-            'Once saved, your service option presets can be easily recalled '
-            'in most AwesomeTTS dialog windows and/or used for on-the-fly '
-            'playback with <tts preset="..."> ... </tts> template tags.'
-        ))
-        layout.addWidget(Note(
-            "Selecting text and then side-clicking in some Anki panels (e.g. "
-            "review mode, card layout editor, note editor fields) will also "
-            "allow playback of the selected text using any of your presets."
-        ))
-        layout.addSpacing(self._SPACING)
-        layout.addStretch()
-        layout.addWidget(self._ui_buttons())
-
-        return layout
-
-    def _ui_buttons(self):
-        """Removes the "Cancel" button."""
-
-        buttons = super(_PresetEditor, self)._ui_buttons()
-        for btn in buttons.buttons():
-            if buttons.buttonRole(btn) == QtGui.QDialogButtonBox.RejectRole:
-                buttons.removeButton(btn)
-        return buttons
-
-    # Events #################################################################
-
-    def accept(self):
-        """Remember the user's options if they hit "Okay"."""
-
-        self._addon.config.update(self._get_all())
-        super(_PresetEditor, self).accept()

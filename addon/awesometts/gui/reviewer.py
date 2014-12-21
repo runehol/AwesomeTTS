@@ -368,6 +368,22 @@ class Reviewer(object):
             ),
         )
 
+    def selection_handler_group(self, text, group, parent):
+        """Play the selected text using the group."""
+
+        self._addon.router.group(
+            text=text,
+            group=group,
+            presets=self._addon.config['presets'],
+            callbacks=dict(
+                okay=self._addon.player.menu_click,
+                fail=lambda exception: (
+                    isinstance(exception, self._addon.router.BusyError) or
+                    self._alerts(exception.message, parent)
+                ),
+            ),
+        )
+
     def nonselection_handler(self, state, card, parent):
         """Play on-the-fly text from the specified card side."""
 

@@ -661,6 +661,21 @@ def reviewer_hooks():
                                key=lambda item: item[0].lower()):
                 glue(item)
 
+            if config['groups']:
+                submenu.addSeparator()
+
+                glue = lambda (name, group): submenu.addAction(
+                    'Say "%s" w/ %s' % (say_display, name),
+                    lambda: reviewer.selection_handler_group(say_text, group,
+                                                             window),
+                )
+                for item in sorted(config['groups'].items(),
+                                   key=lambda item: item[0].lower()):
+                    glue(item)
+
+            if tts_question or tts_answer:
+                submenu.addSeparator()
+
         if tts_question:
             submenu.addAction(
                 "Play On-the-Fly TTS from Question Side",

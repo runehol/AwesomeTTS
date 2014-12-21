@@ -70,16 +70,6 @@
         "title": "Using the Add-on",
         "what": "Enable on-the-fly playback, mass generate audio files, or add as you go",
         "children": {
-            "on-the-fly": {
-                "terse": "On-the-Fly",
-                "title": "Enabling On-the-Fly Playback via Card Templates",
-                "what": "Quickly enable audio via your card templates, with no file synchronization"
-            },
-            "presets": {
-                "terse": "Presets",
-                "title": "Managing Service Presets and Speaking Selected Text",
-                "what": "Save a particular service configuration, then use it later for playback"
-            },
             "editor": {
                 "terse": "Note Editor",
                 "title": "Storing MP3 Audio Files from the Note Editor",
@@ -89,6 +79,16 @@
                 "terse": "Card Browser",
                 "title": "Storing MP3 Audio Files from the Card Browser",
                 "what": "Mass generate audio for many cards at once, files stored with collection"
+            },
+            "on-the-fly": {
+                "terse": "On-the-Fly",
+                "title": "Enabling On-the-Fly Playback via Card Templates",
+                "what": "Quickly enable audio via your card templates, with no file synchronization"
+            },
+            "presets": {
+                "terse": "Presets",
+                "title": "Managing Service Presets and Speaking Selected Text",
+                "what": "Save a particular service configuration, then use it later for playback/recording"
             },
             "groups": {
                 "terse": "Groups",

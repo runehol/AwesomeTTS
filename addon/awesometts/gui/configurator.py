@@ -547,8 +547,13 @@ class Configurator(Dialog):
         abutton.setObjectName('on_cache')
         abutton.clicked.connect(lambda: self._on_cache_clear(abutton))
 
+        fbutton = QtGui.QPushButton("Forget Failures")
+        fbutton.setObjectName('on_forget')
+        fbutton.clicked.connect(lambda: self._on_forget_failures(fbutton))
+
         hor = QtGui.QHBoxLayout()
         hor.addWidget(abutton)
+        hor.addWidget(fbutton)
         layout.addLayout(hor)
 
         group = QtGui.QGroupBox("Caching")
@@ -599,20 +604,27 @@ class Configurator(Dialog):
                 widget.setModel(value)
 
         widget = self.findChild(QtGui.QPushButton, 'on_cache')
-        if widget:
-            widget.atts_list = (
-                [filename for filename in os.listdir(self._addon.paths.cache)]
-                if os.path.isdir(self._addon.paths.cache) else []
-            )
+        widget.atts_list = (
+            [filename for filename in os.listdir(self._addon.paths.cache)]
+            if os.path.isdir(self._addon.paths.cache) else []
+        )
+        if widget.atts_list:
+            widget.setEnabled(True)
+            widget.setText("Delete Files (%s)" %
+                           locale("%d", len(widget.atts_list), grouping=True))
+        else:
+            widget.setEnabled(False)
+            widget.setText("Delete Files")
 
-            if len(widget.atts_list):
-                widget.setEnabled(True)
-                widget.setText("Delete Files (%s)" %
-                               locale("%d", len(widget.atts_list),
-                                      grouping=True))
-            else:
-                widget.setEnabled(False)
-                widget.setText("Delete Files")
+        widget = self.findChild(QtGui.QPushButton, 'on_forget')
+        fail_count = self._addon.router.get_failure_count()
+        if fail_count:
+            widget.setEnabled(True)
+            widget.setText("Forget Failures (%s)" %
+                           locale("%d", fail_count, grouping=True))
+        else:
+            widget.setEnabled(False)
+            widget.setText("Forget Failures")
 
         super(Configurator, self).show(*args, **kwargs)
 
@@ -781,3 +793,10 @@ class Configurator(Dialog):
                 button.setText("unable to empty")
         else:
             button.setText("emptied cache")
+
+    def _on_forget_failures(self, button):
+        """Tells the router to forget all cached failures."""
+
+        button.setEnabled(False)
+        self._addon.router.forget_failures()
+        button.setText("forgot failures")

@@ -26,6 +26,7 @@ __all__ = ['Router']
 
 import os.path
 from random import shuffle
+from urllib2 import URLError
 
 from PyQt4 import QtCore, QtGui
 
@@ -340,8 +341,14 @@ class Router(object):
 
         else:
             def on_error(exception):
-                """Cache errors and pass back to fail handler."""
-                self._failures[path] = exception
+                """
+                Cache errors and pass back to fail handler. URLError
+                exceptions are not cached, as they are usually network
+                or connectivity errors.
+                """
+
+                if not isinstance(exception, URLError):
+                    self._failures[path] = exception
                 callbacks['fail'](exception)
 
             service['instance'].net_reset()

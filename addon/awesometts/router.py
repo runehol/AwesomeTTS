@@ -26,6 +26,7 @@ __all__ = ['Router']
 
 import os.path
 from random import shuffle
+from time import time
 from urllib2 import URLError
 
 from PyQt4 import QtCore, QtGui
@@ -39,6 +40,8 @@ _PREFIXED = lambda prefix, lines: "\n".join(
     prefix + line
     for line in (lines if isinstance(lines, list) else lines.split("\n"))
 )
+
+FAILURE_CACHE_SECS = 3600  # ignore/dump failures from cache after one hour
 
 
 class Router(object):
@@ -332,10 +335,11 @@ class Router(object):
             if 'then' in callbacks:
                 callbacks['then']()
 
-        elif path in self._failures:
+        elif (path in self._failures and
+              time() - self._failures[path][0] < FAILURE_CACHE_SECS):
             if 'done' in callbacks:
                 callbacks['done']()
-            callbacks['fail'](self._failures[path])
+            callbacks['fail'](self._failures[path][1])
             if 'then' in callbacks:
                 callbacks['then']()
 
@@ -348,7 +352,7 @@ class Router(object):
                 """
 
                 if not isinstance(exception, URLError):
-                    self._failures[path] = exception
+                    self._failures[path] = time(), exception
                 callbacks['fail'](exception)
 
             service['instance'].net_reset()

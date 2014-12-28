@@ -170,7 +170,15 @@ class Router(object):
         return service['options']
 
     def get_failure_count(self):
-        """Returns the number of cached failures."""
+        """
+        Returns the number of cached failures, after dumping any expired
+        entries from the cache.
+        """
+
+        now = time()
+        for path, (when, _) in self._failures.items():
+            if now - when > FAILURE_CACHE_SECS:
+                del self._failures[path]
 
         return len(self._failures)
 

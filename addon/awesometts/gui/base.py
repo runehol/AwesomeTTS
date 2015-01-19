@@ -471,13 +471,18 @@ class ServiceDialog(Dialog):
         if svc_id.startswith('group:'):  # we handle groups differently
             svc_id = svc_id[6:]
             group = self._addon.config['groups'][svc_id]
+            presets = [preset for preset in group['presets'] if preset]
+
             stack.setCurrentIndex(stack.count() - 1)
             stack.widget(stack.count() - 1).findChild(QtGui.QLabel).setText(
-                svc_id + (" randomly selects" if group['mode'] == 'random'
-                          else " tries in-order") +
-                " from:\n -" + "\n -".join(group['presets'][0:15]) +
-                ("\n    (... and %d more)" % (len(group['presets']) - 15)
-                 if len(group['presets']) > 15 else "") +
+                svc_id +
+                (" has no presets yet." if len(presets) == 0
+                 else " uses " + presets[0] + "." if len(presets) == 1
+                 else ((" randomly selects" if group['mode'] == 'random'
+                        else " tries in-order") + " from:\n -" +
+                       "\n -".join(presets[0:5]) +
+                       ("\n    (... and %d more)" % (len(presets) - 5)
+                        if len(presets) > 5 else ""))) +
                 "\n\n"
                 "Go to AwesomeTTS config for group setup.\n"
                 "Access preset options in dropdown below."

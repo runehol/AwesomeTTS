@@ -409,7 +409,7 @@ class ServiceDialog(Dialog):
         groups = self._addon.config['groups'].keys()
         if groups:
             dropdown.insertSeparator(dropdown.count())
-            for group in groups:
+            for group in sorted(groups):
                 dropdown.addItem(group, 'group:' + group)
 
         idx = max(dropdown.findData(self._addon.config['last_service']), 0)

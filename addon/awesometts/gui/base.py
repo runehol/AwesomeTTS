@@ -224,6 +224,7 @@ class ServiceDialog(Dialog):
         '_panel_built',  # dict, svc_id to True if panel has been constructed
         '_panel_set',    # dict, svc_id to True if panel values have been set
         '_svc_id',       # active service ID
+        '_svc_count',    # how many services this dialog has access to
     ]
 
     def __init__(self, alerts, ask, *args, **kwargs):
@@ -237,6 +238,7 @@ class ServiceDialog(Dialog):
         self._panel_built = {}
         self._panel_set = {}
         self._svc_id = None
+        self._svc_count = 0
 
         super(ServiceDialog, self).__init__(*args, **kwargs)
 
@@ -282,6 +284,15 @@ class ServiceDialog(Dialog):
             widget.setLayout(panel)
 
             stack.addWidget(widget)
+        self._svc_count = dropdown.count()
+
+        # one extra widget for displaying a group
+        panel = QtGui.QVBoxLayout()
+        panel.addWidget(Note())
+        panel.addStretch()
+        widget = QtGui.QWidget()
+        widget.setLayout(panel)
+        stack.addWidget(widget)
 
         dropdown.activated.connect(self._on_service_activated)
         dropdown.currentIndexChanged.connect(self._on_preset_reset)
@@ -391,6 +402,16 @@ class ServiceDialog(Dialog):
         self._panel_set = {}  # these must be reloaded with each window open
 
         dropdown = self.findChild(QtGui.QComboBox, 'service')
+
+        # refresh the list of groups
+        while dropdown.count() > self._svc_count:
+            dropdown.removeItem(dropdown.count() - 1)
+        groups = self._addon.config['groups'].keys()
+        if groups:
+            dropdown.insertSeparator(dropdown.count())
+            for group in sorted(groups):
+                dropdown.addItem(group, 'group:' + group)
+
         idx = max(dropdown.findData(self._addon.config['last_service']), 0)
         dropdown.setCurrentIndex(idx)
         self._on_service_activated(idx, initial=True)
@@ -445,7 +466,31 @@ class ServiceDialog(Dialog):
         combo = self.findChild(QtGui.QComboBox, 'service')
         svc_id = combo.itemData(idx)
         stack = self.findChild(QtGui.QStackedWidget, 'panels')
+        save = self.findChild(QtGui.QPushButton, 'presets_save')
 
+        if svc_id.startswith('group:'):  # we handle groups differently
+            svc_id = svc_id[6:]
+            group = self._addon.config['groups'][svc_id]
+            presets = [preset for preset in group['presets'] if preset]
+
+            stack.setCurrentIndex(stack.count() - 1)
+            stack.widget(stack.count() - 1).findChild(QtGui.QLabel).setText(
+                svc_id +
+                (" has no presets yet." if len(presets) == 0
+                 else " uses " + presets[0] + "." if len(presets) == 1
+                 else ((" randomly selects" if group['mode'] == 'random'
+                        else " tries in-order") + " from:\n -" +
+                       "\n -".join(presets[0:5]) +
+                       ("\n    (... and %d more)" % (len(presets) - 5)
+                        if len(presets) > 5 else ""))) +
+                "\n\n"
+                "Go to AwesomeTTS config for group setup.\n"
+                "Access preset options in dropdown below."
+            )
+            save.setEnabled(False)
+            return
+
+        save.setEnabled(True)
         panel_unbuilt = svc_id not in self._panel_built
         panel_unset = svc_id not in self._panel_set
 
@@ -608,7 +653,7 @@ class ServiceDialog(Dialog):
                             )
                         ),
                         None,
-                    )
+                    ) if options else None
 
                 if select:
                     idx = dropdown.findText(select)
@@ -637,6 +682,8 @@ class ServiceDialog(Dialog):
         """Saves the current service state back as a preset."""
 
         svc_id, options = self._get_service_values()
+        assert "bad get_service_values() value", \
+               not svc_id.startswith('group:') and options
         svc_name = self.findChild(QtGui.QComboBox, 'service').currentText()
 
         name, okay = self._ask(
@@ -724,21 +771,27 @@ class ServiceDialog(Dialog):
         text_input, text_value = self._get_service_text()
         self._disable_inputs()
 
-        self._addon.router(
-            svc_id=svc_id,
-            text=self._addon.strip.from_user(text_value),
-            options=values,
-            callbacks=dict(
-                done=lambda: self._disable_inputs(False),
-                okay=self._addon.player.preview,
-                fail=lambda exception: self._alerts(
-                    "The service could not playback the phrase.\n\n%s" %
-                    exception.message,
-                    self,
-                ),
-                then=text_input.setFocus,
+        text_value = self._addon.strip.from_user(text_value)
+        callbacks = dict(
+            done=lambda: self._disable_inputs(False),
+            okay=self._addon.player.preview,
+            fail=lambda exception: self._alerts(
+                "Cannot preview the input phrase with these settings.\n\n%s" %
+                exception.message,
+                self,
             ),
+            then=text_input.setFocus,
         )
+
+        if svc_id.startswith('group:'):
+            config = self._addon.config
+            self._addon.router.group(text=text_value,
+                                     group=config['groups'][svc_id[6:]],
+                                     presets=config['presets'],
+                                     callbacks=callbacks)
+        else:
+            self._addon.router(svc_id=svc_id, text=text_value,
+                               options=values, callbacks=callbacks)
 
     # Auxiliary ##############################################################
 
@@ -762,6 +815,10 @@ class ServiceDialog(Dialog):
                 self.findChild(QtGui.QComboBox,
                                'presets_dropdown').currentIndex() > 0
             )
+            self.findChild(QtGui.QPushButton, 'presets_save').setEnabled(
+                self.findChild(QtGui.QComboBox,
+                               'service').currentIndex() < self._svc_count
+            )
 
     def _get_service_values(self):
         """
@@ -770,9 +827,12 @@ class ServiceDialog(Dialog):
 
         dropdown = self.findChild(QtGui.QComboBox, 'service')
         idx = dropdown.currentIndex()
+        svc_id = dropdown.itemData(idx)
+        if svc_id.startswith('group:'):
+            return svc_id, None
+
         vinputs = self.findChild(QtGui.QStackedWidget, 'panels') \
             .widget(idx).findChildren(self._OPTIONS_WIDGETS)
-        svc_id = dropdown.itemData(idx)
         options = self._addon.router.get_options(svc_id)
 
         assert len(options) == len(vinputs)
@@ -811,4 +871,4 @@ class ServiceDialog(Dialog):
                 self._addon.config['last_options'].items() +
                 [(svc_id, values)]
             ),
-        }
+        } if values else dict(last_service=svc_id)

@@ -255,3 +255,36 @@ class Note(Label):
     def __init__(self, *args, **kwargs):
         super(Note, self).__init__(*args, **kwargs)
         self.setWordWrap(True)
+
+
+class Slate(QtGui.QHBoxLayout):  # pylint:disable=too-few-public-methods
+    """Horizontal panel for dealing with lists of things."""
+
+    def __init__(self, thing, ListViewClass, list_view_args, list_name,
+                 *args, **kwargs):
+        super(Slate, self).__init__(*args, **kwargs)
+
+        buttons = []
+        for tooltip, icon in [("Add New " + thing, 'list-add'),
+                              ("Move Selected Up", 'arrow-up'),
+                              ("Move Selected Down", 'arrow-down'),
+                              ("Remove Selected", 'editdelete')]:
+            btn = QtGui.QPushButton(QtGui.QIcon(':/icons/%s.png' % icon), "")
+            btn.setIconSize(QtCore.QSize(16, 16))
+            btn.setFlat(True)
+            btn.setToolTip(tooltip)
+            buttons.append(btn)
+
+        list_view_args.append(buttons)
+        list_view = ListViewClass(*list_view_args)  # pylint:disable=star-args
+        list_view.setObjectName(list_name)
+        list_view.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,
+                                QtGui.QSizePolicy.Ignored)
+
+        vert = QtGui.QVBoxLayout()
+        for btn in buttons:
+            vert.addWidget(btn)
+        vert.insertStretch(len(buttons) - 1)
+
+        self.addWidget(list_view)
+        self.addLayout(vert)

@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2015  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2013  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2014  Dave Shifflett
+# Copyright (C) 2013-2015  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,6 +75,7 @@ for _directory, _rmdir, _filenames in [
             '__init__.py', '__init__.pyc', '__init__.pyo',
         ]),
         ('service', False, [
+            'sapi5.js',   # for 1.0 thru 1.2
             'sapi5.vbs',  # for Beta 11 and older
         ]),
         ('services', True, [
@@ -111,6 +112,7 @@ import awesometts
 # prefixing it with a hash (#) sign and restarting Anki.
 
 awesometts.browser_menus()     # mass generator and MP3 stripper
+awesometts.cache_control()     # automatically clear the media cache regularly
 awesometts.cards_button()      # on-the-fly templater helper in card view
 awesometts.config_menu()       # provides access to configuration dialog
 awesometts.editor_button()     # single audio clip generator button

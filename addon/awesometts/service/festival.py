@@ -64,13 +64,14 @@ class Festival(Service):
 
         import os
         base_dir = '/usr/share/festival/voices'
-        self._voice_list = sorted([
+        self._voice_list = [
             (voice_dir, "%s (%s)" % (voice_dir, lang_dir))
-            for lang_dir in os.listdir(base_dir)
+            for lang_dir in sorted(os.listdir(base_dir))
             if os.path.isdir(os.path.join(base_dir, lang_dir))
-            for voice_dir in os.listdir(os.path.join(base_dir, lang_dir))
+            for voice_dir in sorted(os.listdir(os.path.join(base_dir,
+                                                            lang_dir)))
             if os.path.isdir(os.path.join(base_dir, lang_dir, voice_dir))
-        ], key=lambda voice: voice[1].lower())
+        ]
 
         if not self._voice_list:
             raise EnvironmentError("No usable voices found in %s" % base_dir)

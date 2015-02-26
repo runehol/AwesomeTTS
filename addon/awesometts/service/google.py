@@ -79,11 +79,6 @@ class Google(Service):
         Provides access to voice only.
         """
 
-        voice_list = sorted([
-            (code, "%s (%s)" % (name, code))
-            for code, name in self._VOICE_CODES.items()
-        ], key=lambda voice: voice[1])
-
         voice_lookup = dict([
             # aliases for Chinese, Cantonese (fewer speakers)
             (self.normalize(alias), 'zh-YUE')
@@ -150,7 +145,8 @@ class Google(Service):
             dict(
                 key='voice',
                 label="Voice",
-                values=voice_list,
+                values=[(code, "%s (%s)" % (name, code))
+                        for code, name in sorted(self._VOICE_CODES.items())],
                 transform=transform_voice,
             ),
         ]

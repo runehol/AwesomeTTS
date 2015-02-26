@@ -40,6 +40,9 @@ class Howjsay(Service):
 
     TRAITS = [Trait.INTERNET]
 
+    def __init__(self, *args, **kwargs):
+        super(Howjsay, self).__init__(*args, **kwargs)
+
     def desc(self):
         """
         Returns a short, static description.
@@ -99,9 +102,12 @@ class Howjsay(Service):
             )
 
         except IOError as io_error:
-            raise IOError(
-                "Howjsay only has recorded audio for single words."
-                if text.count(' ')
-                else "Howjsay does not have recorded audio for this word."
-            ) if hasattr(io_error, 'code') and io_error.code == 404 \
-                else io_error
+            if hasattr(io_error, 'code') and io_error.code == 404:
+                raise IOError(
+                    "Howjsay does not have recorded audio for this phrase. "
+                    "While most words have recordings, most phrases do not."
+                    if text.count(' ')
+                    else "Howjsay does not have recorded audio for this word."
+                )
+            else:
+                raise

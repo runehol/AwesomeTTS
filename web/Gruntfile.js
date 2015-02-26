@@ -92,6 +92,16 @@ module.exports = function (grunt) {
         });
     }(grunt.file.readJSON('sitemap.json'), ''));
 
+    var KEYS = {};
+    var KEYS_MISSING = [];
+    try { KEYS = grunt.file.readJSON('keys.json'); } catch (ignore) { }
+    [['gsv', '0000000000000000']].forEach(function (tuple) {
+        if (!KEYS[tuple[0]]) {
+            KEYS[tuple[0]] = tuple[1];
+            KEYS_MISSING.push(tuple[0]);
+        }
+    });
+
     var gaeRegex = function (strings, forceWrap) {
         var map = {};
 
@@ -163,7 +173,7 @@ module.exports = function (grunt) {
     ]);
 
     grunt.task.registerTask('deploy', "Pushes new version to GAE platform.", [
-        'build', 'version', 'gae:update',
+        'keycheck', 'build', 'version', 'gae:update',
     ]);
 
 
@@ -323,6 +333,12 @@ module.exports = function (grunt) {
                 getMustacheRenderPages(SITEMAP)
             )},
 
+            gsv: {files: [{
+                data: {key: KEYS.gsv},
+                template: 'gsv.mustache',
+                dest: 'build/gsv.html',
+            }]},
+
             unresolvedError404: {files: [{
                 data: data({
                     me: {title: "Not Found"},
@@ -476,17 +492,20 @@ module.exports = function (grunt) {
               upload: 'favicon\\.ico', expiration: '70d'},
             {url: '/robots\\.txt', static_files: 'robots.txt',
               upload: 'robots\\.txt', expiration: '70d'},
+            {url: '/google' + KEYS.gsv + '\\.html', static_files: 'gsv.html',
+              upload: 'gsv\\.html'},
 
             {url: '/api/update/[a-z\\d]+-' + gaeRegex([
-                '1.2.3', '1.2.3-pre', '1.2.2', '1.2.2-pre', '1.2.1',
-                '1.2.1-pre', '1.2.0',
+                '1.3.0',
               ]),
               static_files: 'api/update/good-version.json',
               upload: 'api/update/good-version\\.json'},
             {url: '/api/update/[a-z\\d]+-' + gaeRegex([
-                '1.2.0-pre', '1.2.0-dev', '1.1.2', '1.1.2-pre', '1.1.1',
-                '1.1.1-pre', '1.1.0', '1.1.0-pre', '1.1.0-dev', '1.0.1',
-                '1.0.1-pre', '1.0.0', '1.0.0-pre', '1.0.0-dev',
+                '1.3.0-pre', '1.3.0-dev', '1.2.3', '1.2.3-pre', '1.2.2',
+                '1.2.2-pre', '1.2.1', '1.2.1-pre', '1.2.0', '1.2.0-pre',
+                '1.2.0-dev', '1.1.2', '1.1.2-pre', '1.1.1', '1.1.1-pre',
+                '1.1.0', '1.1.0-pre', '1.1.0-dev', '1.0.1', '1.0.1-pre',
+                '1.0.0', '1.0.0-pre', '1.0.0-dev',
               ]),
               static_files: 'api/update/need-newer.json',
               upload: 'api/update/need-newer\\.json'},
@@ -539,6 +558,17 @@ module.exports = function (grunt) {
                 })
             ).join('\n')
         );
+    });
+
+
+    // Deployment Key Verification (keycheck) ////////////////////////////////
+
+    grunt.task.registerTask('keycheck', "Verify API keys.", function () {
+        if (KEYS_MISSING.length) {
+            grunt.fail.fatal("Missing keys for " + KEYS_MISSING.join(", "));
+        } else {
+            grunt.log.ok("API keys are correctly initialized.");
+        }
     });
 
 
@@ -628,12 +658,13 @@ module.exports = function (grunt) {
     config.watch = {
         options: {spawn: false},  // required for grunt.event.on logic to work
 
-        grunt: {files: ['Gruntfile.js', 'sitemap.json'], tasks: 'build',
-          options: {reload: true}},
+        grunt: {files: ['Gruntfile.js', 'keys.json', 'sitemap.json'],
+          tasks: 'build', options: {reload: true}},
 
         favicon: {files: 'favicon.ico', tasks: 'copy:favicon'},
         images: {files: 'images/*.{gif,png}', tasks: 'copy:images'},
         robots: {files: 'robots.txt', tasks: 'copy:robots'},
+        gsv: {files: 'gsv.mustache', tasks: 'mustache_render:gsv'},
         unresolvedPy: {files: 'unresolved/__init__.py',
           tasks: 'copy:unresolvedPy'},
 

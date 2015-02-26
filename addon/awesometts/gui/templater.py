@@ -74,10 +74,14 @@ class Templater(ServiceDialog):
 
         layout = super(Templater, self)._ui_control()
         layout.addWidget(header)
-        layout.addWidget(Note('AwesomeTTS can automatically play the content '
-                              'of <tts> tags in your cards on-the-fly.'))
+        layout.addWidget(Note("AwesomeTTS will speak <tts> tags as you "
+                              "review."))
         layout.addStretch()
         layout.addLayout(self._ui_control_fields())
+        layout.addStretch()
+        layout.addWidget(Note("This feature requires desktop Anki w/ "
+                              "AwesomeTTS installed; it will not work on "
+                              "mobile apps or AnkiWeb."))
         layout.addStretch()
         layout.addWidget(self._ui_buttons())
 
@@ -201,11 +205,12 @@ class Templater(ServiceDialog):
         presets = self.findChild(QtGui.QComboBox, 'presets_dropdown')
 
         last_service = now['last_service']
-        attrs = (
-            [('preset', presets.currentText())] if presets.currentIndex() > 0
-            else ([('service', last_service)] +
-                  sorted(now['last_options'][last_service].items()))
-        )
+        attrs = ([('group', last_service[6:])]
+                 if last_service.startswith('group:') else
+                 [('preset', presets.currentText())]
+                 if presets.currentIndex() > 0 else
+                 [('service', last_service)] +
+                 sorted(now['last_options'][last_service].items()))
         if now['templater_hide'] == 'inline':
             attrs.append(('style', 'display: none'))
         attrs = ' '.join('%s="%s"' % (key, escape(unicode(value), quote=True))

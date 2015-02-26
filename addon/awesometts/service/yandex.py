@@ -50,7 +50,7 @@ class Yandex(Service):
         'ar_AE': "Arabic", 'ca_ES': "Catalan", 'cs_CZ': "Czech",
         'da_DK': "Danish", 'de_DE': "German", 'el_GR': "Greek",
         'en_GB': "English, British", 'es_ES': "Spanish, European",
-        'fi_FI': "Finish", 'fr_FR': "French", 'it_IT': "Italian",
+        'fi_FI': "Finnish", 'fr_FR': "French", 'it_IT': "Italian",
         'nl_NL': "Dutch", 'no_NO': "Norwegian", 'pl_PL': "Polish",
         'pt_PT': "Portuguese, European", 'ru_RU': "Russian",
         'sv_SE': "Swedish", 'tr_TR': "Turkish",
@@ -68,11 +68,6 @@ class Yandex(Service):
         """
         Provides access to voice and quality.
         """
-
-        voice_list = sorted([
-            (code, "%s (%s)" % (name, code.replace('_', '-')))
-            for code, name in self._VOICE_CODES.items()
-        ], key=lambda voice: voice[1])
 
         voice_lookup = dict([
             # two-character language codes
@@ -117,7 +112,8 @@ class Yandex(Service):
             dict(
                 key='voice',
                 label="Voice",
-                values=voice_list,
+                values=[(code, "%s (%s)" % (name, code.replace('_', '-')))
+                        for code, name in sorted(self._VOICE_CODES.items())],
                 transform=transform_voice,
             ),
             dict(

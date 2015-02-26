@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2015  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2013  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2014  Dave Shifflett
+# Copyright (C) 2013-2015  Dave Shifflett
 # Copyright (C) 2012       Dominic Lerbs
 #
 # This program is free software: you can redistribute it and/or modify
@@ -48,7 +48,7 @@ from .text import Sanitizer
 from .updates import Updates
 
 
-VERSION = '1.2.3'
+VERSION = '1.3.0'
 
 WEB = 'https://ankiatts.appspot.com'
 
@@ -86,6 +86,7 @@ config = Config(
         ('automatic_answers_errors', 'integer', True, to.lax_bool, int),
         ('automaticQuestions', 'integer', True, to.lax_bool, int),
         ('automatic_questions_errors', 'integer', True, to.lax_bool, int),
+        ('cache_days', 'integer', 70, int, int),
         ('debug_file', 'integer', False, to.lax_bool, int),
         ('debug_stdout', 'integer', False, to.lax_bool, int),
         ('delay_answers_onthefly', 'integer', 0, int, int),
@@ -94,6 +95,7 @@ config = Config(
         ('delay_questions_onthefly', 'integer', 0, int, int),
         ('delay_questions_stored_ours', 'integer', 0, int, int),
         ('delay_questions_stored_theirs', 'integer', 0, int, int),
+        ('groups', 'text', {}, to.deserialized_dict, to.compact_json),
         ('lame_flags', 'text', '--quiet -q 2', str, str),
         ('last_mass_append', 'integer', True, to.lax_bool, int),
         ('last_mass_behavior', 'integer', True, to.lax_bool, int),
@@ -410,6 +412,48 @@ def browser_menus():
     )
 
 
+def cache_control():
+    """Registers a hook to handle cache control on session exits."""
+
+    def on_unload_profile():
+        """
+        Finds MP3s in the cache directory older than the user's
+        configured cache limit and attempts to remove them.
+        """
+
+        from os import listdir, unlink
+        from os.path import join
+
+        cache = paths.CACHE
+
+        try:
+            filenames = listdir(cache)
+        except:  # allow silent failure, pylint:disable=bare-except
+            return
+        if not filenames:
+            return
+
+        prospects = (join(cache, filename) for filename in filenames)
+
+        if config['cache_days']:
+            from os.path import getmtime
+            from time import time
+
+            limit = time() - 86400 * config['cache_days']
+            targets = (prospect for prospect in prospects
+                       if getmtime(prospect) < limit)
+        else:
+            targets = prospects
+
+        for target in targets:
+            try:
+                unlink(target)
+            except:  # skip broken files, pylint:disable=bare-except
+                pass
+
+    anki.hooks.addHook('unloadProfile', on_unload_profile)
+
+
 def cards_button():
     """Provides access to the templater helper."""
 
@@ -616,6 +660,21 @@ def reviewer_hooks():
             for item in sorted(config['presets'].items(),
                                key=lambda item: item[0].lower()):
                 glue(item)
+
+            if config['groups']:
+                submenu.addSeparator()
+
+                glue = lambda (name, group): submenu.addAction(
+                    'Say "%s" w/ %s' % (say_display, name),
+                    lambda: reviewer.selection_handler_group(say_text, group,
+                                                             window),
+                )
+                for item in sorted(config['groups'].items(),
+                                   key=lambda item: item[0].lower()):
+                    glue(item)
+
+            if tts_question or tts_answer:
+                submenu.addSeparator()
 
         if tts_question:
             submenu.addAction(

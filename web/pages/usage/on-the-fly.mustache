@@ -1,8 +1,8 @@
 {{!
   ! AwesomeTTS text-to-speech add-on website
   !
-  ! Copyright (C) 2014       Anki AwesomeTTS Development Team
-  ! Copyright (C) 2014       Dave Shifflett
+  ! Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
+  ! Copyright (C) 2014-2015  Dave Shifflett
   !
   ! This program is free software: you can redistribute it and/or modify
   ! it under the terms of the GNU Affero General Public License as
@@ -67,7 +67,39 @@
     <li>Clean up any duplicate or unwanted text in your template.</li>
 </ol>
 
-<h3>Hints</h3>
+<h3>Can I selectively disable or modify the TTS output for certain cards?</h3>
+
+<p>If the TTS quality for a particular note phrase is poor, you might want to
+  disable it or replace it with a manually-generated sound.</p>
+
+<p>To disable it, add a &ldquo;<kbd>No TTS</kbd>&rdquo; field to the note
+  type, add a &ldquo;<kbd>1</kbd>&rdquo; in that field for the affected notes,
+  and then modify your template to look like this:</p>
+
+{{=<%disable mustache%>=}}
+<pre>{{^No TTS}}&lt;tts service="google" voice="ar"&gt;{{/No TTS}}
+    {{Front}}
+{{^No TTS}}&lt;/tts&gt;{{/No TTS}}</pre>
+<%disable={{ }}=mustache%>
+
+<p>To use a manually-generated sound, add a &ldquo;<kbd>Sound</kbd>&rdquo;
+  field to the note type, generate an audio file and insert it into the field
+  as a <samp>[sound:xxx]</samp> tag, and then modify your template to look
+  like this:</p>
+
+{{=<%disable mustache%>=}}
+<pre>{{Sound}}
+
+{{^Sound}}&lt;tts service="google" voice="ar"&gt;{{/Sound}}
+    {{Front}}
+{{^Sound}}&lt;/tts&gt;{{/Sound}}</pre>
+<%disable={{ }}=mustache%>
+
+<p>If you would prefer to avoid complicating your templates, you may also opt
+  to create a new note type that doesn't use on-the-fly TTS, and move the
+  affected notes to that new note type.</p>
+
+<h3>Other Hints</h3>
 
 <ul>
     <li>You can test the on-the-fly functionality from the &ldquo;Front

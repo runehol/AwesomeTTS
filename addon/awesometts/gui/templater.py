@@ -74,10 +74,14 @@ class Templater(ServiceDialog):
 
         layout = super(Templater, self)._ui_control()
         layout.addWidget(header)
-        layout.addWidget(Note('AwesomeTTS can automatically play the content '
-                              'of <tts> tags in your cards on-the-fly.'))
+        layout.addWidget(Note("AwesomeTTS will speak <tts> tags as you "
+                              "review."))
         layout.addStretch()
         layout.addLayout(self._ui_control_fields())
+        layout.addStretch()
+        layout.addWidget(Note("This feature requires desktop Anki w/ "
+                              "AwesomeTTS installed; it will not work on "
+                              "mobile apps or AnkiWeb."))
         layout.addStretch()
         layout.addWidget(self._ui_buttons())
 

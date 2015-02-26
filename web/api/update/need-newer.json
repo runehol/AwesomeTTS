@@ -1,23 +1,12 @@
 {
     "auto": true,
-    "intro": "This release adds two new TTS services, user-defined presets, side-click menu functionality, templating improvements, and some bug fixes.",
+    "intro": "This release adds group-based functionality, cache control, and SAPI improvements.",
     "notes": [
-        "adds Howjsay (English words and short phrases)",
-        "adds ImTranslator (Windows and Linux only; Chinese, English, French, German, Italian, Japanese, Korean, Portuguese, Russian)",
-        "adds eSpeak voice variant support (e.g. male, female)",
-        "adds support for nesting TTS tags in card templates",
-        "adds ability to save and recall TTS services as \"presets\"",
-        "adds AwesomeTTS functionality to side-click menus: play selected text, activate on-the-fly playback in review mode, test on-the-fly tags in the template editor",
-        "allow user to disable error messages from automatic on-the-fly playback",
-        "moves AwesomeTTS menu in the card browser to a top-level menu",
-        "fixes eSpeak support for Mandarin",
-        "fixes for SAPI 5 with some IVONA voices",
-        "fixes right-to-left language display of the \"Preview and Record\" input box in the note editor's single MP3 generator",
-        "improves performance for users with many custom text substitutions",
-        "works around a Yandex server issue for playback in certain voices",
-        "avoids a crash if user uninstalls local TTS software while AwesomeTTS is running",
-        "avoids a crash if user enables logging inside a non-ASCII path"
+        "groups of presets may be defined to randomize your playback, e.g. to hear different regional speech patterns of a foreign language",
+        "automatically clear cache files based on a configurable limit in days",
+        "uses a faster implementation for SAPI 5 playback",
+        "adds support to set the SAPI 5 quality level on Windows"
     ],
     "update": true,
-    "version": "1.2.3"
+    "version": "1.3.0"
 }

@@ -22,7 +22,8 @@
  * Really simple JScript gateway for talking to the Microsoft Speech API.
  *
  * cscript sapi5js.js voice-list
- * cscript sapi5js.js speech-output <file> <rate> <vol> <hex_voice> <hex_phrase>
+ * cscript sapi5js.js speech-output <output_path> <rate> <volume> <quality>
+ *                                  <voice_in_hex> <phrase_in_hex>
  */
 
 /*globals WScript*/
@@ -50,8 +51,8 @@ if (command === 'voice-list') {
         throw new Error("Unexpected extra arguments for voice-list");
     }
 } else if (command === 'speech-output') {
-    if (argc !== 6) {
-        throw new Error("Expecting exactly 5 arguments for speech-output");
+    if (argc !== 7) {
+        throw new Error("Expecting exactly 6 arguments for speech-output");
     }
 
     var getWavePath = function (path) {
@@ -95,8 +96,9 @@ if (command === 'voice-list') {
     options.file = getWavePath(argv.item(1));
     options.rate = getInteger(argv.item(2), -10, 10, "rate");
     options.volume = getInteger(argv.item(3), 1, 100, "volume");
-    options.voice = getUnicodeFromHex(argv.item(4), "voice");
-    options.phrase = getUnicodeFromHex(argv.item(5), "phrase");
+    options.quality = getInteger(argv.item(4), 4, 39, "quality");
+    options.voice = getUnicodeFromHex(argv.item(5), "voice");
+    options.phrase = getUnicodeFromHex(argv.item(6), "phrase");
 } else {
     throw new Error("Unrecognized command sent");
 }
@@ -175,6 +177,7 @@ if (command === 'voice-list') {
         throw new Error("Unable to create an output file");
     }
 
+    audioOutputStream.format.type = options.quality;
     audioOutputStream.open(options.file, 3 /* SSFMCreateForWrite */);
 
     sapi.audioOutputStream = audioOutputStream;

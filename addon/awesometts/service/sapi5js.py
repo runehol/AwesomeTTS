@@ -24,9 +24,6 @@ Service implementation for SAPI 5 on the Windows platform via JScript
 
 This module functions with the help of a JScript gateway script. See
 also the sapi5js.js file in this directory.
-
-TODO: Document the difference between this and the win32com version (e.g. USB,
-  speed, possible Wine support differences)
 """
 
 __all__ = 'SAPI5JS'

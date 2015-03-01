@@ -1,8 +1,8 @@
 /*
  * AwesomeTTS text-to-speech add-on website
  *
- * Copyright (C) 2014       Anki AwesomeTTS Development Team
- * Copyright (C) 2014       Dave Shifflett
+ * Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
+ * Copyright (C) 2014-2015  Dave Shifflett
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -496,7 +496,7 @@ module.exports = function (grunt) {
               upload: 'gsv\\.html'},
 
             {url: '/api/update/[a-z\\d]+-' + gaeRegex([
-                '1.3.0',
+                '1.3.1', '1.3.1-pre', '1.3.0',
               ]),
               static_files: 'api/update/good-version.json',
               upload: 'api/update/good-version\\.json'},

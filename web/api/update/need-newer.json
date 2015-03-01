@@ -8,5 +8,5 @@
         "adds support to set the SAPI 5 quality level on Windows"
     ],
     "update": true,
-    "version": "1.3.0"
+    "version": "1.3.1"
 }

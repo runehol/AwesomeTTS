@@ -74,7 +74,7 @@ cp -v awesometts/*.mp3 awesometts/*.py "$target/awesometts"
 mkdir -v "$target/awesometts/gui"
 cp -v awesometts/gui/*.py "$target/awesometts/gui"
 mkdir -v "$target/awesometts/service"
-cp -v awesometts/service/*.py "$target/awesometts/service"
+cp -v awesometts/service/*.py awesometts/service/*.js "$target/awesometts/service"
 
 cd "$oldPwd"
 

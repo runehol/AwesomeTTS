@@ -3,8 +3,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014       Anki AwesomeTTS Development Team
-# Copyright (C) 2014       Dave Shifflett
+# Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2015  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ __all__ = [
     'ImTranslator',
     'Pico2Wave',
     'SAPI5',
+    'SAPI5JS',
     'Say',
     'SpanishDict',
     'TTSAPICom',
@@ -52,6 +53,7 @@ from .howjsay import Howjsay
 from .imtranslator import ImTranslator
 from .pico2wave import Pico2Wave
 from .sapi5 import SAPI5
+from .sapi5js import SAPI5JS
 from .say import Say
 from .spanishdict import SpanishDict
 from .ttsapicom import TTSAPICom

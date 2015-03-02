@@ -207,6 +207,18 @@ class SAPI5JS(Service):
                 transform=int,
                 default=39,
             ),
+
+            dict(
+                key='xml',
+                label="XML Handling",
+                values=[
+                    (0, "automatic"),
+                    (8, "always parse"),
+                    (16, "pass through"),
+                ],
+                transform=int,
+                default=0,
+            ),
         ]
 
     def run(self, text, options, path):
@@ -228,6 +240,7 @@ class SAPI5JS(Service):
                 options['speed'],
                 options['volume'],
                 options['quality'],
+                options['xml'],
                 hexstr(options['voice']),
                 hexstr(text),  # double dash unnecessary due to hex encoding
             )

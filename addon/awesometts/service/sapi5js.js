@@ -23,7 +23,7 @@
  *
  * cscript sapi5js.js voice-list
  * cscript sapi5js.js speech-output <output_path> <rate> <volume> <quality>
- *                                  <voice_in_hex> <phrase_in_hex>
+ *                                  <flags> <voice_in_hex> <phrase_in_hex>
  */
 
 /*globals WScript*/
@@ -51,8 +51,8 @@ if (command === 'voice-list') {
         throw new Error("Unexpected extra arguments for voice-list");
     }
 } else if (command === 'speech-output') {
-    if (argc !== 7) {
-        throw new Error("Expecting exactly 6 arguments for speech-output");
+    if (argc !== 8) {
+        throw new Error("Expecting exactly 7 arguments for speech-output");
     }
 
     var getWavePath = function (path) {
@@ -97,8 +97,9 @@ if (command === 'voice-list') {
     options.rate = getInteger(argv.item(2), -10, 10, "rate");
     options.volume = getInteger(argv.item(3), 1, 100, "volume");
     options.quality = getInteger(argv.item(4), 4, 39, "quality");
-    options.voice = getUnicodeFromHex(argv.item(5), "voice");
-    options.phrase = getUnicodeFromHex(argv.item(6), "phrase");
+    options.flags = getInteger(argv.item(5), 0, 16, "flags");
+    options.voice = getUnicodeFromHex(argv.item(6), "voice");
+    options.phrase = getUnicodeFromHex(argv.item(7), "phrase");
 } else {
     throw new Error("Unrecognized command sent");
 }
@@ -184,5 +185,9 @@ if (command === 'voice-list') {
     sapi.rate = options.rate;
     sapi.volume = options.volume;
 
-    sapi.speak(options.phrase);
+    if (options.flags) {
+      sapi.speak(options.phrase, options.flags);
+    } else {
+      sapi.speak(options.phrase);
+    }
 }

@@ -192,7 +192,7 @@ class SAPI5(Service):
 
             dict(
                 key='xml',
-                label="XML Handling",
+                label="XML",
                 values=[
                     (0, "automatic"),
                     (8, "always parse"),

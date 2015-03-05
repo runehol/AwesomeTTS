@@ -189,6 +189,18 @@ class SAPI5(Service):
                 transform=int,
                 default=39,
             ),
+
+            dict(
+                key='xml',
+                label="XML",
+                values=[
+                    (0, "automatic"),
+                    (8, "always parse"),
+                    (16, "pass through"),
+                ],
+                transform=int,
+                default=0,
+            ),
         ]
 
     def run(self, text, options, path):
@@ -210,7 +222,11 @@ class SAPI5(Service):
                 speech.Rate = options['speed']
                 speech.Voice = self._voice_map[options['voice']]
                 speech.Volume = options['volume']
-                speech.speak(text)
+
+                if options['xml']:
+                    speech.speak(text, options['xml'])
+                else:
+                    speech.speak(text)
             finally:
                 stream.close()
 

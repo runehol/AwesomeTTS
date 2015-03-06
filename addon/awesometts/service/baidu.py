@@ -28,9 +28,15 @@ from .base import Service
 from .common import Trait
 
 
-VOICES = {'en': "English, American", 'jp': "Japanese", 'pt': "Portuguese",
-          'spa': "Spanish", 'th': "Thai", 'uk': "English, British",
-          'zh': "Chinese"}
+VOICES = {
+    'en': "English, American",
+    'jp': "Japanese",
+    'pt': "Portuguese",
+    # returns error -- 'spa': "Spanish",
+    'th': "Thai",
+    'uk': "English, British",
+    'zh': "Chinese",
+}
 
 
 class Baidu(Service):

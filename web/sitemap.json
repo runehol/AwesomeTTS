@@ -10,6 +10,11 @@
         "title": "Available Services",
         "what": "How to best take advantage of local software and services over the Internet",
         "children": {
+            "baidu": {
+                "terse": "Baidu",
+                "title": "Baidu Translate",
+                "what": "Chinese, English, Japanese, Portuguese, and Thai; available over the Internet"
+            },
             "ekho": {
                 "title": "Ekho",
                 "what": "Korean and several dialects of Chinese, Windows and Linux"

@@ -44,7 +44,8 @@ class RHVoice(Service):
     """Provides a Service-compliant implementation for RHVoice."""
 
     __slots__ = [
-        '_voice_list',  # sorted list of (voice value, human label) tuples
+        '_voice_list',    # sorted list of (voice value, human label) tuples
+        '_backgrounded',  # True if AwesomeTTS needed to start the service
     ]
 
     NAME = "RHVoice"
@@ -55,16 +56,11 @@ class RHVoice(Service):
         """
         Searches the RHVoice voice path for usable voices and populates
         the voices list.
-
-        TODO: Need to check if `RHVoice-service` is running or not, and
-        if not, start it and run it in the background.
         """
 
         if not self.IS_LINUX:
-            raise EnvironmentError(
-                "AwesomeTTS only knows how to work with the Linux version of "
-                "RHVoice at this time."
-            )
+            raise EnvironmentError("AwesomeTTS only knows how to work w/ the "
+                                   "Linux version of RHVoice at this time.")
 
         super(RHVoice, self).__init__(*args, **kwargs)
 
@@ -120,10 +116,22 @@ class RHVoice(Service):
         if not self._voice_list:
             raise EnvironmentError("No usable voices in %s" % VOICES_DIR)
 
+        dbus_check = ''.join(self.cli_output_error('RHVoice-client',
+                                                   '-s', '__awesometts_check'))
+        if 'ServiceUnknown' in dbus_check and 'RHVoice' in dbus_check:
+            self.cli_background('RHVoice-service')
+            self._backgrounded = True
+        else:
+            self._backgrounded = False
+
     def desc(self):
         """Return short description with voice count."""
 
-        return "RHVoice synthesizer (%d voices)" % len(self._voice_list)
+        return "RHVoice synthesizer (%d voices), %s" % (
+            len(self._voice_list),
+            "service started by AwesomeTTS" if self._backgrounded
+            else "provided by host system"
+        )
 
     def options(self):
         """Provides access to voice, speed, pitch, and volume."""

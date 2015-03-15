@@ -447,6 +447,24 @@ class Service(object):
             subprocess.Popen(args, stdin=input_stream.fileno(),
                              stdout=output_stream.fileno()).communicate()
 
+    def cli_background(self, *args):
+        """
+        Puts a CLI-based command in the background, terminating it once
+        the session has ended.
+        """
+
+        args = [arg if isinstance(arg, basestring) else str(arg)
+                for arg in self._flatten(args)]
+
+        self._logger.debug("Spinning up %s binary w/ %s to run in background",
+                           args[0],
+                           args[1:] if len(args) > 1 else "no arguments")
+
+        service = subprocess.Popen(args)
+
+        import atexit
+        atexit.register(service.terminate)
+
     def net_stream(self, targets, require=None, method='GET'):
         """
         Returns the raw payload string from the specified target(s).

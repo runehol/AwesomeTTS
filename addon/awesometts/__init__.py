@@ -179,6 +179,7 @@ router = Router(
             ('howjsay', service.Howjsay),
             ('imtranslator', service.ImTranslator),
             ('pico2wave', service.Pico2Wave),
+            ('rhvoice', service.RHVoice),
             ('sapi5', service.SAPI5),
             ('sapi5js', service.SAPI5JS),
             ('say', service.Say),

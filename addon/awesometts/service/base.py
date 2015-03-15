@@ -426,6 +426,27 @@ class Service(object):
             startupinfo=self.CLI_SI,
         )
 
+    def cli_pipe(self, args, input_path, output_path, input_mode='r',
+                 output_mode='wb'):
+        """
+        Takes the given input path, passes it to the specific program as
+        stdin, and then pipes the stdout of the program to the other
+        given path.
+        """
+
+        args = [arg if isinstance(arg, basestring) else str(arg)
+                for arg in args]
+
+        self._logger.debug("Piping %s into %s binary with %s then onto %s",
+                           input_path, args[0],
+                           args[1:] if len(args) > 1 else "no arguments",
+                           output_path)
+
+        with open(input_path, input_mode) as input_stream, \
+                open(output_path, output_mode) as output_stream:
+            subprocess.Popen(args, stdin=input_stream.fileno(),
+                             stdout=output_stream.fileno()).communicate()
+
     def net_stream(self, targets, require=None, method='GET'):
         """
         Returns the raw payload string from the specified target(s).

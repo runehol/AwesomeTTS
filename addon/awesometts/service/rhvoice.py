@@ -37,6 +37,7 @@ GENDER_KEY = 'gender'
 
 PERCENT_VALUES = (-100, +100, "%")
 PERCENT_TRANSFORM = lambda i: min(max(-100, int(round(float(i)))), +100)
+DECIMALIZE = lambda p: round(p / 100.0, 2)
 
 
 class RHVoice(Service):
@@ -149,5 +150,29 @@ class RHVoice(Service):
 
     def run(self, text, options, path):
         """
-        TODO
+        Saves the incoming text into a file, and pipes it through
+        RHVoice-client and back out to a temporary wave file. If
+        successful, the temporary wave file will be transcoded to an MP3
+        for consumption by AwesomeTTS.
         """
+
+        try:
+            input_txt = self.path_input(text)
+            output_wav = self.path_temp('wav')
+
+            self.cli_pipe(
+                ['RHVoice-client',
+                 '-s', options['voice'],
+                 '-r', DECIMALIZE(options['speed']),
+                 '-p', DECIMALIZE(options['pitch']),
+                 '-v', DECIMALIZE(options['volume'])],
+                input_path=input_txt,
+                output_path=output_wav,
+            )
+
+            self.cli_transcode(output_wav,
+                               path,
+                               require=dict(size_in=4096))
+
+        finally:
+            self.path_unlink(input_txt, output_wav)

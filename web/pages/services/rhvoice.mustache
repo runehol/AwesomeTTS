@@ -42,9 +42,13 @@
 
 <p>On Linux, AwesomeTTS must be able to find the <code>RHVoice-client</code>
   binary in your system <code>$PATH</code> <em>and</em> be able to discover
-  the list of installed voices in <code>/usr/share/RHVoice/voices</code>.
-  Additionally, if the RHVoice service is not already running, AwesomeTTS will
-  try to start it directly by calling <code>RHVoice-service</code>.</p>
+  the list of installed voices. To find the voices, AwesomeTTS will search
+  <code>~/share/RHVoice/voices</code>, <code>~/usr/share/RHVoice/voices</code>,
+  <code>/usr/local/share/RHVoice/voices</code>, then finally
+  <code>/usr/share/RHVoice/voices</code>.</p>
+
+<p>Additionally, if the RHVoice service is not already running, AwesomeTTS
+  will try to start it directly by calling <code>RHVoice-service</code>.</p>
 
 <h2>Options</h2>
 

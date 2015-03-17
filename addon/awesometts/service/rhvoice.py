@@ -28,7 +28,8 @@ from .base import Service
 from .common import Trait
 
 
-VOICES_DIR = '/usr/share/RHVoice/voices'
+VOICES_DIRS = (prefix + '/share/RHVoice/voices'
+               for prefix in ['~', '~/usr', '/usr/local', '/usr'])
 INFO_FILE = 'voice.info'
 
 NAME_KEY = 'name'
@@ -64,11 +65,9 @@ class RHVoice(Service):
 
         super(RHVoice, self).__init__(*args, **kwargs)
 
-        from os import listdir
-        from os.path import join, isdir, isfile
-
         def get_voice_info(voice_file):
             """Given a voice.info path, return a dict of voice info."""
+
             try:
                 lookup = {}
                 with open(voice_file) as voice_info:
@@ -79,42 +78,62 @@ class RHVoice(Service):
             except StandardError:
                 return {}
 
-        self._voice_list = [
-            (
-                voice_name,
-                "%s (%s, %s)" % (
-                    voice_info.get(NAME_KEY, voice_name),
-                    voice_info.get(LANGUAGE_KEY, "no language"),
-                    voice_info.get(GENDER_KEY, "no gender"),
-                ),
-            )
-            for voice_name, voice_info in sorted(
-                (
-                    (voice_name, get_voice_info(voice_file))
-                    for (voice_name, voice_file) in (
-                        (voice_name, voice_file)
-                        for (voice_name, voice_file)
-                        in (
-                            (voice_name, join(voice_dir, INFO_FILE))
-                            for (voice_name, voice_dir)
-                            in (
-                                (voice_name, join(VOICES_DIR, voice_name))
-                                for voice_name in listdir(VOICES_DIR)
-                            )
-                            if isdir(voice_dir)
-                        )
-                        if isfile(voice_file)
-                    )
-                ),
-                key=lambda (voice_name, voice_info): (
-                    voice_info.get(LANGUAGE_KEY),
-                    voice_info.get(NAME_KEY, voice_name),
-                )
-            )
-        ]
+        def get_voices_from(path):
+            """Return a list of voices at the given path, if any."""
 
-        if not self._voice_list:
-            raise EnvironmentError("No usable voices in %s" % VOICES_DIR)
+            from os import listdir
+            from os.path import expanduser, join, isdir, isfile
+
+            path = expanduser(path)
+            self._logger.debug("Searching %s for voices", path)
+
+            result = [
+                (
+                    voice_name,
+                    "%s (%s, %s)" % (
+                        voice_info.get(NAME_KEY, voice_name),
+                        voice_info.get(LANGUAGE_KEY, "no language"),
+                        voice_info.get(GENDER_KEY, "no gender"),
+                    ),
+                )
+                for voice_name, voice_info in sorted(
+                    (
+                        (voice_name, get_voice_info(voice_file))
+                        for (voice_name, voice_file) in (
+                            (voice_name, voice_file)
+                            for (voice_name, voice_file)
+                            in (
+                                (voice_name, join(voice_dir, INFO_FILE))
+                                for (voice_name, voice_dir)
+                                in (
+                                    (voice_name, join(path, voice_name))
+                                    for voice_name in listdir(path)
+                                )
+                                if isdir(voice_dir)
+                            )
+                            if isfile(voice_file)
+                        )
+                    ),
+                    key=lambda (voice_name, voice_info): (
+                        voice_info.get(LANGUAGE_KEY),
+                        voice_info.get(NAME_KEY, voice_name),
+                    )
+                )
+            ]
+
+            if not result:
+                raise EnvironmentError
+
+            return result
+
+        for path in VOICES_DIRS:
+            try:
+                self._voice_list = get_voices_from(path)
+                break
+            except StandardError:
+                continue
+        else:
+            raise EnvironmentError("No usable voices could be found")
 
         dbus_check = ''.join(self.cli_output_error('RHVoice-client',
                                                    '-s', '__awesometts_check'))

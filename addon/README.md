@@ -13,6 +13,7 @@ services:
 - ImTranslator
 - OS X Speech Synthesis Manager (`say`)
 - Microsoft Speech API
+- RHVoice (`RHVoice-client`, `RHVoice-service`)
 - SpanishDict.com
 - SVOX Pico (`pico2wave`)
 - TTS-API.com

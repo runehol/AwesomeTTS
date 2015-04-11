@@ -85,18 +85,9 @@ class Oxford(Service):
 
         def transform_voice(value):
             """Normalize and attempt to convert to official code."""
-
             normalized = self.normalize(value)
             if normalized in voice_lookup:
                 return voice_lookup[normalized]
-
-            # if input is more than two characters, maybe the user was trying
-            # a country-specific code (e.g. es-CO); chop it off and try again
-            if len(normalized) > 2:
-                normalized = normalized[0:2]
-                if normalized in voice_lookup:
-                    return voice_lookup[normalized]
-
             return value
 
         return [
@@ -114,6 +105,7 @@ class Oxford(Service):
         Download wep page for given word
         Then extract mp3 path and download it
         """
+        print(options)
 
         dict_url = "http://www.oxforddictionaries.com/definition/"
         voice = options['voice']
@@ -144,4 +136,4 @@ class Oxford(Service):
                 require=dict(mime='audio/mpeg', size=1024),
              )
         else:
-            raise IOError("sound not found")
+            raise IOError("sound not found: " + dict_url)

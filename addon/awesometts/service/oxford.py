@@ -118,13 +118,13 @@ class Oxford(Service):
         dict_url = "http://www.oxforddictionaries.com/definition/"
         voice = options['voice']
         if (voice == 'en-US'):
-            dict_url.append('american_english/')
+            dict_url += "american_english/"
         else:
-            dict_url.append('english/')
+            dict_url += "english/"
 
         subtexts = self.util_split(text, 100)
         
-        usock = urllib.urlopen(Path + text)
+        usock = urllib.urlopen(dict_url + text)
         parser = OxfordLister()
         parser.feed(usock.read())
         parser.close()

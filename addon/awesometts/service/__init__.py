@@ -35,6 +35,7 @@ __all__ = [
     'Google',
     'Howjsay',
     'ImTranslator',
+    'Oxford',
     'Pico2Wave',
     'RHVoice',
     'SAPI5',
@@ -54,6 +55,7 @@ from .festival import Festival
 from .google import Google
 from .howjsay import Howjsay
 from .imtranslator import ImTranslator
+from .oxford import Oxford
 from .pico2wave import Pico2Wave
 from .rhvoice import RHVoice
 from .sapi5 import SAPI5

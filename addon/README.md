@@ -12,6 +12,7 @@ services:
 - Howjsay
 - ImTranslator
 - OS X Speech Synthesis Manager (`say`)
+- The Oxford Dictionary
 - Microsoft Speech API
 - RHVoice (`RHVoice-client`, `RHVoice-service`)
 - SpanishDict.com

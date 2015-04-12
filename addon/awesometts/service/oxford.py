@@ -28,8 +28,6 @@ __all__ = ['Oxford']
 from .base import Service
 from .common import Trait
 
-import urllib
-
 from HTMLParser import HTMLParser
 
 class OxfordLister(HTMLParser):
@@ -108,11 +106,9 @@ class Oxford(Service):
         else:
             dict_url += "english/"
 
-        usock = urllib.urlopen(dict_url + text)
         parser = OxfordLister()
-        parser.feed(usock.read())
+        parser.feed(self.net_stream(dict_url + text))
         parser.close()
-        usock.close()
 
         if len(parser.sounds) > 0:
             sound_url = parser.sounds[0]

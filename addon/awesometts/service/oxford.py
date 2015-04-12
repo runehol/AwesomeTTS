@@ -25,10 +25,16 @@ Service implementation for Oxford Dictionary
 
 __all__ = ['Oxford']
 
+import re
+
 from .base import Service
 from .common import Trait
 
 from HTMLParser import HTMLParser
+
+
+RE_WHITESPACE = re.compile(r'[\0\s]+', re.UNICODE)
+
 
 class OxfordLister(HTMLParser):
 	def reset(self):
@@ -93,21 +99,30 @@ class Oxford(Service):
             ),
         ]
 
+    def modify(self, text):
+        """
+        OED generally represents words with spaces using a dash between
+        the words. Case usually doesn't matter, but sometimes it does,
+        so we do not normalize it (e.g. "United-Kingdom" works but
+        "united-kingdom" does not).
+        """
+
+        return RE_WHITESPACE.sub('-', text)
+
     def run(self, text, options, path):
         """
         Download wep page for given word
         Then extract mp3 path and download it
         """
 
-        dict_url = "http://www.oxforddictionaries.com/definition/"
-        voice = options['voice']
-        if (voice == 'en-US'):
-            dict_url += "american_english/"
-        else:
-            dict_url += "english/"
+        from urllib2 import quote
+        dict_url = 'http://www.oxforddictionaries.com/definition/%s/%s' % (
+            'american_english' if options['voice'] == 'en-US' else 'english',
+            quote(text.encode('utf-8'))
+        )
 
         parser = OxfordLister()
-        parser.feed(self.net_stream(dict_url + text))
+        parser.feed(self.net_stream(dict_url).decode('utf-8'))
         parser.close()
 
         if len(parser.sounds) > 0:

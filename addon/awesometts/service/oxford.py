@@ -42,14 +42,17 @@ RE_DISCARD = re.compile(r'[^-.\s\w]+', re.UNICODE)
 
 
 class OxfordLister(HTMLParser):
-	def reset(self):
-        	HTMLParser.reset(self)
-		self.sounds = []
+    """Accumulate all found MP3s into `sounds` member."""
 
-	def handle_starttag(self, tag, attrs):
-		snd = [v for k, v in attrs if k=='data-src-mp3']
-		if snd:
-			self.sounds.extend(snd)
+    def reset(self):
+        HTMLParser.reset(self)
+        self.sounds = []
+
+    def handle_starttag(self, tag, attrs):
+        snd = [v for k, v in attrs if k == 'data-src-mp3']
+        if snd:
+            self.sounds.extend(snd)
+
 
 class Oxford(Service):
     """
@@ -149,12 +152,12 @@ class Oxford(Service):
 
         if len(parser.sounds) > 0:
             sound_url = parser.sounds[0]
-        
+
             self.net_download(
                 path,
                 sound_url,
                 require=dict(mime='audio/mpeg', size=1024),
-             )
+            )
         else:
             raise IOError("The Oxford Dictionary recognized your input, "
                           "but has no recorded audio for it.")

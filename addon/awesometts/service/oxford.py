@@ -53,22 +53,12 @@ class Oxford(Service):
 
     TRAITS = [Trait.INTERNET]
 
-    _VOICE_CODES = {
-        # n.b. When modifying any variants, make sure that there are
-        # aliases defined in the voice_lookup list below for the most
-        # common alternate codes, including an alias from the base
-        # language to the variant with the most native speakers.
-
-        'en-GB': "English, British", 'en-US': "English, American",
-    }
-
     def desc(self):
         """
         Returns a short, static description.
         """
 
-        return "Oxford Dictionary web API " \
-            "(%d voices)" % len(self._VOICE_CODES)
+        return "Oxford Dictionary (British and American English)"
 
     def options(self):
         """
@@ -76,13 +66,15 @@ class Oxford(Service):
         """
 
         voice_lookup = dict([
-            # aliases for English, British (moderate number)
-            (self.normalize(alias), 'en-GB')
-            for alias in ['en-EU', 'en-UK']
-        ] + [
-            # aliases for English, American (most speakers)
+            # aliases for English, American
             (self.normalize(alias), 'en-US')
-            for alias in ['English', 'en']
+            for alias in ['American', 'American English', 'English, American',
+                          'US']
+        ] + [
+            # aliases for English, British ("default" for the OED)
+            (self.normalize(alias), 'en-GB')
+            for alias in ['British', 'British English', 'English, British',
+                          'English', 'en', 'en-EU', 'en-UK', 'EU', 'GB', 'UK']
         ])
 
         def transform_voice(value):
@@ -96,8 +88,9 @@ class Oxford(Service):
             dict(
                 key='voice',
                 label="Voice",
-                values=[(code, "%s (%s)" % (name, code))
-                        for code, name in sorted(self._VOICE_CODES.items())],
+                values=[('en-US', "English, American (en-US)"),
+                        ('en-GB', "English, British (en-GB)")],
+                default='en-GB',
                 transform=transform_voice,
             ),
         ]

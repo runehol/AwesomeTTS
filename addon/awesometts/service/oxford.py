@@ -2,7 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
+# Copyright (C) 2015       Anki AwesomeTTS Development Team
 # Copyright (C) 2015       Myrgy on GitHub
+# Copyright (C) 2015       Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,7 +49,7 @@ class Oxford(Service):
 
     __slots__ = []
 
-    NAME = "Oxford dictionary"
+    NAME = "Oxford Dictionary"
 
     TRAITS = [Trait.INTERNET]
 
@@ -105,7 +107,6 @@ class Oxford(Service):
         Download wep page for given word
         Then extract mp3 path and download it
         """
-        print(options)
 
         dict_url = "http://www.oxforddictionaries.com/definition/"
         voice = options['voice']
@@ -114,8 +115,6 @@ class Oxford(Service):
         else:
             dict_url += "english/"
 
-        subtexts = self.util_split(text, 100)
-        
         usock = urllib.urlopen(dict_url + text)
         parser = OxfordLister()
         parser.feed(usock.read())
@@ -127,12 +126,7 @@ class Oxford(Service):
         
             self.net_download(
                 path,
-                [
-                    (sound_url, dict())
-                    # n.b. the limit seems to be much higher than 750, but this is
-                    # a safe place to start (the web UI limits the user to 100)
-                    for subtext in self.util_split(text, 750)
-                ], 
+                sound_url,
                 require=dict(mime='audio/mpeg', size=1024),
              )
         else:

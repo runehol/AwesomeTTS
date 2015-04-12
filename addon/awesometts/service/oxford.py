@@ -33,7 +33,12 @@ from .common import Trait
 from HTMLParser import HTMLParser
 
 
-RE_WHITESPACE = re.compile(r'[\0\s]+', re.UNICODE)
+RE_WHITESPACE = re.compile(r'[-\0\s_]+', re.UNICODE)
+
+# n.b. The OED has words with periods (e.g. "Capt."), so we preserve those,
+# but other punctuation can generally be dropped. The re.UNICODE flag here is
+# important so that accented characters are not filtered out.
+RE_DISCARD = re.compile(r'[^-.\s\w]+', re.UNICODE)
 
 
 class OxfordLister(HTMLParser):
@@ -107,7 +112,7 @@ class Oxford(Service):
         "united-kingdom" does not).
         """
 
-        return RE_WHITESPACE.sub('-', text)
+        return RE_WHITESPACE.sub('-', RE_DISCARD.sub('', text)).strip('-')
 
     def run(self, text, options, path):
         """

@@ -115,14 +115,31 @@ class Oxford(Service):
         Then extract mp3 path and download it
         """
 
+        if len(text) > 100:
+            raise IOError("Input text is too long for the Oxford Dictionary")
+
         from urllib2 import quote
         dict_url = 'http://www.oxforddictionaries.com/definition/%s/%s' % (
             'american_english' if options['voice'] == 'en-US' else 'english',
             quote(text.encode('utf-8'))
         )
 
+        try:
+            html_payload = self.net_stream(dict_url)
+        except IOError as io_error:
+            if hasattr(io_error, 'code') and io_error.code == 404:
+                raise IOError(
+                    "The Oxford Dictionary does not recognize this phrase. "
+                    "While most single words are recognized, many multi-word "
+                    "phrases are not."
+                    if text.count('-')
+                    else "The Oxford Dictionary does not recognize this word."
+                )
+            else:
+                raise
+
         parser = OxfordLister()
-        parser.feed(self.net_stream(dict_url).decode('utf-8'))
+        parser.feed(html_payload.decode('utf-8'))
         parser.close()
 
         if len(parser.sounds) > 0:
@@ -134,4 +151,5 @@ class Oxford(Service):
                 require=dict(mime='audio/mpeg', size=1024),
              )
         else:
-            raise IOError("sound not found: " + dict_url)
+            raise IOError("The Oxford Dictionary recognized your input, "
+                          "but has no recorded audio for it.")

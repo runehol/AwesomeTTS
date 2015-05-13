@@ -1,12 +1,13 @@
 {
     "auto": true,
-    "intro": "This release adds group-based functionality, cache control, and SAPI improvements.",
+    "intro": "This release adds new services and some bug fixes.",
     "notes": [
-        "groups of presets may be defined to randomize your playback, e.g. to hear different regional speech patterns of a foreign language",
-        "automatically clear cache files based on a configurable limit in days",
-        "uses a faster implementation for SAPI 5 playback",
-        "adds support to set the SAPI 5 quality level on Windows"
+        "adds support for Baidu Translate",
+        "adds support for the Oxford Dictionary (thanks Alexander Dalshov)",
+        "adds support for RHVoice (Linux, thanks aleksejrs)",
+        "prevents playback of on-the-fly audio if user moves off card before audio can download (thanks aleksejrs)",
+        "allows control of XML parsing capabilities in SAPI (thanks useranki)"
     ],
     "update": true,
-    "version": "1.3.1"
+    "version": "1.4.0"
 }

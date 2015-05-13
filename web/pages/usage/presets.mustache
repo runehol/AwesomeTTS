@@ -66,6 +66,12 @@
     <li>Once you have setup at least two service presets, you can configure
       <a href="groups" rel="next">groups of these presets</a>, which allows
       for some advanced playback/recording scenarios.</li>
+    {{=<%disable mustache%>=}}
+        <li>Presets can also be used in the <a href="on-the-fly">on-the-fly
+          playback mode</a>, which may be helpful if you want to specify which
+          service configuration to use via a template field, e.g.:
+          <kbd>&lt;tts&nbsp;preset="{{preset}}"&gt;{{text}}&lt;/tts&gt;</kbd></li>
+    <%disable={{ }}=mustache%>
 </ul>
 
 <h3>Screenshots</h3>

@@ -34,8 +34,9 @@
 </ul>
 
 <p>Groups can be used with all generation dialogs in AwesomeTTS, the
-  on-the-fly mode (<kbd>&lt;tts group="...">...&lt;/tts&gt;</kbd>), as well as
-  the context menu while reviewing.</p>
+  <a href="on-the-fly">on-the-fly mode</a>
+  (<kbd>&lt;tts group="...">...&lt;/tts&gt;</kbd>), as well as the context
+  menu while reviewing.</p>
 
 <h2>Instructions</h2>
 
@@ -81,10 +82,16 @@
       once.</li>
     <li>The <strong>in-order</strong> mode can be helpful if you want to use
       a dictionary service with a limited vocabulary (like
-      <a href="/services/howjsay">Howjsay</a>), and fallback to another
+      <a href="/services/howjsay">Howjsay</a> or
+      <a href="/services/oxford">Oxford</a>), and fallback to another
       service with an unlimited vocabulary (like
       <a href="/services/google">Google</a>) if the dictionary service does
       not have your word.</li>
+    {{=<%disable mustache%>=}}
+        <li>You can specify a group to use via a template field in the
+          <a href="on-the-fly">on-the-fly playback mode</a>, e.g.:
+          <kbd>&lt;tts&nbsp;group="{{group}}"&gt;{{text}}&lt;/tts&gt;</kbd></li>
+    <%disable={{ }}=mustache%>
 </ul>
 
 <h3>Screenshots</h3>

@@ -113,6 +113,16 @@
       placeholders can also be adjusted depending on your needs. To see these
       settings, go to the <a href="/config/text">Text tab of the configuration
       screen</a>.</li>
+    <li>If you want to use a <a href="presets">Preset</a> for on-the-fly
+      feedback, you can use the <kbd>preset</kbd> attribute, e.g.:
+      <kbd>&lt;tts preset="My Yandex Preset"&gt;apple&lt;/tts&gt;</kbd></li>
+    <li>If you want to use a <a href="groups">Group</a> for on-the-fly
+      feedback, you can use the <kbd>group</kbd> attribute, e.g.:
+      <kbd>&lt;tts group="Male English"&gt;automobile&lt;/tts&gt;</kbd></li>
+    {{=<%disable mustache%>=}}
+        <li>You may use template variables in tag attributes, e.g.:
+          <kbd>&lt;tts&nbsp;group="{{group}}"&gt;{{text}}&lt;/tts&gt;</kbd></li>
+    <%disable={{ }}=mustache%>
     <li>
         You may nest your <kbd>&lt;tts&gt;</kbd> tags to play the same input
         through multiple services. For example:

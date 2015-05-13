@@ -28,13 +28,16 @@ __all__ = [
     'Trait',
 
     # services
+    'Baidu',
     'Ekho',
     'ESpeak',
     'Festival',
     'Google',
     'Howjsay',
     'ImTranslator',
+    'Oxford',
     'Pico2Wave',
+    'RHVoice',
     'SAPI5',
     'SAPI5JS',
     'Say',
@@ -45,13 +48,16 @@ __all__ = [
 
 from .common import Trait
 
+from .baidu import Baidu
 from .ekho import Ekho
 from .espeak import ESpeak
 from .festival import Festival
 from .google import Google
 from .howjsay import Howjsay
 from .imtranslator import ImTranslator
+from .oxford import Oxford
 from .pico2wave import Pico2Wave
+from .rhvoice import RHVoice
 from .sapi5 import SAPI5
 from .sapi5js import SAPI5JS
 from .say import Say

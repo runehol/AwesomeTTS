@@ -197,6 +197,25 @@ class Reviewer(object):
         from_template = (self._addon.strip.from_template_back if side == 'back'
                          else self._addon.strip.from_template_front)
 
+        # when running in review mode, avoid doing playback of a card that is
+        # no longer on-screen
+        try:
+            parent_state = parent.state
+            reviewer_state = parent.reviewer.state
+            card_id = parent.reviewer.card.id
+        except AttributeError:
+            pass
+        else:
+            old_playback = playback
+            playback = lambda *args, **kwargs: (
+                old_playback(*args, **kwargs)
+                if (parent_state == parent.state and
+                    reviewer_state == parent.reviewer.state and
+                    card_id == parent.reviewer.card.id)
+                else self._addon.logger.warn("Review state has changed; "
+                                             "refusing to playback audio")
+            )
+
         for tag in BeautifulTTS(html)('tts'):
             self._play_html_tag(tag, from_template, playback, parent,
                                 show_errors)

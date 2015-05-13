@@ -10,6 +10,11 @@
         "title": "Available Services",
         "what": "How to best take advantage of local software and services over the Internet",
         "children": {
+            "baidu": {
+                "terse": "Baidu",
+                "title": "Baidu Translate",
+                "what": "Chinese, English, Japanese, Portuguese, and Thai; available over the Internet"
+            },
             "ekho": {
                 "title": "Ekho",
                 "what": "Korean and several dialects of Chinese, Windows and Linux"
@@ -34,6 +39,15 @@
             "imtranslator": {
                 "title": "ImTranslator",
                 "what": "Asian and European languages, available over the Internet"
+            },
+            "oxford": {
+                "terse": "Oxford",
+                "title": "Oxford Dictionary",
+                "what": "British and American English, available over the Internet"
+            },
+            "rhvoice": {
+                "title": "RHVoice",
+                "what": "Russian, Georgian, English, and Esperanto; Linux natively or Windows via SAPI"
             },
             "say": {
                 "terse": "OS X",

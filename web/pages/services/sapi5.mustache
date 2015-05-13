@@ -37,7 +37,8 @@
   Microsoft Speech API, it usually only ships with one or a small handful of
   voices. You can make additional voices available over the SAPI system by
   installing software that supports text-to-speech playback, such as
-  <a href="ekho">Ekho</a>, <a href="espeak">eSpeak</a>, and others.</p>
+  <a href="ekho">Ekho</a>, <a href="espeak">eSpeak</a>,
+  <a href="rhvoice">RHVoice</a>, and others.</p>
 
 <h2>Methods</h2>
 
@@ -59,6 +60,11 @@
   adjusted. Depending on the voice you are using, different options may
   produce better output (e.g. some voices produce output natively at 8 kHz,
   16 kHz, or 22 kHz, and matching the quality level may avoid distortion).</p>
+
+<p>Additionally, you may need to set <strong>XML</strong> handling options. If
+  you are using an engine that has a special XML-based markup language (e.g.
+  VTML with NeoSpeech voices), this can be set to <strong>pass through</strong>
+  so that the XML will not be discarded by the SAPI subsystem itself.</p>
 
 <p>If you are using another service (e.g. <a href="ekho">Ekho</a>,
   <a href="espeak">eSpeak</a>) indirectly through this interface, the options

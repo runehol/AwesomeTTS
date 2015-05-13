@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014       Anki AwesomeTTS Development Team
-# Copyright (C) 2014       Dave Shifflett
+# Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2015  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -354,12 +354,15 @@ class Router(object):
         else:
             def on_error(exception):
                 """
-                Cache errors and pass back to fail handler. URLError
+                For Internet-based services, cache errors. URLError
                 exceptions are not cached, as they are usually network
                 or connectivity errors.
+
+                Afterward, pass exception to the fail handler.
                 """
 
-                if not isinstance(exception, URLError):
+                if BaseTrait.INTERNET in service['class'].TRAITS and \
+                   not isinstance(exception, URLError):
                     self._failures[path] = time(), exception
                 callbacks['fail'](exception)
 

@@ -4,6 +4,7 @@ Once loaded into the [Anki](http://ankisrs.net) `addons` directory, the
 AwesomeTTS add-on code adds text-to-speech functionality for the following
 services:
 
+- Baidu Translate
 - Ekho (`ekho`)
 - eSpeak (`espeak`)
 - Festival (`festival`, `text2wave`)
@@ -11,7 +12,9 @@ services:
 - Howjsay
 - ImTranslator
 - OS X Speech Synthesis Manager (`say`)
+- The Oxford Dictionary
 - Microsoft Speech API
+- RHVoice (`RHVoice-client`, `RHVoice-service`)
 - SpanishDict.com
 - SVOX Pico (`pico2wave`)
 - TTS-API.com

@@ -48,7 +48,7 @@ from .text import Sanitizer
 from .updates import Updates
 
 
-VERSION = '1.3.1'
+VERSION = '1.4.0'
 
 WEB = 'https://ankiatts.appspot.com'
 
@@ -171,13 +171,16 @@ player = Player(
 router = Router(
     services=Bundle(
         mappings=[
+            ('baidu', service.Baidu),
             ('ekho', service.Ekho),
             ('espeak', service.ESpeak),
             ('festival', service.Festival),
             ('google', service.Google),
             ('howjsay', service.Howjsay),
             ('imtranslator', service.ImTranslator),
+            ('oxford', service.Oxford),
             ('pico2wave', service.Pico2Wave),
+            ('rhvoice', service.RHVoice),
             ('sapi5', service.SAPI5),
             ('sapi5js', service.SAPI5JS),
             ('say', service.Say),
@@ -185,8 +188,9 @@ router = Router(
             ('ttsapicom', service.TTSAPICom),
             ('yandex', service.Yandex),
         ],
-        aliases=[('g', 'google'), ('macosx', 'say'), ('microsoft', 'sapi5'),
-                 ('microsoftjs', 'sapi5js'), ('microsoftjscript', 'sapi5js'),
+        aliases=[('b', 'baidu'), ('g', 'google'), ('macosx', 'say'),
+                 ('microsoft', 'sapi5'), ('microsoftjs', 'sapi5js'),
+                 ('microsoftjscript', 'sapi5js'), ('oed', 'oxford'),
                  ('osx', 'say'), ('sapi', 'sapi5'),
                  ('sapi5jscript', 'sapi5js'), ('sapijs', 'sapi5js'),
                  ('sapijscript', 'sapi5js'), ('svox', 'pico2wave'),

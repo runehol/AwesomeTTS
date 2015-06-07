@@ -29,8 +29,10 @@ __all__ = ['browser_menus', 'cards_button', 'config_menu', 'editor_button',
            'window_shortcuts']
 
 import logging
+from os.path import join
 import platform
 import sys
+from time import time
 
 from PyQt4.QtCore import PYQT_VERSION_STR, Qt
 from PyQt4.QtGui import QKeySequence
@@ -208,6 +210,7 @@ router = Router(
                     logger=logger),
     ),
     cache_dir=paths.CACHE,
+    temp_dir=join(paths.TEMP, '_awesometts_scratch_' + str(int(time()))),
     logger=logger,
 )
 
@@ -434,7 +437,6 @@ def cache_control():
         """
 
         from os import listdir, unlink
-        from os.path import join
 
         cache = paths.CACHE
 
@@ -449,7 +451,6 @@ def cache_control():
 
         if config['cache_days']:
             from os.path import getmtime
-            from time import time
 
             limit = time() - 86400 * config['cache_days']
             targets = (prospect for prospect in prospects
@@ -736,7 +737,6 @@ def update_checker():
     aqt.addons.GetAddons) that expect it might fail unexpectedly.
     """
 
-    from time import time
     if not config['updates_enabled'] or \
        config['updates_postpone'] and config['updates_postpone'] > time():
         return

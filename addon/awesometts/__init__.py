@@ -727,6 +727,43 @@ def sound_tag_delays():
     anki.sound.play = player.native_wrapper
 
 
+def temp_files():
+    """Remove temporary files upon session exit."""
+
+    def on_unload_profile():
+        """
+        Finds scratch directories in the temporary path, removes their
+        files, then removes the directories themselves.
+        """
+
+        from os import listdir, unlink, rmdir
+        from os.path import isdir
+
+        temp = paths.TEMP
+
+        try:
+            subdirs = [join(temp, filename) for filename in listdir(temp)
+                       if filename.startswith('_awesometts_scratch')]
+        except:  # allow silent failure, pylint:disable=bare-except
+            return
+        if not subdirs:
+            return
+
+        for subdir in subdirs:
+            if isdir(subdir):
+                for filename in listdir(subdir):
+                    try:
+                        unlink(join(subdir, filename))
+                    except:  # skip busy files, pylint:disable=bare-except
+                        pass
+                try:
+                    rmdir(subdir)
+                except:  # allow silent failure, pylint:disable=bare-except
+                    pass
+
+    anki.hooks.addHook('unloadProfile', on_unload_profile)
+
+
 def update_checker():
     """
     Automatic check for new version, if neither postponed nor ignored.

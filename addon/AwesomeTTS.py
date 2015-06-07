@@ -118,5 +118,6 @@ awesometts.config_menu()       # provides access to configuration dialog
 awesometts.editor_button()     # single audio clip generator button
 awesometts.reviewer_hooks()    # on-the-fly playback/shortcuts, context menus
 awesometts.sound_tag_delays()  # delayed playing of stored [sound]s in review
+awesometts.temp_files()        # remove temporary files upon session exit
 awesometts.update_checker()    # if enabled, runs the add-on update checker
 awesometts.window_shortcuts()  # enable/update shortcuts for add-on windows

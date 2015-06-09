@@ -377,6 +377,8 @@ class Router(object):
                 filename = RE_WHITESPACE.sub(' ', filename).strip()
                 if not filename or filename.lower() in WINDOWS_RESERVED:
                     filename = 'AwesomeTTS Audio'
+                else:
+                    filename = filename[0:95]  # accommodate NTFS path limits
                 filename += '.mp3'
 
                 from shutil import copyfile

@@ -24,8 +24,10 @@ Dispatch management of available services
 
 __all__ = ['Router']
 
+import os
 import os.path
 from random import shuffle
+import re
 from time import time
 from urllib2 import URLError
 
@@ -42,6 +44,14 @@ _PREFIXED = lambda prefix, lines: "\n".join(
 )
 
 FAILURE_CACHE_SECS = 3600  # ignore/dump failures from cache after one hour
+
+RE_MUSTACHE = re.compile(r'\{?\{\{(.+?)\}\}\}?')
+RE_UNSAFE = re.compile(r'[^\w\s()-]', re.UNICODE)
+RE_WHITESPACE = re.compile(r'[\0\s]+', re.UNICODE)
+
+WINDOWS_RESERVED = ['com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7',
+                    'com8', 'com9', 'con', 'lpt1', 'lpt2', 'lpt3', 'lpt4',
+                    'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9', 'nul', 'prn']
 
 
 class Router(object):
@@ -66,9 +76,10 @@ class Router(object):
         '_logger',     # logger-like interface with debug(), info(), etc.
         '_pool',       # instance of the _Pool class for managing threads
         '_services',   # bundle with aliases, avail, lookup
+        '_temp_dir',   # path for writing human-readable filenames
     ]
 
-    def __init__(self, services, cache_dir, logger):
+    def __init__(self, services, cache_dir, temp_dir, logger):
         """
         The services should be a bundle with the following:
 
@@ -108,6 +119,7 @@ class Router(object):
         self._logger = logger
         self._pool = _Pool(logger)
         self._services = services
+        self._temp_dir = temp_dir
 
     def by_trait(self, trait):
         """
@@ -187,13 +199,19 @@ class Router(object):
 
         self._failures = {}
 
-    def group(self, text, group, presets, callbacks):
+    def group(self, text, group, presets, callbacks,
+              want_human=False, note=None):
         """
         Execute a group playback request using the passed group to be
         looked up using the passed presets.
 
         The callbacks follow the same rules as in the regular bare call
         method.
+
+        If passed, want_human should be a template string that dictates
+        how the caller wants the filename in the path to be formatted.
+        Additionally, note may be passed to provide mustache values for
+        the given template string.
         """
 
         self._call_assert_callbacks(callbacks)
@@ -226,7 +244,7 @@ class Router(object):
                 """Executes caller callbacks with path."""
                 if 'done' in callbacks:
                     callbacks['done']()
-                callbacks['okay'](path)
+                callbacks['okay'](path)  # n.b. self() below handles want_human
                 if 'then' in callbacks:
                     callbacks['then']()
 
@@ -262,11 +280,13 @@ class Router(object):
                 else:
                     svc_id = preset.pop('service')
                     self(svc_id=svc_id, text=text, options=preset,
-                         callbacks=internal_callbacks)
+                         callbacks=internal_callbacks,
+                         want_human=want_human, note=note)
 
             try_next()
 
-    def __call__(self, svc_id, text, options, callbacks):
+    def __call__(self, svc_id, text, options, callbacks,
+                 want_human=False, note=None):
         """
         Given the service ID and associated options, pass the text into
         the service for processing.
@@ -306,6 +326,11 @@ class Router(object):
               the 'done' handler will not cause the 'fail' handler to
               be called, or an exception in the 'fail' handler would
               not recall the 'fail' handler again
+
+        If passed, want_human should be a template string that dictates
+        how the caller wants the filename in the path to be formatted.
+        Additionally, note may be passed to provide mustache values for
+        the given template string.
         """
 
         self._call_assert_callbacks(callbacks)
@@ -336,10 +361,64 @@ class Router(object):
 
             return
 
+        if want_human:
+            def human(path):
+                """Converts path filename into a human-readable one."""
+
+                if not os.path.isdir(self._temp_dir):
+                    os.mkdir(self._temp_dir)
+
+                def substitute(match):
+                    """Perform variable substitution on filename."""
+
+                    key = match.group(1).strip()
+
+                    if key:
+                        lower = key.lower()
+
+                        if lower == 'service':
+                            return svc_id
+                        if lower == 'text':
+                            return text
+                        if lower == 'voice':
+                            return options['voice'].lower()
+
+                        try:
+                            return note[key]  # exact field match
+                        except:  # ignore error, pylint:disable=bare-except
+                            pass
+
+                        try:
+                            for other_key in note.keys():
+                                if other_key.strip().lower() == lower:
+                                    return note[other_key]  # fuzzy field match
+                        except:  # ignore error, pylint:disable=bare-except
+                            pass
+
+                    return ''  # invalid key / no such note field
+
+                filename = RE_MUSTACHE.sub(substitute, want_human)
+                filename = RE_UNSAFE.sub('', filename)
+                filename = RE_WHITESPACE.sub(' ', filename).strip()
+                if not filename or filename.lower() in WINDOWS_RESERVED:
+                    filename = 'AwesomeTTS Audio'
+                else:
+                    filename = filename[0:95]  # accommodate NTFS path limits
+                filename += '.mp3'
+
+                from shutil import copyfile
+                new_path = os.path.join(self._temp_dir, filename)
+                copyfile(path, new_path)
+
+                return new_path
+
+        else:
+            human = lambda path: path
+
         if cache_hit:
             if 'done' in callbacks:
                 callbacks['done']()
-            callbacks['okay'](path)
+            callbacks['okay'](human(path))
             if 'then' in callbacks:
                 callbacks['then']()
 
@@ -381,7 +460,7 @@ class Router(object):
                     ),
 
                     on_error(exception) if exception
-                    else callbacks['okay'](path) if os.path.exists(path)
+                    else callbacks['okay'](human(path)) if os.path.exists(path)
                     else on_error(RuntimeError(
                         "The %s service did not successfully write out "
                         "an MP3." % service['name']

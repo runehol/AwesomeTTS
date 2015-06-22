@@ -29,8 +29,10 @@ __all__ = ['browser_menus', 'cards_button', 'config_menu', 'editor_button',
            'window_shortcuts']
 
 import logging
+from os.path import join
 import platform
 import sys
+from time import time
 
 from PyQt4.QtCore import PYQT_VERSION_STR, Qt
 from PyQt4.QtGui import QKeySequence
@@ -95,6 +97,9 @@ config = Config(
         ('delay_questions_onthefly', 'integer', 0, int, int),
         ('delay_questions_stored_ours', 'integer', 0, int, int),
         ('delay_questions_stored_theirs', 'integer', 0, int, int),
+        ('filenames', 'text', 'hash', str, str),
+        ('filenames_human', 'text',
+         u'{{text}} ({{service}} {{voice}})', unicode, unicode),
         ('groups', 'text', {}, to.deserialized_dict, to.compact_json),
         ('lame_flags', 'text', '--quiet -q 2', str, str),
         ('last_mass_append', 'integer', True, to.lax_bool, int),
@@ -205,6 +210,7 @@ router = Router(
                     logger=logger),
     ),
     cache_dir=paths.CACHE,
+    temp_dir=join(paths.TEMP, '_awesometts_scratch_' + str(int(time()))),
     logger=logger,
 )
 
@@ -431,7 +437,6 @@ def cache_control():
         """
 
         from os import listdir, unlink
-        from os.path import join
 
         cache = paths.CACHE
 
@@ -446,7 +451,6 @@ def cache_control():
 
         if config['cache_days']:
             from os.path import getmtime
-            from time import time
 
             limit = time() - 86400 * config['cache_days']
             targets = (prospect for prospect in prospects
@@ -723,6 +727,43 @@ def sound_tag_delays():
     anki.sound.play = player.native_wrapper
 
 
+def temp_files():
+    """Remove temporary files upon session exit."""
+
+    def on_unload_profile():
+        """
+        Finds scratch directories in the temporary path, removes their
+        files, then removes the directories themselves.
+        """
+
+        from os import listdir, unlink, rmdir
+        from os.path import isdir
+
+        temp = paths.TEMP
+
+        try:
+            subdirs = [join(temp, filename) for filename in listdir(temp)
+                       if filename.startswith('_awesometts_scratch')]
+        except:  # allow silent failure, pylint:disable=bare-except
+            return
+        if not subdirs:
+            return
+
+        for subdir in subdirs:
+            if isdir(subdir):
+                for filename in listdir(subdir):
+                    try:
+                        unlink(join(subdir, filename))
+                    except:  # skip busy files, pylint:disable=bare-except
+                        pass
+                try:
+                    rmdir(subdir)
+                except:  # allow silent failure, pylint:disable=bare-except
+                    pass
+
+    anki.hooks.addHook('unloadProfile', on_unload_profile)
+
+
 def update_checker():
     """
     Automatic check for new version, if neither postponed nor ignored.
@@ -733,7 +774,6 @@ def update_checker():
     aqt.addons.GetAddons) that expect it might fail unexpectedly.
     """
 
-    from time import time
     if not config['updates_enabled'] or \
        config['updates_postpone'] and config['updates_postpone'] > time():
         return

@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2015  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2014  Dave Shifflett
+# Copyright (C) 2013-2015  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,7 +49,8 @@ class Configurator(Dialog):
         'debug_stdout', 'delay_answers_onthefly', 'delay_answers_stored_ours',
         'delay_answers_stored_theirs', 'delay_questions_onthefly',
         'delay_questions_stored_ours', 'delay_questions_stored_theirs',
-        'lame_flags', 'launch_browser_generator', 'launch_browser_stripper',
+        'filenames', 'filenames_human', 'lame_flags',
+        'launch_browser_generator', 'launch_browser_stripper',
         'launch_configurator', 'launch_editor_generator', 'launch_templater',
         'otf_only_revealed_cloze', 'otf_remove_hints', 'spec_note_strip',
         'spec_note_ellipsize', 'spec_template_ellipsize', 'spec_note_count',
@@ -335,10 +336,7 @@ class Configurator(Dialog):
         """Returns the "MP3s" tab."""
 
         vert = QtGui.QVBoxLayout()
-        vert.addWidget(Note("Note that AwesomeTTS no longer generates audio "
-                            "filenames directly from input phrases. Instead, "
-                            "these are based on a hash of the given inputs."))
-        vert.addSpacing(self._SPACING)
+        vert.addWidget(self._ui_tabs_mp3gen_filenames())
         vert.addWidget(self._ui_tabs_mp3gen_lame())
         vert.addWidget(self._ui_tabs_mp3gen_throttle())
         vert.addStretch()
@@ -346,6 +344,42 @@ class Configurator(Dialog):
         tab = QtGui.QWidget()
         tab.setLayout(vert)
         return tab
+
+    def _ui_tabs_mp3gen_filenames(self):
+        """Returns the "Filenames of MP3s" group."""
+
+        dropdown = QtGui.QComboBox()
+        dropdown.setObjectName('filenames')
+        dropdown.addItem("hashed (safe and portable)", 'hash')
+        dropdown.addItem("human-readable (may not work everywhere)", 'human')
+
+        dropdown_line = QtGui.QHBoxLayout()
+        dropdown_line.addWidget(Label("Filenames should be "))
+        dropdown_line.addWidget(dropdown)
+        dropdown_line.addStretch()
+
+        human = QtGui.QLineEdit()
+        human.setObjectName('filenames_human')
+        human.setPlaceholderText("e.g. {{service}} {{voice}} - {{text}}")
+        human.setEnabled(False)
+
+        human_line = QtGui.QHBoxLayout()
+        human_line.addWidget(Label("Format human-readable filenames as "))
+        human_line.addWidget(human)
+        human_line.addWidget(Label(".mp3"))
+
+        dropdown.currentIndexChanged. \
+            connect(lambda index: human.setEnabled(index > 0))
+
+        vertical = QtGui.QVBoxLayout()
+        vertical.addLayout(dropdown_line)
+        vertical.addLayout(human_line)
+        vertical.addWidget(Note("Changes are not retroactive to old files."))
+
+        group = QtGui.QGroupBox("Filenames of MP3s Stored in Your Collection")
+        group.setLayout(vertical)
+
+        return group
 
     def _ui_tabs_mp3gen_lame(self):
         """Returns the "LAME Transcoder" input group."""
@@ -358,9 +392,8 @@ class Configurator(Dialog):
         vert = QtGui.QVBoxLayout()
         vert.addWidget(Note("Specify flags passed to lame when making MP3s."))
         vert.addWidget(flags)
-        vert.addWidget(Note("Affects %s. Changes will NOT be retroactive to "
-                            "old MP3s. If needed, you may want to regenerate "
-                            "MP3s and/or clear the cache (Advanced tab)." %
+        vert.addWidget(Note("Affects %s. Changes are not retroactive to old "
+                            "files." %
                             ', '.join(rtr.by_trait(rtr.Trait.TRANSCODING))))
 
         group = QtGui.QGroupBox("LAME Transcoder")

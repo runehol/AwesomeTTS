@@ -46,7 +46,6 @@ _PREFIXED = lambda prefix, lines: "\n".join(
 FAILURE_CACHE_SECS = 3600  # ignore/dump failures from cache after one hour
 
 RE_MUSTACHE = re.compile(r'\{?\{\{(.+?)\}\}\}?')
-RE_NONVARIABLE = re.compile(r'[^a-z]')
 RE_UNSAFE = re.compile(r'[^\w\s()-]', re.UNICODE)
 RE_WHITESPACE = re.compile(r'[\0\s]+', re.UNICODE)
 
@@ -200,7 +199,8 @@ class Router(object):
 
         self._failures = {}
 
-    def group(self, text, group, presets, callbacks, want_human=False):
+    def group(self, text, group, presets, callbacks,
+              want_human=False, note=None):
         """
         Execute a group playback request using the passed group to be
         looked up using the passed presets.
@@ -210,6 +210,8 @@ class Router(object):
 
         If passed, want_human should be a template string that dictates
         how the caller wants the filename in the path to be formatted.
+        Additionally, note may be passed to provide mustache values for
+        the given template string.
         """
 
         self._call_assert_callbacks(callbacks)
@@ -278,11 +280,13 @@ class Router(object):
                 else:
                     svc_id = preset.pop('service')
                     self(svc_id=svc_id, text=text, options=preset,
-                         callbacks=internal_callbacks, want_human=want_human)
+                         callbacks=internal_callbacks,
+                         want_human=want_human, note=note)
 
             try_next()
 
-    def __call__(self, svc_id, text, options, callbacks, want_human=False):
+    def __call__(self, svc_id, text, options, callbacks,
+                 want_human=False, note=None):
         """
         Given the service ID and associated options, pass the text into
         the service for processing.
@@ -325,6 +329,8 @@ class Router(object):
 
         If passed, want_human should be a template string that dictates
         how the caller wants the filename in the path to be formatted.
+        Additionally, note may be passed to provide mustache values for
+        the given template string.
         """
 
         self._call_assert_callbacks(callbacks)
@@ -364,13 +370,32 @@ class Router(object):
 
                 def substitute(match):
                     """Perform variable substitution on filename."""
-                    key = RE_NONVARIABLE.sub('', match.group(1).lower())
-                    return (
-                        svc_id if key.startswith('s')
-                        else text if key.startswith('t')
-                        else options['voice'].lower() if key.startswith('v')
-                        else ''
-                    )
+
+                    key = match.group(1).strip()
+
+                    if key:
+                        lower = key.lower()
+
+                        if lower == 'service':
+                            return svc_id
+                        if lower == 'text':
+                            return text
+                        if lower == 'voice':
+                            return options['voice'].lower()
+
+                        try:
+                            return note[key]  # exact field match
+                        except:  # ignore error, pylint:disable=bare-except
+                            pass
+
+                        try:
+                            for other_key in note.keys():
+                                if other_key.strip().lower() == lower:
+                                    return note[other_key]  # fuzzy field match
+                        except:  # ignore error, pylint:disable=bare-except
+                            pass
+
+                    return ''  # invalid key / no such note field
 
                 filename = RE_MUSTACHE.sub(substitute, want_human)
                 filename = RE_UNSAFE.sub('', filename)

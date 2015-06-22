@@ -395,13 +395,15 @@ class BrowserGenerator(ServiceDialog):
                                      group=config['groups'][svc_id[6:]],
                                      presets=config['presets'],
                                      callbacks=callbacks,
-                                     want_human=want_human)
+                                     want_human=want_human,
+                                     note=note)
         else:
             self._addon.router(svc_id=svc_id,
                                text=phrase,
                                options=proc['service']['options'],
                                callbacks=callbacks,
-                               want_human=want_human)
+                               want_human=want_human,
+                               note=note)
 
     def _accept_next_output(self, old_value, filename):
         """
@@ -793,14 +795,16 @@ class EditorGenerator(ServiceDialog):
                                      group=config['groups'][svc_id[6:]],
                                      presets=config['presets'],
                                      callbacks=callbacks,
-                                     want_human=want_human)
+                                     want_human=want_human,
+                                     note=self._editor.note)
         else:
             options = now['last_options'][now['last_service']]
             self._addon.router(svc_id=svc_id,
                                text=text_value,
                                options=options,
                                callbacks=callbacks,
-                               want_human=want_human)
+                               want_human=want_human,
+                               note=self._editor.note)
 
 
 class _Progress(Dialog):

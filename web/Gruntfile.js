@@ -496,11 +496,12 @@ module.exports = function (grunt) {
               upload: 'gsv\\.html'},
 
             {url: '/api/update/[a-z\\d]+-' + gaeRegex([
-                '1.4.0',
+                '1.4.1',
               ]),
               static_files: 'api/update/good-version.json',
               upload: 'api/update/good-version\\.json'},
             {url: '/api/update/[a-z\\d]+-' + gaeRegex([
+                '1.4.1-pre', '1.4.0',
                 '1.4.0-pre', '1.4.0-dev', '1.3.1', '1.3.1-pre', '1.3.0',
                 '1.3.0-pre', '1.3.0-dev', '1.2.3', '1.2.3-pre', '1.2.2',
                 '1.2.2-pre', '1.2.1', '1.2.1-pre', '1.2.0', '1.2.0-pre',

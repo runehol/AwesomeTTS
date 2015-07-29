@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2015  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2014  Dave Shifflett
+# Copyright (C) 2013-2015  Dave Shifflett
 # Copyright (C) 2013       mistaecko on GitHub
 #
 # This program is free software: you can redistribute it and/or modify
@@ -165,12 +165,14 @@ class Google(Service):
             self.net_download(
                 path,
                 [
-                    ('http://translate.google.com/translate_tts', dict(
+                    ('https://translate.google.com/translate_tts', dict(
+                        ie='UTF-8',
                         q=subtext,
                         tl=options['voice'],
                         total=len(subtexts),
                         idx=idx,
                         textlen=len(subtext),
+                        client='t',
                     ))
                     for idx, subtext in enumerate(subtexts)
                 ],

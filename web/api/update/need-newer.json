@@ -1,13 +1,6 @@
 {
     "auto": true,
-    "intro": "This release adds new services and some bug fixes.",
-    "notes": [
-        "adds support for Baidu Translate",
-        "adds support for the Oxford Dictionary (thanks Alexander Dalshov)",
-        "adds support for RHVoice (Linux, thanks aleksejrs)",
-        "prevents playback of on-the-fly audio if user moves off card before audio can download (thanks aleksejrs)",
-        "allows control of XML parsing capabilities in SAPI (thanks useranki)"
-    ],
+    "intro": "This minor release fixes support for the Google Translate service.",
     "update": true,
-    "version": "1.4.0"
+    "version": "1.4.1"
 }

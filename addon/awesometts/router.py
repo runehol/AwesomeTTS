@@ -189,9 +189,17 @@ class Router(object):
         service, with defaults highlighted.
         """
 
-        svc_id, service = self._fetch_options(svc_id)
-
+        svc_id, service = self._fetch_options_and_extras(svc_id)
         return service['options']
+
+    def get_extras(self, svc_id):
+        """
+        Returns a list of "extra" options that the user might need
+        to enter. Returns an empty list if none.
+        """
+
+        svc_id, service = self._fetch_options_and_extras(svc_id)
+        return service['extras']
 
     def get_failure_count(self):
         """
@@ -530,7 +538,7 @@ class Router(object):
             - 4th: cache path
         """
 
-        svc_id, service = self._fetch_options(svc_id)
+        svc_id, service = self._fetch_options_and_extras(svc_id)
         svc_options = service['options']
         svc_options_keys = [svc_option['key'] for svc_option in svc_options]
 
@@ -632,7 +640,7 @@ class Router(object):
 
         return path
 
-    def _fetch_options(self, svc_id):
+    def _fetch_options_and_extras(self, svc_id):
         """
         Identifies the service by its ID, checks to see if the options
         list need construction, and then return back the normalized ID
@@ -681,6 +689,26 @@ class Router(object):
                     ]
 
                 service['options'].append(option)
+
+        if 'extras' not in service:  # extras are like options, but universal
+            service['extras'] = []
+
+            if hasattr(service['instance'], 'extras'):
+                self._logger.debug("Building the extras list for %s",
+                                   service['name'])
+                for extra in service['instance'].extras():
+                    assert 'key' in extra, "missing extra key for %s" % svc_id
+                    assert self._services.normalize(extra['key']) == \
+                        extra['key'], "bad %s key %s" % (svc_id, extra['key'])
+                    assert 'label' in extra, \
+                        "missing %s label for %s" % (extra['key'], svc_id)
+
+                    if 'required' not in extra:
+                        extra['required'] = False
+                    if not extra['label'].endswith(":"):
+                        extra['label'] += ":"
+
+                    service['extras'].append(extra)
 
         return svc_id, service
 

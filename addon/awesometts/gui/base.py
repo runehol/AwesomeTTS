@@ -570,6 +570,19 @@ class ServiceDialog(Dialog):
             except KeyError:
                 pass
 
+            edit.textEdited.connect(lambda val, key=key: config.update(dict(
+                extras=dict(
+                    config['extras'].items() +
+                    [(
+                        svc_id,
+                        dict(
+                            config['extras'].get(svc_id, {}).items() +
+                            [(key, val)]
+                        ),
+                    )]
+                ),
+            )))
+
             panel.addWidget(label, row, 0)
             panel.addWidget(edit, row, 1)
             panel.addWidget(Label("(global)"), row, 2)

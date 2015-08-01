@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014       Anki AwesomeTTS Development Team
-# Copyright (C) 2014       Dave Shifflett
+# Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2015  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -555,14 +555,30 @@ class ServiceDialog(Dialog):
                 vinput.currentIndexChanged.connect(self._on_preset_reset)
 
             panel.addWidget(label, row, 0)
-            panel.addWidget(vinput, row, 1)
+            panel.addWidget(vinput, row, 1, 1, 2)
+            row += 1
 
+        config = self._addon.config
+        for extra in self._addon.router.get_extras(svc_id):
+            label = Label(extra['label'])
+            label.setFont(self._FONT_LABEL)
+
+            edit = QtGui.QLineEdit()
+            key = extra['key']
+            try:
+                edit.setText(config['extras'][svc_id][key])
+            except KeyError:
+                pass
+
+            panel.addWidget(label, row, 0)
+            panel.addWidget(edit, row, 1)
+            panel.addWidget(Label("(global)"), row, 2)
             row += 1
 
         label = Note(self._addon.router.get_desc(svc_id))
         label.setFont(self._FONT_INFO)
 
-        panel.addWidget(label, row, 0, 1, 2, QtCore.Qt.AlignTop)
+        panel.addWidget(label, row, 0, 1, 3, QtCore.Qt.AlignTop)
         panel.setRowStretch(row, 1)
 
     def _on_service_activated_set(self, svc_id, widget, options,

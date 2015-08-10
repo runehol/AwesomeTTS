@@ -1,8 +1,8 @@
 {{!
   ! AwesomeTTS text-to-speech add-on website
   !
-  ! Copyright (C) 2014       Anki AwesomeTTS Development Team
-  ! Copyright (C) 2014       Dave Shifflett
+  ! Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
+  ! Copyright (C) 2014-2015  Dave Shifflett
   !
   ! This program is free software: you can redistribute it and/or modify
   ! it under the terms of the GNU Affero General Public License as
@@ -73,6 +73,11 @@
 <h3>Hints</h3>
 
 <ul>
+    <li>If you want to play the same audio on both the front and back sides of
+      your cards, one way to do this is to add a dedicated <code>Sound</code>
+      or <code>TTS</code> field to your note type, add that field to both
+      sides of your template, and then use that new field as the destination
+      field.</li>
     <li>If one of the cards&rsquo; note in your selection does not have both
       the source and destination field as specified, it will be skipped.</li>
     <li>AwesomeTTS can automatically filter out certain text while processing

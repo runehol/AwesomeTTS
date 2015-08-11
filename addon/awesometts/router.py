@@ -375,6 +375,36 @@ class Router(object):
                 svc_id, options, text, path, "hit" if cache_hit else "miss",
             )
 
+            # If we didn't get a cache hit, we have to call the real service,
+            # so check to see if it has any extras defined, and if so, add
+            # them to the options lookup for the service to use.
+            #
+            # n.b.: Even though the extras do not factor into an audio clip's
+            # cache path, they MIGHT need to factor into the failure cache in
+            # the future... This could be done by generating a special `fpath`
+            # value during this loop, and use that with the `_failures` lookup
+            # instead of the vanilla `path` (but this is a non-issue today,
+            # because VoiceText is the only `extras` service, and it returns a
+            # status 401 on a bad API key, which is a kind of `URLError`, and
+            # thus not failure-cacheable anyway).
+
+            if not cache_hit:
+                for extra in self.get_extras(svc_id):
+                    key = extra['key']
+                    try:
+                        options[key] = self._config['extras'][svc_id][key]
+                        options[key] = options[key].strip()
+                        if not options[key]:
+                            raise KeyError
+                    except KeyError:
+                        if extra['required']:
+                            raise KeyError(
+                                "%s required to access %s" %
+                                (extra['label'].rstrip(':'), svc_id)
+                            )
+                        else:
+                            options[key] = None
+
         except Exception as exception:  # catch all, pylint:disable=W0703
             if 'done' in callbacks:
                 callbacks['done']()

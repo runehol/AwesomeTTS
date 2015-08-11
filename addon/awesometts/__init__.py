@@ -217,6 +217,7 @@ router = Router(
     cache_dir=paths.CACHE,
     temp_dir=join(paths.TEMP, '_awesometts_scratch_' + str(int(time()))),
     logger=logger,
+    config=config,
 )
 
 updates = Updates(

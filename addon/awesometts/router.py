@@ -74,6 +74,7 @@ class Router(object):
     __slots__ = [
         '_busy',       # list of file paths that are in-progress
         '_cache_dir',  # path for writing cached media files
+        '_config',     # user configuration (dict-like)
         '_failures',   # lookup of file paths that raised exceptions
         '_logger',     # logger-like interface with debug(), info(), etc.
         '_pool',       # instance of the _Pool class for managing threads
@@ -81,7 +82,7 @@ class Router(object):
         '_temp_dir',   # path for writing human-readable filenames
     ]
 
-    def __init__(self, services, cache_dir, temp_dir, logger):
+    def __init__(self, services, cache_dir, temp_dir, logger, config):
         """
         The services should be a bundle with the following:
 
@@ -91,6 +92,7 @@ class Router(object):
             - normalize (callable): for service IDs and option keys
             - args (tuple): to be passed to Service constructors
             - kwargs (dict): to be passed to Service constructors
+            - config (dict-like): user configuration lookup
 
         The cache directory should be one where media files get stored
         for a semi-permanent time.
@@ -118,6 +120,7 @@ class Router(object):
 
         self._busy = []
         self._cache_dir = cache_dir
+        self._config = config
         self._failures = {}
         self._logger = logger
         self._pool = _Pool(logger)

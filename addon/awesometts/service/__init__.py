@@ -44,6 +44,7 @@ __all__ = [
     'SpanishDict',
     'TTSAPICom',
     'Yandex',
+    'Youdao',
 ]
 
 from .common import Trait
@@ -64,3 +65,4 @@ from .say import Say
 from .spanishdict import SpanishDict
 from .ttsapicom import TTSAPICom
 from .yandex import Yandex
+from .youdao import Youdao

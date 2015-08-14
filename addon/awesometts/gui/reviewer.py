@@ -36,6 +36,14 @@ from PyQt4.QtCore import Qt
 
 from .common import key_event_combo
 
+X_FOR_THIS_TAG_MSG = 'The "%s" %s specified by this tag does not exist:\n' \
+                     "\n" \
+                     "%s\n" \
+                     "\n" \
+                     "If you are using a different computer or have " \
+                     "re-installed Anki/AwesomeTTS, you can recreate it in " \
+                     "Tools > AwesomeTTS > Advanced."
+
 
 # n.b. Previously, before playing handlers, these event handlers checked to
 # make sure that 'not sound.hasSound()'. I am guessing that this was done
@@ -240,8 +248,11 @@ class Reviewer(object):
                 group = lax_dict_lookup(config['groups'], attr['group'])
             except KeyError:
                 if show_errors:
-                    self._alerts("'group' for this tag does not exist:\n%s" %
-                                 tag.prettify().decode('utf-8'), parent)
+                    self._alerts(
+                        X_FOR_THIS_TAG_MSG % (attr['group'], "group",
+                                              tag.prettify().decode('utf-8')),
+                        parent,
+                    )
             else:
                 self._addon.router.group(
                     text=text,
@@ -270,8 +281,11 @@ class Reviewer(object):
                 attr = dict(lax_dict_lookup(config['presets'], attr['preset']))
             except KeyError:
                 if show_errors:
-                    self._alerts("'preset' for this tag does not exist:\n%s" %
-                                 tag.prettify().decode('utf-8'), parent)
+                    self._alerts(
+                        X_FOR_THIS_TAG_MSG % (attr['preset'], "preset",
+                                              tag.prettify().decode('utf-8')),
+                        parent,
+                    )
                 return
 
         try:

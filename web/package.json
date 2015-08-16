@@ -10,7 +10,7 @@
         "grunt-json-minify": "0.4.x",
         "grunt-mustache-render": "^1.7.0",
         "grunt-replace": "^0.9.3",
-        "grunt-sass": "^0.18.0"
+        "grunt-sass": "^1.0.0"
     },
     "license": "AGPL-3.0",
     "private": true

@@ -75,6 +75,11 @@
                 "terse": "Yandex",
                 "title": "Yandex.Translate",
                 "what": "Russian and many European languages, available over the Internet"
+            },
+            "youdao": {
+                "terse": "Youdao",
+                "title": "Youdao Dictionary",
+                "what": "British and American English, available over the Internet"
             }
         }
     },

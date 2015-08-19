@@ -192,6 +192,7 @@ router = Router(
             ('spanishdict', service.SpanishDict),
             ('ttsapicom', service.TTSAPICom),
             ('yandex', service.Yandex),
+            ('youdao', service.Youdao),
         ],
         aliases=[('b', 'baidu'), ('g', 'google'), ('macosx', 'say'),
                  ('microsoft', 'sapi5'), ('microsoftjs', 'sapi5js'),

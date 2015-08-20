@@ -28,7 +28,6 @@ __all__ = ['browser_menus', 'cards_button', 'config_menu', 'editor_button',
            'reviewer_hooks', 'sound_tag_delays', 'update_checker',
            'window_shortcuts']
 
-import logging
 from os.path import join
 import platform
 import sys
@@ -43,7 +42,6 @@ import aqt
 from . import conversion as to, gui, paths, service
 from .bundle import Bundle
 from .config import Config
-from .logger import Logger
 from .player import Player
 from .router import Router
 from .text import Sanitizer
@@ -57,22 +55,12 @@ WEB = 'https://ankiatts.appspot.com'
 
 # Begin core class initialization and dependency setup, pylint:disable=C0103
 
-logger = Logger(
-    name='AwesomeTTS',
-    handlers=dict(
-        debug_file=logging.FileHandler(paths.LOG,
-                                       encoding='utf-8',
-                                       delay=True),
-        debug_stdout=logging.StreamHandler(sys.stdout),
-    ) if paths.ADDON_IN_ASCII else dict(
-        debug_file=logging.NullHandler(),
-        debug_stdout=logging.NullHandler(),
-    ),
-    formatter=logging.Formatter(
-        "[%(threadName)s %(asctime)s] %(pathname)s@%(lineno)d %(levelname)s\n"
-        "%(message)s\n",
-        "%H:%M:%S",
-    ),
+logger = Bundle(  # for logging output, replace this with a logger object
+    activate=lambda *a, **k: None,  # FIXME remove this
+    debug=lambda *a, **k: None,
+    error=lambda *a, **k: None,
+    info=lambda *a, **k: None,
+    warn=lambda *a, **k: None,
 )
 
 sequences = {key: QKeySequence()

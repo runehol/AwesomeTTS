@@ -60,7 +60,8 @@ def os_call(callee, *args, **kwargs):
 
 _PKG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'awesometts')
 
-for _filename in ['main.py', 'main.pyc', 'main.pyo',
+for _filename in ['logger.py', 'logger.pyc', 'logger.pyo',  # dropped for 1.5
+                  'main.py', 'main.pyc', 'main.pyo',
                   'util.py', 'util.pyc', 'util.pyo']:
     os_call(os.unlink, os.path.join(_PKG, _filename))
 

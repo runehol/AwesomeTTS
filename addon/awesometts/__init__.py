@@ -245,7 +245,6 @@ addon = Bundle(
     ),
     logger=logger,
     paths=Bundle(cache=paths.CACHE,
-                 in_ascii=paths.ADDON_IN_ASCII,
                  is_link=paths.ADDON_IS_LINKED),
     player=player,
     router=router,

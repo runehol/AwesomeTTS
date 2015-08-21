@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2015  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2013  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2014  Dave Shifflett
+# Copyright (C) 2013-2015  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ Path and directory initialization
 
 __all__ = [
     'ADDON',
-    'ADDON_IN_ASCII',
     'ADDON_IS_LINKED',
     'CACHE',
     'CONFIG',
@@ -43,13 +42,6 @@ import tempfile
 
 ADDON = os.path.dirname(os.path.abspath(__file__)) \
     .decode(sys.getfilesystemencoding())  # sqlite (and others?) needs unicode
-
-try:
-    ADDON.encode('ascii')
-except UnicodeError:
-    ADDON_IN_ASCII = False
-else:
-    ADDON_IN_ASCII = True
 
 ADDON_IS_LINKED = os.path.islink(ADDON)
 

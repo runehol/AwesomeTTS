@@ -45,12 +45,11 @@ class Configurator(Dialog):
 
     _PROPERTY_KEYS = [
         'automatic_answers', 'automatic_answers_errors', 'automatic_questions',
-        'automatic_questions_errors', 'cache_days', 'debug_file',
-        'debug_stdout', 'delay_answers_onthefly', 'delay_answers_stored_ours',
-        'delay_answers_stored_theirs', 'delay_questions_onthefly',
-        'delay_questions_stored_ours', 'delay_questions_stored_theirs',
-        'filenames', 'filenames_human', 'lame_flags',
-        'launch_browser_generator', 'launch_browser_stripper',
+        'automatic_questions_errors', 'cache_days', 'delay_answers_onthefly',
+        'delay_answers_stored_ours', 'delay_answers_stored_theirs',
+        'delay_questions_onthefly', 'delay_questions_stored_ours',
+        'delay_questions_stored_theirs', 'filenames', 'filenames_human',
+        'lame_flags', 'launch_browser_generator', 'launch_browser_stripper',
         'launch_configurator', 'launch_editor_generator', 'launch_templater',
         'otf_only_revealed_cloze', 'otf_remove_hints', 'spec_note_strip',
         'spec_note_ellipsize', 'spec_template_ellipsize', 'spec_note_count',
@@ -481,7 +480,6 @@ class Configurator(Dialog):
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self._ui_tabs_advanced_presets())
         layout.addWidget(self._ui_tabs_advanced_update())
-        layout.addWidget(self._ui_tabs_advanced_debug())
         layout.addWidget(self._ui_tabs_advanced_cache())
         layout.addStretch()
 
@@ -534,25 +532,6 @@ class Configurator(Dialog):
         vert.addLayout(hor)
 
         group = QtGui.QGroupBox("Updates")
-        group.setLayout(vert)
-        return group
-
-    def _ui_tabs_advanced_debug(self):
-        """Returns the "Write Debugging Output" input group."""
-
-        vert = QtGui.QHBoxLayout()
-
-        if self._addon.paths.in_ascii:
-            vert.addWidget(Checkbox("standard output (stdout)",
-                                    'debug_stdout'))
-            vert.addWidget(Checkbox("log file in add-on directory",
-                                    'debug_file'))
-        else:
-            vert.addWidget(Note("Unfortunately, logging is not available "
-                                "when running AwesomeTTS from a directory "
-                                "with non-ASCII characters."))
-
-        group = QtGui.QGroupBox("Write Debugging Output")
         group.setLayout(vert)
         return group
 

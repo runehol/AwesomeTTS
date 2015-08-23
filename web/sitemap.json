@@ -150,7 +150,7 @@
             "advanced": {
                 "terse": "Advanced",
                 "title": "Advanced Configuration",
-                "what": "Check for updates, enable debugging, manage your cache"
+                "what": "Setup presets and groups, check for updates, manage your cache"
             }
         }
     },

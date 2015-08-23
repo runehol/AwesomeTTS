@@ -28,7 +28,6 @@ __all__ = ['browser_menus', 'cards_button', 'config_menu', 'editor_button',
            'reviewer_hooks', 'sound_tag_delays', 'update_checker',
            'window_shortcuts']
 
-import logging
 from os.path import join
 import platform
 import sys
@@ -43,7 +42,6 @@ import aqt
 from . import conversion as to, gui, paths, service
 from .bundle import Bundle
 from .config import Config
-from .logger import Logger
 from .player import Player
 from .router import Router
 from .text import Sanitizer
@@ -57,23 +55,11 @@ WEB = 'https://ankiatts.appspot.com'
 
 # Begin core class initialization and dependency setup, pylint:disable=C0103
 
-logger = Logger(
-    name='AwesomeTTS',
-    handlers=dict(
-        debug_file=logging.FileHandler(paths.LOG,
-                                       encoding='utf-8',
-                                       delay=True),
-        debug_stdout=logging.StreamHandler(sys.stdout),
-    ) if paths.ADDON_IN_ASCII else dict(
-        debug_file=logging.NullHandler(),
-        debug_stdout=logging.NullHandler(),
-    ),
-    formatter=logging.Formatter(
-        "[%(threadName)s %(asctime)s] %(pathname)s@%(lineno)d %(levelname)s\n"
-        "%(message)s\n",
-        "%H:%M:%S",
-    ),
-)
+logger = Bundle(debug=lambda *a, **k: None, error=lambda *a, **k: None,
+                info=lambda *a, **k: None, warn=lambda *a, **k: None)
+# for logging output, replace `logger` with a real one, e.g.:
+# import logging as logger
+# logger.basicConfig(stream=sys.stdout, level=logger.DEBUG)
 
 sequences = {key: QKeySequence()
              for key in ['browser_generator', 'browser_stripper',
@@ -89,8 +75,6 @@ config = Config(
         ('automaticQuestions', 'integer', True, to.lax_bool, int),
         ('automatic_questions_errors', 'integer', True, to.lax_bool, int),
         ('cache_days', 'integer', 70, int, int),
-        ('debug_file', 'integer', False, to.lax_bool, int),
-        ('debug_stdout', 'integer', False, to.lax_bool, int),
         ('delay_answers_onthefly', 'integer', 0, int, int),
         ('delay_answers_stored_ours', 'integer', 0, int, int),
         ('delay_answers_stored_theirs', 'integer', 0, int, int),
@@ -155,10 +139,6 @@ config = Config(
     ],
     logger=logger,
     events=[
-        (
-            ['debug_file', 'debug_stdout'],
-            logger.activate,  # BufferedLogger instance, pylint: disable=E1103
-        ),
     ],
 )
 
@@ -257,7 +237,6 @@ addon = Bundle(
     ),
     logger=logger,
     paths=Bundle(cache=paths.CACHE,
-                 in_ascii=paths.ADDON_IN_ASCII,
                  is_link=paths.ADDON_IS_LINKED),
     player=player,
     router=router,

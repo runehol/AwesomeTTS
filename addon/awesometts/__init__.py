@@ -55,12 +55,11 @@ WEB = 'https://ankiatts.appspot.com'
 
 # Begin core class initialization and dependency setup, pylint:disable=C0103
 
-logger = Bundle(  # for logging output, replace this with a logger object
-    debug=lambda *a, **k: None,
-    error=lambda *a, **k: None,
-    info=lambda *a, **k: None,
-    warn=lambda *a, **k: None,
-)
+logger = Bundle(debug=lambda *a, **k: None, error=lambda *a, **k: None,
+                info=lambda *a, **k: None, warn=lambda *a, **k: None)
+# for logging output, replace `logger` with a real one, e.g.:
+# import logging as logger
+# logger.basicConfig(stream=sys.stdout, level=logger.DEBUG)
 
 sequences = {key: QKeySequence()
              for key in ['browser_generator', 'browser_stripper',

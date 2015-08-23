@@ -56,7 +56,6 @@ WEB = 'https://ankiatts.appspot.com'
 # Begin core class initialization and dependency setup, pylint:disable=C0103
 
 logger = Bundle(  # for logging output, replace this with a logger object
-    activate=lambda *a, **k: None,  # FIXME remove this
     debug=lambda *a, **k: None,
     error=lambda *a, **k: None,
     info=lambda *a, **k: None,

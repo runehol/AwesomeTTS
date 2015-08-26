@@ -8,7 +8,7 @@
         "grunt-contrib-watch": "0.6.x",
         "grunt-gae": "^0.2.4",
         "grunt-json-minify": "0.4.x",
-        "grunt-mustache-render": "^1.7.0",
+        "grunt-mustache-render": "^1.9.0",
         "grunt-replace": "^0.10.2",
         "grunt-sass": "^1.0.0"
     },

@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014       Anki AwesomeTTS Development Team
-# Copyright (C) 2014       Dave Shifflett
+# Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2015  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,7 +41,8 @@ RE_CLOZE_RENDERED = re.compile(
     r'<span class=.?cloze.?>\[(.+?)\]</span>'
 )
 RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
-RE_FILENAMES = re.compile(r'[a-z\d]+(-[a-f\d]{8}){5}( \(\d+\))?\.mp3')
+RE_FILENAMES = re.compile(r'([a-z\d]+(-[a-f\d]{8}){5}|ATTS .+)'
+                          r'( \(\d+\))?\.mp3')
 RE_HINT_LINK = re.compile(r'<a[^>]+class=.?hint.?[^>]*>[^<]+</a>')
 RE_LINEBREAK_HTML = re.compile(r'<\s*/?\s*(br|div)(\s+[^>]*)?\s*/?\s*>',
                                re.IGNORECASE)

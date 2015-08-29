@@ -19,6 +19,7 @@ services:
 - SVOX Pico (`pico2wave`)
 - TTS-API.com
 - Yandex.Translate
+- Youdao Dictionary
 
 
 ## Installation

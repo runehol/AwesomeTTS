@@ -40,6 +40,16 @@
                 "title": "ImTranslator",
                 "what": "Asian and European languages, available over the Internet"
             },
+            "sapi5": {
+                "terse": "MS SAPI",
+                "title": "Microsoft Speech API (SAPI)",
+                "what": "Interface for desktop software to enable TTS playback, built into Windows"
+            },
+            "say": {
+                "terse": "OS X",
+                "title": "OS X Speech Synthesis Manager",
+                "what": "Many languages installable through System Preferences, built into Mac OS X"
+            },
             "oxford": {
                 "terse": "Oxford",
                 "title": "Oxford Dictionary",
@@ -48,16 +58,6 @@
             "rhvoice": {
                 "title": "RHVoice",
                 "what": "Russian, Georgian, English, and Esperanto; Linux natively or Windows via SAPI"
-            },
-            "say": {
-                "terse": "OS X",
-                "title": "OS X Speech Synthesis Manager",
-                "what": "Many languages installable through System Preferences, built into Mac OS X"
-            },
-            "sapi5": {
-                "terse": "SAPI",
-                "title": "Microsoft Speech API (SAPI)",
-                "what": "Interface for desktop software to enable TTS playback, built into Windows"
             },
             "spanishdict": {
                 "title": "SpanishDict",

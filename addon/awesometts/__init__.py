@@ -52,6 +52,11 @@ VERSION = '1.5.0-dev'
 
 WEB = 'https://ankiatts.appspot.com'
 
+AGENT = 'AwesomeTTS/%s (Anki %s; PyQt %s; %s %s; %s)' % (
+    VERSION, anki.version, PYQT_VERSION_STR, platform.python_implementation(),
+    platform.python_version(), platform.platform().replace('-', ' '),
+)
+
 
 # Begin core class initialization and dependency setup, pylint:disable=C0103
 
@@ -188,7 +193,8 @@ router = Router(
         kwargs=dict(temp_dir=paths.TEMP,
                     lame_flags=lambda: config['lame_flags'],
                     normalize=to.normalized_ascii,
-                    logger=logger),
+                    logger=logger,
+                    ecosystem=Bundle(web=WEB, agent=AGENT)),
     ),
     cache_dir=paths.CACHE,
     temp_dir=join(paths.TEMP, '_awesometts_scratch_' + str(int(time()))),
@@ -196,11 +202,7 @@ router = Router(
 )
 
 updates = Updates(
-    agent='AwesomeTTS/%s (Anki %s; PyQt %s; %s %s; %s)' % (
-        VERSION, anki.version, PYQT_VERSION_STR,
-        platform.python_implementation(), platform.python_version(),
-        platform.platform().replace('-', ' '),
-    ),
+    agent=AGENT,
     endpoint='%s/api/update/%s-%s' % (WEB, sys.platform, VERSION),
     logger=logger,
 )

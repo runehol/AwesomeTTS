@@ -176,6 +176,7 @@ router = Router(
             ('say', service.Say),
             ('spanishdict', service.SpanishDict),
             ('ttsapicom', service.TTSAPICom),
+            ('voicetext', service.VoiceText),
             ('yandex', service.Yandex),
             ('youdao', service.Youdao),
         ],

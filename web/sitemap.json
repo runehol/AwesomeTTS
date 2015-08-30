@@ -71,6 +71,10 @@
                 "title": "TTS-API.com",
                 "what": "English speech, available over the Internet"
             },
+            "voicetext": {
+                "title": "VoiceText",
+                "what": "Japanese speech in multiple voices, available over the Internet"
+            },
             "yandex": {
                 "terse": "Yandex",
                 "title": "Yandex.Translate",

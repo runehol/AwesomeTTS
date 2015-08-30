@@ -467,7 +467,8 @@ class Service(object):
         import atexit
         atexit.register(service.terminate)
 
-    def net_stream(self, targets, require=None, method='GET'):
+    def net_stream(self, targets, require=None, method='GET',
+                   awesome_ua=False):
         """
         Returns the raw payload string from the specified target(s).
         If multiple targets are specified, their resulting payloads are
@@ -526,7 +527,8 @@ class Service(object):
                 Request(
                     url=('?'.join([url, params]) if params and method == 'GET'
                          else url),
-                    headers={'User-Agent': 'Mozilla/5.0'},
+                    headers={'User-Agent': (self.ecosystem.agent if awesome_ua
+                                            else 'Mozilla/5.0')},
                 ),
                 data=params if params and method == 'POST' else None,
                 timeout=15,

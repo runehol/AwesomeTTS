@@ -256,6 +256,7 @@ addon = Bundle(
         # placeholders are still in their unprocessed state)
         from_note=Sanitizer([
             ('clozes_braced', 'sub_note_cloze'),
+            ('newline_ellipsize', 'ellip_note_newlines'),
             'html',
             'whitespace',
             'sounds_univ',
@@ -277,6 +278,7 @@ addon = Bundle(
             ('clozes_rendered', 'sub_template_cloze'),
             'hint_links',
             ('hint_content', 'otf_remove_hints'),
+            ('newline_ellipsize', 'ellip_template_newlines'),
             'html',
         ] + STRIP_TEMPLATE_POSTHTML, config=config, logger=logger),
 
@@ -285,6 +287,7 @@ addon = Bundle(
             ('clozes_revealed', 'otf_only_revealed_cloze'),
             'hint_links',
             ('hint_content', 'otf_remove_hints'),
+            ('newline_ellipsize', 'ellip_template_newlines'),
             'html',
         ] + STRIP_TEMPLATE_POSTHTML, config=config, logger=logger),
 
@@ -296,6 +299,8 @@ addon = Bundle(
             ('clozes_rendered', 'sub_template_cloze'),
             'hint_links',
             ('hint_content', 'otf_remove_hints'),
+            ('newline_ellipsize', 'ellip_note_newlines'),
+            ('newline_ellipsize', 'ellip_template_newlines'),
             'html',
             'html',  # clipboards often have escaped HTML, so we run twice
             'whitespace',
@@ -597,7 +602,8 @@ def reviewer_hooks():
 
     # context menu playback
 
-    strip = Sanitizer(STRIP_TEMPLATE_POSTHTML, config=config, logger=logger)
+    strip = Sanitizer([('newline_ellipsize', 'ellip_template_newlines')] +
+                      STRIP_TEMPLATE_POSTHTML, config=config, logger=logger)
 
     def on_context_menu(web_view, menu):
         """Populate context menu, given the context/configuration."""

@@ -86,6 +86,8 @@ config = Config(
         ('delay_questions_onthefly', 'integer', 0, int, int),
         ('delay_questions_stored_ours', 'integer', 0, int, int),
         ('delay_questions_stored_theirs', 'integer', 0, int, int),
+        ('ellip_note_newlines', 'integer', False, to.lax_bool, int),
+        ('ellip_template_newlines', 'integer', False, to.lax_bool, int),
         ('filenames', 'text', 'hash', str, str),
         ('filenames_human', 'text',
          u'{{text}} ({{service}} {{voice}})', unicode, unicode),

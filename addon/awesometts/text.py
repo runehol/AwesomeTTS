@@ -23,9 +23,9 @@ Basic manipulation and sanitization of input text
 """
 
 __all__ = ['RE_CLOZE_BRACED', 'RE_CLOZE_RENDERED', 'RE_ELLIPSES',
-           'RE_FILENAMES', 'RE_HINT_LINK', 'RE_LINEBREAK_HTML',
-           'RE_NEWLINEISH', 'RE_SOUNDS', 'RE_WHITESPACE', 'STRIP_HTML',
-           'Sanitizer']
+           'RE_ELLIPSES_LEADING', 'RE_ELLIPSES_TRAILING', 'RE_FILENAMES',
+           'RE_HINT_LINK', 'RE_LINEBREAK_HTML', 'RE_NEWLINEISH', 'RE_SOUNDS',
+           'RE_WHITESPACE', 'STRIP_HTML', 'Sanitizer']
 
 import re
 from StringIO import StringIO
@@ -42,6 +42,8 @@ RE_CLOZE_RENDERED = re.compile(
     r'<span class=.?cloze.?>\[(.+?)\]</span>'
 )
 RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
+RE_ELLIPSES_LEADING = re.compile(r'^\s*(\.\s*){3,}')
+RE_ELLIPSES_TRAILING = re.compile(r'\s*(\.\s*){3,}$')
 RE_FILENAMES = re.compile(r'([a-z\d]+(-[a-f\d]{8}){5}|ATTS .+)'
                           r'( \(\d+\))?\.mp3')
 RE_HINT_LINK = re.compile(r'<a[^>]+class=.?hint.?[^>]*>[^<]+</a>')
@@ -259,9 +261,14 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
         """
         Given at least three periods, separated by whitespace or not,
         collapse down to three consecutive periods padded on both sides.
+
+        Additionally, drop any leading or trailing ellipses entirely.
         """
 
-        return RE_ELLIPSES.sub(' ... ', text)
+        text = RE_ELLIPSES.sub(' ... ', text)
+        text = RE_ELLIPSES_LEADING.sub(' ', text)
+        text = RE_ELLIPSES_TRAILING.sub(' ', text)
+        return text
 
     def _rule_filenames(self, text):
         """

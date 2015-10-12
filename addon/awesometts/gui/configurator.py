@@ -48,7 +48,8 @@ class Configurator(Dialog):
         'automatic_questions_errors', 'cache_days', 'delay_answers_onthefly',
         'delay_answers_stored_ours', 'delay_answers_stored_theirs',
         'delay_questions_onthefly', 'delay_questions_stored_ours',
-        'delay_questions_stored_theirs', 'filenames', 'filenames_human',
+        'delay_questions_stored_theirs', 'ellip_note_newlines',
+        'ellip_template_newlines', 'filenames', 'filenames_human',
         'lame_flags', 'launch_browser_generator', 'launch_browser_stripper',
         'launch_configurator', 'launch_editor_generator', 'launch_templater',
         'otf_only_revealed_cloze', 'otf_remove_hints', 'spec_note_strip',
@@ -186,6 +187,7 @@ class Configurator(Dialog):
         """Returns the "Text" tab."""
 
         layout = QtGui.QVBoxLayout()
+        layout.setContentsMargins(10, 0, 10, 0)
         layout.addWidget(self._ui_tabs_text_mode(
             '_template_',
             "Handling Template Text (e.g. On-the-Fly, Context Menus)",
@@ -258,6 +260,7 @@ class Configurator(Dialog):
         hor.addStretch()
 
         layout = QtGui.QVBoxLayout()
+        layout.setContentsMargins(10, 0, 10, 0)
         layout.addLayout(hor)
 
         if template_options:
@@ -267,6 +270,11 @@ class Configurator(Dialog):
             hor.addWidget(Checkbox("Ignore {{hint}} fields",
                                    'otf_remove_hints'))
             layout.addLayout(hor)
+
+        layout.addWidget(Checkbox(
+            "Convert any newline(s) in input into an ellipsis",
+            infix.join(['ellip', 'newlines'])
+        ))
 
         hor = QtGui.QHBoxLayout()
         hor.addWidget(Label("Strip off text within:"))

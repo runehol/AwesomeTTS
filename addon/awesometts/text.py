@@ -23,7 +23,8 @@ Basic manipulation and sanitization of input text
 """
 
 __all__ = ['RE_CLOZE_BRACED', 'RE_CLOZE_RENDERED', 'RE_ELLIPSES',
-           'RE_FILENAMES', 'RE_HINT_LINK', 'RE_LINEBREAK_HTML', 'RE_SOUNDS',
+           'RE_ELLIPSES_LEADING', 'RE_ELLIPSES_TRAILING', 'RE_FILENAMES',
+           'RE_HINT_LINK', 'RE_LINEBREAK_HTML', 'RE_NEWLINEISH', 'RE_SOUNDS',
            'RE_WHITESPACE', 'STRIP_HTML', 'Sanitizer']
 
 import re
@@ -41,11 +42,15 @@ RE_CLOZE_RENDERED = re.compile(
     r'<span class=.?cloze.?>\[(.+?)\]</span>'
 )
 RE_ELLIPSES = re.compile(r'\s*(\.\s*){3,}')
+RE_ELLIPSES_LEADING = re.compile(r'^\s*(\.\s*){3,}')
+RE_ELLIPSES_TRAILING = re.compile(r'\s*(\.\s*){3,}$')
 RE_FILENAMES = re.compile(r'([a-z\d]+(-[a-f\d]{8}){5}|ATTS .+)'
                           r'( \(\d+\))?\.mp3')
 RE_HINT_LINK = re.compile(r'<a[^>]+class=.?hint.?[^>]*>[^<]+</a>')
-RE_LINEBREAK_HTML = re.compile(r'<\s*/?\s*(br|div)(\s+[^>]*)?\s*/?\s*>',
+RE_LINEBREAK_HTML = re.compile(r'<\s*/?\s*(br|div|p)(\s+[^>]*)?\s*/?\s*>',
                                re.IGNORECASE)
+RE_NEWLINEISH = re.compile(r'(\r|\n|<\s*/?\s*(br|div|p)(\s+[^>]*)?\s*/?\s*>)+',
+                           re.IGNORECASE)
 RE_SOUNDS = re.compile(r'\[sound:(.*?)\]')  # see also anki.sound._soundReg
 RE_WHITESPACE = re.compile(r'[\0\s]+', re.UNICODE)
 
@@ -256,9 +261,14 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
         """
         Given at least three periods, separated by whitespace or not,
         collapse down to three consecutive periods padded on both sides.
+
+        Additionally, drop any leading or trailing ellipses entirely.
         """
 
-        return RE_ELLIPSES.sub(' ... ', text)
+        text = RE_ELLIPSES.sub(' ... ', text)
+        text = RE_ELLIPSES_LEADING.sub(' ', text)
+        text = RE_ELLIPSES_TRAILING.sub(' ', text)
+        return text
 
     def _rule_filenames(self, text):
         """
@@ -293,6 +303,14 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
 
         text = RE_LINEBREAK_HTML.sub(' ', text)
         return STRIP_HTML(text)
+
+    def _rule_newline_ellipsize(self, text):
+        """
+        Replaces linefeeds, newlines, and things that look like that
+        (e.g. paragraph tags, div containers) with an ellipsis.
+        """
+
+        return RE_NEWLINEISH.sub(' ... ', text)
 
     def _rule_sounds_ours(self, text):
         """

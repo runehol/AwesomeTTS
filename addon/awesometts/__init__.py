@@ -86,6 +86,8 @@ config = Config(
         ('delay_questions_onthefly', 'integer', 0, int, int),
         ('delay_questions_stored_ours', 'integer', 0, int, int),
         ('delay_questions_stored_theirs', 'integer', 0, int, int),
+        ('ellip_note_newlines', 'integer', False, to.lax_bool, int),
+        ('ellip_template_newlines', 'integer', False, to.lax_bool, int),
         ('filenames', 'text', 'hash', str, str),
         ('filenames_human', 'text',
          u'{{text}} ({{service}} {{voice}})', unicode, unicode),
@@ -254,6 +256,7 @@ addon = Bundle(
         # placeholders are still in their unprocessed state)
         from_note=Sanitizer([
             ('clozes_braced', 'sub_note_cloze'),
+            ('newline_ellipsize', 'ellip_note_newlines'),
             'html',
             'whitespace',
             'sounds_univ',
@@ -275,6 +278,7 @@ addon = Bundle(
             ('clozes_rendered', 'sub_template_cloze'),
             'hint_links',
             ('hint_content', 'otf_remove_hints'),
+            ('newline_ellipsize', 'ellip_template_newlines'),
             'html',
         ] + STRIP_TEMPLATE_POSTHTML, config=config, logger=logger),
 
@@ -283,6 +287,7 @@ addon = Bundle(
             ('clozes_revealed', 'otf_only_revealed_cloze'),
             'hint_links',
             ('hint_content', 'otf_remove_hints'),
+            ('newline_ellipsize', 'ellip_template_newlines'),
             'html',
         ] + STRIP_TEMPLATE_POSTHTML, config=config, logger=logger),
 
@@ -294,6 +299,8 @@ addon = Bundle(
             ('clozes_rendered', 'sub_template_cloze'),
             'hint_links',
             ('hint_content', 'otf_remove_hints'),
+            ('newline_ellipsize', 'ellip_note_newlines'),
+            ('newline_ellipsize', 'ellip_template_newlines'),
             'html',
             'html',  # clipboards often have escaped HTML, so we run twice
             'whitespace',
@@ -595,7 +602,8 @@ def reviewer_hooks():
 
     # context menu playback
 
-    strip = Sanitizer(STRIP_TEMPLATE_POSTHTML, config=config, logger=logger)
+    strip = Sanitizer([('newline_ellipsize', 'ellip_template_newlines')] +
+                      STRIP_TEMPLATE_POSTHTML, config=config, logger=logger)
 
     def on_context_menu(web_view, menu):
         """Populate context menu, given the context/configuration."""

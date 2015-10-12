@@ -187,6 +187,7 @@ class Configurator(Dialog):
         """Returns the "Text" tab."""
 
         layout = QtGui.QVBoxLayout()
+        layout.setContentsMargins(10, 0, 10, 0)
         layout.addWidget(self._ui_tabs_text_mode(
             '_template_',
             "Handling Template Text (e.g. On-the-Fly, Context Menus)",
@@ -259,6 +260,7 @@ class Configurator(Dialog):
         hor.addStretch()
 
         layout = QtGui.QVBoxLayout()
+        layout.setContentsMargins(10, 0, 10, 0)
         layout.addLayout(hor)
 
         if template_options:

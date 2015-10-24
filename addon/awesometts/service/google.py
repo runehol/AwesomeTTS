@@ -28,7 +28,7 @@ __all__ = ['Google']
 
 from .base import Service
 from .common import Trait
-
+from random import randint
 
 class Google(Service):
     """
@@ -160,6 +160,7 @@ class Google(Service):
         """
 
         subtexts = self.util_split(text, 100)
+        randstring = str(randint(0,100000)) + '|' + str(randint(0,100000))
 
         try:
             self.net_download(
@@ -173,6 +174,7 @@ class Google(Service):
                         idx=idx,
                         textlen=len(subtext),
                         client='t',
+                        tk=randstring
                     ))
                     for idx, subtext in enumerate(subtexts)
                 ],

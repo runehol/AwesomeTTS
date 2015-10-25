@@ -6,6 +6,7 @@
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
 # Copyright (C) 2013-2015  Dave Shifflett
 # Copyright (C) 2013       mistaecko on GitHub
+# Copyright (C) 2015       Glutanimate on GitHub
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

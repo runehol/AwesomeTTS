@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2015  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2014  Dave Shifflett
+# Copyright (C) 2013-2015  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -386,18 +386,24 @@ class BrowserGenerator(ServiceDialog):
         )
 
         svc_id = proc['service']['id']
+        want_human = (self._addon.config['filenames_human'] or u'{{text}}' if
+                      self._addon.config['filenames'] == 'human' else False)
 
         if svc_id.startswith('group:'):
             config = self._addon.config
             self._addon.router.group(text=phrase,
                                      group=config['groups'][svc_id[6:]],
                                      presets=config['presets'],
-                                     callbacks=callbacks)
+                                     callbacks=callbacks,
+                                     want_human=want_human,
+                                     note=note)
         else:
             self._addon.router(svc_id=svc_id,
                                text=phrase,
                                options=proc['service']['options'],
-                               callbacks=callbacks)
+                               callbacks=callbacks,
+                               want_human=want_human,
+                               note=note)
 
     def _accept_next_output(self, old_value, filename):
         """
@@ -779,19 +785,26 @@ class EditorGenerator(ServiceDialog):
             ),
         )
 
+        want_human = (self._addon.config['filenames_human'] or u'{{text}}' if
+                      self._addon.config['filenames'] == 'human' else False)
+
         self._disable_inputs()
         if svc_id.startswith('group:'):
             config = self._addon.config
             self._addon.router.group(text=text_value,
                                      group=config['groups'][svc_id[6:]],
                                      presets=config['presets'],
-                                     callbacks=callbacks)
+                                     callbacks=callbacks,
+                                     want_human=want_human,
+                                     note=self._editor.note)
         else:
             options = now['last_options'][now['last_service']]
             self._addon.router(svc_id=svc_id,
                                text=text_value,
                                options=options,
-                               callbacks=callbacks)
+                               callbacks=callbacks,
+                               want_human=want_human,
+                               note=self._editor.note)
 
 
 class _Progress(Dialog):

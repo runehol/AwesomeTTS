@@ -28,9 +28,10 @@ __all__ = ['browser_menus', 'cards_button', 'config_menu', 'editor_button',
            'reviewer_hooks', 'sound_tag_delays', 'update_checker',
            'window_shortcuts']
 
-import logging
+from os.path import join
 import platform
 import sys
+from time import time
 
 from PyQt4.QtCore import PYQT_VERSION_STR, Qt
 from PyQt4.QtGui import QKeySequence
@@ -41,37 +42,29 @@ import aqt
 from . import conversion as to, gui, paths, service
 from .bundle import Bundle
 from .config import Config
-from .logger import Logger
 from .player import Player
 from .router import Router
 from .text import Sanitizer
 from .updates import Updates
 
 
-VERSION = '1.4.1'
+VERSION = '1.5.0'
 
 WEB = 'https://ankiatts.appspot.com'
+
+AGENT = 'AwesomeTTS/%s (Anki %s; PyQt %s; %s %s; %s)' % (
+    VERSION, anki.version, PYQT_VERSION_STR, platform.python_implementation(),
+    platform.python_version(), platform.platform().replace('-', ' '),
+)
 
 
 # Begin core class initialization and dependency setup, pylint:disable=C0103
 
-logger = Logger(
-    name='AwesomeTTS',
-    handlers=dict(
-        debug_file=logging.FileHandler(paths.LOG,
-                                       encoding='utf-8',
-                                       delay=True),
-        debug_stdout=logging.StreamHandler(sys.stdout),
-    ) if paths.ADDON_IN_ASCII else dict(
-        debug_file=logging.NullHandler(),
-        debug_stdout=logging.NullHandler(),
-    ),
-    formatter=logging.Formatter(
-        "[%(threadName)s %(asctime)s] %(pathname)s@%(lineno)d %(levelname)s\n"
-        "%(message)s\n",
-        "%H:%M:%S",
-    ),
-)
+logger = Bundle(debug=lambda *a, **k: None, error=lambda *a, **k: None,
+                info=lambda *a, **k: None, warn=lambda *a, **k: None)
+# for logging output, replace `logger` with a real one, e.g.:
+# import logging as logger
+# logger.basicConfig(stream=sys.stdout, level=logger.DEBUG)
 
 sequences = {key: QKeySequence()
              for key in ['browser_generator', 'browser_stripper',
@@ -87,14 +80,17 @@ config = Config(
         ('automaticQuestions', 'integer', True, to.lax_bool, int),
         ('automatic_questions_errors', 'integer', True, to.lax_bool, int),
         ('cache_days', 'integer', 70, int, int),
-        ('debug_file', 'integer', False, to.lax_bool, int),
-        ('debug_stdout', 'integer', False, to.lax_bool, int),
         ('delay_answers_onthefly', 'integer', 0, int, int),
         ('delay_answers_stored_ours', 'integer', 0, int, int),
         ('delay_answers_stored_theirs', 'integer', 0, int, int),
         ('delay_questions_onthefly', 'integer', 0, int, int),
         ('delay_questions_stored_ours', 'integer', 0, int, int),
         ('delay_questions_stored_theirs', 'integer', 0, int, int),
+        ('ellip_note_newlines', 'integer', False, to.lax_bool, int),
+        ('ellip_template_newlines', 'integer', False, to.lax_bool, int),
+        ('filenames', 'text', 'hash', str, str),
+        ('filenames_human', 'text',
+         u'{{text}} ({{service}} {{voice}})', unicode, unicode),
         ('groups', 'text', {}, to.deserialized_dict, to.compact_json),
         ('lame_flags', 'text', '--quiet -q 2', str, str),
         ('last_mass_append', 'integer', True, to.lax_bool, int),
@@ -150,10 +146,6 @@ config = Config(
     ],
     logger=logger,
     events=[
-        (
-            ['debug_file', 'debug_stdout'],
-            logger.activate,  # BufferedLogger instance, pylint: disable=E1103
-        ),
     ],
 )
 
@@ -186,7 +178,9 @@ router = Router(
             ('say', service.Say),
             ('spanishdict', service.SpanishDict),
             ('ttsapicom', service.TTSAPICom),
+            ('voicetext', service.VoiceText),
             ('yandex', service.Yandex),
+            ('youdao', service.Youdao),
         ],
         aliases=[('b', 'baidu'), ('g', 'google'), ('macosx', 'say'),
                  ('microsoft', 'sapi5'), ('microsoftjs', 'sapi5js'),
@@ -202,18 +196,16 @@ router = Router(
         kwargs=dict(temp_dir=paths.TEMP,
                     lame_flags=lambda: config['lame_flags'],
                     normalize=to.normalized_ascii,
-                    logger=logger),
+                    logger=logger,
+                    ecosystem=Bundle(web=WEB, agent=AGENT)),
     ),
     cache_dir=paths.CACHE,
+    temp_dir=join(paths.TEMP, '_awesometts_scratch_' + str(int(time()))),
     logger=logger,
 )
 
 updates = Updates(
-    agent='AwesomeTTS/%s (Anki %s; PyQt %s; %s %s; %s)' % (
-        VERSION, anki.version, PYQT_VERSION_STR,
-        platform.python_implementation(), platform.python_version(),
-        platform.platform().replace('-', ' '),
-    ),
+    agent=AGENT,
     endpoint='%s/api/update/%s-%s' % (WEB, sys.platform, VERSION),
     logger=logger,
 )
@@ -250,7 +242,6 @@ addon = Bundle(
     ),
     logger=logger,
     paths=Bundle(cache=paths.CACHE,
-                 in_ascii=paths.ADDON_IN_ASCII,
                  is_link=paths.ADDON_IS_LINKED),
     player=player,
     router=router,
@@ -265,6 +256,7 @@ addon = Bundle(
         # placeholders are still in their unprocessed state)
         from_note=Sanitizer([
             ('clozes_braced', 'sub_note_cloze'),
+            ('newline_ellipsize', 'ellip_note_newlines'),
             'html',
             'whitespace',
             'sounds_univ',
@@ -286,6 +278,7 @@ addon = Bundle(
             ('clozes_rendered', 'sub_template_cloze'),
             'hint_links',
             ('hint_content', 'otf_remove_hints'),
+            ('newline_ellipsize', 'ellip_template_newlines'),
             'html',
         ] + STRIP_TEMPLATE_POSTHTML, config=config, logger=logger),
 
@@ -294,6 +287,7 @@ addon = Bundle(
             ('clozes_revealed', 'otf_only_revealed_cloze'),
             'hint_links',
             ('hint_content', 'otf_remove_hints'),
+            ('newline_ellipsize', 'ellip_template_newlines'),
             'html',
         ] + STRIP_TEMPLATE_POSTHTML, config=config, logger=logger),
 
@@ -305,6 +299,8 @@ addon = Bundle(
             ('clozes_rendered', 'sub_template_cloze'),
             'hint_links',
             ('hint_content', 'otf_remove_hints'),
+            ('newline_ellipsize', 'ellip_note_newlines'),
+            ('newline_ellipsize', 'ellip_template_newlines'),
             'html',
             'html',  # clipboards often have escaped HTML, so we run twice
             'whitespace',
@@ -431,7 +427,6 @@ def cache_control():
         """
 
         from os import listdir, unlink
-        from os.path import join
 
         cache = paths.CACHE
 
@@ -446,7 +441,6 @@ def cache_control():
 
         if config['cache_days']:
             from os.path import getmtime
-            from time import time
 
             limit = time() - 86400 * config['cache_days']
             targets = (prospect for prospect in prospects
@@ -608,7 +602,8 @@ def reviewer_hooks():
 
     # context menu playback
 
-    strip = Sanitizer(STRIP_TEMPLATE_POSTHTML, config=config, logger=logger)
+    strip = Sanitizer([('newline_ellipsize', 'ellip_template_newlines')] +
+                      STRIP_TEMPLATE_POSTHTML, config=config, logger=logger)
 
     def on_context_menu(web_view, menu):
         """Populate context menu, given the context/configuration."""
@@ -723,6 +718,43 @@ def sound_tag_delays():
     anki.sound.play = player.native_wrapper
 
 
+def temp_files():
+    """Remove temporary files upon session exit."""
+
+    def on_unload_profile():
+        """
+        Finds scratch directories in the temporary path, removes their
+        files, then removes the directories themselves.
+        """
+
+        from os import listdir, unlink, rmdir
+        from os.path import isdir
+
+        temp = paths.TEMP
+
+        try:
+            subdirs = [join(temp, filename) for filename in listdir(temp)
+                       if filename.startswith('_awesometts_scratch')]
+        except:  # allow silent failure, pylint:disable=bare-except
+            return
+        if not subdirs:
+            return
+
+        for subdir in subdirs:
+            if isdir(subdir):
+                for filename in listdir(subdir):
+                    try:
+                        unlink(join(subdir, filename))
+                    except:  # skip busy files, pylint:disable=bare-except
+                        pass
+                try:
+                    rmdir(subdir)
+                except:  # allow silent failure, pylint:disable=bare-except
+                    pass
+
+    anki.hooks.addHook('unloadProfile', on_unload_profile)
+
+
 def update_checker():
     """
     Automatic check for new version, if neither postponed nor ignored.
@@ -733,7 +765,6 @@ def update_checker():
     aqt.addons.GetAddons) that expect it might fail unexpectedly.
     """
 
-    from time import time
     if not config['updates_enabled'] or \
        config['updates_postpone'] and config['updates_postpone'] > time():
         return

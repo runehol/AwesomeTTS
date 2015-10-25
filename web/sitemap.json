@@ -40,6 +40,16 @@
                 "title": "ImTranslator",
                 "what": "Asian and European languages, available over the Internet"
             },
+            "sapi5": {
+                "terse": "MS SAPI",
+                "title": "Microsoft Speech API (SAPI)",
+                "what": "Interface for desktop software to enable TTS playback, built into Windows"
+            },
+            "say": {
+                "terse": "OS X",
+                "title": "OS X Speech Synthesis Manager",
+                "what": "Many languages installable through System Preferences, built into Mac OS X"
+            },
             "oxford": {
                 "terse": "Oxford",
                 "title": "Oxford Dictionary",
@@ -48,16 +58,6 @@
             "rhvoice": {
                 "title": "RHVoice",
                 "what": "Russian, Georgian, English, and Esperanto; Linux natively or Windows via SAPI"
-            },
-            "say": {
-                "terse": "OS X",
-                "title": "OS X Speech Synthesis Manager",
-                "what": "Many languages installable through System Preferences, built into Mac OS X"
-            },
-            "sapi5": {
-                "terse": "SAPI",
-                "title": "Microsoft Speech API (SAPI)",
-                "what": "Interface for desktop software to enable TTS playback, built into Windows"
             },
             "spanishdict": {
                 "title": "SpanishDict",
@@ -71,10 +71,19 @@
                 "title": "TTS-API.com",
                 "what": "English speech, available over the Internet"
             },
+            "voicetext": {
+                "title": "VoiceText",
+                "what": "Japanese speech in multiple voices, available over the Internet"
+            },
             "yandex": {
                 "terse": "Yandex",
                 "title": "Yandex.Translate",
                 "what": "Russian and many European languages, available over the Internet"
+            },
+            "youdao": {
+                "terse": "Youdao",
+                "title": "Youdao Dictionary",
+                "what": "British and American English, available over the Internet"
             }
         }
     },
@@ -145,7 +154,7 @@
             "advanced": {
                 "terse": "Advanced",
                 "title": "Advanced Configuration",
-                "what": "Check for updates, enable debugging, manage your cache"
+                "what": "Setup presets and groups, check for updates, manage your cache"
             }
         }
     },

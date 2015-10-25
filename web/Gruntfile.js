@@ -94,11 +94,18 @@ module.exports = function (grunt) {
 
     var KEYS = {};
     var KEYS_MISSING = [];
+    var KEYS_RELAYS_MISSING = [];
     try { KEYS = grunt.file.readJSON('keys.json'); } catch (ignore) { }
-    [['gsv', '0000000000000000']].forEach(function (tuple) {
+    [['gsv', '0000000000000000', 'relays', {}]].forEach(function (tuple) {
         if (!KEYS[tuple[0]]) {
             KEYS[tuple[0]] = tuple[1];
             KEYS_MISSING.push(tuple[0]);
+        }
+    });
+    ['voicetext'].forEach(function (relay) {
+        if (!KEYS.relays[relay]) {
+          KEYS.relays[relay] = '???';
+          KEYS_RELAYS_MISSING.push(relay);
         }
     });
 
@@ -339,6 +346,12 @@ module.exports = function (grunt) {
                 dest: 'build/gsv.html',
             }]},
 
+            relaysPy: {files: [{
+                data: KEYS.relays,
+                template: 'relays/__init__.py',
+                dest: 'build/relays/__init__.py',
+            }]},
+
             unresolvedError404: {files: [{
                 data: data({
                     me: {title: "Not Found"},
@@ -496,12 +509,12 @@ module.exports = function (grunt) {
               upload: 'gsv\\.html'},
 
             {url: '/api/update/[a-z\\d]+-' + gaeRegex([
-                '1.4.1',
+                '1.5.0',
               ]),
               static_files: 'api/update/good-version.json',
               upload: 'api/update/good-version\\.json'},
             {url: '/api/update/[a-z\\d]+-' + gaeRegex([
-                '1.4.1-pre', '1.4.0',
+                '1.5.0-pre', '1.5.0-dev', '1.4.1', '1.4.1-pre', '1.4.0',
                 '1.4.0-pre', '1.4.0-dev', '1.3.1', '1.3.1-pre', '1.3.0',
                 '1.3.0-pre', '1.3.0-dev', '1.2.3', '1.2.3-pre', '1.2.2',
                 '1.2.2-pre', '1.2.1', '1.2.1-pre', '1.2.0', '1.2.0-pre',
@@ -514,9 +527,11 @@ module.exports = function (grunt) {
             {url: '/api/update/[a-z\\d]+-\\d+\\.\\d+\\.(0-dev|\\d+-pre)',
               static_files: 'api/update/unreleased.json',
               upload: 'api/update/unreleased\\.json'},
-
             {url: '/api/update', static_files: 'api/update/index.json',
               upload: 'api/update/index\\.json', expiration: '70d'},
+
+            {url: '/api/voicetext', script: 'relays.voicetext'},
+
             {url: '/api', static_files: 'api/index.json',
               upload: 'api/index\\.json', expiration: '70d'},
 
@@ -568,6 +583,9 @@ module.exports = function (grunt) {
     grunt.task.registerTask('keycheck', "Verify API keys.", function () {
         if (KEYS_MISSING.length) {
             grunt.fail.fatal("Missing keys for " + KEYS_MISSING.join(", "));
+        } else if (KEYS_RELAYS_MISSING.length) {
+            grunt.fail.fatal("Missing relay keys for " +
+                             KEYS_RELAYS_MISSING.join(", "));
         } else {
             grunt.log.ok("API keys are correctly initialized.");
         }
@@ -667,6 +685,8 @@ module.exports = function (grunt) {
         images: {files: 'images/*.{gif,png}', tasks: 'copy:images'},
         robots: {files: 'robots.txt', tasks: 'copy:robots'},
         gsv: {files: 'gsv.mustache', tasks: 'mustache_render:gsv'},
+        relaysPy: {files: 'relays/__init__.py',
+                   tasks: 'mustache_render:relaysPy'},
         unresolvedPy: {files: 'unresolved/__init__.py',
           tasks: 'copy:unresolvedPy'},
 

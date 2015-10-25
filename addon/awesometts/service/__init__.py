@@ -43,7 +43,9 @@ __all__ = [
     'Say',
     'SpanishDict',
     'TTSAPICom',
+    'VoiceText',
     'Yandex',
+    'Youdao',
 ]
 
 from .common import Trait
@@ -63,4 +65,6 @@ from .sapi5js import SAPI5JS
 from .say import Say
 from .spanishdict import SpanishDict
 from .ttsapicom import TTSAPICom
+from .voicetext import VoiceText
 from .yandex import Yandex
+from .youdao import Youdao

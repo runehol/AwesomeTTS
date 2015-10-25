@@ -198,8 +198,8 @@
       parentheses are removed.</li>
     <li>
         Users with multiple rules configured might be interested in how they
-        interact with each other. The rules are listed on-screen in the same
-        order that they are applied, but specifically, AwesomeTTS will
+        interact with each other. The rules are listed on-screen roughly in
+        the order that they are applied, but specifically, AwesomeTTS will
         transform input text using the following rules in the following order:
 
         <ol>
@@ -209,6 +209,8 @@
               <strong>always</strong> <em>(on-the-fly only)</em></li>
             <li>removal of any hint field content, <strong>if enabled by the
               user</strong> <em>(on-the-fly only)</em></li>
+            <li>transformation of newlines into ellipses, <strong>if enabled
+              by the user</strong></li>
             <li>removal of any HTML tags, <strong>always</strong></li>
             <li>removal of any <code>[sound]</code> tags,
               <strong>always</strong></li>

@@ -60,7 +60,8 @@ def os_call(callee, *args, **kwargs):
 
 _PKG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'awesometts')
 
-for _filename in ['main.py', 'main.pyc', 'main.pyo',
+for _filename in ['logger.py', 'logger.pyc', 'logger.pyo',  # dropped for 1.5
+                  'main.py', 'main.pyc', 'main.pyo',
                   'util.py', 'util.pyc', 'util.pyo']:
     os_call(os.unlink, os.path.join(_PKG, _filename))
 
@@ -118,5 +119,6 @@ awesometts.config_menu()       # provides access to configuration dialog
 awesometts.editor_button()     # single audio clip generator button
 awesometts.reviewer_hooks()    # on-the-fly playback/shortcuts, context menus
 awesometts.sound_tag_delays()  # delayed playing of stored [sound]s in review
+awesometts.temp_files()        # remove temporary files upon session exit
 awesometts.update_checker()    # if enabled, runs the add-on update checker
 awesometts.window_shortcuts()  # enable/update shortcuts for add-on windows

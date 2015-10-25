@@ -6,6 +6,7 @@
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
 # Copyright (C) 2013-2015  Dave Shifflett
 # Copyright (C) 2013       mistaecko on GitHub
+# Copyright (C) 2015       Glutanimate on GitHub
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,7 +29,7 @@ __all__ = ['Google']
 
 from .base import Service
 from .common import Trait
-
+from random import randint
 
 class Google(Service):
     """
@@ -160,6 +161,7 @@ class Google(Service):
         """
 
         subtexts = self.util_split(text, 100)
+        randstring = str(randint(0,100000)) + '|' + str(randint(0,100000))
 
         try:
             self.net_download(
@@ -173,6 +175,7 @@ class Google(Service):
                         idx=idx,
                         textlen=len(subtext),
                         client='t',
+                        tk=randstring
                     ))
                     for idx, subtext in enumerate(subtexts)
                 ],

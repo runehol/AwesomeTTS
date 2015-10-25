@@ -34,6 +34,9 @@ import sys
 import subprocess
 
 
+PADDING = '\0' * 1024
+
+
 class Service(object):
     """
     Represents a TTS service, providing an interface for the framework
@@ -468,7 +471,7 @@ class Service(object):
         atexit.register(service.terminate)
 
     def net_stream(self, targets, require=None, method='GET',
-                   awesome_ua=False):
+                   awesome_ua=False, add_padding=False):
         """
         Returns the raw payload string from the specified target(s).
         If multiple targets are specified, their resulting payloads are
@@ -485,6 +488,10 @@ class Service(object):
         The underlying library here already understands how to search
         the environment for proxy settings (e.g. HTTP_PROXY), so we do
         not need to do anything extra for that.
+
+        If add_padding is True, then some additional null padding will
+        be added onto the stream returned. This is helpful for some web
+        services that sometimes return MP3s that `mplayer` clips early.
         """
 
         assert method in ['GET', 'POST'], "method must be GET or POST"
@@ -561,6 +568,8 @@ class Service(object):
 
             payloads.append(payload)
 
+        if add_padding:
+            payloads.append(PADDING)
         return ''.join(payloads)
 
     def net_download(self, path, *args, **kwargs):

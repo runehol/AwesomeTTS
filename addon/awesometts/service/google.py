@@ -180,6 +180,7 @@ class Google(Service):
                     for idx, subtext in enumerate(subtexts)
                 ],
                 require=dict(mime='audio/mpeg', size=1024),
+                add_padding=True,
             )
 
         except IOError as io_error:

@@ -402,7 +402,7 @@ class Router(object):
                 filename = RE_UNSAFE.sub('', filename)
                 filename = RE_WHITESPACE.sub(' ', filename).strip()
                 if not filename or filename.lower() in WINDOWS_RESERVED:
-                    filename = 'AwesomeTTS Audio'
+                    filename = u'AwesomeTTS Audio'
                 else:
                     filename = filename[0:90]  # accommodate NTFS path limits
                 filename = 'ATTS ' + filename + '.mp3'

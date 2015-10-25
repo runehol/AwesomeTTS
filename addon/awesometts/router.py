@@ -28,6 +28,7 @@ import os
 import os.path
 from random import shuffle
 import re
+from socket import error as SocketError
 from time import time
 from urllib2 import URLError
 
@@ -433,7 +434,7 @@ class Router(object):
         else:
             def on_error(exception):
                 """
-                For Internet-based services, cache errors. URLError
+                For Internet-based services, cache errors. Certain
                 exceptions are not cached, as they are usually network
                 or connectivity errors.
 
@@ -441,6 +442,7 @@ class Router(object):
                 """
 
                 if BaseTrait.INTERNET in service['class'].TRAITS and \
+                   not isinstance(exception, SocketError) and \
                    not isinstance(exception, URLError):
                     self._failures[path] = time(), exception
                 callbacks['fail'](exception)

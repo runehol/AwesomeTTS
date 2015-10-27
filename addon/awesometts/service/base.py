@@ -348,7 +348,8 @@ class Service(object):
 
         return returned
 
-    def cli_transcode(self, input_path, output_path, require=None):
+    def cli_transcode(self, input_path, output_path, require=None,
+                      add_padding=False):
         """
         Runs the LAME transcoder to create a new MP3 file.
 
@@ -360,6 +361,10 @@ class Service(object):
         via the CLI. However, because the temporary directory on Windows
         will be of the all-ASCII variety, we can send it through there
         first and then move it to its final home.
+
+        If add_padding is True, then some additional null padding will
+        be added onto the resulting MP3. This can be helpful to ensure
+        that the generated MP3 will not be clipped by `mplayer`.
         """
 
         if not os.path.exists(input_path):
@@ -404,6 +409,9 @@ class Service(object):
                 "Transcoding the audio stream failed. Are the flags you "
                 "specified for LAME (%s) okay?" % self._lame_flags()
             )
+
+        if add_padding:
+            self.util_pad(intermediate_path)
 
         shutil.move(intermediate_path, output_path)  # see note above
 
@@ -739,6 +747,15 @@ class Service(object):
             for input_file in input_files:
                 with open(input_file, 'rb') as input_stream:
                     output_stream.write(input_stream.read())
+
+    def util_pad(self, path):
+        """
+        Add padding to a file already on the file system.
+        """
+
+        self._logger.debug("Adding padding onto %s", path)
+        with open(path, 'ab') as output_stream:
+            output_stream.write(PADDING)
 
     def util_split(self, text, limit):
         """

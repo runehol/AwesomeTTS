@@ -4,7 +4,7 @@
         "grunt-contrib-clean": "0.6.x",
         "grunt-contrib-copy": "^0.8.2",
         "grunt-contrib-cssmin": "^0.13.0",
-        "grunt-contrib-htmlmin": "^0.5.0",
+        "grunt-contrib-htmlmin": "^0.6.0",
         "grunt-contrib-watch": "0.6.x",
         "grunt-gae": "^0.2.4",
         "grunt-json-minify": "0.4.x",

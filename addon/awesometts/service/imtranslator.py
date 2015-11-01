@@ -134,22 +134,44 @@ class ImTranslator(Service):
         """
         Sends the TTS request to ImTranslator, captures the audio from
         the returned SWF, and transcodes to MP3.
+
+        Because ImTranslator can sometimes throw 500 errors, both steps
+        of this (i.e. downloading the page and dumping the audio) may be
+        retried up to three times.
         """
 
         output_wavs = []
         output_mp3s = []
         require = dict(size_in=4096)
 
+        logger = self._logger
+
         try:
             for subtext in self.util_split(text, 400):
-                result = self.net_stream(
-                    ('http://imtranslator.net/translate-and-speak/'
-                     'sockets/tts.asp',
-                     dict(text=subtext, vc=options['voice'],
-                          speed=options['speed'], FA=1)),
-                    require=dict(mime='text/html', size=256),
-                    method='POST',
-                )
+                for i in range(1, 4):
+                    try:
+                        logger.info("ImTranslator net_stream: attempt %d", i)
+                        result = self.net_stream(
+                            ('http://imtranslator.net/translate-and-speak/'
+                             'sockets/tts.asp',
+                             dict(text=subtext, vc=options['voice'],
+                                  speed=options['speed'], FA=1)),
+                            require=dict(mime='text/html', size=256),
+                            method='POST',
+                        )
+                    except IOError as error:
+                        if hasattr(error, 'code') and error.code == 500:
+                            logger.warn("ImTranslator net_stream: got 500")
+                        else:
+                            logger.error("ImTranslator net_stream: non-500")
+                            raise
+                    else:
+                        logger.info("ImTranslator net_stream: success")
+                        break
+                else:
+                    logger.error("ImTranslator net_stream: exhausted")
+                    raise IOError("unable to retrieve page payload from "
+                                  "ImTranslator even after multiple attempts")
 
                 result = self._RE_SWF.search(result)
                 if not result or not result.group():
@@ -159,7 +181,20 @@ class ImTranslator(Service):
 
                 output_wav = self.path_temp('wav')
                 output_wavs.append(output_wav)
-                self.net_dump(output_wav, result)
+
+                for i in range(1, 4):
+                    try:
+                        logger.info("ImTranslator net_dump:   attempt %d", i)
+                        self.net_dump(output_wav, result)
+                    except RuntimeError:
+                        logger.warn("ImTranslator net_dump:   failure")
+                    else:
+                        logger.info("ImTranslator net_dump:   success")
+                        break
+                else:
+                    logger.error("ImTranslator net_dump:   exhausted")
+                    raise IOError("unable to dump audio from ImTranslator "
+                                  "even after multiple attempts")
 
             if len(output_wavs) > 1:
                 for output_wav in output_wavs:

@@ -25,6 +25,7 @@ Service implementation for ImTranslator's text-to-speech portal
 __all__ = ['ImTranslator']
 
 import re
+from socket import error as SocketError  # non-caching error class
 
 from .base import Service
 from .common import Trait
@@ -170,8 +171,8 @@ class ImTranslator(Service):
                         break
                 else:
                     logger.error("ImTranslator net_stream: exhausted")
-                    raise IOError("unable to retrieve page payload from "
-                                  "ImTranslator even after multiple attempts")
+                    raise SocketError("unable to fetch page from ImTranslator "
+                                      "even after multiple attempts")
 
                 result = self._RE_SWF.search(result)
                 if not result or not result.group():
@@ -193,8 +194,8 @@ class ImTranslator(Service):
                         break
                 else:
                     logger.error("ImTranslator net_dump:   exhausted")
-                    raise IOError("unable to dump audio from ImTranslator "
-                                  "even after multiple attempts")
+                    raise SocketError("unable to dump audio from ImTranslator "
+                                      "even after multiple attempts")
 
             if len(output_wavs) > 1:
                 for output_wav in output_wavs:

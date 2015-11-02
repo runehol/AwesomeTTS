@@ -160,11 +160,19 @@ class ImTranslator(Service):
                             require=dict(mime='text/html', size=256),
                             method='POST',
                         )
-                    except IOError as error:
+
+                        result = self._RE_SWF.search(result)
+                        if not result or not result.group():
+                            raise EnvironmentError('500b', "cannot find SWF"
+                                                           "path in payload")
+                        result = result.group()
+                    except (EnvironmentError, IOError) as error:
                         if hasattr(error, 'code') and error.code == 500:
                             logger.warn("ImTranslator net_stream: got 500")
+                        elif hasattr(error, 'errno') and error.errno == '500b':
+                            logger.warn("ImTranslator net_stream: no SWF path")
                         else:
-                            logger.error("ImTranslator net_stream: non-500")
+                            logger.error("ImTranslator net_stream: %s", error)
                             raise
                     else:
                         logger.info("ImTranslator net_stream: success")
@@ -173,12 +181,6 @@ class ImTranslator(Service):
                     logger.error("ImTranslator net_stream: exhausted")
                     raise SocketError("unable to fetch page from ImTranslator "
                                       "even after multiple attempts")
-
-                result = self._RE_SWF.search(result)
-                if not result or not result.group():
-                    raise EnvironmentError("Cannot find audio SWF in "
-                                           "response from ImTranslator")
-                result = result.group()
 
                 output_wav = self.path_temp('wav')
                 output_wavs.append(output_wav)

@@ -182,6 +182,8 @@ router = Router(
             ('yandex', service.Yandex),
             ('youdao', service.Youdao),
         ],
+        dead=dict(
+        ),
         aliases=[('b', 'baidu'), ('g', 'google'), ('macosx', 'say'),
                  ('microsoft', 'sapi5'), ('microsoftjs', 'sapi5js'),
                  ('microsoftjscript', 'sapi5js'), ('oed', 'oxford'),

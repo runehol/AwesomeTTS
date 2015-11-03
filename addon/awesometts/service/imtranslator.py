@@ -136,7 +136,7 @@ class ImTranslator(Service):
         Sends the TTS request to ImTranslator, captures the audio from
         the returned SWF, and transcodes to MP3.
 
-        Because ImTranslator can sometimes throw 500 errors, both steps
+        Because ImTranslator sometimes raises various errors, both steps
         of this (i.e. downloading the page and dumping the audio) may be
         retried up to three times.
         """
@@ -171,6 +171,8 @@ class ImTranslator(Service):
                             logger.warn("ImTranslator net_stream: got 500")
                         elif hasattr(error, 'errno') and error.errno == '500b':
                             logger.warn("ImTranslator net_stream: no SWF path")
+                        elif 'timed out' in format(error):
+                            logger.warn("ImTranslator net_stream: timeout")
                         else:
                             logger.error("ImTranslator net_stream: %s", error)
                             raise

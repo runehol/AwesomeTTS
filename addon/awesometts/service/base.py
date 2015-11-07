@@ -479,7 +479,8 @@ class Service(object):
         atexit.register(service.terminate)
 
     def net_stream(self, targets, require=None, method='GET',
-                   awesome_ua=False, add_padding=False):
+                   awesome_ua=False, add_padding=False,
+                   custom_quoter=None):
         """
         Returns the raw payload string from the specified target(s).
         If multiple targets are specified, their resulting payloads are
@@ -513,7 +514,11 @@ class Service(object):
                 '&'.join(
                     '='.join([
                         key,
-                        quote(
+                        (
+                            custom_quoter[key] if (custom_quoter and
+                                                   key in custom_quoter)
+                            else quote
+                        )(
                             val.encode('utf-8') if isinstance(val, unicode)
                             else val if isinstance(val, str)
                             else str(val),

@@ -45,6 +45,11 @@
                 "title": "Microsoft Speech API (SAPI)",
                 "what": "Interface for desktop software to enable TTS playback, built into Windows"
             },
+            "naver": {
+                "terse": "NAVER",
+                "title": "NAVER Translate",
+                "what": "Korean, English, Japanese, and Chinese, available over the Internet"
+            },
             "say": {
                 "terse": "OS X",
                 "title": "OS X Speech Synthesis Manager",

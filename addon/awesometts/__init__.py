@@ -177,11 +177,14 @@ router = Router(
             ('sapi5js', service.SAPI5JS),
             ('say', service.Say),
             ('spanishdict', service.SpanishDict),
-            ('ttsapicom', service.TTSAPICom),
             ('voicetext', service.VoiceText),
             ('yandex', service.Yandex),
             ('youdao', service.Youdao),
         ],
+        dead=dict(
+            ttsapicom="TTS-API.com has gone offline and can no longer be "
+                      "used. Please switch to another service with English.",
+        ),
         aliases=[('b', 'baidu'), ('g', 'google'), ('macosx', 'say'),
                  ('microsoft', 'sapi5'), ('microsoftjs', 'sapi5js'),
                  ('microsoftjscript', 'sapi5js'), ('oed', 'oxford'),

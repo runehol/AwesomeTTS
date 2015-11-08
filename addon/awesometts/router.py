@@ -76,7 +76,7 @@ class Router(object):
         '_failures',   # lookup of file paths that raised exceptions
         '_logger',     # logger-like interface with debug(), info(), etc.
         '_pool',       # instance of the _Pool class for managing threads
-        '_services',   # bundle with aliases, avail, lookup
+        '_services',   # bundle with dead services, aliases, avail, lookup
         '_temp_dir',   # path for writing human-readable filenames
     ]
 
@@ -85,6 +85,7 @@ class Router(object):
         The services should be a bundle with the following:
 
             - mappings (list of tuples): each with service ID, class
+            - dead (dict): map of dead service IDs to an error message
             - aliases (list of tuples): alternate-to-official service IDs
             - normalize (callable): for service IDs and option keys
             - args (tuple): to be passed to Service constructors
@@ -666,7 +667,10 @@ class Router(object):
         try:
             service = self._services.lookup[svc_id]
         except KeyError:
-            raise ValueError("There is no '%s' service" % svc_id)
+            raise ValueError(
+                self._services.dead[svc_id] if svc_id in self._services.dead
+                else "There is no '%s' service" % svc_id
+            )
 
         self._load_service(service)
 

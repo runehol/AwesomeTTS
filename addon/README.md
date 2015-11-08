@@ -17,7 +17,6 @@ services:
 - RHVoice (`RHVoice-client`, `RHVoice-service`)
 - SpanishDict.com
 - SVOX Pico (`pico2wave`)
-- TTS-API.com
 - VoiceText
 - Yandex.Translate
 - Youdao Dictionary

@@ -42,7 +42,6 @@ __all__ = [
     'SAPI5JS',
     'Say',
     'SpanishDict',
-    'TTSAPICom',
     'VoiceText',
     'Yandex',
     'Youdao',
@@ -64,7 +63,6 @@ from .sapi5 import SAPI5
 from .sapi5js import SAPI5JS
 from .say import Say
 from .spanishdict import SpanishDict
-from .ttsapicom import TTSAPICom
 from .voicetext import VoiceText
 from .yandex import Yandex
 from .youdao import Youdao

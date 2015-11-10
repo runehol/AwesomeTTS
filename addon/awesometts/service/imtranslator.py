@@ -25,6 +25,7 @@ Service implementation for ImTranslator's text-to-speech portal
 __all__ = ['ImTranslator']
 
 import re
+from socket import error as SocketError  # non-caching error class
 
 from .base import Service
 from .common import Trait
@@ -134,32 +135,71 @@ class ImTranslator(Service):
         """
         Sends the TTS request to ImTranslator, captures the audio from
         the returned SWF, and transcodes to MP3.
+
+        Because ImTranslator sometimes raises various errors, both steps
+        of this (i.e. downloading the page and dumping the audio) may be
+        retried up to three times.
         """
 
         output_wavs = []
         output_mp3s = []
         require = dict(size_in=4096)
 
+        logger = self._logger
+
         try:
             for subtext in self.util_split(text, 400):
-                result = self.net_stream(
-                    ('http://imtranslator.net/translate-and-speak/'
-                     'sockets/tts.asp',
-                     dict(text=subtext, vc=options['voice'],
-                          speed=options['speed'], FA=1)),
-                    require=dict(mime='text/html', size=256),
-                    method='POST',
-                )
+                for i in range(1, 4):
+                    try:
+                        logger.info("ImTranslator net_stream: attempt %d", i)
+                        result = self.net_stream(
+                            ('http://imtranslator.net/translate-and-speak/'
+                             'sockets/tts.asp',
+                             dict(text=subtext, vc=options['voice'],
+                                  speed=options['speed'], FA=1)),
+                            require=dict(mime='text/html', size=256),
+                            method='POST',
+                        )
 
-                result = self._RE_SWF.search(result)
-                if not result or not result.group():
-                    raise EnvironmentError("Cannot find audio SWF in "
-                                           "response from ImTranslator")
-                result = result.group()
+                        result = self._RE_SWF.search(result)
+                        if not result or not result.group():
+                            raise EnvironmentError('500b', "cannot find SWF"
+                                                           "path in payload")
+                        result = result.group()
+                    except (EnvironmentError, IOError) as error:
+                        if hasattr(error, 'code') and error.code == 500:
+                            logger.warn("ImTranslator net_stream: got 500")
+                        elif hasattr(error, 'errno') and error.errno == '500b':
+                            logger.warn("ImTranslator net_stream: no SWF path")
+                        elif 'timed out' in format(error):
+                            logger.warn("ImTranslator net_stream: timeout")
+                        else:
+                            logger.error("ImTranslator net_stream: %s", error)
+                            raise
+                    else:
+                        logger.info("ImTranslator net_stream: success")
+                        break
+                else:
+                    logger.error("ImTranslator net_stream: exhausted")
+                    raise SocketError("unable to fetch page from ImTranslator "
+                                      "even after multiple attempts")
 
                 output_wav = self.path_temp('wav')
                 output_wavs.append(output_wav)
-                self.net_dump(output_wav, result)
+
+                for i in range(1, 4):
+                    try:
+                        logger.info("ImTranslator net_dump:   attempt %d", i)
+                        self.net_dump(output_wav, result)
+                    except RuntimeError:
+                        logger.warn("ImTranslator net_dump:   failure")
+                    else:
+                        logger.info("ImTranslator net_dump:   success")
+                        break
+                else:
+                    logger.error("ImTranslator net_dump:   exhausted")
+                    raise SocketError("unable to dump audio from ImTranslator "
+                                      "even after multiple attempts")
 
             if len(output_wavs) > 1:
                 for output_wav in output_wavs:

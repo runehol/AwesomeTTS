@@ -151,6 +151,7 @@ class Yandex(Service):
                 for subtext in self.util_split(text, 750)
             ],
             require=dict(mime='audio/mpeg', size=1024),
+            add_padding=True,
         )
 
         # TODO: This workaround is just fine for now, but it would be nice if

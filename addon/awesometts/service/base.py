@@ -34,6 +34,9 @@ import sys
 import subprocess
 
 
+PADDING = '\0' * 1024
+
+
 class Service(object):
     """
     Represents a TTS service, providing an interface for the framework
@@ -345,7 +348,8 @@ class Service(object):
 
         return returned
 
-    def cli_transcode(self, input_path, output_path, require=None):
+    def cli_transcode(self, input_path, output_path, require=None,
+                      add_padding=False):
         """
         Runs the LAME transcoder to create a new MP3 file.
 
@@ -357,6 +361,10 @@ class Service(object):
         via the CLI. However, because the temporary directory on Windows
         will be of the all-ASCII variety, we can send it through there
         first and then move it to its final home.
+
+        If add_padding is True, then some additional null padding will
+        be added onto the resulting MP3. This can be helpful to ensure
+        that the generated MP3 will not be clipped by `mplayer`.
         """
 
         if not os.path.exists(input_path):
@@ -401,6 +409,9 @@ class Service(object):
                 "Transcoding the audio stream failed. Are the flags you "
                 "specified for LAME (%s) okay?" % self._lame_flags()
             )
+
+        if add_padding:
+            self.util_pad(intermediate_path)
 
         shutil.move(intermediate_path, output_path)  # see note above
 
@@ -468,7 +479,7 @@ class Service(object):
         atexit.register(service.terminate)
 
     def net_stream(self, targets, require=None, method='GET',
-                   awesome_ua=False):
+                   awesome_ua=False, add_padding=False):
         """
         Returns the raw payload string from the specified target(s).
         If multiple targets are specified, their resulting payloads are
@@ -485,6 +496,10 @@ class Service(object):
         The underlying library here already understands how to search
         the environment for proxy settings (e.g. HTTP_PROXY), so we do
         not need to do anything extra for that.
+
+        If add_padding is True, then some additional null padding will
+        be added onto the stream returned. This is helpful for some web
+        services that sometimes return MP3s that `mplayer` clips early.
         """
 
         assert method in ['GET', 'POST'], "method must be GET or POST"
@@ -561,6 +576,8 @@ class Service(object):
 
             payloads.append(payload)
 
+        if add_padding:
+            payloads.append(PADDING)
         return ''.join(payloads)
 
     def net_download(self, path, *args, **kwargs):
@@ -730,6 +747,15 @@ class Service(object):
             for input_file in input_files:
                 with open(input_file, 'rb') as input_stream:
                     output_stream.write(input_stream.read())
+
+    def util_pad(self, path):
+        """
+        Add padding to a file already on the file system.
+        """
+
+        self._logger.debug("Adding padding onto %s", path)
+        with open(path, 'ab') as output_stream:
+            output_stream.write(PADDING)
 
     def util_split(self, text, limit):
         """

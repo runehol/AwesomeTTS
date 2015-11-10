@@ -94,4 +94,5 @@ class Youdao(Service):
                 for subtext in self.util_split(text, 1000)
             ],
             require=dict(mime='audio/mpeg', size=256),
+            add_padding=True,
         )

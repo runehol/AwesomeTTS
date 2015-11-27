@@ -34,7 +34,7 @@ import sys
 import subprocess
 
 
-PADDING = '\0' * 1024
+PADDING = '\0' * 2**11
 
 
 class Service(object):

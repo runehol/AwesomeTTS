@@ -1,10 +1,9 @@
 {
     "auto": true,
-    "intro": "This release adds two new services, fixes Google Translate, adds a text manipulation option, and fixes some minor bugs.",
+    "intro": "This release adds two new services, adds a text manipulation option, and fixes some minor bugs.",
     "notes": [
       "adds VoiceText service (thanks cjkaminski)",
       "adds Youdao Dictionary service (thanks Lou Shi)",
-      "fixes Google Translate again (thanks effective4english, Glutanimate, leo-one, SauloSilva)",
       "option to use human-readable filenames (thanks george84, turgutbekil, szpak)",
       "users can change newlines in their input text into ellipses (thanks noinkling)"
     ],

@@ -48,7 +48,7 @@ from .text import Sanitizer
 from .updates import Updates
 
 
-VERSION = '1.5.0'
+VERSION = '1.5.1'
 
 WEB = 'https://ankiatts.appspot.com'
 
@@ -98,7 +98,9 @@ config = Config(
         ('last_mass_dest', 'text', 'Back', unicode, unicode),
         ('last_mass_source', 'text', 'Front', unicode, unicode),
         ('last_options', 'text', {}, to.deserialized_dict, to.compact_json),
-        ('last_service', 'text', 'google', str, str),
+        ('last_service', 'text', ('sapi5' if 'win32' in sys.platform
+                                  else 'say' if 'darwin' in sys.platform
+                                  else 'yandex'), str, str),
         ('last_strip_mode', 'text', 'ours', str, str),
         ('launch_browser_generator', 'integer', Qt.ControlModifier | Qt.Key_T,
          to.nullable_key, to.nullable_int),

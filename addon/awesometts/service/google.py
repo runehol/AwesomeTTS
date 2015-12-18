@@ -73,7 +73,8 @@ class Google(Service):
         """
 
         return "Google Translate text-to-speech web API " \
-            "(%d voices)" % len(self._VOICE_CODES)
+            "(%d voices)\n\nThis service currently has issues and may not " \
+            "successfully return audio." % len(self._VOICE_CODES)
 
     def options(self):
         """

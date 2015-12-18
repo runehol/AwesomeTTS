@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2015  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2014  Dave Shifflett
+# Copyright (C) 2013-2015  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -338,7 +338,7 @@ class Reviewer(object):
                     )
                 return
 
-            svc_id = 'google'
+            svc_id = 'yandex'
 
         else:
             if len(components) < 3:

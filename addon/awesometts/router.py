@@ -450,27 +450,30 @@ class Router(object):
 
             service['instance'].net_reset()
             self._busy.append(path)
+
+            completion_callback = lambda exception: (
+                self._busy.remove(path),
+
+                'done' in callbacks and callbacks['done'](),
+
+                'miss' in callbacks and callbacks['miss'](
+                    svc_id,
+                    service['instance'].net_count()
+                ),
+
+                on_error(exception) if exception
+                else callbacks['okay'](human(path)) if os.path.exists(path)
+                else on_error(RuntimeError(
+                    "The %s service did not successfully write out "
+                    "an MP3." % service['name']
+                )),
+
+                'then' in callbacks and callbacks['then'](),
+            )
+
             self._pool.spawn(
                 task=lambda: service['instance'].run(text, options, path),
-                callback=lambda exception: (
-                    self._busy.remove(path),
-
-                    'done' in callbacks and callbacks['done'](),
-
-                    'miss' in callbacks and callbacks['miss'](
-                        svc_id,
-                        service['instance'].net_count()
-                    ),
-
-                    on_error(exception) if exception
-                    else callbacks['okay'](human(path)) if os.path.exists(path)
-                    else on_error(RuntimeError(
-                        "The %s service did not successfully write out "
-                        "an MP3." % service['name']
-                    )),
-
-                    'then' in callbacks and callbacks['then'](),
-                )
+                callback=completion_callback,
             )
 
     def _call_assert_callbacks(self, callbacks):

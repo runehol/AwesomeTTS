@@ -478,7 +478,17 @@ class Router(object):
                     callback=completion_callback,
                 )
 
-            do_spawn()
+            if hasattr(service['instance'], 'prerun'):
+                def prerun_ok(result):
+                    options['prerun'] = result
+                    do_spawn()
+                try:
+                    service['instance'].prerun(text, options, path,
+                                               prerun_ok, completion_callback)
+                except Exception as exception:  # all, pylint:disable=W0703
+                    completion_callback(exception)
+            else:
+                do_spawn()
 
     def _call_assert_callbacks(self, callbacks):
         """Checks the callbacks argument for validity."""

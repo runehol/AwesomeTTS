@@ -471,10 +471,14 @@ class Router(object):
                 'then' in callbacks and callbacks['then'](),
             )
 
-            self._pool.spawn(
-                task=lambda: service['instance'].run(text, options, path),
-                callback=completion_callback,
-            )
+            def do_spawn():
+                """Call if ready to start a thread to run the service."""
+                self._pool.spawn(
+                    task=lambda: service['instance'].run(text, options, path),
+                    callback=completion_callback,
+                )
+
+            do_spawn()
 
     def _call_assert_callbacks(self, callbacks):
         """Checks the callbacks argument for validity."""

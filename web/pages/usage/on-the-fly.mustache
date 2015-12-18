@@ -77,7 +77,7 @@
   and then modify your template to look like this:</p>
 
 {{=<%disable mustache%>=}}
-<pre>{{^No TTS}}&lt;tts service="google" voice="ar"&gt;{{/No TTS}}
+<pre>{{^No TTS}}&lt;tts service="yandex" voice="ar"&gt;{{/No TTS}}
     {{Front}}
 {{^No TTS}}&lt;/tts&gt;{{/No TTS}}</pre>
 <%disable={{ }}=mustache%>
@@ -90,7 +90,7 @@
 {{=<%disable mustache%>=}}
 <pre>{{Sound}}
 
-{{^Sound}}&lt;tts service="google" voice="ar"&gt;{{/Sound}}
+{{^Sound}}&lt;tts service="yandex" voice="ar"&gt;{{/Sound}}
     {{Front}}
 {{^Sound}}&lt;/tts&gt;{{/Sound}}</pre>
 <%disable={{ }}=mustache%>
@@ -127,20 +127,15 @@
         You may nest your <kbd>&lt;tts&gt;</kbd> tags to play the same input
         through multiple services. For example:
 
-<pre>&lt;tts service="google" voice="en-US"&gt;
-    This will be read by the American voice only.
+<pre>&lt;tts service="baidu" voice="en"&gt;
+    This will be read by the Baidu American English voice only.
 
-    &lt;tts service="google" voice="en-AU"&gt;
-        This will be read by the American and Australian voices.
+    &lt;tts service="yandex" voice="en-GB"&gt;
+        This will be read by both the Baidu American English and Yandex
+        British English voices.
     &lt;/tts&gt;
 
-    This will be read by the American voice only.
-
-    &lt;tts service="google" voice="en-GB"&gt;
-        This will be read by the American and British voices.
-    &lt;/tts&gt;
-
-    This will be read by the American voice only.
+    This will be read by the Baidu American English voice only.
 &lt;/tts&gt;</pre>
 
     </li>

@@ -27,9 +27,17 @@ Service implementation for Google Translate's text-to-speech API
 
 __all__ = ['Google']
 
+from PyQt4.QtCore import QTimer, QUrl
+from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest
+from PyQt4.QtWebKit import QWebPage
+
 from .base import Service
 from .common import Trait
 
+
+HEADER_CONTENT_TYPE = QNetworkRequest.ContentTypeHeader
+HEADER_CONTENT_LENGTH = QNetworkRequest.ContentLengthHeader
+HEADER_LOCATION = QNetworkRequest.LocationHeader
 
 LIMIT = 200
 
@@ -66,7 +74,6 @@ class Google(Service):
 
         frames = self._frames = {}
 
-        from PyQt4.QtNetwork import QNetworkAccessManager
         class InterceptingNAM(QNetworkAccessManager):
             def createRequest(self, op, req, *args, **kwargs):
                 frame = req.originatingObject()
@@ -78,13 +85,22 @@ class Google(Service):
 
                     def finished():
                         if rep.error():
-                            callbacks['fail']("error in /translate_tts reply")
+                            callbacks['fail']("error in network reply")
+                        elif rep.header(HEADER_LOCATION):
+                            callbacks['fail']("got redirected away")
+                        elif rep.header(HEADER_CONTENT_TYPE) != 'audio/mpeg':
+                            callbacks['fail']("unexpected Content-Type")
+                        elif rep.header(HEADER_CONTENT_LENGTH) < 1024:
+                            callbacks['fail']("Content-Length is too small")
                         else:
                             stream = rep.readAll()
-                            if stream:
-                                callbacks['okay'](stream)
+                            if not stream:
+                                callbacks['fail']("no stream returned")
+                            elif len(stream) < 1024:
+                                callbacks['fail']("stream is too small")
                             else:
-                                callbacks['fail']("empty /translate_tts reply")
+                                callbacks['okay'](stream)
+
                     rep.finished.connect(finished)
 
                 return QNetworkAccessManager.createRequest(self, op, req,
@@ -135,7 +151,6 @@ class Google(Service):
                           "Consider using a different service if you need "
                           "playback for long phrases." % LIMIT)
 
-        from PyQt4.QtWebKit import QWebPage
         page = QWebPage()
         page.setNetworkAccessManager(self._nam)
 
@@ -168,7 +183,6 @@ class Google(Service):
                 fail("Cannot load Google Translate page")
         frame.loadFinished.connect(load_finished)
 
-        from PyQt4.QtCore import QUrl
         url = QUrl('https://translate.google.com/')
         url.addQueryItem('sl', options['voice'])
         url.addQueryItem('q', text)
@@ -176,7 +190,6 @@ class Google(Service):
 
         def timeout():
             fail("Request timed out")
-        from PyQt4.QtCore import QTimer
         QTimer.singleShot(10000, timeout)
 
     def run(self, text, options, path):

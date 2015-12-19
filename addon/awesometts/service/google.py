@@ -29,7 +29,23 @@ __all__ = ['Google']
 
 from .base import Service
 from .common import Trait
-from random import randint
+
+
+LIMIT = 200
+
+VOICES = {'af': "Afrikaans", 'ar': "Arabic", 'bs': "Bosnian", 'ca': "Catalan",
+          'cs': "Czech", 'cy': "Welsh", 'da': "Danish", 'de': "German",
+          'el': "Greek", 'en': "English", 'eo': "Esperanto", 'es': "Spanish",
+          'fi': "Finnish", 'fr': "French", 'hi': "Hindi", 'hr': "Croatian",
+          'ht': "Haitian Creole", 'hu': "Hungarian", 'hy': "Armenian",
+          'id': "Indonesian", 'is': "Icelandic", 'it': "Italian",
+          'ja': "Japanese", 'ko': "Korean", 'la': "Latin", 'lv': "Latvian",
+          'mk': "Macedonian", 'nl': "Dutch", 'no': "Norwegian",
+          'pl': "Polish", 'pt': "Portuguese", 'ro': "Romanian",
+          'ru': "Russian", 'sk': "Slovak", 'sq': "Albanian",
+          'sr': "Serbian", 'sv': "Swedish", 'sw': "Swahili", 'ta': "Tamil",
+          'th': "Thai", 'tr': "Turkish", 'vi': "Vietnamese", 'zh': "Chinese"}
+
 
 class Google(Service):
     """
@@ -37,105 +53,67 @@ class Google(Service):
     """
 
     __slots__ = [
+        '_frames',  # maps in-flight QWebFrames to their callbacks
+        '_nam',     # shared QNetworkAccessManager across all QWebPages
     ]
 
     NAME = "Google Translate"
 
     TRAITS = [Trait.INTERNET]
 
-    _VOICE_CODES = {
-        # n.b. When modifying any variants, make sure that there are
-        # aliases defined in the voice_lookup list below for the most
-        # common alternate codes, including an alias from the base
-        # language to the variant with the most native speakers.
+    def __init__(self, *args, **kwargs):
+        """Setup our frames map and custom QNetworkAccessManager."""
 
-        'af': "Afrikaans", 'ar': "Arabic", 'bs': "Bosnian", 'ca': "Catalan",
-        'cs': "Czech", 'cy': "Welsh", 'da': "Danish", 'de': "German",
-        'el': "Greek", 'en-AU': "English, Australian",
-        'en-GB': "English, British", 'en-US': "English, American",
-        'eo': "Esperanto", 'es-419': "Spanish, Americas",
-        'es-ES': "Spanish, European", 'fi': "Finnish", 'fr': "French",
-        'hi': "Hindi", 'hr': "Croatian", 'ht': "Haitian Creole",
-        'hu': "Hungarian", 'hy': "Armenian", 'id': "Indonesian",
-        'is': "Icelandic", 'it': "Italian", 'ja': "Japanese", 'ko': "Korean",
-        'la': "Latin", 'lv': "Latvian", 'mk': "Macedonian", 'nl': "Dutch",
-        'no': "Norwegian", 'pl': "Polish", 'pt-BR': "Portuguese, Brazilian",
-        'pt-PT': "Portuguese, European", 'ro': "Romanian", 'ru': "Russian",
-        'sk': "Slovak", 'sq': "Albanian", 'sr': "Serbian", 'sv': "Swedish",
-        'sw': "Swahili", 'ta': "Tamil", 'th': "Thai", 'tr': "Turkish",
-        'vi': "Vietnamese", 'zh-CMN': "Chinese, Mandarin",
-        'zh-YUE': "Chinese, Cantonese",
-    }
+        frames = self._frames = {}
+
+        from PyQt4.QtNetwork import QNetworkAccessManager
+        class InterceptingNAM(QNetworkAccessManager):
+            def createRequest(self, op, req, *args, **kwargs):
+                frame = req.originatingObject()
+
+                if frame in frames and '/translate_tts' in req.url().toString():
+                    callbacks = frames[frame]
+                    rep = QNetworkAccessManager.createRequest(self, op, req,
+                                                              *args, **kwargs)
+
+                    def finished():
+                        if rep.error():
+                            callbacks['fail']("error in /translate_tts reply")
+                        else:
+                            stream = rep.readAll()
+                            if stream:
+                                callbacks['okay'](stream)
+                            else:
+                                callbacks['fail']("empty /translate_tts reply")
+                    rep.finished.connect(finished)
+
+                return QNetworkAccessManager.createRequest(self, op, req,
+                                                           *args, **kwargs)
+
+        self._nam = InterceptingNAM()
+
+        super(Google, self).__init__(*args, **kwargs)
 
     def desc(self):
-        """
-        Returns a short, static description.
-        """
+        """Returns voice count and character count limit."""
 
-        return "Google Translate text-to-speech web API " \
-            "(%d voices)\n\nThis service currently has issues and may not " \
-            "successfully return audio." % len(self._VOICE_CODES)
+        return ("Google Translate text-to-speech web API (%d voices; "
+                "limited to %d characters of input)") % (len(VOICES), LIMIT)
 
     def options(self):
-        """
-        Provides access to voice only.
-        """
+        """Provides access to voice only."""
 
-        voice_lookup = dict([
-            # aliases for Chinese, Cantonese (fewer speakers)
-            (self.normalize(alias), 'zh-YUE')
-            for alias in ['Cantonese', 'zh-TW', 'YUE']
-        ] + [
-            # aliases for Chinese, Mandarin (most speakers)
-            (self.normalize(alias), 'zh-CMN')
-            for alias in ['Mandarin', 'Chinese', 'zh', 'zh-CN', 'CMN']
-        ] + [
-            # aliases for Spanish, European (fewer speakers)
-            (self.normalize(alias), 'es-ES')
-            for alias in ['es-EU']
-        ] + [
-            # aliases for Spanish, Americas (most speakers)
-            (self.normalize(alias), 'es-419')
-            for alias in ['Spanish', 'es', 'es-LA', 'es-MX', 'es-US']
-        ] + [
-            # aliases for English, Australian (fewer speakers)
-            (self.normalize(alias), 'en-AU')
-            for alias in ['en-NZ']
-        ] + [
-            # aliases for English, British (moderate number)
-            (self.normalize(alias), 'en-GB')
-            for alias in ['en-EU', 'en-UK']
-        ] + [
-            # aliases for English, American (most speakers)
-            (self.normalize(alias), 'en-US')
-            for alias in ['English', 'en']
-        ] + [
-            # aliases for Portuguese, European (fewer speakers)
-            (self.normalize(alias), 'pt-PT')
-            for alias in ['pt-EU']
-        ] + [
-            # aliases for Portuguese, Brazilian (most speakers)
-            (self.normalize(alias), 'pt-BR')
-            for alias in ['Portuguese', 'pt']
-        ] + [
-            # then add/override for full names (e.g. Spanish, Americas)
-            (self.normalize(name), code)
-            for code, name in self._VOICE_CODES.items()
-        ] + [
-            # then add/override for official voices (e.g. es-419)
-            (self.normalize(code), code)
-            for code in self._VOICE_CODES.keys()
-        ])
+        voice_lookup = dict([(self.normalize(name), code)
+                             for code, name in VOICES.items()] +
+                            [(self.normalize(code), code)
+                             for code in VOICES.keys()])
 
         def transform_voice(value):
-            """Normalize and attempt to convert to official code."""
-
             normalized = self.normalize(value)
+
             if normalized in voice_lookup:
                 return voice_lookup[normalized]
 
-            # if input is more than two characters, maybe the user was trying
-            # a country-specific code (e.g. es-CO); chop it off and try again
             if len(normalized) > 2:
                 normalized = normalized[0:2]
                 if normalized in voice_lookup:
@@ -143,56 +121,67 @@ class Google(Service):
 
             return value
 
-        return [
-            dict(
-                key='voice',
-                label="Voice",
-                values=[(code, "%s (%s)" % (name, code))
-                        for code, name in sorted(self._VOICE_CODES.items())],
-                transform=transform_voice,
-            ),
-        ]
+        return [dict(key='voice',
+                     label="Voice",
+                     values=[(code, "%s (%s)" % (name, code))
+                             for code, name in sorted(VOICES.items())],
+                     transform=transform_voice)]
+
+    def prerun(self, text, options, path, router_success, router_error):
+        """Load Google Translate w/ language/text to capture audio."""
+
+        if len(text) > LIMIT:
+            raise IOError("Google Translate is limited to %d characters. "
+                          "Consider using a different service if you need "
+                          "playback for long phrases." % LIMIT)
+
+        from PyQt4.QtWebKit import QWebPage
+        page = QWebPage()
+        page.setNetworkAccessManager(self._nam)
+
+        frame = page.mainFrame()
+        frames = self._frames
+        def okay(stream):
+            if frame in frames:
+                del frames[frame]
+                router_success(stream)
+        def fail(message):
+            if frame in frames:
+                del frames[frame]
+                router_error(IOError(message))
+        frames[frame] = dict(okay=okay, fail=fail, page=page)
+
+        def load_finished(successful):
+            if successful:
+                frame.evaluateJavaScript('''
+                    window.addEventListener('load', setTimeout(function() {
+                        var node = document.getElementById('gt-src-listen');
+                        if (!node) { return; }
+                        ['mousedown', 'mouseup'].forEach(function(type) {
+                            var event = document.createEvent('MouseEvents');
+                            event.initEvent(type, true, true);
+                            node.dispatchEvent(event);
+                        });
+                    }, 1000));
+                ''')
+            else:
+                fail("Cannot load Google Translate page")
+        frame.loadFinished.connect(load_finished)
+
+        from PyQt4.QtCore import QUrl
+        url = QUrl('https://translate.google.com/')
+        url.addQueryItem('sl', options['voice'])
+        url.addQueryItem('q', text)
+        frame.load(url)
+
+        def timeout():
+            fail("Request timed out")
+        from PyQt4.QtCore import QTimer
+        QTimer.singleShot(10000, timeout)
 
     def run(self, text, options, path):
-        """
-        Downloads from Google directly to an MP3.
+        """Grab the stream from our prerun and write it to disk."""
 
-        Because the MP3 we get from Google is already so very tiny, LAME
-        is not used for transcoding.
-        """
-
-        subtexts = self.util_split(text, 100)
-        randstring = str(randint(0,100000)) + '|' + str(randint(0,100000))
-
-        try:
-            self.net_download(
-                path,
-                [
-                    ('https://translate.google.com/translate_tts', dict(
-                        ie='UTF-8',
-                        q=subtext,
-                        tl=options['voice'],
-                        total=len(subtexts),
-                        idx=idx,
-                        textlen=len(subtext),
-                        client='t',
-                        tk=randstring
-                    ))
-                    for idx, subtext in enumerate(subtexts)
-                ],
-                require=dict(mime='audio/mpeg', size=1024),
-                add_padding=True,
-            )
-
-        except IOError as io_error:
-            raise IOError(
-                "Google Translate returned an HTTP 503 (Service Unavailable) "
-                "error. Unless Google Translate is down, this might indicate "
-                "that too many TTS requests have recently come from your IP "
-                "address. If so, try again after 24 hours.\n"
-                "\n"
-                "Depending on your specific situation, you might be able to "
-                "switch to a different service offering " +
-                self._VOICE_CODES[options['voice']].split(',').pop(0) + "."
-            ) if hasattr(io_error, 'code') and io_error.code == 503 \
-                else io_error
+        with open(path, 'wb') as output:
+            output.write(options['prerun'])
+        self.util_pad(path)

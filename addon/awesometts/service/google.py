@@ -27,6 +27,7 @@ Service implementation for Google Translate's text-to-speech API
 
 __all__ = ['Google']
 
+from socket import error as SocketError  # router does not cache this
 from PyQt4.QtCore import QTimer, QUrl
 from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from PyQt4.QtWebKit import QWebPage
@@ -186,7 +187,7 @@ class Google(Service):
         def fail(message):
             if frame in frames:
                 del frames[frame]
-                router_error(IOError(message))
+                router_error(SocketError(message))
         frames[frame] = dict(okay=okay, fail=fail, page=page)
 
         def load_finished(successful):

@@ -54,6 +54,29 @@ VOICES = {'af': "Afrikaans", 'ar': "Arabic", 'bs': "Bosnian", 'ca': "Catalan",
           'sr': "Serbian", 'sv': "Swedish", 'sw': "Swahili", 'ta': "Tamil",
           'th': "Thai", 'tr': "Turkish", 'vi': "Vietnamese", 'zh': "Chinese"}
 
+SCRIPT = '''
+    setTimeout(function() {
+        var listen = function() {
+            var node = document.getElementById('gt-src-listen');
+            if (node) {
+                ['mousedown', 'mouseup'].forEach(function(type) {
+                    var event = document.createEvent('MouseEvents');
+                    event.initEvent(type, true, true);
+                    node.dispatchEvent(event);
+                });
+            }
+        };
+
+        var fix = document.querySelector('.gt-revert-correct-message a');
+        if (fix) {
+            fix.click();
+            setTimeout(listen, 1000);
+        } else {
+            listen();
+        }
+    }, 1000);
+'''
+
 
 class Google(Service):
     """
@@ -168,17 +191,7 @@ class Google(Service):
 
         def load_finished(successful):
             if successful:
-                frame.evaluateJavaScript('''
-                    window.addEventListener('load', setTimeout(function() {
-                        var node = document.getElementById('gt-src-listen');
-                        if (!node) { return; }
-                        ['mousedown', 'mouseup'].forEach(function(type) {
-                            var event = document.createEvent('MouseEvents');
-                            event.initEvent(type, true, true);
-                            node.dispatchEvent(event);
-                        });
-                    }, 1000));
-                ''')
+                frame.evaluateJavaScript(SCRIPT)
             else:
                 fail("Cannot load Google Translate page")
         frame.loadFinished.connect(load_finished)

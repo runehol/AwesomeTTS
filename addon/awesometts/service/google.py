@@ -175,6 +175,8 @@ class Google(Service):
                           "Consider using a different service if you need "
                           "playback for long phrases." % LIMIT)
 
+        self._netops += 30
+
         page = QWebPage()
         page.setNetworkAccessManager(self._nam)
 

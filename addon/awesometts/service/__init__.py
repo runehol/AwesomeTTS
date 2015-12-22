@@ -32,7 +32,7 @@ __all__ = [
     'Ekho',
     'ESpeak',
     'Festival',
-    'Google',
+    # 'Google',
     'Howjsay',
     'ImTranslator',
     'Naver',
@@ -54,7 +54,7 @@ from .baidu import Baidu
 from .ekho import Ekho
 from .espeak import ESpeak
 from .festival import Festival
-from .google import Google
+# from .google import Google
 from .howjsay import Howjsay
 from .imtranslator import ImTranslator
 from .naver import Naver

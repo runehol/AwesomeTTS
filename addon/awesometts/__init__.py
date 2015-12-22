@@ -169,7 +169,7 @@ router = Router(
             ('ekho', service.Ekho),
             ('espeak', service.ESpeak),
             ('festival', service.Festival),
-            ('google', service.Google),
+            # ('google', service.Google),
             ('howjsay', service.Howjsay),
             ('imtranslator', service.ImTranslator),
             ('naver', service.Naver),
@@ -185,6 +185,9 @@ router = Router(
             ('youdao', service.Youdao),
         ],
         dead=dict(
+            google="Google no longer allows software like AwesomeTTS to use "
+                   "its text-to-speech service. Please switch to another "
+                   "service that offers your language.",
             ttsapicom="TTS-API.com has gone offline and can no longer be "
                       "used. Please switch to another service with English.",
         ),

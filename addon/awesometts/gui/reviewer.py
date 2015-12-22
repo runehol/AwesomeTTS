@@ -197,7 +197,9 @@ class Reviewer(object):
         Additionally, old-style [GTTS], [TTS], and [ATTS] tags are
         detected and played back, e.g.
 
-            - [GTTS:voice:text] or [TTS:g:voice:text] for Google TTS
+            - [GTTS:voice:text] or [TTS:g:voice:text] for Yandex (the
+              "G" here is for Google TTS, but that service is no longer
+              functional as of December 2015)
             - [TTS:espeak:voice:text] for eSpeak
         """
 

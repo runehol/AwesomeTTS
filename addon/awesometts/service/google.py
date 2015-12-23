@@ -71,11 +71,11 @@ SCRIPT = '''
         var fix = document.querySelector('.gt-revert-correct-message a');
         if (fix) {
             fix.click();
-            setTimeout(listen, 1000);
+            setTimeout(listen, 1000 + Math.random() * 4000);
         } else {
             listen();
         }
-    }, 1000);
+    }, 1000 + Math.random() * 4000);
 '''
 
 
@@ -85,8 +85,10 @@ class Google(Service):
     """
 
     __slots__ = [
-        '_frames',  # maps in-flight QWebFrames to their callbacks
-        '_nam',     # shared QNetworkAccessManager across all QWebPages
+        '_nam',     # recycled QNetworkAccessManager instance for all requests
+        '_page',    # recycled QWebPage instance for all requests
+        '_frame',   # recycled QWebFrame instance for all requests
+        '_cb',      # when a request is in-process, dict set to the callbacks
     ]
 
     NAME = "Google Translate"
@@ -94,51 +96,17 @@ class Google(Service):
     TRAITS = [Trait.INTERNET]
 
     def __init__(self, *args, **kwargs):
-        """Setup our frames map and custom QNetworkAccessManager."""
-
-        frames = self._frames = {}
-
-        class InterceptingNAM(QNetworkAccessManager):
-            def createRequest(self, op, req, *args, **kwargs):
-                frame = req.originatingObject()
-
-                if frame in frames and '/translate_tts' in req.url().toString():
-                    callbacks = frames[frame]
-                    rep = QNetworkAccessManager.createRequest(self, op, req,
-                                                              *args, **kwargs)
-
-                    def finished():
-                        if rep.error():
-                            callbacks['fail']("error in network reply")
-                        elif rep.header(HEADER_LOCATION):
-                            callbacks['fail']("got redirected away")
-                        elif rep.header(HEADER_CONTENT_TYPE) != 'audio/mpeg':
-                            callbacks['fail']("unexpected Content-Type")
-                        elif rep.header(HEADER_CONTENT_LENGTH) < 1024:
-                            callbacks['fail']("Content-Length is too small")
-                        else:
-                            stream = rep.readAll()
-                            if not stream:
-                                callbacks['fail']("no stream returned")
-                            elif len(stream) < 1024:
-                                callbacks['fail']("stream is too small")
-                            else:
-                                callbacks['okay'](stream)
-
-                    rep.finished.connect(finished)
-
-                return QNetworkAccessManager.createRequest(self, op, req,
-                                                           *args, **kwargs)
-
-        self._nam = InterceptingNAM()
-
+        self._nam = self._page = self._frame = self._cb = None
         super(Google, self).__init__(*args, **kwargs)
 
     def desc(self):
         """Returns voice count and character count limit."""
 
         return ("Google Translate text-to-speech web API (%d voices; "
-                "limited to %d characters of input)") % (len(VOICES), LIMIT)
+                "limited to %d characters of input)\n"
+                "\n"
+                "Note that this service is slow and not generally "
+                "recommended.") % (len(VOICES), LIMIT)
 
     def options(self):
         """Provides access to voice only."""
@@ -174,39 +142,95 @@ class Google(Service):
             raise IOError("Google Translate is limited to %d characters. "
                           "Consider using a different service if you need "
                           "playback for long phrases." % LIMIT)
+        elif self._cb:
+            raise SocketError("Google Translate does not allow concurrent "
+                              "runs. If you need to playback multiple "
+                              "phrases at the same time, please consider "
+                              "using a different service.")
+
+        if not self._frame:
+            self._prerun_setup()
 
         self._netops += 30
 
-        page = QWebPage()
-        page.setNetworkAccessManager(self._nam)
-
-        frame = page.mainFrame()
-        frames = self._frames
+        state = {}  # using a dict to workaround lack of `nonlocal` keyword
         def okay(stream):
-            if frame in frames:
-                del frames[frame]
+            if 'resolved' not in state:
+                state['resolved'] = True
+                self._cb = None
                 router_success(stream)
         def fail(message):
-            if frame in frames:
-                del frames[frame]
+            if 'resolved' not in state:
+                state['resolved'] = True
+                self._cb = None
                 router_error(SocketError(message))
-        frames[frame] = dict(okay=okay, fail=fail, page=page)
-
-        def load_finished(successful):
-            if successful:
-                frame.evaluateJavaScript(SCRIPT)
-            else:
-                fail("Cannot load Google Translate page")
-        frame.loadFinished.connect(load_finished)
+        self._cb = dict(okay=okay, fail=fail)
 
         url = QUrl('https://translate.google.com/')
         url.addQueryItem('sl', options['voice'])
         url.addQueryItem('q', text)
-        frame.load(url)
+        self._frame.load(url)
 
         def timeout():
             fail("Request timed out")
-        QTimer.singleShot(10000, timeout)
+        QTimer.singleShot(15000, timeout)
+
+    def _prerun_setup(self):
+        """
+        Sets up our web instances.
+
+        This stuff is done here and called via `prerun()` rather than
+        just being setup in `__init__()` because *in the event* that
+        doing any of this crashes Qt or Anki, we do not want to trigger
+        that by just having the user do anything with AwesomeTTS.
+        """
+
+        class InterceptingNAM(QNetworkAccessManager):
+            def createRequest(nself, op, req, *args, **kwargs):
+                if self._cb and '/translate_tts' in req.url().toString():
+                    # FIXME: Does re-calling `createRequest()` cause two HTTP
+                    # requests to go across the wire? If so, return a dummy
+                    # object instead whenever we actually want to intercept it.
+                    rep = QNetworkAccessManager.createRequest(nself, op, req,
+                                                              *args, **kwargs)
+                    def finished():
+                        if not self._cb:
+                            pass
+                        if rep.error():
+                            self._cb['fail']("error in network reply")
+                        elif rep.header(HEADER_LOCATION):
+                            self._cb['fail']("got redirected away")
+                        elif rep.header(HEADER_CONTENT_TYPE) != 'audio/mpeg':
+                            self._cb['fail']("unexpected Content-Type")
+                        elif rep.header(HEADER_CONTENT_LENGTH) < 1024:
+                            self._cb['fail']("Content-Length is too small")
+                        else:
+                            stream = rep.readAll()
+                            if not stream:
+                                self._cb['fail']("no stream returned")
+                            elif len(stream) < 1024:
+                                self._cb['fail']("stream is too small")
+                            else:
+                                self._cb['okay'](stream)
+                    rep.finished.connect(finished)
+
+                return QNetworkAccessManager.createRequest(nself, op, req,
+                                                           *args, **kwargs)
+
+        self._nam = nam = InterceptingNAM()
+
+        self._page = page = QWebPage()
+        page.setNetworkAccessManager(nam)
+
+        self._frame = frame = page.mainFrame()
+        def frame_load_finished(successful):
+            if not self._cb:
+                pass
+            elif successful:
+                frame.evaluateJavaScript(SCRIPT)
+            else:
+                self._cb['fail']("Cannot load Google Translate page")
+        frame.loadFinished.connect(frame_load_finished)
 
     def run(self, text, options, path):
         """Grab the stream from our prerun and write it to disk."""

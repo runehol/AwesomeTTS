@@ -185,9 +185,14 @@ class Google(Service):
         that by just having the user do anything with AwesomeTTS.
         """
 
+        self._logger.debug("Setting up web view for Google Translate...")
+
         class InterceptingNAM(QNetworkAccessManager):
             def createRequest(nself, op, req, *args, **kwargs):
-                if self._cb and '/translate_tts' in req.url().toString():
+                url = req.url().toString()
+                self._logger.debug("Google Translate: %s", url)
+
+                if self._cb and '/translate_tts' in url:
                     # FIXME: Does re-calling `createRequest()` cause two HTTP
                     # requests to go across the wire? If so, return a dummy
                     # object instead whenever we actually want to intercept it.

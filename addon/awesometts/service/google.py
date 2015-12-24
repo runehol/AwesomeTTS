@@ -78,6 +78,8 @@ SCRIPT = '''
     }, 1000 + Math.random() * 4000);
 '''
 
+FAKE = QNetworkRequest(QUrl(""))
+
 
 class Google(Service):
     """
@@ -192,12 +194,15 @@ class Google(Service):
                 url = req.url().toString()
                 self._logger.debug("Google Translate: %s", url)
 
-                if self._cb and '/translate_tts' in url:
-                    # FIXME: Does re-calling `createRequest()` cause two HTTP
-                    # requests to go across the wire? If so, return a dummy
-                    # object instead whenever we actually want to intercept it.
+                if '/translate_tts?' not in url:
+                    return QNetworkAccessManager.createRequest(nself, op, req,
+                                                               *args, **kwargs)
+
+                if self._cb and 'consumed' not in self._cb:
+                    self._cb['consumed'] = True
+
                     rep = QNetworkAccessManager.createRequest(nself, op, req,
-                                                              *args, **kwargs)
+                                                               *args, **kwargs)
                     def finished():
                         if not self._cb:
                             pass
@@ -219,7 +224,7 @@ class Google(Service):
                                 self._cb['okay'](stream)
                     rep.finished.connect(finished)
 
-                return QNetworkAccessManager.createRequest(nself, op, req,
+                return QNetworkAccessManager.createRequest(nself, op, FAKE,
                                                            *args, **kwargs)
 
         self._nam = nam = InterceptingNAM()

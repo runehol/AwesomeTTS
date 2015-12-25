@@ -156,16 +156,19 @@ class Google(Service):
         self._netops += 30
 
         state = {}  # using a dict to workaround lack of `nonlocal` keyword
+
         def okay(stream):
             if 'resolved' not in state:
                 state['resolved'] = True
                 self._cb = None
                 router_success(stream)
+
         def fail(message):
             if 'resolved' not in state:
                 state['resolved'] = True
                 self._cb = None
                 router_error(SocketError(message))
+
         self._cb = dict(okay=okay, fail=fail)
 
         url = QUrl('https://translate.google.com/')
@@ -202,7 +205,8 @@ class Google(Service):
                     self._cb['consumed'] = True
 
                     rep = QNetworkAccessManager.createRequest(nself, op, req,
-                                                               *args, **kwargs)
+                                                              *args, **kwargs)
+
                     def finished():
                         if not self._cb:
                             pass
@@ -222,6 +226,7 @@ class Google(Service):
                                 self._cb['fail']("stream is too small")
                             else:
                                 self._cb['okay'](stream)
+
                     rep.finished.connect(finished)
 
                 return QNetworkAccessManager.createRequest(nself, op, FAKE,
@@ -233,6 +238,7 @@ class Google(Service):
         page.setNetworkAccessManager(nam)
 
         self._frame = frame = page.mainFrame()
+
         def frame_load_finished(successful):
             if not self._cb:
                 pass
@@ -240,6 +246,7 @@ class Google(Service):
                 frame.evaluateJavaScript(SCRIPT)
             else:
                 self._cb['fail']("Cannot load Google Translate page")
+
         frame.loadFinished.connect(frame_load_finished)
 
     def run(self, text, options, path):

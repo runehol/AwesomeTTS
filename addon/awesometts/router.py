@@ -482,10 +482,12 @@ class Router(object):
                 def prerun_ok(result):
                     options['prerun'] = result
                     do_spawn()
+
                 def prerun_error(exception):
                     self._logger.error("Asynchronous exception in prerun: %s",
                                        exception)
                     completion_callback(exception)
+
                 try:
                     service['instance'].prerun(text, options, path,
                                                prerun_ok, prerun_error)

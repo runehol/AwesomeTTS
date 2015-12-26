@@ -135,6 +135,15 @@ class Router(object):
             if trait in service['traits']
         ], key=lambda name: name.lower())
 
+    def get_unavailable_msg(self, svc_id):
+        """
+        Helper method that returns an error message when a particular
+        service ID is not available (e.g. in the GUI).
+        """
+
+        return (self._services.dead[svc_id] if svc_id in self._services.dead
+                else "'%s' service is not available." % svc_id)
+
     def get_services(self):
         """
         Returns available services.

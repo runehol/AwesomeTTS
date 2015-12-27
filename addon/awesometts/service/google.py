@@ -211,7 +211,7 @@ class Google(Service):
                     def finished():
                         if not self._cb:
                             pass
-                        if rep.error():
+                        elif rep.error():
                             self._cb['fail']("error in network reply")
                         elif rep.header(HEADER_LOCATION):
                             self._cb['fail']("got redirected away")

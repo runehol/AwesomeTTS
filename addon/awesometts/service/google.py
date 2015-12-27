@@ -201,7 +201,8 @@ class Google(Service):
                     return QNetworkAccessManager.createRequest(nself, op, req,
                                                                *args, **kwargs)
 
-                if self._cb and 'consumed' not in self._cb:
+                if self._cb and 'consumed' not in self._cb and \
+                   'ttsspeed=' not in url:  # avoid the slower audio playback
                     self._cb['consumed'] = True
 
                     rep = QNetworkAccessManager.createRequest(nself, op, req,

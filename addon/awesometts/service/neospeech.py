@@ -87,9 +87,11 @@ class NeoSpeech(Service):
     def options(self):
         """Provides access to voice only."""
 
+        voice_lookup = {self.normalize(name): name
+                        for language, gender, name, api_id in VOICES}
         def transform_voice(value):
-            # TODO
-            return value
+            normal = self.normalize(value)
+            return voice_lookup[normal] if normal in voice_lookup else value
 
         return [dict(key='voice',
                      label="Voice",

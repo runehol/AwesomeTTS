@@ -106,6 +106,7 @@ class NeoSpeech(Service):
                     cookie.split(';')[0]
                     for cookie in headers['Set-Cookie'].split(',')
                 )
+                self._logger.debug("NeoSpeech cookies are %s", self._cookies)
             headers = {'Cookie': self._cookies}
 
             # TODO handle long content (similar pattern as ImTranslator?)

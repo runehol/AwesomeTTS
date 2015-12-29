@@ -484,6 +484,7 @@ class Service(object):
     def net_headers(self, url):
         """Returns the headers for a URL."""
 
+        self._logger.debug("GET %s for headers", url)
         self._netops += 1
 
         from urllib2 import urlopen, Request

@@ -740,7 +740,8 @@ class ServiceDialog(Dialog):
             dropdown = self.findChild(QtGui.QComboBox, 'service')
             idx = dropdown.findData(svc_id)
             if idx < 0:
-                self._alerts("%s service is not available." % svc_id, self)
+                self._alerts(self._addon.router.get_unavailable_msg(svc_id),
+                             self)
                 return
 
             dropdown.setCurrentIndex(idx)

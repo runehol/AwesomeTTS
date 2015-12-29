@@ -135,6 +135,15 @@ class Router(object):
             if trait in service['traits']
         ], key=lambda name: name.lower())
 
+    def get_unavailable_msg(self, svc_id):
+        """
+        Helper method that returns an error message when a particular
+        service ID is not available (e.g. in the GUI).
+        """
+
+        return (self._services.dead[svc_id] if svc_id in self._services.dead
+                else "'%s' service is not available." % svc_id)
+
     def get_services(self):
         """
         Returns available services.
@@ -450,28 +459,53 @@ class Router(object):
 
             service['instance'].net_reset()
             self._busy.append(path)
-            self._pool.spawn(
-                task=lambda: service['instance'].run(text, options, path),
-                callback=lambda exception: (
-                    self._busy.remove(path),
 
-                    'done' in callbacks and callbacks['done'](),
+            completion_callback = lambda exception: (
+                self._busy.remove(path),
 
-                    'miss' in callbacks and callbacks['miss'](
-                        svc_id,
-                        service['instance'].net_count()
-                    ),
+                'done' in callbacks and callbacks['done'](),
 
-                    on_error(exception) if exception
-                    else callbacks['okay'](human(path)) if os.path.exists(path)
-                    else on_error(RuntimeError(
-                        "The %s service did not successfully write out "
-                        "an MP3." % service['name']
-                    )),
+                'miss' in callbacks and callbacks['miss'](
+                    svc_id,
+                    service['instance'].net_count()
+                ),
 
-                    'then' in callbacks and callbacks['then'](),
-                )
+                on_error(exception) if exception
+                else callbacks['okay'](human(path)) if os.path.exists(path)
+                else on_error(RuntimeError(
+                    "The %s service did not successfully write out "
+                    "an MP3." % service['name']
+                )),
+
+                'then' in callbacks and callbacks['then'](),
             )
+
+            def do_spawn():
+                """Call if ready to start a thread to run the service."""
+                self._pool.spawn(
+                    task=lambda: service['instance'].run(text, options, path),
+                    callback=completion_callback,
+                )
+
+            if hasattr(service['instance'], 'prerun'):
+                def prerun_ok(result):
+                    options['prerun'] = result
+                    do_spawn()
+
+                def prerun_error(exception):
+                    self._logger.error("Asynchronous exception in prerun: %s",
+                                       exception)
+                    completion_callback(exception)
+
+                try:
+                    service['instance'].prerun(text, options, path,
+                                               prerun_ok, prerun_error)
+                except Exception as exception:  # all, pylint:disable=W0703
+                    self._logger.error("Synchronous exception in prerun: %s",
+                                       exception)
+                    completion_callback(exception)
+            else:
+                do_spawn()
 
     def _call_assert_callbacks(self, callbacks):
         """Checks the callbacks argument for validity."""

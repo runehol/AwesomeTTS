@@ -8,7 +8,6 @@ services:
 - Ekho (`ekho`)
 - eSpeak (`espeak`)
 - Festival (`festival`, `text2wave`)
-- Google Translate
 - Howjsay
 - ImTranslator
 - Microsoft Speech API

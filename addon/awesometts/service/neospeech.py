@@ -53,6 +53,13 @@ VOICES = [('en-GB', 'male', "Hugh", 33), ('en-GB', 'female', "Bridget", 4),
 MAP = {name: api_id for language, gender, name, api_id in VOICES}
 
 
+BASE_URL = 'http://neospeech.com'
+
+DEMO_URL = BASE_URL + '/service/demo'
+
+REQUIRE_MP3 = dict(mime='audio/mpeg', size=256)
+
+
 class NeoSpeech(Service):
     """
     Provides a Service-compliant implementation for NeoSpeech.
@@ -95,7 +102,7 @@ class NeoSpeech(Service):
 
         with self._lock:
             if not self._cookies:
-                headers = self.net_headers('http://neospeech.com')
+                headers = self.net_headers(BASE_URL)
                 self._cookies = ';'.join(
                     cookie.split(';')[0]
                     for cookie in headers['Set-Cookie'].split(',')
@@ -103,18 +110,29 @@ class NeoSpeech(Service):
                 self._logger.debug("NeoSpeech cookies are %s", self._cookies)
             headers = {'Cookie': self._cookies}
 
-            # TODO handle long content (similar pattern as ImTranslator?)
+            voice_id = MAP[options['voice']]
 
-            url = self.net_stream(
-                ('http://neospeech.com/service/demo',
-                  dict(voiceId=MAP[options['voice']], content=text)),
-                custom_headers=headers,
-            )
-            url = json.loads(url)
-            url = url['audioUrl']
-            assert len(url) > 1 and url[0] == '/', "expecting relative URL"
+            def fetch_piece(subtext, subpath):
+                url = self.net_stream((DEMO_URL, dict(content=subtext,
+                                                      voiceId=voice_id)),
+                                      custom_headers=headers)
+                url = json.loads(url)
+                url = url['audioUrl']
+                assert len(url) > 1 and url[0] == '/', "expecting relative URL"
 
-            self.net_download(path,
-                              'http://neospeech.com' + url,
-                              require=dict(mime='audio/mpeg', size=256),
-                              custom_headers=headers)
+                self.net_download(subpath, BASE_URL + url, require=REQUIRE_MP3,
+                                  custom_headers=headers)
+
+            subtexts = self.util_split(text, 200)  # see `maxlength` on site
+            if len(subtexts) == 1:
+                fetch_piece(subtexts[0], path)
+            else:
+                intermediate_mp3s = []
+                try:
+                    for subtext in subtexts:
+                        intermediate_mp3 = self.path_temp('mp3')
+                        intermediate_mp3s.append(intermediate_mp3)
+                        fetch_piece(subtext, intermediate_mp3)
+                    self.util_merge(intermediate_mp3s, path)
+                finally:
+                    self.path_unlink(intermediate_mp3s)

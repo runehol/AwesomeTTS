@@ -27,6 +27,7 @@ __all__ = ['NeoSpeech']
 import json
 import re
 from socket import error as SocketError  # router does not cache this
+from threading import Lock
 
 from .base import Service
 from .common import Trait
@@ -58,7 +59,7 @@ class NeoSpeech(Service):
     """
 
     __slots__ = [
-        '_busy',     # limit concurrent runs (download URL is tied to cookie)
+        '_lock',     # download URL is tied to cookie; force serial runs
         '_cookies',  # used for all NeoSpeech requests in this Anki session
     ]
 
@@ -67,7 +68,7 @@ class NeoSpeech(Service):
     TRAITS = [Trait.INTERNET]
 
     def __init__(self, *args, **kwargs):
-        self._busy = False
+        self._lock = Lock()
         self._cookies = None
         super(NeoSpeech, self).__init__(*args, **kwargs)
 
@@ -92,14 +93,7 @@ class NeoSpeech(Service):
     def run(self, text, options, path):
         """Requests MP3 URLs and then downloads them."""
 
-        if self._busy:
-            raise SocketError("NeoSpeech does not allow concurrent runs. If "
-                              "you need to playback multiple phrases at the "
-                              "same time, please consider using a different "
-                              "service.")
-        self._busy = True
-
-        try:
+        with self._lock:
             if not self._cookies:
                 headers = self.net_headers('http://neospeech.com')
                 self._cookies = ';'.join(
@@ -124,6 +118,3 @@ class NeoSpeech(Service):
                               'http://neospeech.com' + url,
                               require=dict(mime='audio/mpeg', size=256),
                               custom_headers=headers)
-
-        finally:
-            self._busy = False

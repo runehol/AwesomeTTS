@@ -173,6 +173,7 @@ router = Router(
             ('howjsay', service.Howjsay),
             ('imtranslator', service.ImTranslator),
             ('naver', service.Naver),
+            ('neospeech', service.NeoSpeech),
             ('oxford', service.Oxford),
             ('pico2wave', service.Pico2Wave),
             ('rhvoice', service.RHVoice),

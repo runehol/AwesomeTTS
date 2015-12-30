@@ -22,15 +22,13 @@
 Service implementation for NeoSpeech's text-to-speech demo engine
 """
 
-__all__ = ['NeoSpeech']
-
 import json
-import re
-from socket import error as SocketError  # router does not cache this
 from threading import Lock
 
 from .base import Service
 from .common import Trait
+
+__all__ = ['NeoSpeech']
 
 
 VOICES = [('en-GB', 'male', "Hugh", 33), ('en-GB', 'female', "Bridget", 4),
@@ -89,7 +87,9 @@ class NeoSpeech(Service):
 
         voice_lookup = {self.normalize(name): name
                         for language, gender, name, api_id in VOICES}
+
         def transform_voice(value):
+            """Fixes whitespace and casing errors only."""
             normal = self.normalize(value)
             return voice_lookup[normal] if normal in voice_lookup else value
 
@@ -115,6 +115,7 @@ class NeoSpeech(Service):
             voice_id = MAP[options['voice']]
 
             def fetch_piece(subtext, subpath):
+                """Fetch given phrase from the API to the given path."""
                 url = self.net_stream((DEMO_URL, dict(content=subtext,
                                                       voiceId=voice_id)),
                                       custom_headers=headers)

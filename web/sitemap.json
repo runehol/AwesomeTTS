@@ -50,6 +50,10 @@
                 "title": "NAVER Translate",
                 "what": "Korean, English, Japanese, and Chinese, available over the Internet"
             },
+            "neospeech": {
+                "title": "NeoSpeech",
+                "what": "English, Spanish, French, Chinese, Japanese, and Korean, available over the Internet"
+            },
             "say": {
                 "terse": "OS X",
                 "title": "OS X Speech Synthesis Manager",

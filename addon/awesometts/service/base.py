@@ -34,6 +34,9 @@ import sys
 import subprocess
 
 
+DEFAULT_UA = 'Mozilla/5.0'
+DEFAULT_TIMEOUT = 15
+
 PADDING = '\0' * 2**11
 
 
@@ -478,9 +481,21 @@ class Service(object):
         import atexit
         atexit.register(service.terminate)
 
+    def net_headers(self, url):
+        """Returns the headers for a URL."""
+
+        self._logger.debug("GET %s for headers", url)
+        self._netops += 1
+
+        from urllib2 import urlopen, Request
+        return urlopen(
+            Request(url=url, headers={'User-Agent': DEFAULT_UA}),
+            timeout=DEFAULT_TIMEOUT,
+        ).headers
+
     def net_stream(self, targets, require=None, method='GET',
                    awesome_ua=False, add_padding=False,
-                   custom_quoter=None):
+                   custom_quoter=None, custom_headers=None):
         """
         Returns the raw payload string from the specified target(s).
         If multiple targets are specified, their resulting payloads are
@@ -542,16 +557,20 @@ class Service(object):
             self._logger.debug("%s %s%s%s for %s", method, url,
                                "?" if params else "", params or "", desc)
 
+            headers = {'User-Agent': (self.ecosystem.agent
+                                      if awesome_ua else DEFAULT_UA)}
+            if custom_headers:
+                headers.update(custom_headers)
+
             self._netops += 1
             response = urlopen(
                 Request(
                     url=('?'.join([url, params]) if params and method == 'GET'
                          else url),
-                    headers={'User-Agent': (self.ecosystem.agent if awesome_ua
-                                            else 'Mozilla/5.0')},
+                    headers=headers,
                 ),
                 data=params if params and method == 'POST' else None,
-                timeout=15,
+                timeout=DEFAULT_TIMEOUT,
             )
 
             if not response:

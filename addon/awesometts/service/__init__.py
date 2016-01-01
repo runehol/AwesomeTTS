@@ -36,6 +36,7 @@ __all__ = [
     'Howjsay',
     'ImTranslator',
     'Naver',
+    'NeoSpeech',
     'Oxford',
     'Pico2Wave',
     'RHVoice',
@@ -58,6 +59,7 @@ from .festival import Festival
 from .howjsay import Howjsay
 from .imtranslator import ImTranslator
 from .naver import Naver
+from .neospeech import NeoSpeech
 from .oxford import Oxford
 from .pico2wave import Pico2Wave
 from .rhvoice import RHVoice

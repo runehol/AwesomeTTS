@@ -12,6 +12,7 @@ services:
 - ImTranslator
 - Microsoft Speech API
 - NAVER Translate
+- NeoSpeech
 - OS X Speech Synthesis Manager (`say`)
 - The Oxford Dictionary
 - RHVoice (`RHVoice-client`, `RHVoice-service`)

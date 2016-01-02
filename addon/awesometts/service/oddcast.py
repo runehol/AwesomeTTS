@@ -264,4 +264,5 @@ class Oddcast(Service):
                 for subtext in self.util_split(text, 180)  # see site maxlength
             ],
             require=dict(mime='audio/mpeg', size=256),
+            add_padding=True,
         )

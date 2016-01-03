@@ -35,6 +35,24 @@ LANGUAGES = {1: 'en', 2: 'es', 3: 'de', 4: 'fr', 5: 'ca', 6: 'pt', 7: 'it',
              27: 'ar', 28: 'id', 29: 'hu', 30: 'ro', 31: 'eo'}
 
 MAPPINGS = [
+    # Note that some of the voices below are dummied out because of various
+    # problems (e.g. jibberish output when encountering input characters with
+    # diacritics despite being voices for languages where such diacritics are
+    # common, producing very long stretches of silence in the output when
+    # encountering the end of a sentence).
+    #
+    # The voices that are dummied out because they produce very long stretches
+    # of silence in the output when encountering the end of a sentence *could*
+    # possibly be worked around with an audio post-processing tool or by
+    # recognizing the repeating `UUUU` pattern in the MP3. However, if this is
+    # attempted, keep in mind that the silent stretches may appear multiple
+    # times in the audio based on where the original input has sentences or
+    # ellipses (i.e. not just as simple as "strip silence from the end"). Also
+    # keep in mind that even if this can be worked around post-processing,
+    # these voices are still problematic because they frequently time out when
+    # fed multiple sentences (presumably because whatever backend system
+    # generates the audio is really busy generating all that silence).
+
     # engine ID, language ID, voice ID, language variant, gender, name
     (2, 1, 1, 'US', 'female', "Susan"),
     (2, 1, 2, 'US', 'male', "Dave"),

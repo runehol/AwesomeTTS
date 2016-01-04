@@ -28,6 +28,7 @@ import os
 import os.path
 from random import shuffle
 import re
+from httplib import IncompleteRead
 from socket import error as SocketError
 from time import time
 from urllib2 import URLError
@@ -452,6 +453,7 @@ class Router(object):
                 """
 
                 if BaseTrait.INTERNET in service['class'].TRAITS and \
+                   not isinstance(exception, IncompleteRead) and \
                    not isinstance(exception, SocketError) and \
                    not isinstance(exception, URLError):
                     self._failures[path] = time(), exception

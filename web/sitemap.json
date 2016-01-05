@@ -54,6 +54,10 @@
                 "title": "NeoSpeech",
                 "what": "English, Spanish, French, Chinese, Japanese, and Korean, available over the Internet"
             },
+            "oddcast": {
+                "title": "Oddcast",
+                "what": "Many languages available over the Internet"
+            },
             "say": {
                 "terse": "OS X",
                 "title": "OS X Speech Synthesis Manager",

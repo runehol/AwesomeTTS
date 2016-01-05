@@ -13,6 +13,7 @@ services:
 - Microsoft Speech API
 - NAVER Translate
 - NeoSpeech
+- Oddcast
 - OS X Speech Synthesis Manager (`say`)
 - The Oxford Dictionary
 - RHVoice (`RHVoice-client`, `RHVoice-service`)

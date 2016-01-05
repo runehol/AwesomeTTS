@@ -88,5 +88,6 @@ class SpanishDict(Service):
 
                 for subtext in self.util_split(text, 200)
             ],
+            add_padding=True,
             require=dict(mime='audio/mpeg', size=1024),
         )

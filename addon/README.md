@@ -8,16 +8,17 @@ services:
 - Ekho (`ekho`)
 - eSpeak (`espeak`)
 - Festival (`festival`, `text2wave`)
-- Google Translate
 - Howjsay
 - ImTranslator
+- Microsoft Speech API
+- NAVER Translate
+- NeoSpeech
+- Oddcast
 - OS X Speech Synthesis Manager (`say`)
 - The Oxford Dictionary
-- Microsoft Speech API
 - RHVoice (`RHVoice-client`, `RHVoice-service`)
 - SpanishDict.com
 - SVOX Pico (`pico2wave`)
-- TTS-API.com
 - VoiceText
 - Yandex.Translate
 - Youdao Dictionary

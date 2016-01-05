@@ -96,6 +96,7 @@ def voicetext(environ, start_response):
 
         if not (response.getcode() == 200 and
                 response.info().gettype() == 'audio/wave'):
+            response.close()
             raise IOError
 
         payload = [response.read()]

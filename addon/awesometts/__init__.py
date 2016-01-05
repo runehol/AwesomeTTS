@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2015  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2016  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2013  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2015  Dave Shifflett
+# Copyright (C) 2013-2016  Dave Shifflett
 # Copyright (C) 2012       Dominic Lerbs
 #
 # This program is free software: you can redistribute it and/or modify
@@ -48,7 +48,7 @@ from .text import Sanitizer
 from .updates import Updates
 
 
-VERSION = '1.5.1'
+VERSION = '1.6.0'
 
 WEB = 'https://ankiatts.appspot.com'
 
@@ -169,9 +169,12 @@ router = Router(
             ('ekho', service.Ekho),
             ('espeak', service.ESpeak),
             ('festival', service.Festival),
-            ('google', service.Google),
+            # ('google', service.Google),
             ('howjsay', service.Howjsay),
             ('imtranslator', service.ImTranslator),
+            ('naver', service.Naver),
+            ('neospeech', service.NeoSpeech),
+            ('oddcast', service.Oddcast),
             ('oxford', service.Oxford),
             ('pico2wave', service.Pico2Wave),
             ('rhvoice', service.RHVoice),
@@ -179,11 +182,17 @@ router = Router(
             ('sapi5js', service.SAPI5JS),
             ('say', service.Say),
             ('spanishdict', service.SpanishDict),
-            ('ttsapicom', service.TTSAPICom),
             ('voicetext', service.VoiceText),
             ('yandex', service.Yandex),
             ('youdao', service.Youdao),
         ],
+        dead=dict(
+            google="Google no longer allows software like AwesomeTTS to use "
+                   "its text-to-speech service. Please switch to another "
+                   "service that offers your language.",
+            ttsapicom="TTS-API.com has gone offline and can no longer be "
+                      "used. Please switch to another service with English.",
+        ),
         aliases=[('b', 'baidu'), ('g', 'google'), ('macosx', 'say'),
                  ('microsoft', 'sapi5'), ('microsoftjs', 'sapi5js'),
                  ('microsoftjscript', 'sapi5js'), ('oed', 'oxford'),

@@ -30,7 +30,7 @@
             "google": {
                 "terse": "Google",
                 "title": "Google Translate",
-                "what": "Many high-quality languages, available over the Internet"
+                "what": "Discontinued service that formerly offered many high-quality languages over the Internet"
             },
             "howjsay": {
                 "title": "Howjsay",
@@ -44,6 +44,19 @@
                 "terse": "MS SAPI",
                 "title": "Microsoft Speech API (SAPI)",
                 "what": "Interface for desktop software to enable TTS playback, built into Windows"
+            },
+            "naver": {
+                "terse": "NAVER",
+                "title": "NAVER Translate",
+                "what": "Korean, English, Japanese, and Chinese, available over the Internet"
+            },
+            "neospeech": {
+                "title": "NeoSpeech",
+                "what": "English, Spanish, French, Chinese, Japanese, and Korean, available over the Internet"
+            },
+            "oddcast": {
+                "title": "Oddcast",
+                "what": "Many languages available over the Internet"
             },
             "say": {
                 "terse": "OS X",
@@ -69,7 +82,7 @@
             },
             "ttsapicom": {
                 "title": "TTS-API.com",
-                "what": "English speech, available over the Internet"
+                "what": "Discontinued service that formerly offered English via the Internet"
             },
             "voicetext": {
                 "title": "VoiceText",

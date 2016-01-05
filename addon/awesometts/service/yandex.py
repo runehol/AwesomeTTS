@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014       Anki AwesomeTTS Development Team
-# Copyright (C) 2014       Dave Shifflett
+# Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2015  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ class Yandex(Service):
         # variants and is therefore safe to always alias to the full
         # code from the two-character language code. If, in the future,
         # there are two kinds of any particular language, the alias list
-        # logic will have to be reworked to be more like Google's.
+        # logic will have to be reworked.
 
         'ar_AE': "Arabic", 'ca_ES': "Catalan", 'cs_CZ': "Czech",
         'da_DK': "Danish", 'de_DE': "German", 'el_GR': "Greek",
@@ -151,6 +151,7 @@ class Yandex(Service):
                 for subtext in self.util_split(text, 750)
             ],
             require=dict(mime='audio/mpeg', size=1024),
+            add_padding=True,
         )
 
         # TODO: This workaround is just fine for now, but it would be nice if

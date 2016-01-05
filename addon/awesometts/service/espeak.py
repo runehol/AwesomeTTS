@@ -354,6 +354,7 @@ class ESpeak(Service):
                 require=dict(
                     size_in=4096,
                 ),
+                add_padding=True,
             )
 
         finally:

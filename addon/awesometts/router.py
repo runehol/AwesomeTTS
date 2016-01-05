@@ -28,6 +28,7 @@ import os
 import os.path
 from random import shuffle
 import re
+from httplib import IncompleteRead
 from socket import error as SocketError
 from time import time
 from urllib2 import URLError
@@ -76,7 +77,7 @@ class Router(object):
         '_failures',   # lookup of file paths that raised exceptions
         '_logger',     # logger-like interface with debug(), info(), etc.
         '_pool',       # instance of the _Pool class for managing threads
-        '_services',   # bundle with aliases, avail, lookup
+        '_services',   # bundle with dead services, aliases, avail, lookup
         '_temp_dir',   # path for writing human-readable filenames
     ]
 
@@ -85,6 +86,7 @@ class Router(object):
         The services should be a bundle with the following:
 
             - mappings (list of tuples): each with service ID, class
+            - dead (dict): map of dead service IDs to an error message
             - aliases (list of tuples): alternate-to-official service IDs
             - normalize (callable): for service IDs and option keys
             - args (tuple): to be passed to Service constructors
@@ -133,6 +135,15 @@ class Router(object):
             in self._services.lookup.values()
             if trait in service['traits']
         ], key=lambda name: name.lower())
+
+    def get_unavailable_msg(self, svc_id):
+        """
+        Helper method that returns an error message when a particular
+        service ID is not available (e.g. in the GUI).
+        """
+
+        return (self._services.dead[svc_id] if svc_id in self._services.dead
+                else "'%s' service is not available." % svc_id)
 
     def get_services(self):
         """
@@ -442,6 +453,7 @@ class Router(object):
                 """
 
                 if BaseTrait.INTERNET in service['class'].TRAITS and \
+                   not isinstance(exception, IncompleteRead) and \
                    not isinstance(exception, SocketError) and \
                    not isinstance(exception, URLError):
                     self._failures[path] = time(), exception
@@ -449,28 +461,53 @@ class Router(object):
 
             service['instance'].net_reset()
             self._busy.append(path)
-            self._pool.spawn(
-                task=lambda: service['instance'].run(text, options, path),
-                callback=lambda exception: (
-                    self._busy.remove(path),
 
-                    'done' in callbacks and callbacks['done'](),
+            completion_callback = lambda exception: (
+                self._busy.remove(path),
 
-                    'miss' in callbacks and callbacks['miss'](
-                        svc_id,
-                        service['instance'].net_count()
-                    ),
+                'done' in callbacks and callbacks['done'](),
 
-                    on_error(exception) if exception
-                    else callbacks['okay'](human(path)) if os.path.exists(path)
-                    else on_error(RuntimeError(
-                        "The %s service did not successfully write out "
-                        "an MP3." % service['name']
-                    )),
+                'miss' in callbacks and callbacks['miss'](
+                    svc_id,
+                    service['instance'].net_count()
+                ),
 
-                    'then' in callbacks and callbacks['then'](),
-                )
+                on_error(exception) if exception
+                else callbacks['okay'](human(path)) if os.path.exists(path)
+                else on_error(RuntimeError(
+                    "The %s service did not successfully write out "
+                    "an MP3." % service['name']
+                )),
+
+                'then' in callbacks and callbacks['then'](),
             )
+
+            def do_spawn():
+                """Call if ready to start a thread to run the service."""
+                self._pool.spawn(
+                    task=lambda: service['instance'].run(text, options, path),
+                    callback=completion_callback,
+                )
+
+            if hasattr(service['instance'], 'prerun'):
+                def prerun_ok(result):
+                    options['prerun'] = result
+                    do_spawn()
+
+                def prerun_error(exception):
+                    self._logger.error("Asynchronous exception in prerun: %s",
+                                       exception)
+                    completion_callback(exception)
+
+                try:
+                    service['instance'].prerun(text, options, path,
+                                               prerun_ok, prerun_error)
+                except Exception as exception:  # all, pylint:disable=W0703
+                    self._logger.error("Synchronous exception in prerun: %s",
+                                       exception)
+                    completion_callback(exception)
+            else:
+                do_spawn()
 
     def _call_assert_callbacks(self, callbacks):
         """Checks the callbacks argument for validity."""
@@ -666,7 +703,10 @@ class Router(object):
         try:
             service = self._services.lookup[svc_id]
         except KeyError:
-            raise ValueError("There is no '%s' service" % svc_id)
+            raise ValueError(
+                self._services.dead[svc_id] if svc_id in self._services.dead
+                else "There is no '%s' service" % svc_id
+            )
 
         self._load_service(service)
 

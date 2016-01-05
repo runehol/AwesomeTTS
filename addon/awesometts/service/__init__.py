@@ -3,8 +3,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
-# Copyright (C) 2014-2015  Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,9 +32,12 @@ __all__ = [
     'Ekho',
     'ESpeak',
     'Festival',
-    'Google',
+    # 'Google',
     'Howjsay',
     'ImTranslator',
+    'Naver',
+    'NeoSpeech',
+    'Oddcast',
     'Oxford',
     'Pico2Wave',
     'RHVoice',
@@ -42,7 +45,6 @@ __all__ = [
     'SAPI5JS',
     'Say',
     'SpanishDict',
-    'TTSAPICom',
     'VoiceText',
     'Yandex',
     'Youdao',
@@ -54,9 +56,12 @@ from .baidu import Baidu
 from .ekho import Ekho
 from .espeak import ESpeak
 from .festival import Festival
-from .google import Google
+# from .google import Google
 from .howjsay import Howjsay
 from .imtranslator import ImTranslator
+from .naver import Naver
+from .neospeech import NeoSpeech
+from .oddcast import Oddcast
 from .oxford import Oxford
 from .pico2wave import Pico2Wave
 from .rhvoice import RHVoice
@@ -64,7 +69,6 @@ from .sapi5 import SAPI5
 from .sapi5js import SAPI5JS
 from .say import Say
 from .spanishdict import SpanishDict
-from .ttsapicom import TTSAPICom
 from .voicetext import VoiceText
 from .yandex import Yandex
 from .youdao import Youdao

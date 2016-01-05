@@ -1,12 +1,14 @@
 {
     "auto": true,
-    "intro": "This release adds two new services, adds a text manipulation option, and fixes some minor bugs.",
+    "intro": "This release adds three new services.",
     "notes": [
-      "adds VoiceText service (thanks cjkaminski)",
-      "adds Youdao Dictionary service (thanks Lou Shi)",
-      "option to use human-readable filenames (thanks george84, turgutbekil, szpak)",
-      "users can change newlines in their input text into ellipses (thanks noinkling)"
+      "adds NAVER service",
+      "adds NeoSpeech service",
+      "adds Oddcast service",
+      "removes Google service (at least for now)",
+      "improves handling of ImTranslator server errors",
+      "works around MP3s stopping short on some versions of mplayer (affects new MP3s only)"
     ],
     "update": true,
-    "version": "1.5.1"
+    "version": "1.6.0"
 }

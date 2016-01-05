@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2015  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2016  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2013  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2015  Dave Shifflett
+# Copyright (C) 2013-2016  Dave Shifflett
 # Copyright (C) 2012       Dominic Lerbs
 #
 # This program is free software: you can redistribute it and/or modify
@@ -174,6 +174,7 @@ router = Router(
             ('imtranslator', service.ImTranslator),
             ('naver', service.Naver),
             ('neospeech', service.NeoSpeech),
+            ('oddcast', service.Oddcast),
             ('oxford', service.Oxford),
             ('pico2wave', service.Pico2Wave),
             ('rhvoice', service.RHVoice),

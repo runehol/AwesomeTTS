@@ -3,8 +3,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
-# Copyright (C) 2014-2015  Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ __all__ = [
     'ImTranslator',
     'Naver',
     'NeoSpeech',
+    'Oddcast',
     'Oxford',
     'Pico2Wave',
     'RHVoice',
@@ -60,6 +61,7 @@ from .howjsay import Howjsay
 from .imtranslator import ImTranslator
 from .naver import Naver
 from .neospeech import NeoSpeech
+from .oddcast import Oddcast
 from .oxford import Oxford
 from .pico2wave import Pico2Wave
 from .rhvoice import RHVoice

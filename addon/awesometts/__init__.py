@@ -169,6 +169,7 @@ router = Router(
             ('ekho', service.Ekho),
             ('espeak', service.ESpeak),
             ('festival', service.Festival),
+            ('fluencynl', service.FluencyNl),
             # ('google', service.Google),
             ('howjsay', service.Howjsay),
             ('imtranslator', service.ImTranslator),

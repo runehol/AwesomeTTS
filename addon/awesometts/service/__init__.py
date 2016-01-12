@@ -28,6 +28,7 @@ __all__ = [
     'Trait',
 
     # services
+    'Acapela',
     'Baidu',
     'Ekho',
     'ESpeak',
@@ -53,6 +54,7 @@ __all__ = [
 
 from .common import Trait
 
+from .acapela import Acapela
 from .baidu import Baidu
 from .ekho import Ekho
 from .espeak import ESpeak

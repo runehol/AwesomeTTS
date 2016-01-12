@@ -165,6 +165,7 @@ player = Player(
 router = Router(
     services=Bundle(
         mappings=[
+            ('acapela', service.Acapela),
             ('baidu', service.Baidu),
             ('ekho', service.Ekho),
             ('espeak', service.ESpeak),

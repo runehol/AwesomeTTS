@@ -151,7 +151,6 @@ class Acapela(Service):
                 ),
             ),
             method='POST',
-            # TODO need padding?
         )
 
         match = RE_MP3.search(payload)

@@ -138,22 +138,38 @@ class Acapela(Service):
 
         long_voice_name = VOICES[options['voice']][0]
 
-        # FIXME split up text longer than 300 characters
+        def fetch_piece(subtext, subpath):
+            """
+            Gets the MP3 URL for the given subtext and downloads it to
+            the given subpath.
+            """
 
-        payload = self.net_stream(
-            (
-                FORM_ENDPOINT,
-                dict(
-                    MySelectedVoice=long_voice_name,
-                    MyTextForTTS=text,
-                    SendToVaaS='',
-                    t=1,
+            payload = self.net_stream(
+                (
+                    FORM_ENDPOINT,
+                    dict(
+                        MySelectedVoice=long_voice_name,
+                        MyTextForTTS=subtext,
+                        SendToVaaS='',
+                        t=1,
+                    ),
                 ),
-            ),
-            method='POST',
-        )
+                method='POST',
+            )
+            match = RE_MP3.search(payload)
+            match = match.group(0)
+            self.net_download(subpath, match, require=REQUIRE_MP3)
 
-        match = RE_MP3.search(payload)
-        match = match.group(0)
-
-        self.net_download(path, match, require=REQUIRE_MP3)
+        subtexts = self.util_split(text, 300)  # see `maxlength` on site
+        if len(subtexts) == 1:
+            fetch_piece(text, path)
+        else:
+            intermediate_mp3s = []
+            try:
+                for subtext in subtexts:
+                    intermediate_mp3 = self.path_temp('mp3')
+                    intermediate_mp3s.append(intermediate_mp3)
+                    fetch_piece(subtext, intermediate_mp3)
+                self.util_merge(intermediate_mp3s, path)
+            finally:
+                self.path_unlink(intermediate_mp3s)

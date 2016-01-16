@@ -1,14 +1,10 @@
 {
     "auto": true,
-    "intro": "This release adds three new services.",
+    "intro": "This release adds two new services.",
     "notes": [
-      "adds NAVER service",
-      "adds NeoSpeech service",
-      "adds Oddcast service",
-      "removes Google service (at least for now)",
-      "improves handling of ImTranslator server errors",
-      "works around MP3s stopping short on some versions of mplayer (affects new MP3s only)"
+      "adds Acapela Group service",
+      "adds Fluency.nl service (for Dutch)"
     ],
     "update": true,
-    "version": "1.6.0"
+    "version": "1.7.0"
 }

@@ -1,8 +1,8 @@
 /*
  * AwesomeTTS text-to-speech add-on website
  *
- * Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
- * Copyright (C) 2014-2015  Dave Shifflett
+ * Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+ * Copyright (C) 2014-2016  Dave Shifflett
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -195,8 +195,10 @@ module.exports = function (grunt) {
     grunt.task.loadNpmTasks('grunt-contrib-copy');
     config.copy = {
         favicon: {src: 'favicon.ico', dest: 'build/'},
+        touchIcon: {src: 'apple-touch-icon.png', dest: 'build/'},
         images: {src: 'images/*.{gif,png}', dest: 'build/'},
         redirects: {src: 'redirects.json', dest: 'build/'},
+        dntPolicy: {src: 'dnt-policy.txt', dest: 'build/'},
         robots: {src: 'robots.txt', dest: 'build/'},
         unresolvedPy: {src: 'unresolved/__init__.py', dest: 'build/'},
         api: {src: 'api/**/*.json', dest: 'build/'},  // minify in-place next
@@ -503,17 +505,25 @@ module.exports = function (grunt) {
               upload: 'style\\.css', expiration: '35d'},
             {url: '/favicon\\.ico', static_files: 'favicon.ico',
               upload: 'favicon\\.ico', expiration: '70d'},
+            {url: '/apple-touch-icon\\.png',
+             static_files: 'apple-touch-icon.png',
+              upload: 'apple-touch-icon\\.png', expiration: '70d'},
+            {url: '/\\.?well-known/dnt-policy\\.txt',
+              static_files: 'dnt-policy.txt',
+              upload: 'dnt-policy\\.txt', expiration: '70d',
+              mime_type: 'text/plain; charset=utf-8'},
             {url: '/robots\\.txt', static_files: 'robots.txt',
               upload: 'robots\\.txt', expiration: '70d'},
             {url: '/google' + KEYS.gsv + '\\.html', static_files: 'gsv.html',
               upload: 'gsv\\.html'},
 
             {url: '/api/update/[a-z\\d]+-' + gaeRegex([
-                '1.6.0',
+                '1.7.0',
               ]),
               static_files: 'api/update/good-version.json',
               upload: 'api/update/good-version\\.json'},
             {url: '/api/update/[a-z\\d]+-' + gaeRegex([
+                '1.7.0-pre', '1.7.0-dev', '1.6.0',
                 '1.6.0-pre', '1.6.0-dev', '1.5.1', '1.5.1-pre', '1.5.0',
                 '1.5.0-pre', '1.5.0-dev', '1.4.1', '1.4.1-pre', '1.4.0',
                 '1.4.0-pre', '1.4.0-dev', '1.3.1', '1.3.1-pre', '1.3.0',
@@ -683,8 +693,10 @@ module.exports = function (grunt) {
           tasks: 'build', options: {reload: true}},
 
         favicon: {files: 'favicon.ico', tasks: 'copy:favicon'},
+        touchIcon: {files: 'apple-touch-icon.png', tasks: 'copy:touchIcon'},
         images: {files: 'images/*.{gif,png}', tasks: 'copy:images'},
         robots: {files: 'robots.txt', tasks: 'copy:robots'},
+        dntPolicy: {files: 'dnt-policy.txt', tasks: 'copy:dntPolicy'},
         gsv: {files: 'gsv.mustache', tasks: 'mustache_render:gsv'},
         relaysPy: {files: 'relays/__init__.py',
                    tasks: 'mustache_render:relaysPy'},

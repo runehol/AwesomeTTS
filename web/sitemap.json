@@ -10,6 +10,11 @@
         "title": "Available Services",
         "what": "How to best take advantage of local software and services over the Internet",
         "children": {
+            "acapela": {
+                "terse": "Acapela",
+                "title": "Acapela Group",
+                "what": "Many languages available over the Internet"
+            },
             "baidu": {
                 "terse": "Baidu",
                 "title": "Baidu Translate",
@@ -26,6 +31,10 @@
             "festival": {
                 "title": "Festival",
                 "what": "Bundled with English, other languages installable separately, Linux only"
+            },
+            "fluencynl": {
+                "title": "Fluency.nl",
+                "what": "Many Dutch voices available over the Internet"
             },
             "google": {
                 "terse": "Google",

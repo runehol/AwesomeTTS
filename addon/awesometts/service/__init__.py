@@ -28,10 +28,12 @@ __all__ = [
     'Trait',
 
     # services
+    'Acapela',
     'Baidu',
     'Ekho',
     'ESpeak',
     'Festival',
+    'FluencyNl',
     # 'Google',
     'Howjsay',
     'ImTranslator',
@@ -52,10 +54,12 @@ __all__ = [
 
 from .common import Trait
 
+from .acapela import Acapela
 from .baidu import Baidu
 from .ekho import Ekho
 from .espeak import ESpeak
 from .festival import Festival
+from .fluencynl import FluencyNl
 # from .google import Google
 from .howjsay import Howjsay
 from .imtranslator import ImTranslator

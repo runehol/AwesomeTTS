@@ -48,7 +48,7 @@ from .text import Sanitizer
 from .updates import Updates
 
 
-VERSION = '1.6.0'
+VERSION = '1.7.0'
 
 WEB = 'https://ankiatts.appspot.com'
 
@@ -165,10 +165,12 @@ player = Player(
 router = Router(
     services=Bundle(
         mappings=[
+            ('acapela', service.Acapela),
             ('baidu', service.Baidu),
             ('ekho', service.Ekho),
             ('espeak', service.ESpeak),
             ('festival', service.Festival),
+            ('fluencynl', service.FluencyNl),
             # ('google', service.Google),
             ('howjsay', service.Howjsay),
             ('imtranslator', service.ImTranslator),

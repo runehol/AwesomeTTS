@@ -195,6 +195,7 @@ module.exports = function (grunt) {
     grunt.task.loadNpmTasks('grunt-contrib-copy');
     config.copy = {
         favicon: {src: 'favicon.ico', dest: 'build/'},
+        touchIcon: {src: 'apple-touch-icon.png', dest: 'build/'},
         images: {src: 'images/*.{gif,png}', dest: 'build/'},
         redirects: {src: 'redirects.json', dest: 'build/'},
         dntPolicy: {src: 'dnt-policy.txt', dest: 'build/'},
@@ -504,6 +505,9 @@ module.exports = function (grunt) {
               upload: 'style\\.css', expiration: '35d'},
             {url: '/favicon\\.ico', static_files: 'favicon.ico',
               upload: 'favicon\\.ico', expiration: '70d'},
+            {url: '/apple-touch-icon\\.png',
+             static_files: 'apple-touch-icon.png',
+              upload: 'apple-touch-icon\\.png', expiration: '70d'},
             {url: '/\\.?well-known/dnt-policy\\.txt',
               static_files: 'dnt-policy.txt',
               upload: 'dnt-policy\\.txt', expiration: '70d',
@@ -688,6 +692,7 @@ module.exports = function (grunt) {
           tasks: 'build', options: {reload: true}},
 
         favicon: {files: 'favicon.ico', tasks: 'copy:favicon'},
+        touchIcon: {files: 'apple-touch-icon.png', tasks: 'copy:touchIcon'},
         images: {files: 'images/*.{gif,png}', tasks: 'copy:images'},
         robots: {files: 'robots.txt', tasks: 'copy:robots'},
         dntPolicy: {files: 'dnt-policy.txt', tasks: 'copy:dntPolicy'},

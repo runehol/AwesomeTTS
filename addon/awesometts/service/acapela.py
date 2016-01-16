@@ -116,6 +116,13 @@ class Acapela(Service):
     def options(self):
         """Provides access to voice only."""
 
+        voice_lookup = {self.normalize(key): key for key in VOICES.keys()}
+
+        def transform_voice(value):
+            """Fixes whitespace and casing errors only."""
+            normal = self.normalize(value)
+            return voice_lookup[normal] if normal in voice_lookup else value
+
         return [
             dict(
                 key='voice',
@@ -128,8 +135,7 @@ class Acapela(Service):
                     for short_voice_name, (_, language_code)
                     in sorted(VOICES.items(), key=lambda voice: voice[1][1])
                 ],
-                transform=str,  # FIXME needs to recover from case, whitespace
-                                # differences and input without parentheticals
+                transform=transform_voice,
             ),
         ]
 

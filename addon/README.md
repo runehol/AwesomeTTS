@@ -1,29 +1,8 @@
 # AwesomeTTS Add-on
 
 Once loaded into the [Anki](http://ankisrs.net) `addons` directory, the
-AwesomeTTS add-on code adds text-to-speech functionality for the following
-services:
-
-- Acapela Group
-- Baidu Translate
-- Ekho (`ekho`)
-- eSpeak (`espeak`)
-- Festival (`festival`, `text2wave`)
-- Fluency.nl
-- Howjsay
-- ImTranslator
-- Microsoft Speech API
-- NAVER Translate
-- NeoSpeech
-- Oddcast
-- OS X Speech Synthesis Manager (`say`)
-- The Oxford Dictionary
-- RHVoice (`RHVoice-client`, `RHVoice-service`)
-- SpanishDict.com
-- SVOX Pico (`pico2wave`)
-- VoiceText
-- Yandex.Translate
-- Youdao Dictionary
+AwesomeTTS add-on code enables both on-demand playback and recording
+functionality.
 
 
 ## Installation

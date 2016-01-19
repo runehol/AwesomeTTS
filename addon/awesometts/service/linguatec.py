@@ -80,4 +80,6 @@ class Linguatec(Service):
     def run(self, text, options, path):
         """Requests MP3 URLs and then downloads them."""
 
+        # TODO implement a 250-character split
+
         pass

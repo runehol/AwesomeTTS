@@ -22,6 +22,8 @@
 Service implementation for Linguatec's text-to-speech demo engine
 """
 
+from re import compile as re_compile
+
 from .base import Service
 from .common import Trait
 
@@ -41,6 +43,11 @@ VOICES = {
     # TODO
 }
 
+FORM_ENDPOINT = 'http://www.linguatec.net/onlineservices/vrs15_getmp3'
+
+RE_MP3 = re_compile(r'https?://[-\w.]+\.linguatec\.org/[-\w/]+\.mp3')
+
+REQUIRE_MP3 = dict(mime='audio/mpeg', size=256)
 
 class Linguatec(Service):
     """
@@ -82,4 +89,18 @@ class Linguatec(Service):
 
         # TODO implement a 250-character split
 
-        pass
+        payload = self.net_stream(
+            (
+                FORM_ENDPOINT,
+                dict(
+                    text=text,
+                    voiceName=options['voice'],
+                    speakSpeed=100,
+                    speakPith=100,  # sic
+                    speakVolume=100,
+                ),
+            ),
+        )
+        match = RE_MP3.search(payload)
+        url = match.group(0)
+        self.net_download(path, url, require=REQUIRE_MP3)  # TODO padding?

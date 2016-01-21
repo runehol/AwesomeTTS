@@ -49,6 +49,7 @@ RE_MP3 = re_compile(r'https?://[-\w.]+\.linguatec\.org/[-\w/]+\.mp3')
 
 REQUIRE_MP3 = dict(mime='audio/mpeg', size=256)
 
+
 class Linguatec(Service):
     """
     Provides a Service-compliant implementation for Linguatec.

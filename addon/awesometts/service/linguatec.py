@@ -30,18 +30,48 @@ from .common import Trait
 __all__ = ['Linguatec']
 
 
-VOICES = {
-    'Angelica': 'es-MX',
-    'Carlos': 'es-CO',
-    'Diego': 'es-AR',
-    'Jorge': 'es',
-    'Juan': 'es-MX',
-    'Monica': 'es',
-    'Paulina': 'es-MX',
-    'Soledad': 'es-CO',
-
-    # TODO
-}
+# list of (API name, human-readable name, language code) tuples
+VOICES = [('Alice-ml', "Alice", 'it'), ('Allison', "Allison", 'en-US'),
+          ('alva', "Alva", 'sv'), ('Amelie', "Amelie", 'fr-CA'),
+          ('angelica', "Angelica", 'es-MX'), ('Anna-ml', "Anna", 'de'),
+          ('Audrey-ml', "Audrey", 'fr'), ('Aurelie', "Aurelie", 'fr'),
+          ('Ava', "Ava", 'en-US'), ('Carlos', "Carlos", 'es-CO'),
+          ('Carmela', "Carmela", 'gl'), ('Carmit', "Carmit", 'he'),
+          ('Catarina', "Catarina", 'pt'), ('cem', "Cem", 'tr'),
+          ('Chantal', "Chantal", 'fr-CA'), ('Claire', "Claire", 'nl-NL'),
+          ('Damayanti', "Damayanti", 'id'), ('Daniel', "Daniel", 'en-GB'),
+          ('diego', "Diego", 'es-AR'), ('Ellen', "Ellen", 'nl-BE'),
+          ('Empar', "Empar", 'ca-Valencian'), ('Ewa', "Ewa", 'pl'),
+          ('Federica', "Federica", 'it'), ('Felipe', "Felipe", 'pt-BR'),
+          ('Fiona', "Fiona", 'en-Scottish'), ('Henrik', "Henrik", 'no'),
+          ('Ioana', "Ioana", 'ro'), ('iveta', "Iveta", 'cs'),
+          ('Joana', "Joana", 'pt'), ('Jordi', "Jordi", 'ca'),
+          ('jorge', "Jorge", 'es'), ('juan', "Juan", 'es-MX'),
+          ('Kanya', "Kanya", 'th'), ('Karen', "Karen", 'en-AU'),
+          ('Kate', "Kate", 'en-GB'), ('Katya', "Katya", 'ru'),
+          ('klara', "Klara", 'sv'), ('Kyoko', "Kyoko", 'ja'),
+          ('Laura', "Laura", 'sk'), ('Lee', "Lee", 'en-AU'),
+          ('Lekha', "Lekha", 'hi'), ('Luca', "Luca", 'it'),
+          ('Luciana', "Luciana", 'pt-BR'), ('Magnus', "Magnus", 'da'),
+          ('mariska', "Mariska", 'hu'), ('Markus', "Markus", 'de'),
+          ('Mei-Jia', "Mei-Jia", 'zh-TW'), ('Melina', "Melina", 'el'),
+          ('Milena', "Milena", 'ru'), ('Miren', "Miren", 'eu'),
+          ('Moira', "Moira", 'en-IE'), ('monica', "Monica", 'es'),
+          ('Montserrat', "Montserrat", 'ca'), ('Nicolas', "Nicolas", 'fr-CA'),
+          ('Nikos', "Nikos", 'el'), ('Nora', "Nora", 'no'),
+          ('Oliver', "Oliver", 'en-GB'), ('oskar', "Oskar", 'sv'),
+          ('Otoya', "Otoya", 'ja'), ('Paola', "Paola", 'it'),
+          ('paulina', "Paulina", 'es-MX'), ('Petra', "Petra", 'de'),
+          ('Samantha', "Samantha", 'en-US'), ('Sara', "Sara", 'da'),
+          ('Satu', "Satu", 'fi'), ('Serena', "Serena", 'en-GB'),
+          ('Sin-Ji', "Sin-Ji", 'zh-HK'), ('Soledad', "Soledad", 'es-CO'),
+          ('Sora', "Sora", 'ko'), ('Susan', "Susan", 'en-US'),
+          ('Tarik', "Tarik", 'ar'), ('Tessa', "Tessa", 'en-ZA'),
+          ('Thomas', "Thomas", 'fr'), ('Tian-Tian', "Tian-Tian", 'zh-CN'),
+          ('Tom', "Tom", 'en-US'), ('Veena', "Veena", 'en-IN'),
+          ('Xander', "Xander", 'nl-NL'), ('Yannick', "Yannick", 'de'),
+          ('yelda', "Yelda", 'tr'), ('yuri', "Yuri", 'ru'),
+          ('Zosia', "Zosia", 'pl'), ('zuzana', "Zuzana", 'cs')]
 
 FORM_ENDPOINT = 'http://www.linguatec.net/onlineservices/vrs15_getmp3'
 
@@ -70,19 +100,22 @@ class Linguatec(Service):
     def options(self):
         """Provides access to voice only."""
 
-        voice_lookup = {self.normalize(name): name for name in VOICES.keys()}
+        voice_lookup = dict([(self.normalize(human_name), api_name)
+                             for api_name, human_name, _ in VOICES] +
+                            [(self.normalize(api_name), api_name)
+                             for api_name, human_name, _ in VOICES])
 
         def transform_voice(value):
-            """Fixes whitespace and casing errors only."""
+            """Fixes whitespace, casing, and human names."""
             normal = self.normalize(value)
             return voice_lookup[normal] if normal in voice_lookup else value
 
         return [dict(key='voice',
                      label="Voice",
-                     values=[(name, "%s (%s)" % (name, language))
-                             for name, language
-                             in sorted(VOICES.items(),
-                                       key=lambda item: (item[1], item[0]))],
+                     values=[(api_name, "%s (%s)" % (human_name, language))
+                             for api_name, human_name, language
+                             in sorted(VOICES,
+                                       key=lambda item: (item[2], item[1]))],
                      transform=transform_voice)]
 
     def run(self, text, options, path):

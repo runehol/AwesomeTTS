@@ -23,6 +23,7 @@ Service implementation for Linguatec's text-to-speech demo engine
 """
 
 from re import compile as re_compile
+from socket import error as SocketError
 
 from .base import Service
 from .common import Trait
@@ -136,5 +137,7 @@ class Linguatec(Service):
             ),
         )
         match = RE_MP3.search(payload)
+        if not match:
+            raise SocketError("Linguatec did not return an MP3 for the input.")
         url = match.group(0)
         self.net_download(path, url, require=REQUIRE_MP3)  # TODO padding?

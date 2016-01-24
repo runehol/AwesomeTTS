@@ -23,7 +23,7 @@ Service implementation for Linguatec's text-to-speech demo engine
 """
 
 from re import compile as re_compile
-from socket import error as SocketError
+from socket import error as SocketError  # non-caching error class
 
 from .base import Service
 from .common import Trait

@@ -122,22 +122,39 @@ class Linguatec(Service):
     def run(self, text, options, path):
         """Requests MP3 URLs and then downloads them."""
 
-        # TODO implement a 250-character split
+        voice = options['voice']
 
-        payload = self.net_stream(
-            (
-                FORM_ENDPOINT,
-                dict(
-                    text=text,
-                    voiceName=options['voice'],
-                    speakSpeed=100,
-                    speakPith=100,  # sic
-                    speakVolume=100,
+        def fetch_piece(subtext, subpath):
+            """Fetch given phrase from demo to given path."""
+
+            payload = self.net_stream(
+                (
+                    FORM_ENDPOINT,
+                    dict(
+                        text=subtext,
+                        voiceName=voice,
+                        speakSpeed=100,
+                        speakPith=100,  # sic
+                        speakVolume=100,
+                    ),
                 ),
-            ),
-        )
-        match = RE_MP3.search(payload)
-        if not match:
-            raise SocketError("Linguatec did not return an MP3 for the input.")
-        url = match.group(0)
-        self.net_download(path, url, require=REQUIRE_MP3)
+            )
+            match = RE_MP3.search(payload)
+            if not match:
+                raise SocketError("No MP3 was returned for the input.")
+            url = match.group(0)
+            self.net_download(subpath, url, require=REQUIRE_MP3)
+
+        subtexts = self.util_split(text, 250)  # see `maxlength` on site
+        if len(subtexts) == 1:
+            fetch_piece(text, path)
+        else:
+            intermediate_mp3s = []
+            try:
+                for subtext in subtexts:
+                    intermediate_mp3 = self.path_temp('mp3')
+                    intermediate_mp3s.append(intermediate_mp3)
+                    fetch_piece(subtext, intermediate_mp3)
+                self.util_merge(intermediate_mp3s, path)
+            finally:
+                self.path_unlink(intermediate_mp3s)

@@ -49,6 +49,10 @@
                 "title": "ImTranslator",
                 "what": "Asian and European languages, available over the Internet"
             },
+            "linguatec": {
+                "title": "Linguatec",
+                "what": "Many languages available over the Internet"
+            },
             "sapi5": {
                 "terse": "MS SAPI",
                 "title": "Microsoft Speech API (SAPI)",

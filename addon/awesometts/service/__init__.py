@@ -37,6 +37,7 @@ __all__ = [
     # 'Google',
     'Howjsay',
     'ImTranslator',
+    'Linguatec',
     'Naver',
     'NeoSpeech',
     'Oddcast',
@@ -63,6 +64,7 @@ from .fluencynl import FluencyNl
 # from .google import Google
 from .howjsay import Howjsay
 from .imtranslator import ImTranslator
+from .linguatec import Linguatec
 from .naver import Naver
 from .neospeech import NeoSpeech
 from .oddcast import Oddcast

@@ -20,10 +20,10 @@
 
 """Youdao Dictionary"""
 
-__all__ = ['Youdao']
-
 from .base import Service
 from .common import Trait
+
+__all__ = ['Youdao']
 
 
 VOICE_CODES = [

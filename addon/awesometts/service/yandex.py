@@ -22,10 +22,10 @@
 Service implementation for Yandex.Translate's text-to-speech API
 """
 
-__all__ = ['Yandex']
-
 from .base import Service
 from .common import Trait
+
+__all__ = ['Yandex']
 
 
 class Yandex(Service):

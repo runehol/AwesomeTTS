@@ -23,10 +23,10 @@
 Service implementation for OS X's say command
 """
 
-__all__ = ['Say']
-
 from .base import Service
 from .common import Trait
+
+__all__ = ['Say']
 
 
 class Say(Service):

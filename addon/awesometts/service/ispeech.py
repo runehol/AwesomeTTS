@@ -23,7 +23,6 @@ Service implementation for the iSpeech API
 """
 
 from .base import Service
-from .common import Trait
 
 __all__ = ['ISpeech']
 
@@ -84,7 +83,10 @@ class ISpeech(Service):
 
     NAME = "iSpeech"
 
-    TRAITS = [Trait.INTERNET]
+    # Although iSpeech is an Internet service, we do not mark it with
+    # Trait.INTERNET, as it is a paid-for-by-the-user API, and we do not want
+    # to rate-limit it or trigger error caching behavior
+    TRAITS = []
 
     def desc(self):
         """Returns name with a voice count."""

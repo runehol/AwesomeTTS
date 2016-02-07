@@ -175,6 +175,7 @@ router = Router(
             # ('google', service.Google),
             ('howjsay', service.Howjsay),
             ('imtranslator', service.ImTranslator),
+            ('ispeech', service.ISpeech),
             ('linguatec', service.Linguatec),
             ('naver', service.Naver),
             ('neospeech', service.NeoSpeech),

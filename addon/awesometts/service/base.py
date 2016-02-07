@@ -157,7 +157,8 @@ class Service(object):
         """
 
         assert self.NAME, "Please specify a NAME for the service"
-        assert self.TRAITS, "Please specify a TRAITS list for the service"
+        assert isinstance(self.TRAITS, list), \
+            "Please specify a TRAITS list for the service"
 
         self._netops = None
         self._lame_flags = lame_flags

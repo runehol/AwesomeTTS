@@ -149,3 +149,5 @@ class ISpeech(Service):
             require=dict(mime='audio/mpeg', size=256),
             add_padding=True,
         )
+
+        self.net_reset()  # no throttle; FIXME should be controlled by trait

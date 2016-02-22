@@ -137,17 +137,25 @@ class ISpeech(Service):
     def run(self, text, options, path):
         """Downloads from iSpeech API directly to an MP3."""
 
-        self.net_download(
-            path,
-            [
-                ('http://api.ispeech.org/api/rest',
-                 dict(apikey=options['key'], action='convert', text=subtext,
-                      voice=options['voice'], speed=options['speed'],
-                      pitch=options['pitch']))
-                for subtext in self.util_split(text, 250)
-            ],
-            require=dict(mime='audio/mpeg', size=256),
-            add_padding=True,
-        )
+        try:
+            self.net_download(
+                path,
+                [
+                    ('http://api.ispeech.org/api/rest',
+                     dict(apikey=options['key'], action='convert',
+                          text=subtext, voice=options['voice'],
+                          speed=options['speed'], pitch=options['pitch']))
+                    for subtext in self.util_split(text, 250)
+                ],
+                require=dict(mime='audio/mpeg', size=256),
+                add_padding=True,
+            )
+        except ValueError as error:
+            try:
+                from urlparse import parse_qs
+                error = ValueError(parse_qs(error.payload)['message'][0])
+            except StandardError:
+                pass
+            raise error
 
         self.net_reset()  # no throttle; FIXME should be controlled by trait

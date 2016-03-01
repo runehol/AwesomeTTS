@@ -384,9 +384,8 @@ class Router(object):
             # the future... This could be done by generating a special `fpath`
             # value during this loop, and use that with the `_failures` lookup
             # instead of the vanilla `path` (but this is a non-issue today,
-            # because VoiceText is the only `extras` service, and it returns a
-            # status 401 on a bad API key, which is a kind of `URLError`, and
-            # thus not failure-cacheable anyway).
+            # because iSpeech is the only `extras` service, and it has caching
+            # turned off, being that it is a paid-for key service
 
             if not cache_hit:
                 for extra in self.get_extras(svc_id):

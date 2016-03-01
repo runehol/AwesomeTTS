@@ -49,6 +49,10 @@
                 "title": "ImTranslator",
                 "what": "Asian and European languages, available over the Internet"
             },
+            "ispeech": {
+                "title": "iSpeech",
+                "what": "Paid API that offers access to high-quality voices in several languages"
+            },
             "linguatec": {
                 "title": "Linguatec",
                 "what": "Many languages available over the Internet"

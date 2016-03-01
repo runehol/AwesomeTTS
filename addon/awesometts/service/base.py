@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
-# Copyright (C) 2014-2015  Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,13 +25,13 @@ Provides an abstract Service class that can be extended for implementing
 TTS services for use with AwesomeTTS.
 """
 
-__all__ = ['Service']
-
 import abc
 import os
 import shutil
 import sys
 import subprocess
+
+__all__ = ['Service']
 
 
 DEFAULT_UA = 'Mozilla/5.0'
@@ -157,7 +157,8 @@ class Service(object):
         """
 
         assert self.NAME, "Please specify a NAME for the service"
-        assert self.TRAITS, "Please specify a TRAITS list for the service"
+        assert isinstance(self.TRAITS, list), \
+            "Please specify a TRAITS list for the service"
 
         self._netops = None
         self._lame_flags = lame_flags
@@ -577,10 +578,16 @@ class Service(object):
                 raise IOError("No response for %s" % desc)
 
             if response.getcode() != 200:
-                raise ValueError(
+                value_error = ValueError(
                     "Got %d status for %s" %
                     (response.getcode(), desc)
                 )
+                try:
+                    value_error.payload = response.read()
+                    response.close()
+                except StandardError:
+                    pass
+                raise value_error
 
             if 'mime' in require and \
                     require['mime'] != format(response.info().

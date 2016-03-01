@@ -88,6 +88,7 @@ config = Config(
         ('delay_questions_stored_theirs', 'integer', 0, int, int),
         ('ellip_note_newlines', 'integer', False, to.lax_bool, int),
         ('ellip_template_newlines', 'integer', False, to.lax_bool, int),
+        ('extras', 'text', {}, to.deserialized_dict, to.compact_json),
         ('filenames', 'text', 'hash', str, str),
         ('filenames_human', 'text',
          u'{{text}} ({{service}} {{voice}})', unicode, unicode),
@@ -174,6 +175,7 @@ router = Router(
             # ('google', service.Google),
             ('howjsay', service.Howjsay),
             ('imtranslator', service.ImTranslator),
+            ('ispeech', service.ISpeech),
             ('linguatec', service.Linguatec),
             ('naver', service.Naver),
             ('neospeech', service.NeoSpeech),
@@ -216,6 +218,7 @@ router = Router(
     cache_dir=paths.CACHE,
     temp_dir=join(paths.TEMP, '_awesometts_scratch_' + str(int(time()))),
     logger=logger,
+    config=config,
 )
 
 updates = Updates(

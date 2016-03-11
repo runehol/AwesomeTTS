@@ -2,9 +2,9 @@
     "devDependencies": {
         "grunt": "0.4.x",
         "grunt-contrib-clean": "1.0.0",
-        "grunt-contrib-copy": "^0.8.2",
-        "grunt-contrib-cssmin": "^0.14.0",
-        "grunt-contrib-htmlmin": "^0.6.0",
+        "grunt-contrib-copy": "1.0.0",
+        "grunt-contrib-cssmin": "1.0.0",
+        "grunt-contrib-htmlmin": "1.0.0",
         "grunt-contrib-watch": "0.6.x",
         "grunt-gae": "^0.2.4",
         "grunt-json-minify": "0.4.x",

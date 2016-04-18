@@ -20,9 +20,27 @@
 
 """
 Service implementation for Duden
+
+TODO: Improve performance. Can we skip certain detail URLs based on them
+not possibly matching the input string? Maybe restore the eszett/umlaut
+conversion in modify() and force URLs to begin with <input> or <input>_
+... if we do that, then the eszett conversion in comparison_normalize()
+can go away, because the input text string should already have taken care
+of it, but make sure to test words with eszett
+
+TODO: Make sure all imports safe on various Anki packages on OS X and on
+Windows.
+
+TODO: Needs lots of manual testing. Search for various words manually on
+www.duden.de and make sure anything that has pronunciation works through
+here, including making sure lookalikes (e.g. schon/schön) are done
+correctly.
 """
 
+from BeautifulSoup import BeautifulSoup
+from HTMLParser import HTMLParser
 from re import compile as re
+from unicodedata import normalize as unicode_normalize
 
 from .base import Service
 from .common import Trait
@@ -30,9 +48,24 @@ from .common import Trait
 __all__ = ['Duden']
 
 
+INPUT_MAXIMUM = 100
+IGNORE_ARTICLES = ['der', 'das', 'die']
+CASE_MATTERS = ['Weg']
+
 SEARCH_FORM = 'http://www.duden.de/suchen/dudenonline'
-RE_DETAIL = re(r'href="(https?://www\.duden\.de/rechtschreibung/(.+?))"')
-RE_MP3 = re(r'href="(https?://www\.duden\.de/_media_/audio/.+?\.mp3)"')
+RE_DETAIL = re(r'href="(https?://www\.duden\.de/rechtschreibung/.+?)"')
+RE_MP3 = re(r'(Betonung:|Bei der Schreibung) '
+            r'(<em>|&raquo;)(.+?)(</em>|&laquo;).+?'
+            r'<a .*? href="(https?://www\.duden\.de/_media_/audio/.+?\.mp3)"')
+
+HTML_PARSER = HTMLParser()
+
+
+def comparison_normalize(input_string):
+    """Throw away diacritics, accent marks, dashes, spaces, etc."""
+    input_string = input_string.replace(' ', '').replace('-', '')
+    input_string = input_string.replace(u'\u00df', 'ss')
+    return unicode_normalize('NFKD', input_string).encode('ASCII', 'ignore')
 
 
 class Duden(Service):
@@ -51,7 +84,7 @@ class Duden(Service):
         Returns a short, static description.
         """
 
-        return "Duden (German only, single words only)"
+        return "Duden (German only, single words and short phrases only)"
 
     def options(self):
         """
@@ -73,74 +106,85 @@ class Duden(Service):
 
     def modify(self, text):
         """
-        Transform any eszett or character with an umlaut to the ASCII
-        form that Duden uses. Drop any other non-ASCII characters or
-        non-alphabetic symbols. Retain spaces so we can display a "no
-        multi-word input" error message if needed (so that in-order
-        group can fallover to the next preset).
+        Drop non-alphanumeric/non-space/non-dash characters, remove any
+        leading or trailing dash on any individual word, remove any
+        leading article from inputs with 2+ words, drop out extra
+        whitespace, and force lowercase (unless exception like "Weg").
         """
 
-        return ''.join(
-            'Ae' if char == u'\u00c4'
-            else 'Oe' if char == u'\u00d6'
-            else 'Ue' if char == u'\u00dc'
-            else 'sz' if char == u'\u00df'
-            else 'ae' if char == u'\u00e4'
-            else 'oe' if char == u'\u00f6'
-            else 'ue' if char == u'\u00fc'
-            else char
-            for char in text
-            if char.isalpha() or char == ' '
-        ).strip().encode('us-ascii', errors='ignore')
+        text = ''.join(char
+                       for char in text
+                       if char.isalpha() or char == ' ' or char == '-')
+
+        words = text.split()
+        words = [word.strip('-') for word in words]
+        words = [word for word in words if word]
+
+        if not words:
+            return ''
+
+        if len(words) > 1 and words[0].lower() in IGNORE_ARTICLES:
+            words.pop(0)
+
+        text = ''.join(words)
+
+        if text not in CASE_MATTERS:
+            text = text.lower()
+
+        return text
+
 
     def run(self, text, options, path):
         """
-        WIP
         """
 
         assert options['voice'] == 'de', "Only German is supported."
 
-        if len(text) > 100:
+        if len(text) > INPUT_MAXIMUM:
             raise IOError("Your input text is too long for Duden.")
 
-        if ' ' in text:
-            raise IOError("You cannot use multiple words with Duden.")
+        self._logger.debug('Duden: Searching on "%s"', text)
+        try:
+            html = self.net_stream((SEARCH_FORM, dict(s=text)),
+                                   require=dict(mime='text/html'))
+        except IOError as io_error:
+            if getattr(io_error, 'code', None) == 404:
+                raise IOError("Duden does not recognize this input.")
+            else:
+                raise
 
-        html = self.net_stream((SEARCH_FORM, dict(s=text)),
-                               require=dict(mime='text/html'))
+        text = comparison_normalize(text)
+        self._logger.debug('Duden: Will use "%s" for comparisons', text)
 
         seen_urls = {}
-        candidates = []
 
         for match in RE_DETAIL.finditer(html):
             url = match.group(1)
+
             if url in seen_urls:
                 continue
             seen_urls[url] = True
 
-            word = match.group(2)
-
-            if word == text:
-                candidates.append((0, url))
-                continue
-
-            word_lower = word.lower()
-            text_lower = text.lower()
-
-            if word_lower == text_lower:
-                candidates.append((1, url))
-            elif word.split('_', 1)[0] == text:
-                candidates.append((2, url))
-            elif word_lower.split('_', 1)[0] == text_lower:
-                candidates.append((3, url))
-
-        for _, url in sorted(candidates):
+            self._logger.debug("Duden: Trying the entry at %s", url)
             html = self.net_stream(url)
-            match = RE_MP3.search(html)
 
-            if match:
-                self.net_download(path, match.group(1),
-                                  require=dict(mime='audio/mpeg'))
-                return
+            for match in RE_MP3.finditer(html):
+                word = match.group(3)
+                word = ''.join(HTML_PARSER.unescape(word)
+                               for word
+                               in BeautifulSoup(word).findAll(text=True))
+                word = self.modify(word)
+                word = comparison_normalize(word)
+
+                url = match.group(5)
+
+                if word == text:
+                    self._logger.debug('Duden: Matched "%s" at %s', word, url)
+                    self.net_download(path, url,
+                                      require=dict(mime='audio/mpeg'))
+                    return
+
+                else:
+                    self._logger.debug('Duden: Skipped "%s" at %s', word, url)
 
         raise IOError("Duden does not have recorded audio for this word.")

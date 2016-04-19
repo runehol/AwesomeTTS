@@ -47,7 +47,7 @@ CASE_MATTERS = ['Weg']
 
 SEARCH_FORM = 'http://www.duden.de/suchen/dudenonline'
 RE_DETAIL = re(r'href="(https?://www\.duden\.de/rechtschreibung/(.+?))"')
-RE_MP3 = re(r'(Betonung:|Bei der Schreibung) '
+RE_MP3 = re(r'(Betonung:|Bei der Schreibung) .*?'
             r'(<em>|&raquo;)(.+?)(</em>|&laquo;).+?'
             r'<a .*? href="(https?://www\.duden\.de/_media_/audio/.+?\.mp3)"')
 
@@ -177,14 +177,17 @@ class Duden(Service):
             replace(' ', '_').replace('-', '_') + '_'
         text_compressed = text.replace(' ', '').replace('-', '')
         text_lower_compressed = text_compressed.lower()
+        text_deumlauted_compressed = text_compressed.replace('ae', 'a'). \
+            replace('oe', 'o').replace('ue', 'u')
         self._logger.debug('Got a search response; will follow links whose '
                            'lowercased+compressed article segment equals "%s" '
                            'or whose lowercased-but-still-underscored article '
                            'segment begins with "%s"; looking for MP3s whose '
-                           'compressed guide says "%s"',
+                           'compressed guide says "%s" or "%s"',
                            text_lower_compressed,
                            text_lower_underscored_trailing,
-                           text_compressed)
+                           text_compressed,
+                           text_deumlauted_compressed)
 
         seen_article_urls = {}
 
@@ -229,7 +232,8 @@ class Duden(Service):
 
                 mp3_url = mp3_match.group(5)
 
-                if guide_normalized == text_compressed:
+                if guide_normalized == text_compressed or \
+                        guide_normalized == text_deumlauted_compressed:
 
                     self._logger.debug('Duden: found MATCHING MP3 at %s for '
                                        '"%s", which normalized to "%s" and '
@@ -243,8 +247,7 @@ class Duden(Service):
                 else:
                     self._logger.debug('Duden: found non-matching MP3 at %s '
                                        'for "%s", which normalized to "%s" '
-                                       'and does not match our input "%s"',
-                                       mp3_url, guide, guide_normalized,
-                                       text_compressed)
+                                       'and does not match our input',
+                                       mp3_url, guide, guide_normalized)
 
         raise IOError("Duden does not have recorded audio for this word.")

@@ -21,13 +21,6 @@
 """
 Service implementation for Duden
 
-TODO: Improve performance. Can we skip certain detail URLs based on them
-not possibly matching the input string? Maybe restore the eszett/umlaut
-conversion in modify() and force URLs to begin with <input> or <input>_
-... if we do that, then the eszett conversion in comparison_normalize()
-can go away, because the input text string should already have taken care
-of it, but make sure to test words with eszett
-
 TODO: Make sure all imports safe on various Anki packages on OS X and on
 Windows.
 
@@ -53,19 +46,12 @@ IGNORE_ARTICLES = ['der', 'das', 'die']
 CASE_MATTERS = ['Weg']
 
 SEARCH_FORM = 'http://www.duden.de/suchen/dudenonline'
-RE_DETAIL = re(r'href="(https?://www\.duden\.de/rechtschreibung/.+?)"')
+RE_DETAIL = re(r'href="(https?://www\.duden\.de/rechtschreibung/(.+?))"')
 RE_MP3 = re(r'(Betonung:|Bei der Schreibung) '
             r'(<em>|&raquo;)(.+?)(</em>|&laquo;).+?'
             r'<a .*? href="(https?://www\.duden\.de/_media_/audio/.+?\.mp3)"')
 
 HTML_PARSER = HTMLParser()
-
-
-def comparison_normalize(input_string):
-    """Throw away diacritics, accent marks, dashes, spaces, etc."""
-    input_string = input_string.replace(' ', '').replace('-', '')
-    input_string = input_string.replace(u'\u00df', 'ss')
-    return unicode_normalize('NFKD', input_string).encode('ASCII', 'ignore')
 
 
 class Duden(Service):
@@ -106,36 +92,63 @@ class Duden(Service):
 
     def modify(self, text):
         """
-        Drop non-alphanumeric/non-space/non-dash characters, remove any
-        leading or trailing dash on any individual word, remove any
-        leading article from inputs with 2+ words, drop out extra
-        whitespace, and force lowercase (unless exception like "Weg").
+        Modifies the input text as follows:
+
+        1. drops characters that are not alphabetic, spaces, or dashes
+        2. ASCIIizes any eszett (i.e. to "sz") and any vowel with
+           umlauts (e.g. a-umlaut to "ae")
+        3. extra whitespace around each word is dropped
+        4. for each word, strip any leading or trailing dash (e.g.
+           "ueber-" becomes just "ueber")
+        5. any word that is entirely dashes is dropped
+        6. for each word, unless it is an uppercase word where being
+           uppercase matters (e.g. "Weg" instead of "weg", see
+           `CASE_MATTERS`), lowercase it
+        7. if the input is at least two words long and the first word
+           is one of the articles that a user might use on a note to
+           indicate gender (i.e. nominative definite articles, see
+           `IGNORE_ARTICLES`), remove it
         """
 
-        text = ''.join(char
+        text = ''.join('Ae' if char == u'\u00c4'
+                       else 'Oe' if char == u'\u00d6'
+                       else 'Ue' if char == u'\u00dc'
+                       else 'sz' if char == u'\u00df'
+                       else 'ae' if char == u'\u00e4'
+                       else 'oe' if char == u'\u00f6'
+                       else 'ue' if char == u'\u00fc'
+                       else char
                        for char in text
                        if char.isalpha() or char == ' ' or char == '-')
 
         words = text.split()
         words = [word.strip('-') for word in words]
-        words = [word for word in words if word]
+        words = [word if word in CASE_MATTERS else word.lower()
+                 for word in words if word]
 
         if not words:
             return ''
 
-        if len(words) > 1 and words[0].lower() in IGNORE_ARTICLES:
+        if len(words) > 1 and words[0] in IGNORE_ARTICLES:
             words.pop(0)
 
-        text = ''.join(words)
+            # special case: if because the first word was an article, we know
+            # that the next word *should* be a noun, and if by capitalizing it
+            # we realize it is a case-matters noun, make it capitalized (this
+            # makes, e.g., an input of "der weg" become "Weg")
+            first_word_capitalized = words[0].capitalize()
+            if first_word_capitalized in CASE_MATTERS:
+                words[0] = first_word_capitalized
 
-        if text not in CASE_MATTERS:
-            text = text.lower()
+        text = ' '.join(words)
 
         return text
 
-
     def run(self, text, options, path):
         """
+        Search the dictionary, walk the returned articles, then download
+        articles that look like a match, and find MP3s in those articles
+        that match the original input.
         """
 
         assert options['voice'] == 'de', "Only German is supported."
@@ -143,48 +156,95 @@ class Duden(Service):
         if len(text) > INPUT_MAXIMUM:
             raise IOError("Your input text is too long for Duden.")
 
+        try:
+            text.encode('us-ascii')
+        except UnicodeEncodeError:
+            raise IOError("Your input text uses characters that cannot be "
+                          "accurately searched for in the Duden.")
+
         self._logger.debug('Duden: Searching on "%s"', text)
         try:
-            html = self.net_stream((SEARCH_FORM, dict(s=text)),
-                                   require=dict(mime='text/html'))
+            search_html = self.net_stream((SEARCH_FORM, dict(s=text)),
+                                          require=dict(mime='text/html'))
         except IOError as io_error:
             if getattr(io_error, 'code', None) == 404:
                 raise IOError("Duden does not recognize this input.")
             else:
                 raise
 
-        text = comparison_normalize(text)
-        self._logger.debug('Duden: Will use "%s" for comparisons', text)
+        text_lower = text.lower()
+        text_lower_underscored_trailing = text_lower. \
+            replace(' ', '_').replace('-', '_') + '_'
+        text_compressed = text.replace(' ', '').replace('-', '')
+        text_lower_compressed = text_compressed.lower()
+        self._logger.debug('Got a search response; will follow links whose '
+                           'lowercased+compressed article segment equals "%s" '
+                           'or whose lowercased-but-still-underscored article '
+                           'segment begins with "%s"; looking for MP3s whose '
+                           'compressed guide says "%s"',
+                           text_lower_compressed,
+                           text_lower_underscored_trailing,
+                           text_compressed)
 
-        seen_urls = {}
+        seen_article_urls = {}
 
-        for match in RE_DETAIL.finditer(html):
-            url = match.group(1)
+        for article_match in RE_DETAIL.finditer(search_html):
+            article_url = article_match.group(1)
 
-            if url in seen_urls:
+            if article_url in seen_article_urls:
                 continue
-            seen_urls[url] = True
+            seen_article_urls[article_url] = True
 
-            self._logger.debug("Duden: Trying the entry at %s", url)
-            html = self.net_stream(url)
+            segment = article_match.group(2)
+            segment_lower = segment.lower()
+            segment_lower_compressed = segment_lower.replace('_', '')
 
-            for match in RE_MP3.finditer(html):
-                word = match.group(3)
-                word = ''.join(HTML_PARSER.unescape(word)
-                               for word
-                               in BeautifulSoup(word).findAll(text=True))
-                word = self.modify(word)
-                word = comparison_normalize(word)
+            if segment_lower_compressed == text_lower_compressed:
+                self._logger.debug('Duden: lowered+compressed article segment '
+                                   'for %s are same ("%s")',
+                                   article_url, segment_lower_compressed)
 
-                url = match.group(5)
+            elif segment_lower.startswith(text_lower_underscored_trailing):
+                self._logger.debug('Duden: lowered segment "%s" for %s begins '
+                                   'with "%s"',
+                                   segment_lower, article_url,
+                                   text_lower_underscored_trailing)
 
-                if word == text:
-                    self._logger.debug('Duden: Matched "%s" at %s', word, url)
-                    self.net_download(path, url,
+            else:
+                self._logger.debug('Duden: article segment for %s does not '
+                                   'match; skipping', article_url)
+                continue
+
+            article_html = self.net_stream(article_url)
+
+            for mp3_match in RE_MP3.finditer(article_html):
+                guide = mp3_match.group(3)
+                guide = ''.join(HTML_PARSER.unescape(node)
+                                for node
+                                in BeautifulSoup(guide).findAll(text=True))
+                guide_normalized = unicode_normalize(
+                    'NFKD',
+                    self.modify(guide).replace('-', '').replace(' ', ''),
+                ).encode('ASCII', 'ignore')
+
+                mp3_url = mp3_match.group(5)
+
+                if guide_normalized == text_compressed:
+
+                    self._logger.debug('Duden: found MATCHING MP3 at %s for '
+                                       '"%s", which normalized to "%s" and '
+                                       'matches our input',
+                                       mp3_url, guide, guide_normalized)
+
+                    self.net_download(path, mp3_url,
                                       require=dict(mime='audio/mpeg'))
                     return
 
                 else:
-                    self._logger.debug('Duden: Skipped "%s" at %s', word, url)
+                    self._logger.debug('Duden: found non-matching MP3 at %s '
+                                       'for "%s", which normalized to "%s" '
+                                       'and does not match our input "%s"',
+                                       mp3_url, guide, guide_normalized,
+                                       text_compressed)
 
         raise IOError("Duden does not have recorded audio for this word.")

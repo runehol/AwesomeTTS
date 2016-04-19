@@ -162,9 +162,10 @@ class Duden(Service):
             raise IOError("Your input text uses characters that cannot be "
                           "accurately searched for in the Duden.")
 
-        self._logger.debug('Duden: Searching on "%s"', text)
+        text_search = text.replace('sz', u'\u00df')
+        self._logger.debug('Duden: Searching on "%s"', text_search)
         try:
-            search_html = self.net_stream((SEARCH_FORM, dict(s=text)),
+            search_html = self.net_stream((SEARCH_FORM, dict(s=text_search)),
                                           require=dict(mime='text/html'))
         except IOError as io_error:
             if getattr(io_error, 'code', None) == 404:

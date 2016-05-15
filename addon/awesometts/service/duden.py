@@ -21,9 +21,6 @@
 """
 Service implementation for Duden
 
-TODO: Make sure all imports safe on various Anki packages on OS X and on
-Windows.
-
 TODO: Needs lots of manual testing. Search for various words manually on
 www.duden.de and make sure anything that has pronunciation works through
 here, including making sure lookalikes (e.g. schon/schön) are done

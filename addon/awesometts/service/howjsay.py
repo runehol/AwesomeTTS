@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014       Anki AwesomeTTS Development Team
-# Copyright (C) 2014       Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ class Howjsay(Service):
 
     NAME = "Howjsay"
 
-    TRAITS = [Trait.INTERNET]
+    TRAITS = [Trait.INTERNET, Trait.DICTIONARY]
 
     def __init__(self, *args, **kwargs):
         super(Howjsay, self).__init__(*args, **kwargs)

@@ -312,7 +312,15 @@ class Reviewer(object):
                     isinstance(exception, self._addon.router.BusyError) or
                     not show_errors or
                     self._alerts(
-                        "Unable to play this tag:\n%s\n\n%s" % (
+                        ("Unable to play this tag:\n%s\n\n%s\n\n"
+                         "If you want AwesomeTTS to automatically fallback to "
+                         "a non-dictionary service when audio is not "
+                         "available, you can setup an in-order playback "
+                         "group. Go to Tools > AwesomeTTS > Advanced > "
+                         "Service Presets and Groups for more information."
+                         if self._addon.router.has_trait(svc_id, 'DICTIONARY')
+                         else "Unable to play this tag:\n%s\n\n%s")
+                        % (
                             tag.prettify().decode('utf-8').strip(),
                             exception.message,
                         ),

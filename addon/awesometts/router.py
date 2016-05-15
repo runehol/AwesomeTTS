@@ -139,6 +139,30 @@ class Router(object):
             if trait in service['traits']
         ], key=lambda name: name.lower())
 
+    def has_trait(self, svc_id, trait):
+        """
+        Return True if the service (given by its string service ID or
+        alias) has the passed trait (given by either the enum integer or
+        string). Returns False if not.
+
+        Returns None if the passed service does not exist.
+        """
+
+        svc_id = self._services.normalize(svc_id)
+        if svc_id in self._services.aliases:
+            svc_id = self._services.aliases[svc_id]
+
+        if isinstance(trait, basestring):
+            trait = getattr(BaseTrait, trait.upper())
+
+        try:
+            traits = self._services.lookup[svc_id]['traits']
+        except KeyError:
+            return None
+        else:
+            return trait in traits
+
+
     def get_unavailable_msg(self, svc_id):
         """
         Helper method that returns an error message when a particular

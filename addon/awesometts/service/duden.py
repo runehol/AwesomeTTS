@@ -55,7 +55,7 @@ class Duden(Service):
 
     NAME = "Duden"
 
-    TRAITS = [Trait.INTERNET]
+    TRAITS = [Trait.INTERNET, Trait.DICTIONARY]
 
     def desc(self):
         """

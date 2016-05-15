@@ -168,6 +168,7 @@ router = Router(
         mappings=[
             ('acapela', service.Acapela),
             ('baidu', service.Baidu),
+            ('duden', service.Duden),
             ('ekho', service.Ekho),
             ('espeak', service.ESpeak),
             ('festival', service.Festival),

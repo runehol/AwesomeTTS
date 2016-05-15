@@ -27,6 +27,7 @@ from .common import Trait
 
 from .acapela import Acapela
 from .baidu import Baidu
+from .duden import Duden
 from .ekho import Ekho
 from .espeak import ESpeak
 from .festival import Festival
@@ -57,6 +58,7 @@ __all__ = [
     # services
     'Acapela',
     'Baidu',
+    'Duden',
     'Ekho',
     'ESpeak',
     'Festival',

@@ -20,6 +20,10 @@
                 "title": "Baidu Translate",
                 "what": "Chinese, English, Japanese, Portuguese, and Thai; available over the Internet"
             },
+            "duden": {
+                "title": "Duden",
+                "what": "Online dictionary for German, available over the Internet"
+            },
             "ekho": {
                 "title": "Ekho",
                 "what": "Korean and several dialects of Chinese, Windows and Linux"

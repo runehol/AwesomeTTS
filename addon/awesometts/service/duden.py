@@ -20,11 +20,6 @@
 
 """
 Service implementation for Duden
-
-TODO: Needs lots of manual testing. Search for various words manually on
-www.duden.de and make sure anything that has pronunciation works through
-here, including making sure lookalikes (e.g. schon/schön) are done
-correctly.
 """
 
 from BeautifulSoup import BeautifulSoup

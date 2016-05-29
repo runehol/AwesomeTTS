@@ -127,6 +127,9 @@ class VoiceText(Service):
         together into a single MP3.
         """
 
+        if len(text) > 250:
+            raise IOError("Input text is too long for the VoiceText service")
+
         wav_paths = []
         mp3_paths = []
 

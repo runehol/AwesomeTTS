@@ -446,6 +446,7 @@ module.exports = function (grunt) {
 
         var BASICS = {application: 'ankiatts', version: 'local',
           runtime: 'python27', api_version: '1', threadsafe: true,
+          automatic_scaling: {max_idle_instances: 1},
           default_expiration: '1d'};
 
         var INDICES = '/' + gaeRegex(

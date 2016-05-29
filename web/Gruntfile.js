@@ -557,7 +557,19 @@ module.exports = function (grunt) {
 
             Array.prototype.concat(
                 Object.keys(BASICS).map(function (key) {
-                    return [key, BASICS[key]].join(': ');
+                    var value = BASICS[key];
+
+                    return key + ': ' +
+                           (
+                               typeof value === 'object' && value !== null ?
+
+                               Object.keys(value).map(function (subkey) {
+                                   return '\n  ' + subkey + ': ' +
+                                          value[subkey];
+                               }).join('') :
+
+                               value
+                           );
                 }),
                 '',
                 'handlers:',

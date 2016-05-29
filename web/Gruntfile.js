@@ -446,6 +446,7 @@ module.exports = function (grunt) {
 
         var BASICS = {application: 'ankiatts', version: 'local',
           runtime: 'python27', api_version: '1', threadsafe: true,
+          automatic_scaling: {max_idle_instances: 1},
           default_expiration: '1d'};
 
         var INDICES = '/' + gaeRegex(
@@ -557,7 +558,19 @@ module.exports = function (grunt) {
 
             Array.prototype.concat(
                 Object.keys(BASICS).map(function (key) {
-                    return [key, BASICS[key]].join(': ');
+                    var value = BASICS[key];
+
+                    return key + ': ' +
+                           (
+                               typeof value === 'object' && value !== null ?
+
+                               Object.keys(value).map(function (subkey) {
+                                   return '\n  ' + subkey + ': ' +
+                                          value[subkey];
+                               }).join('') :
+
+                               value
+                           );
                 }),
                 '',
                 'handlers:',

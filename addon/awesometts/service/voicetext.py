@@ -20,14 +20,24 @@
 
 """Service implementation for VoiceText's text-to-speech API"""
 
+from anki.utils import isWin as WIN32, isMac as MACOSX
+
 from .base import Service
 from .common import Trait
 
 __all__ = ['VoiceText']
 
 
-API_FORMAT = 'ogg'  # TODO: see which works best on different platforms
-API_REQUIRE = dict(mime='audio/' + API_FORMAT, size=256)
+API_FORMAT = (
+    'wav' if MACOSX      # OS X is unreliable and mplayer crashes too much
+    else 'ogg' if WIN32  # aac usually works on Windows, but not always
+    else 'aac'           # others (i.e. Linux) generally have good mplayer
+)
+
+API_REQUIRE = (
+    dict(mime='audio/wave', size=2048) if API_FORMAT == 'wav'
+    else dict(mime='audio/' + API_FORMAT, size=256)
+)
 
 VOICES = [
     ('show', "Show (male)"),
@@ -122,8 +132,9 @@ class VoiceText(Service):
 
     def run(self, text, options, path):
         """
-        Downloads from VoiceText to an AAC or OGG file, then transcodes
-        that into an MP3 via mplayer and lame.
+        Downloads from VoiceText to some initial file, then converts it
+        WAV using mplayer if it wasn't already, and then transcodes it
+        to MP3 using lame.
 
         If the input text is longer than 100 characters, it will be
         split across multiple requests, transcoded, then merged back
@@ -160,20 +171,25 @@ class VoiceText(Service):
             api_endpoint = self.ecosystem.web + '/api/voicetext'
 
             for subtext in self.util_split(text, 100):
-                # n.b. We call net_dump() using a local file path after calling
-                # net_download() instead of just calling net_dump() directly w/
-                # the URL so we can get direct access to HTTP status codes from
-                # net_download() (e.g. if our VoiceText proxy rejects the call)
-
-                svc_path = self.path_temp(API_FORMAT)
-                svc_paths.append(svc_path)
-                parameters['text'] = subtext
-                self.net_download(svc_path, (api_endpoint, parameters),
-                                  require=API_REQUIRE, awesome_ua=True)
-
                 wav_path = self.path_temp('wav')
                 wav_paths.append(wav_path)
-                self.net_dump(wav_path, svc_path)
+                parameters['text'] = subtext
+
+                if API_FORMAT == 'wav':
+                    self.net_download(wav_path, (api_endpoint, parameters),
+                                      require=API_REQUIRE, awesome_ua=True)
+                else:
+                    # n.b. We call net_dump() using a local file path after
+                    # calling net_download() instead of just calling net_dump()
+                    # directly w/ the URL so we can get direct access to HTTP
+                    # status codes from net_download() (e.g. if our VoiceText
+                    # proxy rejects the call)
+
+                    svc_path = self.path_temp(API_FORMAT)
+                    svc_paths.append(svc_path)
+                    self.net_download(svc_path, (api_endpoint, parameters),
+                                      require=API_REQUIRE, awesome_ua=True)
+                    self.net_dump(wav_path, svc_path)
 
             if len(wav_paths) > 1:
                 for wav_path in wav_paths:

@@ -28,11 +28,7 @@ from .common import Trait
 __all__ = ['VoiceText']
 
 
-API_FORMAT = (
-    'wav' if MACOSX      # OS X is unreliable and mplayer crashes too much
-    else 'ogg' if WIN32  # aac usually works on Windows, but not always
-    else 'aac'           # others (i.e. Linux) generally have good mplayer
-)
+API_FORMAT = 'ogg' if WIN32 else 'aac'  # very short AAC files fail on Windows
 
 API_REQUIRE = (
     dict(mime='audio/wave', size=2048) if API_FORMAT == 'wav'
@@ -145,6 +141,7 @@ class VoiceText(Service):
             raise IOError("Input text is too long for the VoiceText service")
 
         svc_paths = []
+        caf_paths = []
         wav_paths = []
         mp3_paths = []
 
@@ -189,7 +186,20 @@ class VoiceText(Service):
                     svc_paths.append(svc_path)
                     self.net_download(svc_path, (api_endpoint, parameters),
                                       require=API_REQUIRE, awesome_ua=True)
-                    self.net_dump(wav_path, svc_path)
+
+                    if MACOSX and API_FORMAT == 'aac':  # avoid crashes on OS X
+                        caf_path = self.path_temp('caf')
+                        caf_paths.append(caf_path)
+
+                        self.cli_call('afconvert',
+                                      '-d', 'aac', svc_path,
+                                      '-f', 'caff', caf_path)
+                        self.cli_call('afconvert',
+                                      '-d', 'I8', caf_path,
+                                      '-f', 'AIFF', wav_path)
+
+                    else:  # mplayer works just fine on Linux and Windows
+                        self.net_dump(wav_path, svc_path)
 
             if len(wav_paths) > 1:
                 for wav_path in wav_paths:
@@ -202,4 +212,4 @@ class VoiceText(Service):
                 self.cli_transcode(wav_paths[0], path)
 
         finally:
-            self.path_unlink(svc_paths, wav_paths, mp3_paths)
+            self.path_unlink(svc_paths, caf_paths, wav_paths, mp3_paths)

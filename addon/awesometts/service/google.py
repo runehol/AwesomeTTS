@@ -209,24 +209,35 @@ class Google(Service):
                                                               *args, **kwargs)
 
                     def finished():
-                        if not self._cb:
-                            pass
-                        elif rep.error():
-                            self._cb['fail']("error in network reply")
-                        elif rep.header(HEADER_LOCATION):
-                            self._cb['fail']("got redirected away")
-                        elif rep.header(HEADER_CONTENT_TYPE) != 'audio/mpeg':
-                            self._cb['fail']("unexpected Content-Type")
-                        elif rep.header(HEADER_CONTENT_LENGTH) < 1024:
-                            self._cb['fail']("Content-Length is too small")
-                        else:
-                            stream = rep.readAll()
-                            if not stream:
-                                self._cb['fail']("no stream returned")
-                            elif len(stream) < 1024:
-                                self._cb['fail']("stream is too small")
+                        try:
+                            if not self._cb:
+                                pass
+                            elif rep.error():
+                                raise RuntimeError("error in network reply")
+                            elif rep.header(HEADER_LOCATION):
+                                raise RuntimeError("got redirected away")
+                            elif rep.header(HEADER_CONTENT_TYPE) != 'audio/mpeg':
+                                raise RuntimeError("unexpected Content-Type")
+                            elif rep.header(HEADER_CONTENT_LENGTH) < 1024:
+                                raise RuntimeError("Content-Length is too small")
                             else:
-                                self._cb['okay'](stream)
+                                stream = rep.readAll()
+                                if not stream:
+                                    raise RuntimeError("no stream returned")
+                                elif len(stream) < 1024:
+                                    raise RuntimeError("stream is too small")
+                                else:
+                                    self._cb['okay'](stream)
+                        except StandardError as error:
+                            try:
+                                self._cb['fail'](format(error))
+                            except StandardError:
+                                pass
+                        finally:
+                            try:
+                                rep.close()
+                            except StandardError:
+                                pass
 
                     rep.finished.connect(finished)
 

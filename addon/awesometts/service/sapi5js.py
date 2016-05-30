@@ -26,13 +26,13 @@ This module functions with the help of a JScript gateway script. See
 also the sapi5js.js file in this directory.
 """
 
-__all__ = 'SAPI5JS'
-
 import os
 import os.path
 
 from .base import Service
 from .common import Trait
+
+__all__ = 'SAPI5JS'
 
 
 class SAPI5JS(Service):

@@ -22,10 +22,10 @@
 Service implementation for SpanishDict's text-to-speech API
 """
 
-__all__ = ['SpanishDict']
-
 from .base import Service
 from .common import Trait
+
+__all__ = ['SpanishDict']
 
 
 class SpanishDict(Service):

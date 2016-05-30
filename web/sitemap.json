@@ -20,6 +20,10 @@
                 "title": "Baidu Translate",
                 "what": "Chinese, English, Japanese, Portuguese, and Thai; available over the Internet"
             },
+            "duden": {
+                "title": "Duden",
+                "what": "Online dictionary for German, available over the Internet"
+            },
             "ekho": {
                 "title": "Ekho",
                 "what": "Korean and several dialects of Chinese, Windows and Linux"
@@ -48,6 +52,14 @@
             "imtranslator": {
                 "title": "ImTranslator",
                 "what": "Asian and European languages, available over the Internet"
+            },
+            "ispeech": {
+                "title": "iSpeech",
+                "what": "Paid API that offers access to high-quality voices in several languages"
+            },
+            "linguatec": {
+                "title": "Linguatec",
+                "what": "Many languages available over the Internet"
             },
             "sapi5": {
                 "terse": "MS SAPI",

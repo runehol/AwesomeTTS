@@ -74,6 +74,7 @@ class Router(object):
     __slots__ = [
         '_busy',       # list of file paths that are in-progress
         '_cache_dir',  # path for writing cached media files
+        '_config',     # user configuration (dict-like)
         '_failures',   # lookup of file paths that raised exceptions
         '_logger',     # logger-like interface with debug(), info(), etc.
         '_pool',       # instance of the _Pool class for managing threads
@@ -81,7 +82,7 @@ class Router(object):
         '_temp_dir',   # path for writing human-readable filenames
     ]
 
-    def __init__(self, services, cache_dir, temp_dir, logger):
+    def __init__(self, services, cache_dir, temp_dir, logger, config):
         """
         The services should be a bundle with the following:
 
@@ -91,6 +92,7 @@ class Router(object):
             - normalize (callable): for service IDs and option keys
             - args (tuple): to be passed to Service constructors
             - kwargs (dict): to be passed to Service constructors
+            - config (dict-like): user configuration lookup
 
         The cache directory should be one where media files get stored
         for a semi-permanent time.
@@ -118,6 +120,7 @@ class Router(object):
 
         self._busy = []
         self._cache_dir = cache_dir
+        self._config = config
         self._failures = {}
         self._logger = logger
         self._pool = _Pool(logger)
@@ -135,6 +138,30 @@ class Router(object):
             in self._services.lookup.values()
             if trait in service['traits']
         ], key=lambda name: name.lower())
+
+    def has_trait(self, svc_id, trait):
+        """
+        Return True if the service (given by its string service ID or
+        alias) has the passed trait (given by either the enum integer or
+        string). Returns False if not.
+
+        Returns None if the passed service does not exist.
+        """
+
+        svc_id = self._services.normalize(svc_id)
+        if svc_id in self._services.aliases:
+            svc_id = self._services.aliases[svc_id]
+
+        if isinstance(trait, basestring):
+            trait = getattr(BaseTrait, trait.upper())
+
+        try:
+            traits = self._services.lookup[svc_id]['traits']
+        except KeyError:
+            return None
+        else:
+            return trait in traits
+
 
     def get_unavailable_msg(self, svc_id):
         """
@@ -189,9 +216,17 @@ class Router(object):
         service, with defaults highlighted.
         """
 
-        svc_id, service = self._fetch_options(svc_id)
-
+        svc_id, service = self._fetch_options_and_extras(svc_id)
         return service['options']
+
+    def get_extras(self, svc_id):
+        """
+        Returns a list of "extra" options that the user might need
+        to enter. Returns an empty list if none.
+        """
+
+        svc_id, service = self._fetch_options_and_extras(svc_id)
+        return service['extras']
 
     def get_failure_count(self):
         """
@@ -364,6 +399,35 @@ class Router(object):
                 svc_id, options, text, path, "hit" if cache_hit else "miss",
             )
 
+            # If we didn't get a cache hit, we have to call the real service,
+            # so check to see if it has any extras defined, and if so, add
+            # them to the options lookup for the service to use.
+            #
+            # n.b.: Even though the extras do not factor into an audio clip's
+            # cache path, they MIGHT need to factor into the failure cache in
+            # the future... This could be done by generating a special `fpath`
+            # value during this loop, and use that with the `_failures` lookup
+            # instead of the vanilla `path` (but this is a non-issue today,
+            # because iSpeech is the only `extras` service, and it has caching
+            # turned off, being that it is a paid-for key service
+
+            if not cache_hit:
+                for extra in self.get_extras(svc_id):
+                    key = extra['key']
+                    try:
+                        options[key] = self._config['extras'][svc_id][key]
+                        options[key] = options[key].strip()
+                        if not options[key]:
+                            raise KeyError
+                    except KeyError:
+                        if extra['required']:
+                            raise KeyError(
+                                "%s required to access %s" %
+                                (extra['label'].rstrip(':'), svc_id)
+                            )
+                        else:
+                            options[key] = None
+
         except Exception as exception:  # catch all, pylint:disable=W0703
             if 'done' in callbacks:
                 callbacks['done']()
@@ -530,7 +594,7 @@ class Router(object):
             - 4th: cache path
         """
 
-        svc_id, service = self._fetch_options(svc_id)
+        svc_id, service = self._fetch_options_and_extras(svc_id)
         svc_options = service['options']
         svc_options_keys = [svc_option['key'] for svc_option in svc_options]
 
@@ -632,7 +696,7 @@ class Router(object):
 
         return path
 
-    def _fetch_options(self, svc_id):
+    def _fetch_options_and_extras(self, svc_id):
         """
         Identifies the service by its ID, checks to see if the options
         list need construction, and then return back the normalized ID
@@ -681,6 +745,26 @@ class Router(object):
                     ]
 
                 service['options'].append(option)
+
+        if 'extras' not in service:  # extras are like options, but universal
+            service['extras'] = []
+
+            if hasattr(service['instance'], 'extras'):
+                self._logger.debug("Building the extras list for %s",
+                                   service['name'])
+                for extra in service['instance'].extras():
+                    assert 'key' in extra, "missing extra key for %s" % svc_id
+                    assert self._services.normalize(extra['key']) == \
+                        extra['key'], "bad %s key %s" % (svc_id, extra['key'])
+                    assert 'label' in extra, \
+                        "missing %s label for %s" % (extra['key'], svc_id)
+
+                    if 'required' not in extra:
+                        extra['required'] = False
+                    if not extra['label'].endswith(":"):
+                        extra['label'] += ":"
+
+                    service['extras'].append(extra)
 
         return svc_id, service
 

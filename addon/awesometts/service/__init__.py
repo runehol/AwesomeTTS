@@ -23,6 +23,34 @@
 Service classes for AwesomeTTS
 """
 
+from .common import Trait
+
+from .acapela import Acapela
+from .baidu import Baidu
+from .duden import Duden
+from .ekho import Ekho
+from .espeak import ESpeak
+from .festival import Festival
+from .fluencynl import FluencyNl
+# from .google import Google
+from .howjsay import Howjsay
+from .imtranslator import ImTranslator
+from .ispeech import ISpeech
+from .linguatec import Linguatec
+from .naver import Naver
+from .neospeech import NeoSpeech
+from .oddcast import Oddcast
+from .oxford import Oxford
+from .pico2wave import Pico2Wave
+from .rhvoice import RHVoice
+from .sapi5 import SAPI5
+from .sapi5js import SAPI5JS
+from .say import Say
+from .spanishdict import SpanishDict
+from .voicetext import VoiceText
+from .yandex import Yandex
+from .youdao import Youdao
+
 __all__ = [
     # common
     'Trait',
@@ -30,6 +58,7 @@ __all__ = [
     # services
     'Acapela',
     'Baidu',
+    'Duden',
     'Ekho',
     'ESpeak',
     'Festival',
@@ -37,6 +66,8 @@ __all__ = [
     # 'Google',
     'Howjsay',
     'ImTranslator',
+    'ISpeech',
+    'Linguatec',
     'Naver',
     'NeoSpeech',
     'Oddcast',
@@ -51,28 +82,3 @@ __all__ = [
     'Yandex',
     'Youdao',
 ]
-
-from .common import Trait
-
-from .acapela import Acapela
-from .baidu import Baidu
-from .ekho import Ekho
-from .espeak import ESpeak
-from .festival import Festival
-from .fluencynl import FluencyNl
-# from .google import Google
-from .howjsay import Howjsay
-from .imtranslator import ImTranslator
-from .naver import Naver
-from .neospeech import NeoSpeech
-from .oddcast import Oddcast
-from .oxford import Oxford
-from .pico2wave import Pico2Wave
-from .rhvoice import RHVoice
-from .sapi5 import SAPI5
-from .sapi5js import SAPI5JS
-from .say import Say
-from .spanishdict import SpanishDict
-from .voicetext import VoiceText
-from .yandex import Yandex
-from .youdao import Youdao

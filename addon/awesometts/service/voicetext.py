@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2015       Anki AwesomeTTS Development Team
-# Copyright (C) 2015       Dave Shifflett
+# Copyright (C) 2015-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2015-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,11 +20,24 @@
 
 """Service implementation for VoiceText's text-to-speech API"""
 
-__all__ = ['VoiceText']
+from anki.utils import isWin as WIN32, isMac as MACOSX
 
 from .base import Service
 from .common import Trait
 
+__all__ = ['VoiceText']
+
+
+API_FORMAT = (
+    'wav' if MACOSX      # OS X is unreliable and mplayer crashes too much
+    else 'ogg' if WIN32  # aac usually works on Windows, but not always
+    else 'aac'           # others (i.e. Linux) generally have good mplayer
+)
+
+API_REQUIRE = (
+    dict(mime='audio/wave', size=2048) if API_FORMAT == 'wav'
+    else dict(mime='audio/' + API_FORMAT, size=256)
+)
 
 VOICES = [
     ('show', "Show (male)"),
@@ -119,20 +132,25 @@ class VoiceText(Service):
 
     def run(self, text, options, path):
         """
-        Downloads from VoiceText to a wave file, then transcodes that
-        into an MP3 via lame.
+        Downloads from VoiceText to some initial file, then converts it
+        WAV using mplayer if it wasn't already, and then transcodes it
+        to MP3 using lame.
 
         If the input text is longer than 100 characters, it will be
         split across multiple requests, transcoded, then merged back
         together into a single MP3.
         """
 
+        if len(text) > 250:
+            raise IOError("Input text is too long for the VoiceText service")
+
+        svc_paths = []
         wav_paths = []
         mp3_paths = []
 
         parameters = dict(
             speaker=options['voice'],
-            format='wav',
+            format=API_FORMAT,
             # emotion_level=options['intensity'],
             speed=options['speed'],
             pitch=options['pitch'],
@@ -156,10 +174,22 @@ class VoiceText(Service):
                 wav_path = self.path_temp('wav')
                 wav_paths.append(wav_path)
                 parameters['text'] = subtext
-                self.net_download(wav_path,
-                                  (api_endpoint, parameters),
-                                  require=dict(mime='audio/wave', size=2048),
-                                  awesome_ua=True)
+
+                if API_FORMAT == 'wav':
+                    self.net_download(wav_path, (api_endpoint, parameters),
+                                      require=API_REQUIRE, awesome_ua=True)
+                else:
+                    # n.b. We call net_dump() using a local file path after
+                    # calling net_download() instead of just calling net_dump()
+                    # directly w/ the URL so we can get direct access to HTTP
+                    # status codes from net_download() (e.g. if our VoiceText
+                    # proxy rejects the call)
+
+                    svc_path = self.path_temp(API_FORMAT)
+                    svc_paths.append(svc_path)
+                    self.net_download(svc_path, (api_endpoint, parameters),
+                                      require=API_REQUIRE, awesome_ua=True)
+                    self.net_dump(wav_path, svc_path)
 
             if len(wav_paths) > 1:
                 for wav_path in wav_paths:
@@ -172,4 +202,4 @@ class VoiceText(Service):
                 self.cli_transcode(wav_paths[0], path)
 
         finally:
-            self.path_unlink(wav_paths, mp3_paths)
+            self.path_unlink(svc_paths, wav_paths, mp3_paths)

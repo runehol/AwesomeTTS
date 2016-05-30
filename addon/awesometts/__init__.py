@@ -48,7 +48,7 @@ from .text import Sanitizer
 from .updates import Updates
 
 
-VERSION = '1.7.0'
+VERSION = '1.8.0'
 
 WEB = 'https://ankiatts.appspot.com'
 
@@ -88,6 +88,7 @@ config = Config(
         ('delay_questions_stored_theirs', 'integer', 0, int, int),
         ('ellip_note_newlines', 'integer', False, to.lax_bool, int),
         ('ellip_template_newlines', 'integer', False, to.lax_bool, int),
+        ('extras', 'text', {}, to.deserialized_dict, to.compact_json),
         ('filenames', 'text', 'hash', str, str),
         ('filenames_human', 'text',
          u'{{text}} ({{service}} {{voice}})', unicode, unicode),
@@ -167,6 +168,7 @@ router = Router(
         mappings=[
             ('acapela', service.Acapela),
             ('baidu', service.Baidu),
+            ('duden', service.Duden),
             ('ekho', service.Ekho),
             ('espeak', service.ESpeak),
             ('festival', service.Festival),
@@ -174,6 +176,8 @@ router = Router(
             # ('google', service.Google),
             ('howjsay', service.Howjsay),
             ('imtranslator', service.ImTranslator),
+            ('ispeech', service.ISpeech),
+            ('linguatec', service.Linguatec),
             ('naver', service.Naver),
             ('neospeech', service.NeoSpeech),
             ('oddcast', service.Oddcast),
@@ -215,6 +219,7 @@ router = Router(
     cache_dir=paths.CACHE,
     temp_dir=join(paths.TEMP, '_awesometts_scratch_' + str(int(time()))),
     logger=logger,
+    config=config,
 )
 
 updates = Updates(

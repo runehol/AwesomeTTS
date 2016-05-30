@@ -23,10 +23,10 @@
 Service implementation for Ekho text-to-speech engine
 """
 
-__all__ = ['Ekho']
-
 from .base import Service
 from .common import Trait
+
+__all__ = ['Ekho']
 
 
 class Ekho(Service):

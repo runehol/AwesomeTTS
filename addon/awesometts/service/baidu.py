@@ -22,10 +22,10 @@
 Service implementation for Baidu Translate's text-to-speech API
 """
 
-__all__ = ['Baidu']
-
 from .base import Service
 from .common import Trait
+
+__all__ = ['Baidu']
 
 
 VOICES = {

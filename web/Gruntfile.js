@@ -446,6 +446,7 @@ module.exports = function (grunt) {
 
         var BASICS = {application: 'ankiatts', version: 'local',
           runtime: 'python27', api_version: '1', threadsafe: true,
+          automatic_scaling: {max_idle_instances: 1},
           default_expiration: '1d'};
 
         var INDICES = '/' + gaeRegex(
@@ -518,11 +519,12 @@ module.exports = function (grunt) {
               upload: 'gsv\\.html'},
 
             {url: '/api/update/[a-z\\d]+-' + gaeRegex([
-                '1.7.0',
+                '1.8.0',
               ]),
               static_files: 'api/update/good-version.json',
               upload: 'api/update/good-version\\.json'},
             {url: '/api/update/[a-z\\d]+-' + gaeRegex([
+                '1.8.0-pre', '1.8.0-dev', '1.7.0',
                 '1.7.0-pre', '1.7.0-dev', '1.6.0',
                 '1.6.0-pre', '1.6.0-dev', '1.5.1', '1.5.1-pre', '1.5.0',
                 '1.5.0-pre', '1.5.0-dev', '1.4.1', '1.4.1-pre', '1.4.0',
@@ -557,7 +559,19 @@ module.exports = function (grunt) {
 
             Array.prototype.concat(
                 Object.keys(BASICS).map(function (key) {
-                    return [key, BASICS[key]].join(': ');
+                    var value = BASICS[key];
+
+                    return key + ': ' +
+                           (
+                               typeof value === 'object' && value !== null ?
+
+                               Object.keys(value).map(function (subkey) {
+                                   return '\n  ' + subkey + ': ' +
+                                          value[subkey];
+                               }).join('') :
+
+                               value
+                           );
                 }),
                 '',
                 'handlers:',

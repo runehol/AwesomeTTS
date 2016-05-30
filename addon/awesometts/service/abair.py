@@ -63,7 +63,6 @@ class Abair(Service):
 
         voice_lookup = {self.normalize(value): value for value, _ in VOICES}
         speed_lookup = {self.normalize(value): value for value in SPEEDS}
-        print speed_lookup
 
         return [
             dict(

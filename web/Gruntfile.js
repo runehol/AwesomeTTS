@@ -420,11 +420,11 @@ module.exports = function (grunt) {
     grunt.task.loadNpmTasks('grunt-contrib-htmlmin');
     config.htmlmin = {
         options: {collapseBooleanAttributes: true, collapseWhitespace: true,
-          minifyCSS: true, minifyJS: true, removeAttributeQuotes: true,
-          removeCDATASectionsFromCDATA: true, removeComments: true,
-          removeCommentsFromCDATA: true, removeEmptyAttributes: true,
+          html5: true, minifyCSS: true, removeAttributeQuotes: true,
+          removeComments: true, removeEmptyAttributes: true,
           removeEmptyElements: true, removeOptionalTags: true,
-          removeRedundantAttributes: true, useShortDoctype: true},
+          removeRedundantAttributes: true, removeStyleLinkTypeAttributes: true,
+          sortAttributes: true, sortClassName: true},
 
         pages: {expand: true, cwd: 'build/', src: 'pages/**/*.html',
           dest: 'build/'},

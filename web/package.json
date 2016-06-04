@@ -9,7 +9,7 @@
         "grunt-gae": "0.2.4",
         "grunt-json-minify": "0.4.0",
         "grunt-mustache-render": "1.9.2",
-        "grunt-replace": "0.11.0",
+        "grunt-replace": "1.0.1",
         "grunt-sass": "1.2.0"
     },
     "license": "AGPL-3.0",

@@ -25,10 +25,11 @@
 Service implementation for Google Translate's text-to-speech API
 """
 
-__all__ = ['Google']
-
 from .base import Service
 from .common import Trait
+
+__all__ = ['Google']
+
 
 class Google(Service):
     """
@@ -189,5 +190,4 @@ class Google(Service):
                 "Depending on your specific situation, you might be able to "
                 "switch to a different service offering " +
                 self._VOICE_CODES[options['voice']].split(',').pop(0) + "."
-            ) if hasattr(io_error, 'code') and io_error.code == 503 \
-                else io_error
+            ) if getattr(io_error, 'code', None) == 503 else io_error

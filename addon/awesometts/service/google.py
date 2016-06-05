@@ -25,6 +25,8 @@
 Service implementation for Google Translate's text-to-speech API
 """
 
+from threading import Lock
+
 from .base import Service
 from .common import Trait
 
@@ -37,6 +39,8 @@ class Google(Service):
     """
 
     __slots__ = [
+        '_lock',
+        '_cookies',
     ]
 
     NAME = "Google Translate"
@@ -66,6 +70,11 @@ class Google(Service):
         'vi': "Vietnamese", 'zh-CMN': "Chinese, Mandarin",
         'zh-YUE': "Chinese, Cantonese",
     }
+
+    def __init__(self, *args, **kwargs):
+        self._lock = Lock()
+        self._cookies = None
+        super(Google, self).__init__(*args, **kwargs)
 
     def desc(self):
         """
@@ -160,6 +169,14 @@ class Google(Service):
         is not used for transcoding.
         """
 
+        with self._lock:
+            if not self._cookies:
+                headers = self.net_headers('https://www.google.com')
+                self._cookies = ';'.join(cookie.split(';')[0]
+                                         for cookie
+                                         in headers['Set-Cookie'].split(','))
+                self._logger.debug("Google cookies are %s", self._cookies)
+
         subtexts = self.util_split(text, 100)
 
         try:
@@ -173,11 +190,12 @@ class Google(Service):
                         total=len(subtexts),
                         idx=idx,
                         textlen=len(subtext),
-                        client='t',
+                        client='tw-ob',
                     ))
                     for idx, subtext in enumerate(subtexts)
                 ],
                 require=dict(mime='audio/mpeg', size=1024),
+                custom_headers={'Cookie': self._cookies},
             )
 
         except IOError as io_error:

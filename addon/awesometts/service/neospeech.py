@@ -116,12 +116,25 @@ class NeoSpeech(Service):
 
             def fetch_piece(subtext, subpath):
                 """Fetch given phrase from the API to the given path."""
-                url = self.net_stream((DEMO_URL, dict(content=subtext,
-                                                      voiceId=voice_id)),
-                                      custom_headers=headers)
-                url = json.loads(url)
-                url = url['audioUrl']
-                assert len(url) > 1 and url[0] == '/', "expecting relative URL"
+
+                payload = self.net_stream((DEMO_URL, dict(content=subtext,
+                                                          voiceId=voice_id)),
+                                          custom_headers=headers)
+
+                try:
+                    data = json.loads(payload)
+                except ValueError:
+                    raise ValueError("Unable to interpret the response from "
+                                     "the NeoSpeech service")
+
+                try:
+                    url = data['audioUrl']
+                except KeyError:
+                    raise KeyError("Cannot find the audio URL in the response "
+                                   "from the NeoSpeech service")
+                assert isinstance(url, basestring) and len(url) > 2 and \
+                    url[0] == '/' and url[1].isalnum(), \
+                    "The audio URL from NeoSpeech does not seem to be valid"
 
                 self.net_download(subpath, BASE_URL + url, require=REQUIRE_MP3,
                                   custom_headers=headers)

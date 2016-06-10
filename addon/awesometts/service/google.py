@@ -81,8 +81,9 @@ class Google(Service):
         Returns a short, static description.
         """
 
-        return "Google Translate text-to-speech web API " \
-            "(%d voices)" % len(self._VOICE_CODES)
+        return "Google Translate text-to-speech web API (%d voices); " \
+            "service is heavily rate-limited and not recommended for mass " \
+            "generation" % len(self._VOICE_CODES)
 
     def options(self):
         """
@@ -180,6 +181,7 @@ class Google(Service):
         subtexts = self.util_split(text, 100)
 
         try:
+            self._netops += 10 * len(subtexts)
             self.net_download(
                 path,
                 [

@@ -28,6 +28,7 @@ from .common import Trait
 from .abair import Abair
 from .acapela import Acapela
 from .baidu import Baidu
+from .collins import Collins
 from .duden import Duden
 from .ekho import Ekho
 from .espeak import ESpeak
@@ -60,6 +61,7 @@ __all__ = [
     'Abair',
     'Acapela',
     'Baidu',
+    'Collins',
     'Duden',
     'Ekho',
     'ESpeak',

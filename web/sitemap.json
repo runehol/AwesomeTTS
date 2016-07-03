@@ -25,6 +25,11 @@
                 "title": "Baidu Translate",
                 "what": "Chinese, English, Japanese, Portuguese, and Thai; available over the Internet"
             },
+            "collins": {
+                "terse": "Collins",
+                "title": "Collins Dictionary",
+                "what": "Human pronunciation of most common English, French, German, Spanish, Italian, and Chinese words"
+            },
             "duden": {
                 "title": "Duden",
                 "what": "Online dictionary for German, available over the Internet"

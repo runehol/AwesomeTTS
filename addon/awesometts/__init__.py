@@ -169,6 +169,7 @@ router = Router(
             ('abair', service.Abair),
             ('acapela', service.Acapela),
             ('baidu', service.Baidu),
+            ('collins', service.Collins),
             ('duden', service.Duden),
             ('ekho', service.Ekho),
             ('espeak', service.ESpeak),

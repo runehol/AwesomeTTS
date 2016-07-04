@@ -147,7 +147,11 @@ class GroupListView(_ListView):
 class _Delegate(QtGui.QItemDelegate):
     """Abstract delegate view for use throughout AwesomeTTS."""
 
-    sizeHint = lambda self, option, index: self.sizeHint.SIZE
+    def sizeHint(self,            # pylint:disable=invalid-name
+                 option, index):  # pylint:disable=unused-argument
+        """Always return the same size."""
+        return self.sizeHint.SIZE
+
     sizeHint.SIZE = QtCore.QSize(-1, 40)
 
 

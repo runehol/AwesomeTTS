@@ -734,8 +734,11 @@ class EditorGenerator(ServiceDialog):
         web = editor.web
         from_note = self._addon.strip.from_note
         from_unknown = self._addon.strip.from_unknown
-        try_clipboard = lambda subtype: \
-            from_unknown(QtGui.QApplication.clipboard().text(subtype)[0])
+        app = QtGui.QApplication
+
+        def try_clipboard(subtype):
+            """Fetch from given system clipboard."""
+            return from_unknown(app.clipboard().text(subtype)[0])
 
         for origin in [
                 lambda: from_note(web.selectedText()),

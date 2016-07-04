@@ -661,6 +661,8 @@ def reviewer_hooks():
         submenu = QMenu("Awesome&TTS", menu)
         submenu.setIcon(gui.ICON)
 
+        needs_separator = False
+
         if atts_button:
             submenu.addAction(
                 "Add MP3 to the Note",
@@ -670,12 +672,18 @@ def reviewer_hooks():
                     window,
                 )
             )
+            needs_separator = True
 
         if say_text:
             say_display = (say_text if len(say_text) < 25
                            else say_text[0:20].rstrip(' .') + "...")
 
             if config['presets']:
+                if needs_separator:
+                    submenu.addSeparator()
+                else:
+                    needs_separator = True
+
                 def preset_glue((name, preset)):
                     """Closure for callback handler to access `preset`."""
                     submenu.addAction(
@@ -689,7 +697,10 @@ def reviewer_hooks():
                     preset_glue(item)
 
             if config['groups']:
-                submenu.addSeparator()
+                if needs_separator:
+                    submenu.addSeparator()
+                else:
+                    needs_separator = True
 
                 def group_glue((name, group)):
                     """Closure for callback handler to access `group`."""
@@ -703,24 +714,25 @@ def reviewer_hooks():
                                    key=lambda item: item[0].lower()):
                     group_glue(item)
 
-            if tts_question or tts_answer:
+        if tts_question or tts_answer:
+            if needs_separator:
                 submenu.addSeparator()
 
-        if tts_question:
-            submenu.addAction(
-                "Play On-the-Fly TTS from Question Side",
-                lambda: reviewer.nonselection_handler('question', tts_card,
-                                                      window),
-                tts_shortcuts and config['tts_key_q'] or 0,
-            )
+            if tts_question:
+                submenu.addAction(
+                    "Play On-the-Fly TTS from Question Side",
+                    lambda: reviewer.nonselection_handler('question', tts_card,
+                                                          window),
+                    tts_shortcuts and config['tts_key_q'] or 0,
+                )
 
-        if tts_answer:
-            submenu.addAction(
-                "Play On-the-Fly TTS from Answer Side",
-                lambda: reviewer.nonselection_handler('answer', tts_card,
-                                                      window),
-                tts_shortcuts and config['tts_key_a'] or 0,
-            )
+            if tts_answer:
+                submenu.addAction(
+                    "Play On-the-Fly TTS from Answer Side",
+                    lambda: reviewer.nonselection_handler('answer', tts_card,
+                                                          window),
+                    tts_shortcuts and config['tts_key_a'] or 0,
+                )
 
         menu.addMenu(submenu)
 

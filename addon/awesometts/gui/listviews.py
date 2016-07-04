@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014       Anki AwesomeTTS Development Team
-# Copyright (C) 2014       Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,11 +25,11 @@ This module currently exposes a SubListView for manipulating lists of
 substitution rules.
 """
 
-__all__ = ['GroupListView', 'SubListView']
-
 import re
 from PyQt4 import QtCore, QtGui
 from .common import Checkbox, HTML
+
+__all__ = ['GroupListView', 'SubListView']
 
 # all methods might need 'self' in the future, pylint:disable=R0201
 

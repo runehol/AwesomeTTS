@@ -598,10 +598,10 @@ class ServiceDialog(Dialog):
                 panel.addWidget(Label("(global)"), row, 2)
                 row += 1
 
-        label = Note(self._addon.router.get_desc(svc_id))
-        label.setFont(self._FONT_INFO)
+        note = Note(self._addon.router.get_desc(svc_id))
+        note.setFont(self._FONT_INFO)
 
-        panel.addWidget(label, row, 0, 1, 3, QtCore.Qt.AlignTop)
+        panel.addWidget(note, row, 0, 1, 3, QtCore.Qt.AlignTop)
         panel.setRowStretch(row, 1)
 
     def _on_service_activated_set(self, svc_id, widget, options,

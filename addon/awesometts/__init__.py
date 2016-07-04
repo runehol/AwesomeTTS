@@ -24,10 +24,6 @@
 Add-on package initialization
 """
 
-__all__ = ['browser_menus', 'cards_button', 'config_menu', 'editor_button',
-           'reviewer_hooks', 'sound_tag_delays', 'update_checker',
-           'window_shortcuts']
-
 from os.path import join
 import platform
 import sys
@@ -46,6 +42,10 @@ from .player import Player
 from .router import Router
 from .text import Sanitizer
 from .updates import Updates
+
+__all__ = ['browser_menus', 'cards_button', 'config_menu', 'editor_button',
+           'reviewer_hooks', 'sound_tag_delays', 'update_checker',
+           'window_shortcuts']
 
 
 VERSION = '1.9.0-dev'

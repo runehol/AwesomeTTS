@@ -558,35 +558,45 @@ class ServiceDialog(Dialog):
             panel.addWidget(vinput, row, 1, 1, 2)
             row += 1
 
-        config = self._addon.config
-        for extra in self._addon.router.get_extras(svc_id):
-            label = Label(extra['label'])
-            label.setFont(self._FONT_LABEL)
+        extras = self._addon.router.get_extras(svc_id)
+        if extras:
+            config = self._addon.config
 
-            edit = QtGui.QLineEdit()
-            key = extra['key']
-            try:
-                edit.setText(config['extras'][svc_id][key])
-            except KeyError:
-                pass
+            def glue_edit(edit, key):
+                """Wires `textEdited` on `edit`, closing on `key`."""
 
-            edit.textEdited.connect(lambda val, key=key: config.update(dict(
-                extras=dict(
-                    config['extras'].items() +
-                    [(
-                        svc_id,
-                        dict(
-                            config['extras'].get(svc_id, {}).items() +
-                            [(key, val)]
-                        ),
-                    )]
-                ),
-            )))
+                def on_text_edited(val):
+                    """Updates `extras` dict when user input changes."""
+                    config['extras'] = dict(
+                        config['extras'].items() +
+                        [(
+                            svc_id,
+                            dict(
+                                config['extras'].get(svc_id, {}).items() +
+                                [(key, val)]
+                            ),
+                        )]
+                    )
 
-            panel.addWidget(label, row, 0)
-            panel.addWidget(edit, row, 1)
-            panel.addWidget(Label("(global)"), row, 2)
-            row += 1
+                edit.textEdited.connect(on_text_edited)
+
+            for extra in extras:
+                label = Label(extra['label'])
+                label.setFont(self._FONT_LABEL)
+
+                edit = QtGui.QLineEdit()
+                key = extra['key']
+                try:
+                    edit.setText(config['extras'][svc_id][key])
+                except KeyError:
+                    pass
+
+                glue_edit(edit, key)
+
+                panel.addWidget(label, row, 0)
+                panel.addWidget(edit, row, 1)
+                panel.addWidget(Label("(global)"), row, 2)
+                row += 1
 
         label = Note(self._addon.router.get_desc(svc_id))
         label.setFont(self._FONT_INFO)

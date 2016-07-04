@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014       Anki AwesomeTTS Development Team
-# Copyright (C) 2014       Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,9 +22,9 @@
 Update detection and callback handling
 """
 
-__all__ = ['Updates']
-
 from PyQt4 import QtCore, QtGui
+
+__all__ = ['Updates']
 
 
 _SIGNAL_NEED = QtCore.SIGNAL('awesomeTtsUpdateNeeded')

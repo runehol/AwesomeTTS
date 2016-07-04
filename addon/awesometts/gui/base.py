@@ -276,23 +276,23 @@ class ServiceDialog(Dialog):
         for svc_id, text in self._addon.router.get_services():
             dropdown.addItem(text, svc_id)
 
-            panel = QtGui.QGridLayout()
-            panel.addWidget(Label("Pass the following to %s:" % text),
-                            0, 0, 1, 2)
+            svc_layout = QtGui.QGridLayout()
+            svc_layout.addWidget(Label("Pass the following to %s:" % text),
+                                 0, 0, 1, 2)
 
-            widget = QtGui.QWidget()
-            widget.setLayout(panel)
+            svc_widget = QtGui.QWidget()
+            svc_widget.setLayout(svc_layout)
 
-            stack.addWidget(widget)
+            stack.addWidget(svc_widget)
         self._svc_count = dropdown.count()
 
         # one extra widget for displaying a group
-        panel = QtGui.QVBoxLayout()
-        panel.addWidget(Note())
-        panel.addStretch()
-        widget = QtGui.QWidget()
-        widget.setLayout(panel)
-        stack.addWidget(widget)
+        group_layout = QtGui.QVBoxLayout()
+        group_layout.addWidget(Note())
+        group_layout.addStretch()
+        group_widget = QtGui.QWidget()
+        group_widget.setLayout(group_layout)
+        stack.addWidget(group_widget)
 
         dropdown.activated.connect(self._on_service_activated)
         dropdown.currentIndexChanged.connect(self._on_preset_reset)

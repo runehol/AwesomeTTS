@@ -353,11 +353,17 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
 
         return RE_WHITESPACE.sub(' ', text).strip()
 
-    _rule_within_braces = lambda self, text: _aux_within(text, '{', '}')
+    def _rule_within_braces(self, text):
+        """Removes text within curly braces."""
+        return _aux_within(text, '{', '}')
 
-    _rule_within_brackets = lambda self, text: _aux_within(text, '[', ']')
+    def _rule_within_brackets(self, text):
+        """Removes text within square brackets."""
+        return _aux_within(text, '[', ']')
 
-    _rule_within_parens = lambda self, text: _aux_within(text, '(', ')')
+    def _rule_within_parens(self, text):
+        """Removes text within parentheses."""
+        return _aux_within(text, '(', ')')
 
 
 def _aux_within(text, begin_char, end_char):

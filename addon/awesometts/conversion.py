@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2013-2014  Anki AwesomeTTS Development Team
-# Copyright (C) 2013-2014  Dave Shifflett
+# Copyright (C) 2013-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2013-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,14 +22,14 @@
 Helpful type conversions
 """
 
-__all__ = ['compact_json', 'deserialized_dict', 'lax_bool',
-           'normalized_ascii', 'nullable_key', 'nullable_int',
-           'substitution_compiled', 'substitution_json', 'substitution_list']
-
 import json
 import re
 
 from PyQt4.QtCore import Qt
+
+__all__ = ['compact_json', 'deserialized_dict', 'lax_bool',
+           'normalized_ascii', 'nullable_key', 'nullable_int',
+           'substitution_compiled', 'substitution_json', 'substitution_list']
 
 
 def compact_json(obj):

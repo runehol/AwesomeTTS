@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
-# Copyright (C) 2014-2015  Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,8 +22,6 @@
 Dispatch management of available services
 """
 
-__all__ = ['Router']
-
 import os
 import os.path
 from random import shuffle
@@ -36,6 +34,8 @@ from urllib2 import URLError
 from PyQt4 import QtCore, QtGui
 
 from .service import Trait as BaseTrait
+
+__all__ = ['Router']
 
 
 _SIGNAL = QtCore.SIGNAL('awesomeTtsThreadDone')

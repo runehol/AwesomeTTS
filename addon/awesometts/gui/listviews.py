@@ -316,11 +316,17 @@ class _ListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
 
     __slots__ = ['raw_data']
 
-    flags = lambda self, index: self.flags.LIST_ITEM
+    def flags(self, index):  # pylint:disable=unused-argument
+        """Always return same item flags."""
+        return self.flags.LIST_ITEM
+
     flags.LIST_ITEM = (QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable |
                        QtCore.Qt.ItemIsEnabled)
 
-    rowCount = lambda self, parent=None: len(self.raw_data)
+    def rowCount(self,          # pylint:disable=invalid-name
+                 parent=None):  # pylint:disable=unused-argument
+        """Return row count based on my raw data."""
+        return len(self.raw_data)
 
     def __init__(self, raw_data, *args, **kwargs):
         super(_ListModel, self).__init__(*args, **kwargs)

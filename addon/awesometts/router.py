@@ -166,7 +166,6 @@ class Router(object):
         else:
             return trait in traits
 
-
     def get_unavailable_msg(self, svc_id):
         """
         Helper method that returns an error message when a particular
@@ -559,10 +558,12 @@ class Router(object):
 
             if hasattr(service['instance'], 'prerun'):
                 def prerun_ok(result):
+                    """Callback handler for successful prerun hook."""
                     options['prerun'] = result
                     do_spawn()
 
                 def prerun_error(exception):
+                    """Callback handler for unsuccessful prerun hook."""
                     self._logger.error("Asynchronous exception in prerun: %s",
                                        exception)
                     completion_callback(exception)

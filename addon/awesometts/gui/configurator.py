@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2015  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2016  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2015  Dave Shifflett
+# Copyright (C) 2013-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,6 @@
 
 """Configuration dialog"""
 
-__all__ = ['Configurator']
-
 from locale import format as locale
 import os
 import os.path
@@ -36,6 +34,8 @@ from .common import key_event_combo, key_combo_desc
 from .listviews import SubListView
 from .presets import Presets
 from .groups import Groups
+
+__all__ = ['Configurator']
 
 # all methods might need 'self' in the future, pylint:disable=R0201
 

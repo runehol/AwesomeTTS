@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
-# Copyright (C) 2014-2015  Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,12 +25,12 @@ Provides classes that can be extended for constructing GUI elements for
 use with AwesomeTTS.
 """
 
-__all__ = ['Dialog', 'ServiceDialog']
+import inspect
 
 from PyQt4 import QtCore, QtGui
 from .common import Label, Note, ICON
 
-import inspect
+__all__ = ['Dialog', 'ServiceDialog']
 
 # all methods might need 'self' in the future, pylint:disable=R0201
 

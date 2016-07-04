@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014       Anki AwesomeTTS Development Team
-# Copyright (C) 2014       Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,25 +21,6 @@
 """
 GUI classes for AwesomeTTS
 """
-
-__all__ = [
-    # common
-    'Action',
-    'Button',
-    'Filter',
-    'ICON',
-
-    # dialog windows
-    'Configurator',
-    'BrowserGenerator',
-    'EditorGenerator',
-    'BrowserStripper',
-    'Templater',
-    'Updater',
-
-    # headless
-    'Reviewer',
-]
 
 from .common import (
     Action,
@@ -62,3 +43,22 @@ from .templater import Templater
 from .updater import Updater
 
 from .reviewer import Reviewer
+
+__all__ = [
+    # common
+    'Action',
+    'Button',
+    'Filter',
+    'ICON',
+
+    # dialog windows
+    'Configurator',
+    'BrowserGenerator',
+    'EditorGenerator',
+    'BrowserStripper',
+    'Templater',
+    'Updater',
+
+    # headless
+    'Reviewer',
+]

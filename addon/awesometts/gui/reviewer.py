@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2015  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2016  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2015  Dave Shifflett
+# Copyright (C) 2013-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,14 +27,14 @@ because interacts with the GUI components of Anki and it also spawns
 alert windows. It also may have more visual components in the future.
 """
 
-__all__ = ['Reviewer']
-
 import re
 
 from BeautifulSoup import BeautifulSoup
 from PyQt4.QtCore import Qt
 
 from .common import key_event_combo
+
+__all__ = ['Reviewer']
 
 X_FOR_THIS_TAG_MSG = 'The "%s" %s specified by this tag does not exist:\n' \
                      "\n" \

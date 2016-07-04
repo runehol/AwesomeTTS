@@ -40,11 +40,6 @@ __all__ = ['Router']
 
 _SIGNAL = QtCore.SIGNAL('awesomeTtsThreadDone')
 
-_PREFIXED = lambda prefix, lines: "\n".join(
-    prefix + line
-    for line in (lines if isinstance(lines, list) else lines.split("\n"))
-)
-
 FAILURE_CACHE_SECS = 3600  # ignore/dump failures from cache after one hour
 
 RE_MUSTACHE = re.compile(r'\{?\{\{(.+?)\}\}\}?')
@@ -54,6 +49,15 @@ RE_WHITESPACE = re.compile(r'[\0\s]+', re.UNICODE)
 WINDOWS_RESERVED = ['com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7',
                     'com8', 'com9', 'con', 'lpt1', 'lpt2', 'lpt3', 'lpt4',
                     'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9', 'nul', 'prn']
+
+
+def _prefixed(lines, prefix="!!! "):
+    """Take incoming `lines` and prefix each line with `prefix`."""
+
+    return "\n".join(
+        prefix + line
+        for line in (lines if isinstance(lines, list) else lines.split("\n"))
+    )
 
 
 class Router(object):
@@ -829,7 +833,7 @@ class Router(object):
             from traceback import format_exc
             self._logger.warn(
                 "Initialization failed for %s service\n%s",
-                service['name'], _PREFIXED("!!! ", format_exc().split('\n')),
+                service['name'], _prefixed(format_exc()),
             )
 
     def _path_cache(self, svc_id, text, options):
@@ -936,7 +940,7 @@ class _Pool(QtGui.QWidget):
 
                 thread_id, exception.message,
 
-                _PREFIXED("!!! ", stack_trace.split('\n'))
+                _prefixed(stack_trace)
                 if isinstance(stack_trace, basestring)
                 else "Stack trace unavailable",
             )

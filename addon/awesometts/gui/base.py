@@ -619,8 +619,8 @@ class ServiceDialog(Dialog):
 
         assert len(vinputs) == len(options)
 
-        for i in range(len(options)):
-            opt, vinput = options[i], vinputs[i]
+        for i, opt in enumerate(options):
+            vinput = vinputs[i]
 
             if isinstance(opt['values'], tuple):
                 try:

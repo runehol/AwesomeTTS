@@ -440,59 +440,58 @@ class Router(object):
 
             return
 
-        if want_human:
-            def human(path):
-                """Converts path filename into a human-readable one."""
+        def human(path):
+            """Converts path into a human-readable one, if enabled."""
 
-                if not os.path.isdir(self._temp_dir):
-                    os.mkdir(self._temp_dir)
+            if not want_human:
+                return path
 
-                def substitute(match):
-                    """Perform variable substitution on filename."""
+            if not os.path.isdir(self._temp_dir):
+                os.mkdir(self._temp_dir)
 
-                    key = match.group(1).strip()
+            def substitute(match):
+                """Perform variable substitution on filename."""
 
-                    if key:
-                        lower = key.lower()
+                key = match.group(1).strip()
 
-                        if lower == 'service':
-                            return svc_id
-                        if lower == 'text':
-                            return text
-                        if lower == 'voice':
-                            return options['voice'].lower()
+                if key:
+                    lower = key.lower()
 
-                        try:
-                            return note[key]  # exact field match
-                        except:  # ignore error, pylint:disable=bare-except
-                            pass
+                    if lower == 'service':
+                        return svc_id
+                    if lower == 'text':
+                        return text
+                    if lower == 'voice':
+                        return options['voice'].lower()
 
-                        try:
-                            for other_key in note.keys():
-                                if other_key.strip().lower() == lower:
-                                    return note[other_key]  # fuzzy field match
-                        except:  # ignore error, pylint:disable=bare-except
-                            pass
+                    try:
+                        return note[key]  # exact field match
+                    except:  # ignore error, pylint:disable=bare-except
+                        pass
 
-                    return ''  # invalid key / no such note field
+                    try:
+                        for other_key in note.keys():
+                            if other_key.strip().lower() == lower:
+                                return note[other_key]  # fuzzy field match
+                    except:  # ignore error, pylint:disable=bare-except
+                        pass
 
-                filename = RE_MUSTACHE.sub(substitute, want_human)
-                filename = RE_UNSAFE.sub('', filename)
-                filename = RE_WHITESPACE.sub(' ', filename).strip()
-                if not filename or filename.lower() in WINDOWS_RESERVED:
-                    filename = u'AwesomeTTS Audio'
-                else:
-                    filename = filename[0:90]  # accommodate NTFS path limits
-                filename = 'ATTS ' + filename + '.mp3'
+                return ''  # invalid key / no such note field
 
-                from shutil import copyfile
-                new_path = os.path.join(self._temp_dir, filename)
-                copyfile(path, new_path)
+            filename = RE_MUSTACHE.sub(substitute, want_human)
+            filename = RE_UNSAFE.sub('', filename)
+            filename = RE_WHITESPACE.sub(' ', filename).strip()
+            if not filename or filename.lower() in WINDOWS_RESERVED:
+                filename = u'AwesomeTTS Audio'
+            else:
+                filename = filename[0:90]  # accommodate NTFS path limits
+            filename = 'ATTS ' + filename + '.mp3'
 
-                return new_path
+            from shutil import copyfile
+            new_path = os.path.join(self._temp_dir, filename)
+            copyfile(path, new_path)
 
-        else:
-            human = lambda path: path
+            return new_path
 
         if cache_hit:
             if 'done' in callbacks:
@@ -529,25 +528,29 @@ class Router(object):
             service['instance'].net_reset()
             self._busy.append(path)
 
-            completion_callback = lambda exception: (
-                self._busy.remove(path),
+            def completion_callback(exception):
+                """Intermediate callback handler for all service calls."""
 
-                'done' in callbacks and callbacks['done'](),
+                self._busy.remove(path)
 
-                'miss' in callbacks and callbacks['miss'](
-                    svc_id,
-                    service['instance'].net_count()
-                ),
+                if 'done' in callbacks:
+                    callbacks['done']()
 
-                on_error(exception) if exception
-                else callbacks['okay'](human(path)) if os.path.exists(path)
-                else on_error(RuntimeError(
-                    "The %s service did not successfully write out "
-                    "an MP3." % service['name']
-                )),
+                if 'miss' in callbacks:
+                    callbacks['miss'](svc_id, service['instance'].net_count())
 
-                'then' in callbacks and callbacks['then'](),
-            )
+                if exception:
+                    on_error(exception)
+                elif os.path.exists(path):
+                    callbacks['okay'](human(path))
+                else:
+                    on_error(RuntimeError(
+                        "The %s service did not successfully write out an "
+                        "MP3." % service['name']
+                    ))
+
+                if 'then' in callbacks:
+                    callbacks['then']()
 
             def do_spawn():
                 """Call if ready to start a thread to run the service."""

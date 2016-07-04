@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2015  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2016  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2013  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2015  Dave Shifflett
+# Copyright (C) 2013-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,12 +31,13 @@ Need help or more information? Visit one of these places...
 - https://ankiweb.net/shared/info/301952613       User Reviews
 """
 
+import os
+from sys import stderr
+
 __all__ = []
 
 
 if __name__ == "__main__":
-    from sys import stderr
-
     stderr.write(
         "AwesomeTTS is a text-to-speech add-on for Anki.\n"
         "It is not intended to be run directly.\n"
@@ -46,9 +47,6 @@ if __name__ == "__main__":
 
 
 # Begin temporary migration code from Beta 10 and older (unless noted)
-
-import os
-
 
 def os_call(callee, *args, **kwargs):
     """Call the function with the given arguments, ignoring OSError."""
@@ -106,7 +104,11 @@ os_call(
 # End temporary migration code
 
 
-import awesometts
+# n.b. Import is intentionally placed down here so that Python processes it
+# after *after* any package migration steps above (e.g. module renames) occur.
+
+import awesometts  # noqa, pylint:disable=wrong-import-position
+
 
 # If a specific component of AwesomeTTS that you do not need is causing a
 # problem (e.g. conflicting with another add-on), you can disable it here by

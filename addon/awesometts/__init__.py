@@ -674,25 +674,34 @@ def reviewer_hooks():
         if say_text:
             say_display = (say_text if len(say_text) < 25
                            else say_text[0:20].rstrip(' .') + "...")
-            glue = lambda (name, preset): submenu.addAction(
-                'Say "%s" w/ %s' % (say_display, name),
-                lambda: reviewer.selection_handler(say_text, preset, window),
-            )
-            for item in sorted(config['presets'].items(),
-                               key=lambda item: item[0].lower()):
-                glue(item)
+
+            if config['presets']:
+                def preset_glue((name, preset)):
+                    """Closure for callback handler to access `preset`."""
+                    submenu.addAction(
+                        'Say "%s" w/ %s' % (say_display, name),
+                        lambda: reviewer.selection_handler(say_text,
+                                                           preset,
+                                                           window),
+                    )
+                for item in sorted(config['presets'].items(),
+                                   key=lambda item: item[0].lower()):
+                    preset_glue(item)
 
             if config['groups']:
                 submenu.addSeparator()
 
-                glue = lambda (name, group): submenu.addAction(
-                    'Say "%s" w/ %s' % (say_display, name),
-                    lambda: reviewer.selection_handler_group(say_text, group,
-                                                             window),
-                )
+                def group_glue((name, group)):
+                    """Closure for callback handler to access `group`."""
+                    submenu.addAction(
+                        'Say "%s" w/ %s' % (say_display, name),
+                        lambda: reviewer.selection_handler_group(say_text,
+                                                                 group,
+                                                                 window),
+                    )
                 for item in sorted(config['groups'].items(),
                                    key=lambda item: item[0].lower()):
-                    glue(item)
+                    group_glue(item)
 
             if tts_question or tts_answer:
                 submenu.addSeparator()

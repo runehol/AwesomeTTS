@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2015       Anki AwesomeTTS Development Team
-# Copyright (C) 2015       Dave Shifflett
+# Copyright (C) 2015-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2015-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -96,7 +96,7 @@ class NeoSpeech(Service):
         return [dict(key='voice',
                      label="Voice",
                      values=[(name, "%s (%s %s)" % (name, gender, language))
-                             for language, gender, name, api_id in VOICES],
+                             for language, gender, name, _ in VOICES],
                      transform=transform_voice)]
 
     def run(self, text, options, path):

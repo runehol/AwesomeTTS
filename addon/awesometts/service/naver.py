@@ -20,10 +20,10 @@
 
 """NAVER Translate"""
 
-__all__ = ['Naver']
-
 from .base import Service
 from .common import Trait
+
+__all__ = ['Naver']
 
 
 CNDIC_ENDPOINT = 'http://tts.cndic.naver.com/tts/mp3ttsV1.cgi'

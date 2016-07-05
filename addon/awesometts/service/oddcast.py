@@ -267,11 +267,15 @@ class Oddcast(Service):
         eng_id, lang_id, vo_id, _, _, _ = VOICES[options['voice']]
 
         from hashlib import md5
-        get_md5 = lambda subtext: md5(
-            '<engineID>%d</engineID><voiceID>%d</voiceID>'
-            '<langID>%d</langID><ext>mp3</ext>%s' %
-            (eng_id, vo_id, lang_id, subtext.encode('utf-8'))
-        ).hexdigest()
+
+        def get_md5(subtext):
+            """Generates the filename."""
+
+            return md5(
+                '<engineID>%d</engineID><voiceID>%d</voiceID>'
+                '<langID>%d</langID><ext>mp3</ext>%s' %
+                (eng_id, vo_id, lang_id, subtext.encode('utf-8'))
+            ).hexdigest()
 
         self.net_download(
             path,

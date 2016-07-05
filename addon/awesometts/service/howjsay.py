@@ -22,10 +22,10 @@
 Service implementation for Howjsay
 """
 
-__all__ = ['Howjsay']
-
 from .base import Service
 from .common import Trait
+
+__all__ = ['Howjsay']
 
 
 class Howjsay(Service):

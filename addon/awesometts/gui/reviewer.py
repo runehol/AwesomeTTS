@@ -209,6 +209,8 @@ class Reviewer(object):
 
         # when running in review mode, avoid doing playback of a card that is
         # no longer on-screen
+
+        skip_check = True
         try:
             parent_state = parent.state
             reviewer_state = parent.reviewer.state
@@ -216,23 +218,31 @@ class Reviewer(object):
         except AttributeError:
             pass
         else:
-            old_playback = playback
-            playback = lambda *args, **kwargs: (
-                old_playback(*args, **kwargs)
-                if (parent_state == parent.state and
-                    reviewer_state == parent.reviewer.state and
-                    card_id == parent.reviewer.card.id)
-                else self._addon.logger.warn("Review state has changed; "
-                                             "refusing to playback audio")
-            )
+            skip_check = False
+
+        def playback_wrapper(*args, **kwargs):
+            """Play audio contingent on matching state."""
+
+            if skip_check:
+                self._addon.logger.info("No previous state; playing audio")
+                playback(*args, **kwargs)
+
+            elif (parent_state == parent.state and
+                  reviewer_state == parent.reviewer.state and
+                  card_id == parent.reviewer.card.id):
+                self._addon.logger.info("Previous state same; playing audio")
+                playback(*args, **kwargs)
+
+            else:
+                self._addon.logger.warn("State changed; not playing audio")
 
         for tag in BeautifulTTS(html)('tts'):
-            self._play_html_tag(tag, from_template, playback, parent,
-                                show_errors)
+            self._play_html_tag(tag, from_template, playback_wrapper,
+                                parent, show_errors)
 
         for legacy in self.RE_LEGACY_TAGS.findall(html):
-            self._play_html_legacy(legacy, from_template, playback, parent,
-                                   show_errors)
+            self._play_html_legacy(legacy, from_template, playback_wrapper,
+                                   parent, show_errors)
 
     def _play_html_tag(self, tag, from_template, playback, parent,
                        show_errors=True):

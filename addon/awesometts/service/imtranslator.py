@@ -172,9 +172,9 @@ class ImTranslator(Service):
                                                            "path in payload")
                         result = result.group()
                     except (EnvironmentError, IOError) as error:
-                        if hasattr(error, 'code') and error.code == 500:
+                        if getattr(error, 'code', None) == 500:
                             logger.warn("ImTranslator net_stream: got 500")
-                        elif hasattr(error, 'errno') and error.errno == '500b':
+                        elif getattr(error, 'errno', None) == '500b':
                             logger.warn("ImTranslator net_stream: no SWF path")
                         elif 'timed out' in format(error):
                             logger.warn("ImTranslator net_stream: timeout")

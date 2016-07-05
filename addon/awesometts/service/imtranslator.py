@@ -22,13 +22,13 @@
 Service implementation for ImTranslator's text-to-speech portal
 """
 
-__all__ = ['ImTranslator']
-
 import re
 from socket import error as SocketError  # non-caching error class
 
 from .base import Service
 from .common import Trait
+
+__all__ = ['ImTranslator']
 
 
 class ImTranslator(Service):

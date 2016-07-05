@@ -462,7 +462,7 @@ class Reviewer(object):
                          self.RE_LEGACY_TAGS.search(html))
 
 
-class BeautifulTTS(BeautifulSoup):  # pylint:disable=too-many-public-methods
+class BeautifulTTS(BeautifulSoup):  # pylint:disable=abstract-method
     """
     Provides a customized version of the BeautifulSoup parser that
     treats TTS tags as nestable.

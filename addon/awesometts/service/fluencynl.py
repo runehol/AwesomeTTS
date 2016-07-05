@@ -64,10 +64,16 @@ SPEEDS = [(-10, "slowest"), (-8, "very slow"), (-6, "slower"), (-2, "slow"),
 
 SPEED_VALUES = [value for value, label in SPEEDS]
 
-# n.b. This quoter throws away some characters that are not in latin-1, like
-# curly quotes (which the Flash version encodes as `%u201C` and `%u201D`),
-# which is probably fine for 99.99% of use cases
-QUOTER = lambda user_string: quote(user_string.encode('latin-1', 'ignore'))
+
+def _quoter(user_string):
+    """
+    n.b. This quoter throws away some characters that are not in
+    latin-1, like curly quotes (which the Flash version encodes as
+    `%u201C` and `%u201D`), which is probably fine for 99.99% of use
+    cases
+    """
+
+    return quote(user_string.encode('latin-1', 'ignore'))
 
 
 class FluencyNl(Service):
@@ -147,7 +153,7 @@ class FluencyNl(Service):
                     dict(
                         id='Fluency',
                         voice=api_voice_value,
-                        text=QUOTER(subtext),  # intentionally double-encoded
+                        text=_quoter(subtext),  # intentionally double-encoded
                         tempo=api_speed_value,
                         rtf=50,
                     ),

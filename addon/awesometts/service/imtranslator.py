@@ -108,6 +108,12 @@ class ImTranslator(Service):
 
             return value
 
+        def transform_speed(value):
+            """Return the speed value closest to one of the user's."""
+            value = float(value)
+            return min([10, 6, 3, 0, -3, -6, -10],
+                       key=lambda i: abs(i - value))
+
         return [
             dict(
                 key='voice',
@@ -125,8 +131,7 @@ class ImTranslator(Service):
                 values=[(10, "fastest"), (6, "faster"), (3, "fast"),
                         (0, "normal"),
                         (-3, "slow"), (-6, "slower"), (-10, "slowest")],
-                transform=lambda v: min([10, 6, 3, 0, -3, -6, -10],
-                                        key=lambda i: abs(i - float(v))),
+                transform=transform_speed,
                 default=0,
             ),
         ]

@@ -238,6 +238,12 @@ class Oddcast(Service):
             normal = self.normalize(value)
             return voice_lookup[normal] if normal in voice_lookup else value
 
+        def voice_sorter(voice_item):
+            """Returns a tuple of language, country, gender, name."""
+            _, voice_def = voice_item
+            _, lang_id, _, country, gender, name = voice_def
+            return LANGUAGES[lang_id], country, gender, name
+
         return [
             dict(
                 key='voice',
@@ -250,12 +256,7 @@ class Oddcast(Service):
                                         if variant else LANGUAGES[lang_id]),
                     )
                     for key, (_, lang_id, _, variant, gend, name)
-                    in sorted(
-                        VOICES.items(),
-
-                        key=lambda (key, (_, lang_id, _2, var, gend, name)):
-                        (LANGUAGES[lang_id], var, gend, name),
-                    )
+                    in sorted(VOICES.items(), key=voice_sorter)
                 ],
                 transform=transform_voice,
             ),

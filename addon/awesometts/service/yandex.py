@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
-# Copyright (C) 2014-2015  Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -136,23 +136,25 @@ class Yandex(Service):
         happens, we retry the download (for a total of five tries).
         """
 
-        download = lambda: self.net_download(
-            path,
-            [
-                ('http://tts.voicetech.yandex.net/tts', dict(
-                    format='mp3',
-                    quality=options['quality'],
-                    lang=options['voice'],
-                    text=subtext,
-                ))
+        def download():
+            """Attempt a download of the given phrase."""
+            self.net_download(
+                path,
+                [
+                    ('http://tts.voicetech.yandex.net/tts', dict(
+                        format='mp3',
+                        quality=options['quality'],
+                        lang=options['voice'],
+                        text=subtext,
+                    ))
 
-                # n.b. the limit seems to be much higher than 750, but this is
-                # a safe place to start (the web UI limits the user to 100)
-                for subtext in self.util_split(text, 750)
-            ],
-            require=dict(mime='audio/mpeg', size=1024),
-            add_padding=True,
-        )
+                    # n.b. limit seems to be much higher than 750, but this is
+                    # a safe place to start (the web UI limits the user to 100)
+                    for subtext in self.util_split(text, 750)
+                ],
+                require=dict(mime='audio/mpeg', size=1024),
+                add_padding=True,
+            )
 
         # TODO: This workaround is just fine for now, but it would be nice if
         # it were part of the net_download() call. That way, net_download()

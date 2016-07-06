@@ -92,8 +92,12 @@ class SAPI5JS(Service):
         ]
 
         output = output[output.index('__AWESOMETTS_VOICE_LIST__') + 1:]
-        hex2uni = lambda string: ''.join(unichr(int(string[i:i + 4], 16))
-                                         for i in range(0, len(string), 4))
+
+        def hex2uni(string):
+            """Convert hexadecimal-escaped string back to unicode."""
+            return ''.join(unichr(int(string[i:i + 4], 16))
+                           for i in range(0, len(string), 4))
+
         self._voice_list = sorted({
             (voice, voice)
             for voice in [hex2uni(voice).strip() for voice in output]
@@ -227,7 +231,9 @@ class SAPI5JS(Service):
         temporary wave file, and then transcodes to MP3.
         """
 
-        hexstr = lambda value: ''.join(['%04X' % ord(char) for char in value])
+        def hexstr(value):
+            """Convert given unicode into hexadecimal string."""
+            return ''.join(['%04X' % ord(char) for char in value])
 
         output_wav = self.path_temp('wav')
 

@@ -22,10 +22,10 @@
 Service implementation for RHVoice
 """
 
-__all__ = ['RHVoice']
-
 from .base import Service
 from .common import Trait
+
+__all__ = ['RHVoice']
 
 
 VOICES_DIRS = (prefix + '/share/RHVoice/voices'

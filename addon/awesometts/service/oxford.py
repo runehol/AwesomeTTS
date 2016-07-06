@@ -23,14 +23,13 @@
 Service implementation for Oxford Dictionary
 """
 
-__all__ = ['Oxford']
-
 import re
+from HTMLParser import HTMLParser
 
 from .base import Service
 from .common import Trait
 
-from HTMLParser import HTMLParser
+__all__ = ['Oxford']
 
 
 RE_WHITESPACE = re.compile(r'[-\0\s_]+', re.UNICODE)

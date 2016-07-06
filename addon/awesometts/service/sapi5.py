@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2015  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2016  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
-# Copyright (C) 2014-2015  Dave Shifflett
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,10 +23,10 @@
 Service implementation for SAPI 5 on the Windows platform via win32com
 """
 
-__all__ = 'SAPI5'
-
 from .base import Service
 from .common import Trait
+
+__all__ = ['SAPI5']
 
 
 class SAPI5(Service):

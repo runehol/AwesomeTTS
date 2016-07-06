@@ -134,7 +134,7 @@ class Oxford(Service):
         try:
             html_payload = self.net_stream(dict_url)
         except IOError as io_error:
-            if hasattr(io_error, 'code') and io_error.code == 404:
+            if getattr(io_error, 'code', None) == 404:
                 raise IOError(
                     "The Oxford Dictionary does not recognize this phrase. "
                     "While most single words are recognized, many multi-word "

@@ -53,8 +53,8 @@ RE_NONWORD = re.compile(r'\W+', re.UNICODE)
 DEFINITE_ARTICLES = ['das', 'der', 'die', 'el', 'gli', 'i', 'il', 'l', 'la',
                      'las', 'le', 'les', 'lo', 'los', 'the']
 
-TEXT_SPACE_LIMIT = 2
-TEXT_LENGTH_LIMIT = 100
+TEXT_SPACE_LIMIT = 1
+TEXT_LENGTH_LIMIT = 75
 COLLINS_WEBSITE = 'http://www.collinsdictionary.com'
 SEARCH_FORM = COLLINS_WEBSITE + '/search/'
 RE_MP3_URL = re.compile(r'<a[^>]+class="[^>"]*hwd_sound[^>"]*"[^>]+'
@@ -75,7 +75,7 @@ class Collins(Service):
         """Returns a short, static description."""
 
         return "Collins Dictionary (%d languages); single words and " \
-            "short phrases only with fuzzy matching" % len(MAPPINGS)
+            "two-word phrases only with fuzzy matching" % len(MAPPINGS)
 
     def options(self):
         """Provides access to voice only."""

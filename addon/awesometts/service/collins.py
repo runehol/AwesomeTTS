@@ -106,7 +106,7 @@ class Collins(Service):
 
         text = RE_NONWORD.sub('_', text).replace('_', ' ').strip().lower()
 
-        tokenized = text.split(' ')
+        tokenized = text.split(' ', 1)
         if len(tokenized) == 2:
             first, rest = tokenized
             if first in DEFINITE_ARTICLES:

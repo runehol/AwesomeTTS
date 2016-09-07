@@ -25,7 +25,6 @@ Add-on package initialization
 """
 
 from os.path import join
-import platform
 import sys
 from time import time
 
@@ -48,14 +47,41 @@ __all__ = ['browser_menus', 'cards_button', 'config_menu', 'editor_button',
            'window_shortcuts']
 
 
+def get_platform_info():
+    """Exception-tolerant platform information for use with AGENT."""
+
+    implementation = system_description = "???"
+    python_version = "?.?.?"
+
+    try:
+        import platform
+    except:  # catch-all, pylint:disable=bare-except
+        pass
+    else:
+        try:
+            implementation = platform.python_implementation()
+        except:  # catch-all, pylint:disable=bare-except
+            pass
+
+        try:
+            python_version = platform.python_version()
+        except:  # catch-all, pylint:disable=bare-except
+            pass
+
+        try:
+            system_description = platform.platform().replace('-', ' ')
+        except:  # catch-all, pylint:disable=bare-except
+            pass
+
+    return "%s %s; %s" % (implementation, python_version, system_description)
+
 VERSION = '1.9.0-dev'
 
 WEB = 'https://ankiatts.appspot.com'
 
-AGENT = 'AwesomeTTS/%s (Anki %s; PyQt %s; %s %s; %s)' % (
-    VERSION, anki.version, PYQT_VERSION_STR, platform.python_implementation(),
-    platform.python_version(), platform.platform().replace('-', ' '),
-)
+AGENT = 'AwesomeTTS/%s (Anki %s; PyQt %s; %s)' % (VERSION, anki.version,
+                                                  PYQT_VERSION_STR,
+                                                  get_platform_info())
 
 
 # Begin core class initialization and dependency setup, pylint:disable=C0103

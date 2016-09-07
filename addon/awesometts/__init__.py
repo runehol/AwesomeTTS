@@ -249,7 +249,8 @@ router = Router(
 
 updates = Updates(
     agent=AGENT,
-    endpoint='%s/api/update/%s-%s' % (WEB, sys.platform, VERSION),
+    endpoint='%s/api/update/%s-%s-%s' % (WEB, anki.version, sys.platform,
+                                         VERSION),
     logger=logger,
 )
 

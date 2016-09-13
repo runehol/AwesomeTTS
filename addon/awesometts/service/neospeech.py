@@ -64,8 +64,10 @@ class NeoSpeech(Service):
     """
 
     __slots__ = [
-        '_lock',     # download URL is tied to cookie; force serial runs
-        '_cookies',  # used for all NeoSpeech requests in this Anki session
+        '_lock',         # download URL is tied to cookie; force serial runs
+        '_cookies',      # used for all NeoSpeech requests in this Anki session
+        '_last_phrase',  # last subtext we sent to NeoSpeech
+        '_last_stream',  # last download we got from NeoSpeech
     ]
 
     NAME = "NeoSpeech"
@@ -75,6 +77,8 @@ class NeoSpeech(Service):
     def __init__(self, *args, **kwargs):
         self._lock = Lock()
         self._cookies = None
+        self._last_phrase = None
+        self._last_stream = None
         super(NeoSpeech, self).__init__(*args, **kwargs)
 
     def desc(self):
@@ -136,8 +140,18 @@ class NeoSpeech(Service):
                     url[0] == '/' and url[1].isalnum(), \
                     "The audio URL from NeoSpeech does not seem to be valid"
 
-                self.net_download(subpath, BASE_URL + url, require=REQUIRE_MP3,
-                                  custom_headers=headers)
+                mp3_stream = self.net_stream(BASE_URL + url,
+                                             require=REQUIRE_MP3,
+                                             custom_headers=headers)
+                if self._last_phrase != subtext and \
+                        self._last_stream == mp3_stream:
+                    raise IOError("NeoSpeech seems to be returning the same "
+                                  "MP3 file twice in a row; it may be having "
+                                  "service problems.")
+                self._last_phrase = subtext
+                self._last_stream = mp3_stream
+                with open(subpath, 'wb') as mp3_file:
+                    mp3_file.write(mp3_stream)
 
             subtexts = self.util_split(text, 200)  # see `maxlength` on site
             if len(subtexts) == 1:

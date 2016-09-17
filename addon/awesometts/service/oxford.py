@@ -46,11 +46,15 @@ class OxfordLister(HTMLParser):
     def reset(self):
         HTMLParser.reset(self)
         self.sounds = []
+        self.prev_tag = ""
 
     def handle_starttag(self, tag, attrs):
-        snd = [v for k, v in attrs if k == 'data-src-mp3']
-        if snd:
-            self.sounds.extend(snd)
+        if tag == "audio" and self.prev_tag == "a":            
+            snd = [v for k, v in attrs if k == "src"]
+            if snd:
+                self.sounds.extend(snd)
+        if tag == "a" and ("class","speaker") in attrs:     
+            self.prev_tag = tag 
 
 
 class Oxford(Service):
@@ -155,7 +159,7 @@ class Oxford(Service):
             self.net_download(
                 path,
                 sound_url,
-                require=dict(mime='audio/mpeg', size=1024),
+                require=dict(mime='binary/octet-stream', size=1024),
             )
         else:
             raise IOError("The Oxford Dictionary recognized your input, "

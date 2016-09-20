@@ -74,7 +74,8 @@ class Oxford(Service):
         Returns a short, static description.
         """
 
-        return "Oxford Dictionary (British and American English)"
+        return "Oxford Dictionary (British and American English); " \
+            "dictionary words only with fuzzy matching"
 
     def options(self):
         """
@@ -163,5 +164,13 @@ class Oxford(Service):
                 require=dict(mime='binary/octet-stream', size=1024),
             )
         else:
-            raise IOError("The Oxford Dictionary recognized your input, "
-                          "but has no recorded audio for it.")
+            raise IOError(
+                "The Oxford Dictionary does not currently seem to be "
+                "advertising American English pronunciation. You may want to "
+                "consider either using a different service or switching to "
+                "British English."
+                if options['voice'] == 'en-US'
+
+                else
+                "The Oxford Dictionary has no recorded audio for your input."
+            )

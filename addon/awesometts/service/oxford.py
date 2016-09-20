@@ -4,6 +4,7 @@
 #
 # Copyright (C) 2015-2016  Anki AwesomeTTS Development Team
 # Copyright (C) 2015       Myrgy on GitHub
+# Copyright (C) 2016       Vladimir Fedulov
 # Copyright (C) 2015-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify

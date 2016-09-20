@@ -130,8 +130,8 @@ class Oxford(Service):
             raise IOError("Input text is too long for the Oxford Dictionary")
 
         from urllib2 import quote
-        dict_url = 'http://www.oxforddictionaries.com/definition/%s/%s' % (
-            'american_english' if options['voice'] == 'en-US' else 'english',
+        dict_url = 'https://en.oxforddictionaries.com/definition/%s%s' % (
+            'us/' if options['voice'] == 'en-US' else '',
             quote(text.encode('utf-8'))
         )
 

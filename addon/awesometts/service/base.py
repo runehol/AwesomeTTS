@@ -592,10 +592,13 @@ class Service(object):
             if 'mime' in require and \
                     require['mime'] != format(response.info().
                                               gettype()).replace('/x-', '/'):
-                raise ValueError(
+                value_error = ValueError(
                     "Request got %s Content-Type for %s; wanted %s" %
                     (response.info().gettype(), desc, require['mime'])
                 )
+                value_error.got_mime = response.info().gettype()
+                value_error.wanted_mime = require['mime']
+                raise value_error
 
             payload = response.read()
             response.close()

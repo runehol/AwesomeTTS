@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2016  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2014  Dave Shifflett
+# Copyright (C) 2013-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,9 +26,9 @@ Storage and management of add-on configuration
 # TODO Would it be possible to get these configuration options to sync with
 #      AnkiWeb, e.g. by moving them into the collections database?
 
-__all__ = ['Config']
-
 import sqlite3
+
+__all__ = ['Config']
 
 
 class Config(object):

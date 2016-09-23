@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
-# Copyright (C) 2014-2015  Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,12 +25,12 @@ Provides classes that can be extended for constructing GUI elements for
 use with AwesomeTTS.
 """
 
-__all__ = ['Dialog', 'ServiceDialog']
+import inspect
 
 from PyQt4 import QtCore, QtGui
 from .common import Label, Note, ICON
 
-import inspect
+__all__ = ['Dialog', 'ServiceDialog']
 
 # all methods might need 'self' in the future, pylint:disable=R0201
 
@@ -276,23 +276,23 @@ class ServiceDialog(Dialog):
         for svc_id, text in self._addon.router.get_services():
             dropdown.addItem(text, svc_id)
 
-            panel = QtGui.QGridLayout()
-            panel.addWidget(Label("Pass the following to %s:" % text),
-                            0, 0, 1, 2)
+            svc_layout = QtGui.QGridLayout()
+            svc_layout.addWidget(Label("Pass the following to %s:" % text),
+                                 0, 0, 1, 2)
 
-            widget = QtGui.QWidget()
-            widget.setLayout(panel)
+            svc_widget = QtGui.QWidget()
+            svc_widget.setLayout(svc_layout)
 
-            stack.addWidget(widget)
+            stack.addWidget(svc_widget)
         self._svc_count = dropdown.count()
 
         # one extra widget for displaying a group
-        panel = QtGui.QVBoxLayout()
-        panel.addWidget(Note())
-        panel.addStretch()
-        widget = QtGui.QWidget()
-        widget.setLayout(panel)
-        stack.addWidget(widget)
+        group_layout = QtGui.QVBoxLayout()
+        group_layout.addWidget(Note())
+        group_layout.addStretch()
+        group_widget = QtGui.QWidget()
+        group_widget.setLayout(group_layout)
+        stack.addWidget(group_widget)
 
         dropdown.activated.connect(self._on_service_activated)
         dropdown.currentIndexChanged.connect(self._on_preset_reset)
@@ -558,40 +558,50 @@ class ServiceDialog(Dialog):
             panel.addWidget(vinput, row, 1, 1, 2)
             row += 1
 
-        config = self._addon.config
-        for extra in self._addon.router.get_extras(svc_id):
-            label = Label(extra['label'])
-            label.setFont(self._FONT_LABEL)
+        extras = self._addon.router.get_extras(svc_id)
+        if extras:
+            config = self._addon.config
 
-            edit = QtGui.QLineEdit()
-            key = extra['key']
-            try:
-                edit.setText(config['extras'][svc_id][key])
-            except KeyError:
-                pass
+            def glue_edit(edit, key):
+                """Wires `textEdited` on `edit`, closing on `key`."""
 
-            edit.textEdited.connect(lambda val, key=key: config.update(dict(
-                extras=dict(
-                    config['extras'].items() +
-                    [(
-                        svc_id,
-                        dict(
-                            config['extras'].get(svc_id, {}).items() +
-                            [(key, val)]
-                        ),
-                    )]
-                ),
-            )))
+                def on_text_edited(val):
+                    """Updates `extras` dict when user input changes."""
+                    config['extras'] = dict(
+                        config['extras'].items() +
+                        [(
+                            svc_id,
+                            dict(
+                                config['extras'].get(svc_id, {}).items() +
+                                [(key, val)]
+                            ),
+                        )]
+                    )
 
-            panel.addWidget(label, row, 0)
-            panel.addWidget(edit, row, 1)
-            panel.addWidget(Label("(global)"), row, 2)
-            row += 1
+                edit.textEdited.connect(on_text_edited)
 
-        label = Note(self._addon.router.get_desc(svc_id))
-        label.setFont(self._FONT_INFO)
+            for extra in extras:
+                label = Label(extra['label'])
+                label.setFont(self._FONT_LABEL)
 
-        panel.addWidget(label, row, 0, 1, 3, QtCore.Qt.AlignTop)
+                edit = QtGui.QLineEdit()
+                key = extra['key']
+                try:
+                    edit.setText(config['extras'][svc_id][key])
+                except KeyError:
+                    pass
+
+                glue_edit(edit, key)
+
+                panel.addWidget(label, row, 0)
+                panel.addWidget(edit, row, 1)
+                panel.addWidget(Label("(global)"), row, 2)
+                row += 1
+
+        note = Note(self._addon.router.get_desc(svc_id))
+        note.setFont(self._FONT_INFO)
+
+        panel.addWidget(note, row, 0, 1, 3, QtCore.Qt.AlignTop)
         panel.setRowStretch(row, 1)
 
     def _on_service_activated_set(self, svc_id, widget, options,
@@ -609,8 +619,8 @@ class ServiceDialog(Dialog):
 
         assert len(vinputs) == len(options)
 
-        for i in range(len(options)):
-            opt, vinput = options[i], vinputs[i]
+        for i, opt in enumerate(options):
+            vinput = vinputs[i]
 
             if isinstance(opt['values'], tuple):
                 try:

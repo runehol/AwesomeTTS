@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
-# Copyright (C) 2014-2015  Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,16 +22,16 @@
 Basic manipulation and sanitization of input text
 """
 
-__all__ = ['RE_CLOZE_BRACED', 'RE_CLOZE_RENDERED', 'RE_ELLIPSES',
-           'RE_ELLIPSES_LEADING', 'RE_ELLIPSES_TRAILING', 'RE_FILENAMES',
-           'RE_HINT_LINK', 'RE_LINEBREAK_HTML', 'RE_NEWLINEISH', 'RE_SOUNDS',
-           'RE_WHITESPACE', 'STRIP_HTML', 'Sanitizer']
-
 import re
 from StringIO import StringIO
 
 from BeautifulSoup import BeautifulSoup
 import anki
+
+__all__ = ['RE_CLOZE_BRACED', 'RE_CLOZE_RENDERED', 'RE_ELLIPSES',
+           'RE_ELLIPSES_LEADING', 'RE_ELLIPSES_TRAILING', 'RE_FILENAMES',
+           'RE_HINT_LINK', 'RE_LINEBREAK_HTML', 'RE_NEWLINEISH', 'RE_SOUNDS',
+           'RE_WHITESPACE', 'STRIP_HTML', 'Sanitizer']
 
 
 RE_CLOZE_BRACED = re.compile(anki.template.template.clozeReg % r'\d+')
@@ -353,11 +353,17 @@ class Sanitizer(object):  # call only, pylint:disable=too-few-public-methods
 
         return RE_WHITESPACE.sub(' ', text).strip()
 
-    _rule_within_braces = lambda self, text: _aux_within(text, '{', '}')
+    def _rule_within_braces(self, text):
+        """Removes text within curly braces."""
+        return _aux_within(text, '{', '}')
 
-    _rule_within_brackets = lambda self, text: _aux_within(text, '[', ']')
+    def _rule_within_brackets(self, text):
+        """Removes text within square brackets."""
+        return _aux_within(text, '[', ']')
 
-    _rule_within_parens = lambda self, text: _aux_within(text, '(', ')')
+    def _rule_within_parens(self, text):
+        """Removes text within parentheses."""
+        return _aux_within(text, '(', ')')
 
 
 def _aux_within(text, begin_char, end_char):

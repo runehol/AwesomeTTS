@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2014  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2016  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2014  Dave Shifflett
+# Copyright (C) 2013-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,11 +28,11 @@ As everything done from the add-on code has to do with AwesomeTTS, these
 all carry a speaker icon (if supported by the desktop environment).
 """
 
-__all__ = ['ICON', 'key_event_combo', 'key_combo_desc', 'Action', 'Button',
-           'Checkbox', 'Filter', 'HTML', 'Label', 'Note']
-
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import Qt
+
+__all__ = ['ICON', 'key_event_combo', 'key_combo_desc', 'Action', 'Button',
+           'Checkbox', 'Filter', 'HTML', 'Label', 'Note']
 
 
 ICON = QtGui.QIcon(':/icons/speaker.png')
@@ -276,7 +276,7 @@ class Slate(QtGui.QHBoxLayout):  # pylint:disable=too-few-public-methods
             buttons.append(btn)
 
         list_view_args.append(buttons)
-        list_view = ListViewClass(*list_view_args)  # pylint:disable=star-args
+        list_view = ListViewClass(*list_view_args)
         list_view.setObjectName(list_name)
         list_view.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,
                                 QtGui.QSizePolicy.Ignored)

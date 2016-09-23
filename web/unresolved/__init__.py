@@ -79,7 +79,7 @@ api.json = lambda message: [json.dumps(
 api.response404 = api.json("No such endpoint")
 
 api.update_path = '/api/update/'
-api.update_response404 = api.json("Add-on not recognized")
+api.update_response404 = api.json("Installation not recognized")
 
 
 

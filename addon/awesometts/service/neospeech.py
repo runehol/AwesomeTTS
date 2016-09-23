@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2015       Anki AwesomeTTS Development Team
-# Copyright (C) 2015       Dave Shifflett
+# Copyright (C) 2015-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2015-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,8 +64,10 @@ class NeoSpeech(Service):
     """
 
     __slots__ = [
-        '_lock',     # download URL is tied to cookie; force serial runs
-        '_cookies',  # used for all NeoSpeech requests in this Anki session
+        '_lock',         # download URL is tied to cookie; force serial runs
+        '_cookies',      # used for all NeoSpeech requests in this Anki session
+        '_last_phrase',  # last subtext we sent to NeoSpeech
+        '_last_stream',  # last download we got from NeoSpeech
     ]
 
     NAME = "NeoSpeech"
@@ -75,6 +77,8 @@ class NeoSpeech(Service):
     def __init__(self, *args, **kwargs):
         self._lock = Lock()
         self._cookies = None
+        self._last_phrase = None
+        self._last_stream = None
         super(NeoSpeech, self).__init__(*args, **kwargs)
 
     def desc(self):
@@ -96,7 +100,7 @@ class NeoSpeech(Service):
         return [dict(key='voice',
                      label="Voice",
                      values=[(name, "%s (%s %s)" % (name, gender, language))
-                             for language, gender, name, api_id in VOICES],
+                             for language, gender, name, _ in VOICES],
                      transform=transform_voice)]
 
     def run(self, text, options, path):
@@ -116,15 +120,38 @@ class NeoSpeech(Service):
 
             def fetch_piece(subtext, subpath):
                 """Fetch given phrase from the API to the given path."""
-                url = self.net_stream((DEMO_URL, dict(content=subtext,
-                                                      voiceId=voice_id)),
-                                      custom_headers=headers)
-                url = json.loads(url)
-                url = url['audioUrl']
-                assert len(url) > 1 and url[0] == '/', "expecting relative URL"
 
-                self.net_download(subpath, BASE_URL + url, require=REQUIRE_MP3,
-                                  custom_headers=headers)
+                payload = self.net_stream((DEMO_URL, dict(content=subtext,
+                                                          voiceId=voice_id)),
+                                          custom_headers=headers)
+
+                try:
+                    data = json.loads(payload)
+                except ValueError:
+                    raise ValueError("Unable to interpret the response from "
+                                     "the NeoSpeech service")
+
+                try:
+                    url = data['audioUrl']
+                except KeyError:
+                    raise KeyError("Cannot find the audio URL in the response "
+                                   "from the NeoSpeech service")
+                assert isinstance(url, basestring) and len(url) > 2 and \
+                    url[0] == '/' and url[1].isalnum(), \
+                    "The audio URL from NeoSpeech does not seem to be valid"
+
+                mp3_stream = self.net_stream(BASE_URL + url,
+                                             require=REQUIRE_MP3,
+                                             custom_headers=headers)
+                if self._last_phrase != subtext and \
+                        self._last_stream == mp3_stream:
+                    raise IOError("NeoSpeech seems to be returning the same "
+                                  "MP3 file twice in a row; it may be having "
+                                  "service problems.")
+                self._last_phrase = subtext
+                self._last_stream = mp3_stream
+                with open(subpath, 'wb') as mp3_file:
+                    mp3_file.write(mp3_stream)
 
             subtexts = self.util_split(text, 200)  # see `maxlength` on site
             if len(subtexts) == 1:

@@ -22,13 +22,13 @@
 Service implementation for ImTranslator's text-to-speech portal
 """
 
-__all__ = ['ImTranslator']
-
 import re
 from socket import error as SocketError  # non-caching error class
 
 from .base import Service
 from .common import Trait
+
+__all__ = ['ImTranslator']
 
 
 class ImTranslator(Service):
@@ -108,6 +108,12 @@ class ImTranslator(Service):
 
             return value
 
+        def transform_speed(value):
+            """Return the speed value closest to one of the user's."""
+            value = float(value)
+            return min([10, 6, 3, 0, -3, -6, -10],
+                       key=lambda i: abs(i - value))
+
         return [
             dict(
                 key='voice',
@@ -125,8 +131,7 @@ class ImTranslator(Service):
                 values=[(10, "fastest"), (6, "faster"), (3, "fast"),
                         (0, "normal"),
                         (-3, "slow"), (-6, "slower"), (-10, "slowest")],
-                transform=lambda v: min([10, 6, 3, 0, -3, -6, -10],
-                                        key=lambda i: abs(i - float(v))),
+                transform=transform_speed,
                 default=0,
             ),
         ]
@@ -167,9 +172,9 @@ class ImTranslator(Service):
                                                            "path in payload")
                         result = result.group()
                     except (EnvironmentError, IOError) as error:
-                        if hasattr(error, 'code') and error.code == 500:
+                        if getattr(error, 'code', None) == 500:
                             logger.warn("ImTranslator net_stream: got 500")
-                        elif hasattr(error, 'errno') and error.errno == '500b':
+                        elif getattr(error, 'errno', None) == '500b':
                             logger.warn("ImTranslator net_stream: no SWF path")
                         elif 'timed out' in format(error):
                             logger.warn("ImTranslator net_stream: timeout")

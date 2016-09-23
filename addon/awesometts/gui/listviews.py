@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014       Anki AwesomeTTS Development Team
-# Copyright (C) 2014       Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,11 +25,11 @@ This module currently exposes a SubListView for manipulating lists of
 substitution rules.
 """
 
-__all__ = ['GroupListView', 'SubListView']
-
 import re
 from PyQt4 import QtCore, QtGui
 from .common import Checkbox, HTML
+
+__all__ = ['GroupListView', 'SubListView']
 
 # all methods might need 'self' in the future, pylint:disable=R0201
 
@@ -147,7 +147,11 @@ class GroupListView(_ListView):
 class _Delegate(QtGui.QItemDelegate):
     """Abstract delegate view for use throughout AwesomeTTS."""
 
-    sizeHint = lambda self, option, index: self.sizeHint.SIZE
+    def sizeHint(self,            # pylint:disable=invalid-name
+                 option, index):  # pylint:disable=unused-argument
+        """Always return the same size."""
+        return self.sizeHint.SIZE
+
     sizeHint.SIZE = QtCore.QSize(-1, 40)
 
 
@@ -312,11 +316,17 @@ class _ListModel(QtCore.QAbstractListModel):  # pylint:disable=R0904
 
     __slots__ = ['raw_data']
 
-    flags = lambda self, index: self.flags.LIST_ITEM
+    def flags(self, index):  # pylint:disable=unused-argument
+        """Always return same item flags."""
+        return self.flags.LIST_ITEM
+
     flags.LIST_ITEM = (QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable |
                        QtCore.Qt.ItemIsEnabled)
 
-    rowCount = lambda self, parent=None: len(self.raw_data)
+    def rowCount(self,          # pylint:disable=invalid-name
+                 parent=None):  # pylint:disable=unused-argument
+        """Return row count based on my raw data."""
+        return len(self.raw_data)
 
     def __init__(self, raw_data, *args, **kwargs):
         super(_ListModel, self).__init__(*args, **kwargs)

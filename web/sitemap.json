@@ -10,6 +10,11 @@
         "title": "Available Services",
         "what": "How to best take advantage of local software and services over the Internet",
         "children": {
+            "abair": {
+                "terse": "Abair.ie",
+                "title": "Abair.ie Irish language synthesiser",
+                "what": "Irish synthesized voices available over the Internet"
+            },
             "acapela": {
                 "terse": "Acapela",
                 "title": "Acapela Group",
@@ -19,6 +24,11 @@
                 "terse": "Baidu",
                 "title": "Baidu Translate",
                 "what": "Chinese, English, Japanese, Portuguese, and Thai; available over the Internet"
+            },
+            "collins": {
+                "terse": "Collins",
+                "title": "Collins Dictionary",
+                "what": "Human pronunciation of most common English, French, German, Spanish, Italian, and Chinese words"
             },
             "duden": {
                 "title": "Duden",
@@ -43,7 +53,7 @@
             "google": {
                 "terse": "Google",
                 "title": "Google Translate",
-                "what": "Discontinued service that formerly offered many high-quality languages over the Internet"
+                "what": "Many high-quality languages over the Internet"
             },
             "howjsay": {
                 "title": "Howjsay",

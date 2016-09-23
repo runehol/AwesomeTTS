@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014       Anki AwesomeTTS Development Team
-# Copyright (C) 2014       Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,12 +20,12 @@
 
 """Presets management dialog"""
 
-__all__ = ['Presets']
-
 from PyQt4 import QtGui
 
 from .base import ServiceDialog
 from .common import Label, Note
+
+__all__ = ['Presets']
 
 
 class Presets(ServiceDialog):

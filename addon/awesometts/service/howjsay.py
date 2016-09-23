@@ -22,10 +22,10 @@
 Service implementation for Howjsay
 """
 
-__all__ = ['Howjsay']
-
 from .base import Service
 from .common import Trait
+
+__all__ = ['Howjsay']
 
 
 class Howjsay(Service):
@@ -101,8 +101,9 @@ class Howjsay(Service):
                 require=dict(mime='audio/mpeg', size=512),
             )
 
-        except IOError as io_error:
-            if hasattr(io_error, 'code') and io_error.code == 404:
+        except (ValueError, IOError) as error:
+            if getattr(error, 'code', None) == 404 or \
+                    getattr(error, 'got_mime', None) == 'text/html':
                 raise IOError(
                     "Howjsay does not have recorded audio for this phrase. "
                     "While most words have recordings, most phrases do not."

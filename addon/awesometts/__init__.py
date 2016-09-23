@@ -24,12 +24,7 @@
 Add-on package initialization
 """
 
-__all__ = ['browser_menus', 'cards_button', 'config_menu', 'editor_button',
-           'reviewer_hooks', 'sound_tag_delays', 'update_checker',
-           'window_shortcuts']
-
 from os.path import join
-import platform
 import sys
 from time import time
 
@@ -47,15 +42,46 @@ from .router import Router
 from .text import Sanitizer
 from .updates import Updates
 
+__all__ = ['browser_menus', 'cards_button', 'config_menu', 'editor_button',
+           'reviewer_hooks', 'sound_tag_delays', 'update_checker',
+           'window_shortcuts']
 
-VERSION = '1.8.0'
+
+def get_platform_info():
+    """Exception-tolerant platform information for use with AGENT."""
+
+    implementation = system_description = "???"
+    python_version = "?.?.?"
+
+    try:
+        import platform
+    except:  # catch-all, pylint:disable=bare-except
+        pass
+    else:
+        try:
+            implementation = platform.python_implementation()
+        except:  # catch-all, pylint:disable=bare-except
+            pass
+
+        try:
+            python_version = platform.python_version()
+        except:  # catch-all, pylint:disable=bare-except
+            pass
+
+        try:
+            system_description = platform.platform().replace('-', ' ')
+        except:  # catch-all, pylint:disable=bare-except
+            pass
+
+    return "%s %s; %s" % (implementation, python_version, system_description)
+
+VERSION = '1.9.0'
 
 WEB = 'https://ankiatts.appspot.com'
 
-AGENT = 'AwesomeTTS/%s (Anki %s; PyQt %s; %s %s; %s)' % (
-    VERSION, anki.version, PYQT_VERSION_STR, platform.python_implementation(),
-    platform.python_version(), platform.platform().replace('-', ' '),
-)
+AGENT = 'AwesomeTTS/%s (Anki %s; PyQt %s; %s)' % (VERSION, anki.version,
+                                                  PYQT_VERSION_STR,
+                                                  get_platform_info())
 
 
 # Begin core class initialization and dependency setup, pylint:disable=C0103
@@ -166,14 +192,16 @@ player = Player(
 router = Router(
     services=Bundle(
         mappings=[
+            ('abair', service.Abair),
             ('acapela', service.Acapela),
             ('baidu', service.Baidu),
+            ('collins', service.Collins),
             ('duden', service.Duden),
             ('ekho', service.Ekho),
             ('espeak', service.ESpeak),
             ('festival', service.Festival),
             ('fluencynl', service.FluencyNl),
-            # ('google', service.Google),
+            ('google', service.Google),
             ('howjsay', service.Howjsay),
             ('imtranslator', service.ImTranslator),
             ('ispeech', service.ISpeech),
@@ -193,9 +221,6 @@ router = Router(
             ('youdao', service.Youdao),
         ],
         dead=dict(
-            google="Google no longer allows software like AwesomeTTS to use "
-                   "its text-to-speech service. Please switch to another "
-                   "service that offers your language.",
             ttsapicom="TTS-API.com has gone offline and can no longer be "
                       "used. Please switch to another service with English.",
         ),
@@ -224,7 +249,8 @@ router = Router(
 
 updates = Updates(
     agent=AGENT,
-    endpoint='%s/api/update/%s-%s' % (WEB, sys.platform, VERSION),
+    endpoint='%s/api/update/%s-%s-%s' % (WEB, anki.version, sys.platform,
+                                         VERSION),
     logger=logger,
 )
 
@@ -662,6 +688,8 @@ def reviewer_hooks():
         submenu = QMenu("Awesome&TTS", menu)
         submenu.setIcon(gui.ICON)
 
+        needs_separator = False
+
         if atts_button:
             submenu.addAction(
                 "Add MP3 to the Note",
@@ -671,48 +699,67 @@ def reviewer_hooks():
                     window,
                 )
             )
+            needs_separator = True
 
         if say_text:
             say_display = (say_text if len(say_text) < 25
                            else say_text[0:20].rstrip(' .') + "...")
-            glue = lambda (name, preset): submenu.addAction(
-                'Say "%s" w/ %s' % (say_display, name),
-                lambda: reviewer.selection_handler(say_text, preset, window),
-            )
-            for item in sorted(config['presets'].items(),
-                               key=lambda item: item[0].lower()):
-                glue(item)
+
+            if config['presets']:
+                if needs_separator:
+                    submenu.addSeparator()
+                else:
+                    needs_separator = True
+
+                def preset_glue((name, preset)):
+                    """Closure for callback handler to access `preset`."""
+                    submenu.addAction(
+                        'Say "%s" w/ %s' % (say_display, name),
+                        lambda: reviewer.selection_handler(say_text,
+                                                           preset,
+                                                           window),
+                    )
+                for item in sorted(config['presets'].items(),
+                                   key=lambda item: item[0].lower()):
+                    preset_glue(item)
 
             if config['groups']:
-                submenu.addSeparator()
+                if needs_separator:
+                    submenu.addSeparator()
+                else:
+                    needs_separator = True
 
-                glue = lambda (name, group): submenu.addAction(
-                    'Say "%s" w/ %s' % (say_display, name),
-                    lambda: reviewer.selection_handler_group(say_text, group,
-                                                             window),
-                )
+                def group_glue((name, group)):
+                    """Closure for callback handler to access `group`."""
+                    submenu.addAction(
+                        'Say "%s" w/ %s' % (say_display, name),
+                        lambda: reviewer.selection_handler_group(say_text,
+                                                                 group,
+                                                                 window),
+                    )
                 for item in sorted(config['groups'].items(),
                                    key=lambda item: item[0].lower()):
-                    glue(item)
+                    group_glue(item)
 
-            if tts_question or tts_answer:
+        if tts_question or tts_answer:
+            if needs_separator:
                 submenu.addSeparator()
 
-        if tts_question:
-            submenu.addAction(
-                "Play On-the-Fly TTS from Question Side",
-                lambda: reviewer.nonselection_handler('question', tts_card,
-                                                      window),
-                tts_shortcuts and config['tts_key_q'] or 0,
-            )
+            if tts_question:
+                submenu.addAction(
+                    "Play On-the-Fly TTS from Question Side",
+                    lambda: reviewer.nonselection_handler('question', tts_card,
+                                                          window),
+                    tts_shortcuts and config['tts_key_q'] or 0,
+                )
 
-        if tts_answer:
-            submenu.addAction(
-                "Play On-the-Fly TTS from Answer Side",
-                lambda: reviewer.nonselection_handler('answer', tts_card,
-                                                      window),
-                tts_shortcuts and config['tts_key_a'] or 0,
-            )
+            if tts_answer:
+                submenu.addAction(
+                    "Play On-the-Fly TTS from Answer Side",
+                    lambda: reviewer.nonselection_handler('answer', tts_card,
+                                                          window),
+                    tts_shortcuts and config['tts_key_a'] or 0,
+                )
 
         menu.addMenu(submenu)
 

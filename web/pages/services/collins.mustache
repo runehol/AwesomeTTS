@@ -1,8 +1,8 @@
 {{!
   ! AwesomeTTS text-to-speech add-on website
   !
-  ! Copyright (C) 2014       Anki AwesomeTTS Development Team
-  ! Copyright (C) 2014       Dave Shifflett
+  ! Copyright (C) 2016       Anki AwesomeTTS Development Team
+  ! Copyright (C) 2016       Dave Shifflett
   !
   ! This program is free software: you can redistribute it and/or modify
   ! it under the terms of the GNU Affero General Public License as
@@ -20,27 +20,30 @@
 
 {{> above}}
 
-<p><a href="http://www.howjsay.com/" rel="external noreferrer">Howjsay</a> is
-  an online service offering high-quality pronunciations of most common English
-  words, including many loanwords commonly used in English.</p>
+<p>The <a href="http://www.collinsdictionary.com" rel="external noreferrer">Collins
+  Dictionary</a> is an online reference site that has high-quality human
+  pronunciation of most common English, French, German, Spanish, Italian, and
+  Chinese words.</p>
 
 <p>Please note that this service generally supports single words only and
   <strong>cannot be used to speak arbitrary sentences or phrases</strong>.
-  Because of this, you may want to use Howjsay as <a href="/usage/groups">part
+  Because of this, you may want to use Collins as <a href="/usage/groups">part
   of a <strong>in-order</strong> service group</a> so that you can fallback to
-  <a href="/services" rel="parent">another service</a> when Howjsay does not
+  <a href="/services" rel="parent">another service</a> when Collins does not
   have audio for your input.</p>
 
 <h2>Requirements</h2>
 
-<p>An Internet connection is required to use Howjsay from AwesomeTTS, but no
+<p>An Internet connection is required to use Collins from AwesomeTTS, but no
   special software needs to be installed and it can be used from any operating
   system.</p>
 
-<p>Because Howjsay is a public Internet service, mass generation of MP3s using
+<p>Because Collins is a public Internet service, mass generation of MP3s using
   the <a href="/usage/browser">tool in the Card Browser</a> is rate-limited.
-  If you would like to tweak this behavior for your installation of
-  AwesomeTTS, go to the <a href="/config/mp3s">MP3s configuration tab</a> and
-  look for the &ldquo;Download Throttling&rdquo; settings.</p>
+  In addition, each word lookup on the Collins Dictionary requires two
+  requests to fulfill. If you would like to tweak this behavior for your
+  installation of AwesomeTTS, go to the <a href="/config/mp3s">MP3s
+  configuration tab</a> and look for the &ldquo;Download Throttling&rdquo;
+  settings.</p>
 
 {{> below}}

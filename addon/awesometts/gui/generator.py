@@ -2,9 +2,9 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2010-2015  Anki AwesomeTTS Development Team
+# Copyright (C) 2010-2016  Anki AwesomeTTS Development Team
 # Copyright (C) 2010-2012  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2015  Dave Shifflett
+# Copyright (C) 2013-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,13 +23,13 @@
 File generation dialogs
 """
 
-__all__ = ['BrowserGenerator', 'EditorGenerator']
-
 from re import compile as re
 from PyQt4 import QtCore, QtGui
 
 from .base import Dialog, ServiceDialog
 from .common import Checkbox, Label, Note
+
+__all__ = ['BrowserGenerator', 'EditorGenerator']
 
 
 class BrowserGenerator(ServiceDialog):
@@ -734,8 +734,11 @@ class EditorGenerator(ServiceDialog):
         web = editor.web
         from_note = self._addon.strip.from_note
         from_unknown = self._addon.strip.from_unknown
-        try_clipboard = lambda subtype: \
-            from_unknown(QtGui.QApplication.clipboard().text(subtype)[0])
+        app = QtGui.QApplication
+
+        def try_clipboard(subtype):
+            """Fetch from given system clipboard."""
+            return from_unknown(app.clipboard().text(subtype)[0])
 
         for origin in [
                 lambda: from_note(web.selectedText()),

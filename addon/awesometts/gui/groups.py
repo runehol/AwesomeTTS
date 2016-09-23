@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014       Anki AwesomeTTS Development Team
-# Copyright (C) 2014       Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,13 +20,13 @@
 
 """Groups management dialog"""
 
-__all__ = ['Groups']
-
 from PyQt4 import QtCore, QtGui
 
 from .base import Dialog
 from .common import Label, Note, Slate
 from .listviews import GroupListView
+
+__all__ = ['Groups']
 
 
 class Groups(Dialog):

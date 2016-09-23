@@ -1,14 +1,14 @@
 {
     "auto": true,
-    "intro": "This release adds three new services.",
+    "intro": "This release adds two new services and brings other fixes.",
     "notes": [
-      "adds Duden (dictionary words for German)",
-      "adds iSpeech (several languages, paid API)",
-      "adds Linguatec (several languages)",
-      "use compressed audio for VoiceText downloads (Linux and Windows)",
-      "better error messages for dictionary services when using on-the-fly mode"
+      "adds Abair.ie (Irish)",
+      "adds Collins dictionary (English, French, German, Spanish, Italian, Chinese)",
+      "fix British English access to Oxford English Dictionary",
+      "workaround for incorrect audio being returned by NeoSpeech",
+      "use compressed audio for VoiceText downloads (OS X)"
     ],
     "synopsis": "Please help by reporting bugs in the Add-ons forum at the Anki Support site!",
     "update": true,
-    "version": "1.8.0"
+    "version": "1.9.0"
 }

@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
-# Copyright (C) 2014-2015  Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,8 +22,6 @@
 Dispatch management of available services
 """
 
-__all__ = ['Router']
-
 import os
 import os.path
 from random import shuffle
@@ -37,13 +35,10 @@ from PyQt4 import QtCore, QtGui
 
 from .service import Trait as BaseTrait
 
+__all__ = ['Router']
+
 
 _SIGNAL = QtCore.SIGNAL('awesomeTtsThreadDone')
-
-_PREFIXED = lambda prefix, lines: "\n".join(
-    prefix + line
-    for line in (lines if isinstance(lines, list) else lines.split("\n"))
-)
 
 FAILURE_CACHE_SECS = 3600  # ignore/dump failures from cache after one hour
 
@@ -54,6 +49,15 @@ RE_WHITESPACE = re.compile(r'[\0\s]+', re.UNICODE)
 WINDOWS_RESERVED = ['com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7',
                     'com8', 'com9', 'con', 'lpt1', 'lpt2', 'lpt3', 'lpt4',
                     'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9', 'nul', 'prn']
+
+
+def _prefixed(lines, prefix="!!! "):
+    """Take incoming `lines` and prefix each line with `prefix`."""
+
+    return "\n".join(
+        prefix + line
+        for line in (lines if isinstance(lines, list) else lines.split("\n"))
+    )
 
 
 class Router(object):
@@ -161,7 +165,6 @@ class Router(object):
             return None
         else:
             return trait in traits
-
 
     def get_unavailable_msg(self, svc_id):
         """
@@ -437,59 +440,58 @@ class Router(object):
 
             return
 
-        if want_human:
-            def human(path):
-                """Converts path filename into a human-readable one."""
+        def human(path):
+            """Converts path into a human-readable one, if enabled."""
 
-                if not os.path.isdir(self._temp_dir):
-                    os.mkdir(self._temp_dir)
+            if not want_human:
+                return path
 
-                def substitute(match):
-                    """Perform variable substitution on filename."""
+            if not os.path.isdir(self._temp_dir):
+                os.mkdir(self._temp_dir)
 
-                    key = match.group(1).strip()
+            def substitute(match):
+                """Perform variable substitution on filename."""
 
-                    if key:
-                        lower = key.lower()
+                key = match.group(1).strip()
 
-                        if lower == 'service':
-                            return svc_id
-                        if lower == 'text':
-                            return text
-                        if lower == 'voice':
-                            return options['voice'].lower()
+                if key:
+                    lower = key.lower()
 
-                        try:
-                            return note[key]  # exact field match
-                        except:  # ignore error, pylint:disable=bare-except
-                            pass
+                    if lower == 'service':
+                        return svc_id
+                    if lower == 'text':
+                        return text
+                    if lower == 'voice':
+                        return options['voice'].lower()
 
-                        try:
-                            for other_key in note.keys():
-                                if other_key.strip().lower() == lower:
-                                    return note[other_key]  # fuzzy field match
-                        except:  # ignore error, pylint:disable=bare-except
-                            pass
+                    try:
+                        return note[key]  # exact field match
+                    except:  # ignore error, pylint:disable=bare-except
+                        pass
 
-                    return ''  # invalid key / no such note field
+                    try:
+                        for other_key in note.keys():
+                            if other_key.strip().lower() == lower:
+                                return note[other_key]  # fuzzy field match
+                    except:  # ignore error, pylint:disable=bare-except
+                        pass
 
-                filename = RE_MUSTACHE.sub(substitute, want_human)
-                filename = RE_UNSAFE.sub('', filename)
-                filename = RE_WHITESPACE.sub(' ', filename).strip()
-                if not filename or filename.lower() in WINDOWS_RESERVED:
-                    filename = u'AwesomeTTS Audio'
-                else:
-                    filename = filename[0:90]  # accommodate NTFS path limits
-                filename = 'ATTS ' + filename + '.mp3'
+                return ''  # invalid key / no such note field
 
-                from shutil import copyfile
-                new_path = os.path.join(self._temp_dir, filename)
-                copyfile(path, new_path)
+            filename = RE_MUSTACHE.sub(substitute, want_human)
+            filename = RE_UNSAFE.sub('', filename)
+            filename = RE_WHITESPACE.sub(' ', filename).strip()
+            if not filename or filename.lower() in WINDOWS_RESERVED:
+                filename = u'AwesomeTTS Audio'
+            else:
+                filename = filename[0:90]  # accommodate NTFS path limits
+            filename = 'ATTS ' + filename + '.mp3'
 
-                return new_path
+            from shutil import copyfile
+            new_path = os.path.join(self._temp_dir, filename)
+            copyfile(path, new_path)
 
-        else:
-            human = lambda path: path
+            return new_path
 
         if cache_hit:
             if 'done' in callbacks:
@@ -526,25 +528,29 @@ class Router(object):
             service['instance'].net_reset()
             self._busy.append(path)
 
-            completion_callback = lambda exception: (
-                self._busy.remove(path),
+            def completion_callback(exception):
+                """Intermediate callback handler for all service calls."""
 
-                'done' in callbacks and callbacks['done'](),
+                self._busy.remove(path)
 
-                'miss' in callbacks and callbacks['miss'](
-                    svc_id,
-                    service['instance'].net_count()
-                ),
+                if 'done' in callbacks:
+                    callbacks['done']()
 
-                on_error(exception) if exception
-                else callbacks['okay'](human(path)) if os.path.exists(path)
-                else on_error(RuntimeError(
-                    "The %s service did not successfully write out "
-                    "an MP3." % service['name']
-                )),
+                if 'miss' in callbacks:
+                    callbacks['miss'](svc_id, service['instance'].net_count())
 
-                'then' in callbacks and callbacks['then'](),
-            )
+                if exception:
+                    on_error(exception)
+                elif os.path.exists(path):
+                    callbacks['okay'](human(path))
+                else:
+                    on_error(RuntimeError(
+                        "The %s service did not successfully write out an "
+                        "MP3." % service['name']
+                    ))
+
+                if 'then' in callbacks:
+                    callbacks['then']()
 
             def do_spawn():
                 """Call if ready to start a thread to run the service."""
@@ -555,10 +561,12 @@ class Router(object):
 
             if hasattr(service['instance'], 'prerun'):
                 def prerun_ok(result):
+                    """Callback handler for successful prerun hook."""
                     options['prerun'] = result
                     do_spawn()
 
                 def prerun_error(exception):
+                    """Callback handler for unsuccessful prerun hook."""
                     self._logger.error("Asynchronous exception in prerun: %s",
                                        exception)
                     completion_callback(exception)
@@ -829,7 +837,7 @@ class Router(object):
             from traceback import format_exc
             self._logger.warn(
                 "Initialization failed for %s service\n%s",
-                service['name'], _PREFIXED("!!! ", format_exc().split('\n')),
+                service['name'], _prefixed(format_exc()),
             )
 
     def _path_cache(self, svc_id, text, options):
@@ -936,7 +944,7 @@ class _Pool(QtGui.QWidget):
 
                 thread_id, exception.message,
 
-                _PREFIXED("!!! ", stack_trace.split('\n'))
+                _prefixed(stack_trace)
                 if isinstance(stack_trace, basestring)
                 else "Stack trace unavailable",
             )

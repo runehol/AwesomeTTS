@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2015       Anki AwesomeTTS Development Team
-# Copyright (C) 2015       Dave Shifflett
+# Copyright (C) 2015-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2015-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,10 +22,10 @@
 Service implementation for RHVoice
 """
 
-__all__ = ['RHVoice']
-
 from .base import Service
 from .common import Trait
+
+__all__ = ['RHVoice']
 
 
 VOICES_DIRS = (prefix + '/share/RHVoice/voices'
@@ -37,8 +37,11 @@ LANGUAGE_KEY = 'language'
 GENDER_KEY = 'gender'
 
 PERCENT_VALUES = (-100, +100, "%")
-PERCENT_TRANSFORM = lambda i: min(max(-100, int(round(float(i)))), +100)
-DECIMALIZE = lambda p: round(p / 100.0, 2)
+
+
+def decimalize(percentage_value):
+    """Given an integer within [-100, 100], return a decimal."""
+    return round(percentage_value / 100.0, 2)
 
 
 class RHVoice(Service):
@@ -164,15 +167,19 @@ class RHVoice(Service):
             return (voice_lookup[normalized] if normalized in voice_lookup
                     else value)
 
+        def transform_percent(user_input):
+            """Given some user input, return a integer within [-100, 100]."""
+            return min(max(-100, int(round(float(user_input)))), +100)
+
         return [
             dict(key='voice', label="Voice", values=self._voice_list,
                  transform=transform_voice),
             dict(key='speed', label="Speed", values=PERCENT_VALUES,
-                 transform=PERCENT_TRANSFORM, default=0),
+                 transform=transform_percent, default=0),
             dict(key='pitch', label="Pitch", values=PERCENT_VALUES,
-                 transform=PERCENT_TRANSFORM, default=0),
+                 transform=transform_percent, default=0),
             dict(key='volume', label="Volume", values=PERCENT_VALUES,
-                 transform=PERCENT_TRANSFORM, default=0),
+                 transform=transform_percent, default=0),
         ]
 
     def run(self, text, options, path):
@@ -190,9 +197,9 @@ class RHVoice(Service):
             self.cli_pipe(
                 ['RHVoice-client',
                  '-s', options['voice'],
-                 '-r', DECIMALIZE(options['speed']),
-                 '-p', DECIMALIZE(options['pitch']),
-                 '-v', DECIMALIZE(options['volume'])],
+                 '-r', decimalize(options['speed']),
+                 '-p', decimalize(options['pitch']),
+                 '-v', decimalize(options['volume'])],
                 input_path=input_txt,
                 output_path=output_wav,
             )

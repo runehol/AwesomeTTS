@@ -4,6 +4,7 @@
 #
 # Copyright (C) 2015-2016  Anki AwesomeTTS Development Team
 # Copyright (C) 2015       Myrgy on GitHub
+# Copyright (C) 2016       Vladimir Fedulov
 # Copyright (C) 2015-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
@@ -23,14 +24,13 @@
 Service implementation for Oxford Dictionary
 """
 
-__all__ = ['Oxford']
-
 import re
+from HTMLParser import HTMLParser
 
 from .base import Service
 from .common import Trait
 
-from HTMLParser import HTMLParser
+__all__ = ['Oxford']
 
 
 RE_WHITESPACE = re.compile(r'[-\0\s_]+', re.UNICODE)
@@ -47,11 +47,15 @@ class OxfordLister(HTMLParser):
     def reset(self):
         HTMLParser.reset(self)
         self.sounds = []
+        self.prev_tag = ""
 
     def handle_starttag(self, tag, attrs):
-        snd = [v for k, v in attrs if k == 'data-src-mp3']
-        if snd:
-            self.sounds.extend(snd)
+        if tag == "audio" and self.prev_tag == "a":            
+            snd = [v for k, v in attrs if k == "src"]
+            if snd:
+                self.sounds.extend(snd)
+        if tag == "a" and ("class","speaker") in attrs:     
+            self.prev_tag = tag 
 
 
 class Oxford(Service):
@@ -70,7 +74,8 @@ class Oxford(Service):
         Returns a short, static description.
         """
 
-        return "Oxford Dictionary (British and American English)"
+        return "Oxford Dictionary (British and American English); " \
+            "dictionary words only with fuzzy matching"
 
     def options(self):
         """
@@ -127,15 +132,15 @@ class Oxford(Service):
             raise IOError("Input text is too long for the Oxford Dictionary")
 
         from urllib2 import quote
-        dict_url = 'http://www.oxforddictionaries.com/definition/%s/%s' % (
-            'american_english' if options['voice'] == 'en-US' else 'english',
+        dict_url = 'https://en.oxforddictionaries.com/definition/%s%s' % (
+            'us/' if options['voice'] == 'en-US' else '',
             quote(text.encode('utf-8'))
         )
 
         try:
             html_payload = self.net_stream(dict_url)
         except IOError as io_error:
-            if hasattr(io_error, 'code') and io_error.code == 404:
+            if getattr(io_error, 'code', None) == 404:
                 raise IOError(
                     "The Oxford Dictionary does not recognize this phrase. "
                     "While most single words are recognized, many multi-word "
@@ -156,8 +161,16 @@ class Oxford(Service):
             self.net_download(
                 path,
                 sound_url,
-                require=dict(mime='audio/mpeg', size=1024),
+                require=dict(mime='binary/octet-stream', size=1024),
             )
         else:
-            raise IOError("The Oxford Dictionary recognized your input, "
-                          "but has no recorded audio for it.")
+            raise IOError(
+                "The Oxford Dictionary does not currently seem to be "
+                "advertising American English pronunciation. You may want to "
+                "consider either using a different service or switching to "
+                "British English."
+                if options['voice'] == 'en-US'
+
+                else
+                "The Oxford Dictionary has no recorded audio for your input."
+            )

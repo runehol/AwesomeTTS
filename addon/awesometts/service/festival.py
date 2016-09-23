@@ -2,8 +2,8 @@
 
 # AwesomeTTS text-to-speech add-on for Anki
 #
-# Copyright (C) 2014       Anki AwesomeTTS Development Team
-# Copyright (C) 2014       Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,10 +22,10 @@
 Service implementation for Festival Speech Synthesis System
 """
 
-__all__ = ['Festival']
-
 from .base import Service
 from .common import Trait
+
+__all__ = ['Festival']
 
 
 class Festival(Service):

@@ -20,10 +20,10 @@
 
 """NAVER Translate"""
 
-__all__ = ['Naver']
-
 from .base import Service
 from .common import Trait
+
+__all__ = ['Naver']
 
 
 CNDIC_ENDPOINT = 'http://tts.cndic.naver.com/tts/mp3ttsV1.cgi'
@@ -81,7 +81,11 @@ VOICE_CODES = [
 
 VOICE_LOOKUP = dict(VOICE_CODES)
 
-QUOTE_ALL = lambda s, *args, **kwargs: ''.join('%%%x' % ord(c) for c in s)
+
+def _quote_all(input_string,
+               *args, **kwargs):  # pylint:disable=unused-argument
+    """NAVER Translate needs every character quoted."""
+    return ''.join('%%%x' % ord(char) for char in input_string)
 
 
 class Naver(Service):
@@ -134,7 +138,7 @@ class Naver(Service):
                     for subtext in self.util_split(text, 250)
                 ],
                 require=dict(mime='audio/mpeg', size=256),
-                custom_quoter=dict(text=QUOTE_ALL),
+                custom_quoter=dict(text=_quote_all),
             )
 
         else:
@@ -161,7 +165,7 @@ class Naver(Service):
                         ),
                     ),
                     require=dict(mime='audio/mpeg', size=256),
-                    custom_quoter=dict(text=QUOTE_ALL),
+                    custom_quoter=dict(text=_quote_all),
                 )
 
             subtexts = self.util_split(text, 250)

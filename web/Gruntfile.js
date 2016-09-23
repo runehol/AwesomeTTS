@@ -518,39 +518,33 @@ module.exports = function (grunt) {
             {url: '/google' + KEYS.gsv + '\\.html', static_files: 'gsv.html',
               upload: 'gsv\\.html'},
 
-            // @todo Upon release of 1.9.0...
-            // - the Anki version within the URL should become required to get
-            //   back `unreleased.json` (i.e. drop the `()?` construction)
-            // - for `1.9.0-dev`, both the `xxx-1.9.0-dev` *and*
-            //   `2.n.nn-xxx-1.9.0-dev` forms should work and return the
-            //   `need-newer.json` response
-            // - for `1.9.0-pre`, only the newer `2.n.nn-xxx-1.9.0-pre` form
-            //   should work to return `need-newer.json`
-            // - for `1.9.0` itself, only the newer `2.n.nn-xxx-1.9.0` form
-            //   should work to return `good-version.json`
-            //
             // @tbd We might need to distinguish between the 2.0 and 2.1
             // releases of Anki in the future.
-            {url: '/api/update/[a-z\\d]+-' + gaeRegex([
-                '1.8.0',
+            {url: '/api/update/2\\.\\d+\\.\\d+-[a-z\\d]+-' + gaeRegex([
+                '1.9.0',
               ]),
               static_files: 'api/update/good-version.json',
               upload: 'api/update/good-version\\.json'},
-            {url: '/api/update/[a-z\\d]+-' + gaeRegex([
-                '1.8.0-pre', '1.8.0-dev', '1.7.0',
-                '1.7.0-pre', '1.7.0-dev', '1.6.0',
-                '1.6.0-pre', '1.6.0-dev', '1.5.1', '1.5.1-pre', '1.5.0',
-                '1.5.0-pre', '1.5.0-dev', '1.4.1', '1.4.1-pre', '1.4.0',
-                '1.4.0-pre', '1.4.0-dev', '1.3.1', '1.3.1-pre', '1.3.0',
-                '1.3.0-pre', '1.3.0-dev', '1.2.3', '1.2.3-pre', '1.2.2',
-                '1.2.2-pre', '1.2.1', '1.2.1-pre', '1.2.0', '1.2.0-pre',
-                '1.2.0-dev', '1.1.2', '1.1.2-pre', '1.1.1', '1.1.1-pre',
-                '1.1.0', '1.1.0-pre', '1.1.0-dev', '1.0.1', '1.0.1-pre',
-                '1.0.0', '1.0.0-pre', '1.0.0-dev',
+            {url: '/api/update/2\\.\\d+\\.\\d+-[a-z\\d]+-' + gaeRegex([
+                '1.9.0-pre', '1.9.0-dev',
               ]),
               static_files: 'api/update/need-newer.json',
               upload: 'api/update/need-newer\\.json'},
-            {url: '/api/update/(2\\.\\d+\\.\\d+-)?[a-z\\d]+-\\d+\\.\\d+\\.(0-dev|\\d+-pre)',
+            {url: '/api/update/[a-z\\d]+-' + gaeRegex([
+                '1.9.0-dev', '1.8.0', '1.8.0-pre', '1.8.0-dev', '1.7.0',
+                '1.7.0-pre', '1.7.0-dev', '1.6.0', '1.6.0-pre', '1.6.0-dev',
+                '1.5.1', '1.5.1-pre', '1.5.0', '1.5.0-pre', '1.5.0-dev',
+                '1.4.1', '1.4.1-pre', '1.4.0', '1.4.0-pre', '1.4.0-dev',
+                '1.3.1', '1.3.1-pre', '1.3.0', '1.3.0-pre', '1.3.0-dev',
+                '1.2.3', '1.2.3-pre', '1.2.2', '1.2.2-pre', '1.2.1',
+                '1.2.1-pre', '1.2.0', '1.2.0-pre', '1.2.0-dev', '1.1.2',
+                '1.1.2-pre', '1.1.1', '1.1.1-pre', '1.1.0', '1.1.0-pre',
+                '1.1.0-dev', '1.0.1', '1.0.1-pre', '1.0.0', '1.0.0-pre',
+                '1.0.0-dev',
+              ]),
+              static_files: 'api/update/need-newer.json',
+              upload: 'api/update/need-newer\\.json'},
+            {url: '/api/update/2\\.\\d+\\.\\d+-[a-z\\d]+-\\d+\\.\\d+\\.(0-dev|\\d+-pre)',
               static_files: 'api/update/unreleased.json',
               upload: 'api/update/unreleased\\.json'},
             {url: '/api/update', static_files: 'api/update/index.json',

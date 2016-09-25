@@ -122,6 +122,7 @@ def voicetext(environ, start_response):
     # allow up to 100 Japanese characters (or 900 bytes) in the client
     if not (data and len(data) < 1000 and data.count('&') > 4 and
             data.count('=') < 8 and 'format=' in data and
+            'format=wav' not in data and
             'pitch=' in data and 'speaker=' in data and 'speed=' in data and
             'text=' in data and 'volume=' in data):
         _warn("Relay denied -- unacceptable query string")

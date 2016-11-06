@@ -49,6 +49,7 @@ from .sapi5js import SAPI5JS
 from .say import Say
 from .spanishdict import SpanishDict
 from .voicetext import VoiceText
+from .wiktionary import Wiktionary
 from .yandex import Yandex
 from .youdao import Youdao
 
@@ -82,6 +83,7 @@ __all__ = [
     'Say',
     'SpanishDict',
     'VoiceText',
+    'Wiktionary',
     'Yandex',
     'Youdao',
 ]

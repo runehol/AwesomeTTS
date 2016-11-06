@@ -217,6 +217,7 @@ router = Router(
             ('say', service.Say),
             ('spanishdict', service.SpanishDict),
             ('voicetext', service.VoiceText),
+            ('wiktionary', service.Wiktionary),
             ('yandex', service.Yandex),
             ('youdao', service.Youdao),
         ],

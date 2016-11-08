@@ -74,8 +74,8 @@ class Wiktionary(Service):
         
         return [
             dict(
-                key='language',
-                label="Language",
+                key='voice',
+                label="Voice",
                 values=[(code, "%s" % (name))
                         for code, name in sorted(self._LANGUAGE_CODES.items(), key=lambda x : x[1])],
                 transform=lambda x : x,
@@ -92,7 +92,7 @@ class Wiktionary(Service):
         """
         
         # First download the Wiktionary page
-        wikurl = 'http://%s.wiktionary.org/wiki/%s' % (options['language'], text.lower())
+        wikurl = 'http://%s.wiktionary.org/wiki/%s' % (options['voice'], text.lower())
         webpage = self.net_stream([(wikurl, {})])
 
         # Now parse the page, looking for the ogg file.  This will

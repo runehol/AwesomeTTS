@@ -23,6 +23,8 @@
 Service implementation for Wiktionary single word pronunciations
 """
 
+from anki.utils import isMac as MACOSX
+
 from .base import Service
 from .common import Trait
 import re
@@ -105,7 +107,17 @@ class Wiktionary(Service):
         m = re.search("//.*\\.ogg", webpage)
         if m is None: return
         oggurl = "https:" + m.group(0)
-        oggpath = self.path_temp("ogg")
-        self.net_download(oggpath, (oggurl, {}),
-                          require=dict(mime='application/ogg', size=1024))
-        self.cli_transcode(oggpath, path)
+
+        temppath = self.path_temp('ogg' if MACOSX else 'wav')
+        try:
+            if MACOSX:
+                self.net_download(temppath, oggurl,
+                                  require=dict(mime='application/ogg',
+                                               size=1024))
+            else:
+                self.net_dump(temppath, oggurl)
+
+            self.cli_transcode(temppath, path)
+
+        finally:
+            self.path_unlink(temppath)

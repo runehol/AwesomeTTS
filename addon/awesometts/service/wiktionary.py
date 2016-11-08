@@ -92,7 +92,7 @@ class Wiktionary(Service):
         """
         
         # First download the Wiktionary page
-        wikurl = 'http://%s.wiktionary.org/wiki/%s' % (options['voice'], text.lower())
+        wikurl = 'https://%s.wiktionary.org/wiki/%s' % (options['voice'], text.lower())
         webpage = self.net_stream([(wikurl, {})])
 
         # Now parse the page, looking for the ogg file.  This will
@@ -104,7 +104,7 @@ class Wiktionary(Service):
         # for now.
         m = re.search("//.*\\.ogg", webpage)
         if m is None: return
-        oggurl = "http:" + m.group(0)
+        oggurl = "https:" + m.group(0)
         oggpath = self.path_temp("ogg")
         self.net_download(oggpath, (oggurl, {}),
                           require=dict(mime='application/ogg', size=1024))

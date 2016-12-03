@@ -92,10 +92,19 @@ class Wiktionary(Service):
         Many words (and all phrases) are not listed on Wiktionary.
         Thus, this will fail often.
         """
-        
-        # First download the Wiktionary page
-        wikurl = 'https://%s.wiktionary.org/wiki/%s' % (options['voice'], text.lower())
-        webpage = self.net_stream([(wikurl, {})])
+
+        # Execute search using the text *as is* (i.e. no lowercasing) so that
+        # Wiktionary can pick the best page (i.e. decide whether case matters)
+        webpage = self.net_stream(
+            (
+                'https://%s.wiktionary.org/w/index.php' % options['voice'],
+                dict(
+                    search=text,
+                    title='Special:Search',
+                ),
+            ),
+            require=dict(mime='text/html'),
+        )
 
         # Now parse the page, looking for the ogg file.  This will
         # find at most one match, as we expect there to be no more

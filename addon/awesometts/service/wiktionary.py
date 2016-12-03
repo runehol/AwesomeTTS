@@ -36,6 +36,9 @@ RE_NONWORD = re.compile(r'\W+', re.UNICODE)
 DEFINITE_ARTICLES = ['das', 'der', 'die', 'el', 'gli', 'i', 'il', 'l', 'la',
                      'las', 'le', 'les', 'lo', 'los', 'the']
 
+TEXT_SPACE_LIMIT = 1
+TEXT_LENGTH_LIMIT = 75
+
 
 class Wiktionary(Service):
     """
@@ -115,6 +118,11 @@ class Wiktionary(Service):
         Many words (and all phrases) are not listed on Wiktionary.
         Thus, this will fail often.
         """
+
+        if text.count(' ') > TEXT_SPACE_LIMIT:
+            raise IOError("Wiktionary does not support phrases")
+        elif len(text) > TEXT_LENGTH_LIMIT:
+            raise IOError("Wiktionary only supports short input")
 
         # Execute search using the text *as is* (i.e. no lowercasing) so that
         # Wiktionary can pick the best page (i.e. decide whether case matters)

@@ -23,8 +23,6 @@
 Service implementation for Wiktionary single word pronunciations
 """
 
-from anki.utils import isMac as MACOSX
-
 from .base import Service
 from .common import Trait
 import re
@@ -69,6 +67,16 @@ class Wiktionary(Service):
         'uz' : 'Uzbek', 'li' : 'Limburgish', 'my' : 'Burmese',
         'or' : 'Oriya', 'te' : 'Telugu', 
     }
+
+    def __init__(self, *args, **kwargs):
+        if self.IS_MACOSX:
+            raise EnvironmentError(
+                "Wiktionary cannot be used on Mac OS X due to mplayer "
+                "crashes while converting the audio. If you are able to fix "
+                "this, please send a pull request."
+            )
+
+        super(Wiktionary, self).__init__(*args, **kwargs)
 
     def desc(self):
         """
@@ -149,16 +157,14 @@ class Wiktionary(Service):
             raise IOError("Wiktionary doesn't have any audio for this input.")
         oggurl = "https:" + m.group(0)
 
-        temppath = self.path_temp('ogg' if MACOSX else 'wav')
-        try:
-            if MACOSX:
-                self.net_download(temppath, oggurl,
-                                  require=dict(mime='application/ogg',
-                                               size=1024))
-            else:
-                self.net_dump(temppath, oggurl)
+        ogg_path = self.path_temp('ogg')
+        wav_path = self.path_temp('wav')
 
-            self.cli_transcode(temppath, path)
+        try:
+            self.net_download(ogg_path, oggurl,
+                              require=dict(mime='application/ogg', size=1024))
+            self.net_dump(wav_path, ogg_path)
+            self.cli_transcode(wav_path, path)
 
         finally:
-            self.path_unlink(temppath)
+            self.path_unlink(ogg_path, wav_path)

@@ -32,6 +32,11 @@ import re
 __all__ = ['Wiktionary']
 
 
+RE_NONWORD = re.compile(r'\W+', re.UNICODE)
+DEFINITE_ARTICLES = ['das', 'der', 'die', 'el', 'gli', 'i', 'il', 'l', 'la',
+                     'las', 'le', 'les', 'lo', 'los', 'the']
+
+
 class Wiktionary(Service):
     """
     Provides a Service-compliant implementation for Wiktionary
@@ -83,6 +88,24 @@ class Wiktionary(Service):
                 transform=lambda x : x,
             ),
         ]
+
+    def modify(self, text):
+        """
+        Remove punctuation but leave case as-is (sometimes it matters).
+
+        If the input is multiple words and the first word is a definite
+        article, drop it.
+        """
+
+        text = RE_NONWORD.sub('_', text).replace('_', ' ').strip()
+
+        tokenized = text.split(' ', 1)
+        if len(tokenized) == 2:
+            first, rest = tokenized
+            if first in DEFINITE_ARTICLES:
+                return rest
+
+        return text
 
     def run(self, text, options, path):
         """

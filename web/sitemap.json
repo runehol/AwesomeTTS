@@ -119,6 +119,10 @@
                 "title": "VoiceText",
                 "what": "Japanese speech in multiple voices, available over the Internet"
             },
+            "wiktionary": {
+                "title": "Wiktionary",
+                "what": "Several languages, available over the Internet"
+            },
             "yandex": {
                 "terse": "Yandex",
                 "title": "Yandex.Translate",

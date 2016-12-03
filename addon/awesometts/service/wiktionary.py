@@ -114,7 +114,8 @@ class Wiktionary(Service):
         # way to choose between them, this should be good enough
         # for now.
         m = re.search("//.*\\.ogg", webpage)
-        if m is None: return
+        if not m:
+            raise IOError("Wiktionary doesn't have any audio for this input.")
         oggurl = "https:" + m.group(0)
 
         temppath = self.path_temp('ogg' if MACOSX else 'wav')

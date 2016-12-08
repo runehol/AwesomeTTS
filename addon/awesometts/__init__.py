@@ -193,7 +193,6 @@ router = Router(
     services=Bundle(
         mappings=[
             ('abair', service.Abair),
-            ('acapela', service.Acapela),
             ('baidu', service.Baidu),
             ('collins', service.Collins),
             ('duden', service.Duden),
@@ -205,7 +204,6 @@ router = Router(
             ('howjsay', service.Howjsay),
             ('imtranslator', service.ImTranslator),
             ('ispeech', service.ISpeech),
-            ('linguatec', service.Linguatec),
             ('naver', service.Naver),
             ('neospeech', service.NeoSpeech),
             ('oddcast', service.Oddcast),

@@ -75,7 +75,7 @@ def get_platform_info():
 
     return "%s %s; %s" % (implementation, python_version, system_description)
 
-VERSION = '1.10.0-dev'
+VERSION = '1.10.0-pre'
 
 WEB = 'https://ankiatts.appspot.com'
 

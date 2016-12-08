@@ -15,11 +15,6 @@
                 "title": "Abair.ie Irish language synthesiser",
                 "what": "Irish synthesized voices available over the Internet"
             },
-            "acapela": {
-                "terse": "Acapela",
-                "title": "Acapela Group",
-                "what": "Many languages available over the Internet"
-            },
             "baidu": {
                 "terse": "Baidu",
                 "title": "Baidu Translate",
@@ -66,10 +61,6 @@
             "ispeech": {
                 "title": "iSpeech",
                 "what": "Paid API that offers access to high-quality voices in several languages"
-            },
-            "linguatec": {
-                "title": "Linguatec",
-                "what": "Many languages available over the Internet"
             },
             "sapi5": {
                 "terse": "MS SAPI",
@@ -118,6 +109,10 @@
             "voicetext": {
                 "title": "VoiceText",
                 "what": "Japanese speech in multiple voices, available over the Internet"
+            },
+            "wiktionary": {
+                "title": "Wiktionary",
+                "what": "Several languages, available over the Internet"
             },
             "yandex": {
                 "terse": "Yandex",

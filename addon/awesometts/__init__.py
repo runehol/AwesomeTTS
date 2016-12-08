@@ -75,7 +75,7 @@ def get_platform_info():
 
     return "%s %s; %s" % (implementation, python_version, system_description)
 
-VERSION = '1.9.0'
+VERSION = '1.10.0'
 
 WEB = 'https://ankiatts.appspot.com'
 
@@ -193,7 +193,6 @@ router = Router(
     services=Bundle(
         mappings=[
             ('abair', service.Abair),
-            ('acapela', service.Acapela),
             ('baidu', service.Baidu),
             ('collins', service.Collins),
             ('duden', service.Duden),
@@ -205,7 +204,6 @@ router = Router(
             ('howjsay', service.Howjsay),
             ('imtranslator', service.ImTranslator),
             ('ispeech', service.ISpeech),
-            ('linguatec', service.Linguatec),
             ('naver', service.Naver),
             ('neospeech', service.NeoSpeech),
             ('oddcast', service.Oddcast),
@@ -217,6 +215,7 @@ router = Router(
             ('say', service.Say),
             ('spanishdict', service.SpanishDict),
             ('voicetext', service.VoiceText),
+            ('wiktionary', service.Wiktionary),
             ('yandex', service.Yandex),
             ('youdao', service.Youdao),
         ],

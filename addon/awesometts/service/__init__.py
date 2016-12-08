@@ -25,7 +25,6 @@ Service classes for AwesomeTTS
 from .common import Trait
 
 from .abair import Abair
-from .acapela import Acapela
 from .baidu import Baidu
 from .collins import Collins
 from .duden import Duden
@@ -37,7 +36,6 @@ from .google import Google
 from .howjsay import Howjsay
 from .imtranslator import ImTranslator
 from .ispeech import ISpeech
-from .linguatec import Linguatec
 from .naver import Naver
 from .neospeech import NeoSpeech
 from .oddcast import Oddcast
@@ -49,6 +47,7 @@ from .sapi5js import SAPI5JS
 from .say import Say
 from .spanishdict import SpanishDict
 from .voicetext import VoiceText
+from .wiktionary import Wiktionary
 from .yandex import Yandex
 from .youdao import Youdao
 
@@ -58,7 +57,6 @@ __all__ = [
 
     # services
     'Abair',
-    'Acapela',
     'Baidu',
     'Collins',
     'Duden',
@@ -70,7 +68,6 @@ __all__ = [
     'Howjsay',
     'ImTranslator',
     'ISpeech',
-    'Linguatec',
     'Naver',
     'NeoSpeech',
     'Oddcast',
@@ -82,6 +79,7 @@ __all__ = [
     'Say',
     'SpanishDict',
     'VoiceText',
+    'Wiktionary',
     'Yandex',
     'Youdao',
 ]

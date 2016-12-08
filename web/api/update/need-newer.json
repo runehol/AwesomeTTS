@@ -1,14 +1,11 @@
 {
     "auto": true,
-    "intro": "This release adds two new services and brings other fixes.",
+    "intro": "This is a services update.",
     "notes": [
-      "adds Abair.ie (Irish)",
-      "adds Collins dictionary (English, French, German, Spanish, Italian, Chinese)",
-      "fix British English access to Oxford English Dictionary",
-      "workaround for incorrect audio being returned by NeoSpeech",
-      "use compressed audio for VoiceText downloads (OS X)"
+      "adds Wiktionary",
+      "update Google language list",
+      "removes services that no longer work"
     ],
-    "synopsis": "Please help by reporting bugs in the Add-ons forum at the Anki Support site!",
     "update": true,
-    "version": "1.9.0"
+    "version": "1.10.0"
 }

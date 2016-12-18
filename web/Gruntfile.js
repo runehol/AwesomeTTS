@@ -96,7 +96,7 @@ module.exports = function (grunt) {
     var KEYS_MISSING = [];
     var KEYS_RELAYS_MISSING = [];
     try { KEYS = grunt.file.readJSON('keys.json'); } catch (ignore) { }
-    [['gsv', '0000000000000000'], ['relays', {}]].forEach(function (tuple) {
+    [['relays', {}]].forEach(function (tuple) {
         if (!KEYS[tuple[0]]) {
             KEYS[tuple[0]] = tuple[1];
             KEYS_MISSING.push(tuple[0]);
@@ -342,12 +342,6 @@ module.exports = function (grunt) {
                 getMustacheRenderPages(SITEMAP)
             )},
 
-            gsv: {files: [{
-                data: {key: KEYS.gsv},
-                template: 'gsv.mustache',
-                dest: 'build/gsv.html',
-            }]},
-
             relaysPy: {files: [{
                 data: KEYS.relays,
                 template: 'relays/__init__.py',
@@ -515,8 +509,6 @@ module.exports = function (grunt) {
               mime_type: 'text/plain; charset=utf-8'},
             {url: '/robots\\.txt', static_files: 'robots.txt',
               upload: 'robots\\.txt', expiration: '70d'},
-            {url: '/google' + KEYS.gsv + '\\.html', static_files: 'gsv.html',
-              upload: 'gsv\\.html'},
 
             // @tbd We might need to distinguish between the 2.0 and 2.1
             // releases of Anki in the future.
@@ -718,7 +710,6 @@ module.exports = function (grunt) {
         images: {files: 'images/*.{gif,png}', tasks: 'copy:images'},
         robots: {files: 'robots.txt', tasks: 'copy:robots'},
         dntPolicy: {files: 'dnt-policy.txt', tasks: 'copy:dntPolicy'},
-        gsv: {files: 'gsv.mustache', tasks: 'mustache_render:gsv'},
         relaysPy: {files: 'relays/__init__.py',
                    tasks: 'mustache_render:relaysPy'},
         unresolvedPy: {files: 'unresolved/__init__.py',

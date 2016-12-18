@@ -96,7 +96,7 @@ module.exports = function (grunt) {
     var KEYS_MISSING = [];
     var KEYS_RELAYS_MISSING = [];
     try { KEYS = grunt.file.readJSON('keys.json'); } catch (ignore) { }
-    [['gsv', '0000000000000000', 'relays', {}]].forEach(function (tuple) {
+    [['gsv', '0000000000000000'], ['relays', {}]].forEach(function (tuple) {
         if (!KEYS[tuple[0]]) {
             KEYS[tuple[0]] = tuple[1];
             KEYS_MISSING.push(tuple[0]);

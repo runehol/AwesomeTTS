@@ -6,29 +6,9 @@
     },
 
     "services": {
-        "terse": "Services",
-        "title": "Available Services",
-        "what": "How to best take advantage of local software and services over the Internet",
+        "title": "Services",
+        "what": "General information and some additional hints for some locally-installed services",
         "children": {
-            "abair": {
-                "terse": "Abair.ie",
-                "title": "Abair.ie Irish language synthesiser",
-                "what": "Irish synthesized voices available over the Internet"
-            },
-            "baidu": {
-                "terse": "Baidu",
-                "title": "Baidu Translate",
-                "what": "Chinese, English, Japanese, Portuguese, and Thai; available over the Internet"
-            },
-            "collins": {
-                "terse": "Collins",
-                "title": "Collins Dictionary",
-                "what": "Human pronunciation of most common English, French, German, Spanish, Italian, and Chinese words"
-            },
-            "duden": {
-                "title": "Duden",
-                "what": "Online dictionary for German, available over the Internet"
-            },
             "ekho": {
                 "title": "Ekho",
                 "what": "Korean and several dialects of Chinese, Windows and Linux"
@@ -41,23 +21,6 @@
                 "title": "Festival",
                 "what": "Bundled with English, other languages installable separately, Linux only"
             },
-            "fluencynl": {
-                "title": "Fluency.nl",
-                "what": "Many Dutch voices available over the Internet"
-            },
-            "google": {
-                "terse": "Google",
-                "title": "Google Translate",
-                "what": "Many high-quality languages over the Internet"
-            },
-            "howjsay": {
-                "title": "Howjsay",
-                "what": "High-quality pronunciations of most common English words"
-            },
-            "imtranslator": {
-                "title": "ImTranslator",
-                "what": "Asian and European languages, available over the Internet"
-            },
             "ispeech": {
                 "title": "iSpeech",
                 "what": "Paid API that offers access to high-quality voices in several languages"
@@ -67,62 +30,18 @@
                 "title": "Microsoft Speech API (SAPI)",
                 "what": "Interface for desktop software to enable TTS playback, built into Windows"
             },
-            "naver": {
-                "terse": "NAVER",
-                "title": "NAVER Translate",
-                "what": "Korean, English, Japanese, and Chinese, available over the Internet"
-            },
-            "neospeech": {
-                "title": "NeoSpeech",
-                "what": "English, Spanish, French, Chinese, Japanese, and Korean, available over the Internet"
-            },
-            "oddcast": {
-                "title": "Oddcast",
-                "what": "Many languages available over the Internet"
-            },
             "say": {
                 "terse": "OS X",
                 "title": "OS X Speech Synthesis Manager",
                 "what": "Many languages installable through System Preferences, built into Mac OS X"
             },
-            "oxford": {
-                "terse": "Oxford",
-                "title": "Oxford Dictionary",
-                "what": "British and American English, available over the Internet"
-            },
             "rhvoice": {
                 "title": "RHVoice",
                 "what": "Russian, Georgian, English, and Esperanto; Linux natively or Windows via SAPI"
             },
-            "spanishdict": {
-                "title": "SpanishDict",
-                "what": "English and Spanish speech, available over the Internet"
-            },
             "pico2wave": {
                 "title": "SVOX Pico",
                 "what": "Voice synthesizer used in the Android operating system"
-            },
-            "ttsapicom": {
-                "title": "TTS-API.com",
-                "what": "Discontinued service that formerly offered English via the Internet"
-            },
-            "voicetext": {
-                "title": "VoiceText",
-                "what": "Japanese speech in multiple voices, available over the Internet"
-            },
-            "wiktionary": {
-                "title": "Wiktionary",
-                "what": "Several languages, available over the Internet"
-            },
-            "yandex": {
-                "terse": "Yandex",
-                "title": "Yandex.Translate",
-                "what": "Russian and many European languages, available over the Internet"
-            },
-            "youdao": {
-                "terse": "Youdao",
-                "title": "Youdao Dictionary",
-                "what": "British and American English, available over the Internet"
             }
         }
     },
@@ -183,7 +102,7 @@
             "mp3s": {
                 "terse": "MP3s",
                 "title": "MP3 Generation Configuration",
-                "what": "Tune how the LAME transcoder gets called, control download rate limiting"
+                "what": "Change generated filenames, tune how the LAME transcoder gets called"
             },
             "windows": {
                 "terse": "Windows",

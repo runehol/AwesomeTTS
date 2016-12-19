@@ -1,8 +1,8 @@
 {{!
   ! AwesomeTTS text-to-speech add-on website
   !
-  ! Copyright (C) 2014-2015  Anki AwesomeTTS Development Team
-  ! Copyright (C) 2014-2015  Dave Shifflett
+  ! Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+  ! Copyright (C) 2014-2016  Dave Shifflett
   !
   ! This program is free software: you can redistribute it and/or modify
   ! it under the terms of the GNU Affero General Public License as
@@ -89,20 +89,12 @@
       <kbd>Edit</kbd> menu and selecting the <kbd>Undo AwesomeTTS Batch
       Update</kbd> option.</li>
     <li>
-      Please note that mass generation using an online service (e.g.
-      <a href="/services/yandex">Yandex.Translate</a>) is rate-limited. By
+      Please note that mass generation using most services is rate-limited. By
       default, AwesomeTTS is very conservative about the number of requests it
-      will send to these services at one time.
-      <ul>
-        <li>If you do not share a public IP address with anyone else, you may
-          choose to allow more requests at once by adjusting the throttling
-          settings on the <a href="/config/mp3s">MP3s tab of the configuration
-          screen</a>.</li>
-        <li>Throttling is done per-service, so another way to generate more
-          MP3s at once is to setup a randomized <a href="groups">group of
-          service presets</a> to spread your requests across more than one
-          service.</li>
-      </ul>
+      will send to these services at one time. This rate-limiting is done
+      per-service, so setting up a randomized <a href="groups">group of
+      service presets</a> to spread your requests across more than one service
+      is recommended.
     </li>
     <li>If you want to remove audio from several notes, that can
       <a href="removing">also be handled in the card browser</a> from the

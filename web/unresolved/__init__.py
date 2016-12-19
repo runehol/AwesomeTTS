@@ -3,8 +3,8 @@
 
 # AwesomeTTS text-to-speech add-on website
 #
-# Copyright (C) 2014       Anki AwesomeTTS Development Team
-# Copyright (C) 2014       Dave Shifflett
+# Copyright (C) 2014-2016  Anki AwesomeTTS Development Team
+# Copyright (C) 2014-2016  Dave Shifflett
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -91,8 +91,11 @@ def other(environ, start_response):
     """
 
     old_path, new_path = get_paths(environ)
-    if not new_path and old_path in other.redirects:
-        new_path = other.redirects[old_path]
+    if not new_path:
+        if old_path in other.redirects:
+            new_path = other.redirects[old_path]
+        elif old_path.startswith('/services/'):
+            new_path = '/services'
 
     if new_path:
         start_response(

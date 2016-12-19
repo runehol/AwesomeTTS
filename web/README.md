@@ -2,7 +2,7 @@
 
 The website provides documentation and help for current and prospective users
 of AwesomeTTS, in addition to hosting some limited APIs for use from the
-add-on (e.g. update mechanism, VoiceText access).
+add-on (e.g. update mechanism, relay access to some third-party APIs).
 
 [Google App Engine](https://developers.google.com/appengine), with its content
 delivery network and Python runtime environment, is the platform for the

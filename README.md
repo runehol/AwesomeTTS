@@ -13,11 +13,6 @@ This repository holds two interconnected projects:
 - [documentation website and some API web services](web/), which run on Google
   App Engine and help users get the most out of the add-on
 
-[GitHub](https://github.com/AwesomeTTS/AwesomeTTS) is the primary and official
-host for the repository and its issue/pull trackers, but there are also
-mirrors at [Bitbucket](https://bitbucket.org/corpulentcoffee/awesometts) and
-[GitLab](https://gitlab.com/corpulentcoffee/AwesomeTTS).
-
 
 ## Licenses
 

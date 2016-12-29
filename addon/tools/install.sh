@@ -62,7 +62,7 @@ rm -fv "$target/AwesomeTTS.py"*
 rm -rfv "$target/awesometts"
 
 oldPwd=$PWD
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 
 echo 'Installing...'
 cp -v AwesomeTTS.py "$target/AwesomeTTS.py"
@@ -74,7 +74,7 @@ cp -v awesometts/gui/*.py "$target/awesometts/gui"
 mkdir -v "$target/awesometts/service"
 cp -v awesometts/service/*.py awesometts/service/*.js "$target/awesometts/service"
 
-cd "$oldPwd"
+cd "$oldPwd" || exit 1
 
 if [ -n "$saveConf" ]
 then

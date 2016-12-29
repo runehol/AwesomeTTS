@@ -62,13 +62,13 @@ rm -fv "$target/AwesomeTTS.py"*
 rm -rfv "$target/awesometts"
 
 oldPwd=$PWD
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 
 echo 'Linking...'
 ln -sv "$PWD/AwesomeTTS.py" "$target"
 ln -sv "$PWD/awesometts" "$target"
 
-cd "$oldPwd"
+cd "$oldPwd" || exit 1
 
 if [ -n "$saveConf" ]
 then

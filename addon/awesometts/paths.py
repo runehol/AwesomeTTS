@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # AwesomeTTS text-to-speech add-on for Anki
-#
-# Copyright (C) 2010-2016  Anki AwesomeTTS Development Team
-# Copyright (C) 2010-2013  Arthur Helfstein Fragoso
-# Copyright (C) 2013-2016  Dave Shifflett
+# Copyright (C) 2010-Present  Anki AwesomeTTS Development Team
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

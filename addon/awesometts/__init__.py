@@ -121,7 +121,7 @@ config = Config(
         ('last_mass_dest', 'text', 'Back', unicode, unicode),
         ('last_mass_source', 'text', 'Front', unicode, unicode),
         ('last_options', 'text', {}, to.deserialized_dict, to.compact_json),
-        ('last_service', 'text', ('sapi5' if 'win32' in sys.platform
+        ('last_service', 'text', ('sapi5js' if 'win32' in sys.platform
                                   else 'say' if 'darwin' in sys.platform
                                   else 'yandex'), str, str),
         ('last_strip_mode', 'text', 'ours', str, str),
@@ -206,7 +206,6 @@ router = Router(
             ('oxford', service.Oxford),
             ('pico2wave', service.Pico2Wave),
             ('rhvoice', service.RHVoice),
-            ('sapi5', service.SAPI5),
             ('sapi5js', service.SAPI5JS),
             ('say', service.Say),
             ('spanishdict', service.SpanishDict),
@@ -220,13 +219,13 @@ router = Router(
                       "used. Please switch to another service with English.",
         ),
         aliases=[('b', 'baidu'), ('g', 'google'), ('macosx', 'say'),
-                 ('microsoft', 'sapi5'), ('microsoftjs', 'sapi5js'),
+                 ('microsoft', 'sapi5js'), ('microsoftjs', 'sapi5js'),
                  ('microsoftjscript', 'sapi5js'), ('oed', 'oxford'),
-                 ('osx', 'say'), ('sapi', 'sapi5'),
+                 ('osx', 'say'), ('sapi', 'sapi5js'), ('sapi5', 'sapi5js'),
                  ('sapi5jscript', 'sapi5js'), ('sapijs', 'sapi5js'),
                  ('sapijscript', 'sapi5js'), ('svox', 'pico2wave'),
                  ('svoxpico', 'pico2wave'), ('ttsapi', 'ttsapicom'),
-                 ('windows', 'sapi5'), ('windowsjs', 'sapi5js'),
+                 ('windows', 'sapi5js'), ('windowsjs', 'sapi5js'),
                  ('windowsjscript', 'sapi5js'), ('y', 'yandex')],
         normalize=to.normalized_ascii,
         args=(),

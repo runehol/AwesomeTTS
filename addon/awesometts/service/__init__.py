@@ -40,7 +40,6 @@ from .oddcast import Oddcast
 from .oxford import Oxford
 from .pico2wave import Pico2Wave
 from .rhvoice import RHVoice
-from .sapi5 import SAPI5
 from .sapi5js import SAPI5JS
 from .say import Say
 from .spanishdict import SpanishDict
@@ -72,7 +71,6 @@ __all__ = [
     'Oxford',
     'Pico2Wave',
     'RHVoice',
-    'SAPI5',
     'SAPI5JS',
     'Say',
     'SpanishDict',

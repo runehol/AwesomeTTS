@@ -53,7 +53,7 @@ fi
 if [ -f "$target/awesometts/config.db" ]
 then
     echo 'Saving configuration...'
-    saveConf=$(mktemp /tmp/config.db.XXXXXXXXXX)
+    saveConf=$(mktemp /tmp/config.XXXXXXXXXX.db)
     cp -v "$target/awesometts/config.db" "$saveConf"
 fi
 
@@ -64,15 +64,10 @@ rm -rfv "$target/awesometts"
 oldPwd=$PWD
 cd "$(dirname "$0")/.." || exit 1
 
-echo 'Installing...'
-cp -v AwesomeTTS.py "$target/AwesomeTTS.py"
-mkdir -v "$target/awesometts"
-cp -v awesometts/LICENSE.txt "$target/awesometts"
-cp -v awesometts/*.mp3 awesometts/*.py "$target/awesometts"
-mkdir -v "$target/awesometts/gui"
-cp -v awesometts/gui/*.py "$target/awesometts/gui"
-mkdir -v "$target/awesometts/service"
-cp -v awesometts/service/*.py awesometts/service/*.js "$target/awesometts/service"
+packageZip=$(mktemp /tmp/package.XXXXXXXXXX.zip)
+./tools/package.sh "$packageZip"
+unzip "$packageZip" -d "$target"
+rm -fv "$packageZip"
 
 cd "$oldPwd" || exit 1
 

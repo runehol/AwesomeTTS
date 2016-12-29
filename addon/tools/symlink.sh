@@ -53,7 +53,7 @@ fi
 if [ -f "$target/awesometts/config.db" ]
 then
     echo 'Saving configuration...'
-    saveConf=$(mktemp /tmp/config.db.XXXXXXXXXX)
+    saveConf=$(mktemp /tmp/config.XXXXXXXXXX.db)
     cp -v "$target/awesometts/config.db" "$saveConf"
 fi
 

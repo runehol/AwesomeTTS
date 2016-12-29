@@ -2,9 +2,9 @@
 *.log
 *.py[co]
 
-addon/awesometts/.cache/
+/addon/awesometts/.cache/
 
-web/build/
-web/node_modules/
-web/.grunt-gae-pid
-web/keys.json
+/web/build/
+/web/node_modules/
+/web/.grunt-gae-pid
+/web/keys.json

@@ -54,6 +54,13 @@ oldPwd=$PWD
 cd "$(dirname "$0")/.." || exit 1
 
 echo 'Packing zip file...'
-zip -9R "$target" awesometts/LICENSE.txt awesometts/\*.mp3 \*.py \*.js
+zip -9 "$target" \
+    awesometts/blank.mp3 \
+    awesometts/LICENSE.txt \
+    awesometts/*.py \
+    awesometts/gui/*.py \
+    awesometts/service/*.py \
+    awesometts/service/*.js \
+    AwesomeTTS.py
 
 cd "$oldPwd" || exit 1

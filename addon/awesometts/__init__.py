@@ -101,7 +101,7 @@ config = Config(
         ('automatic_answers_errors', 'integer', True, to.lax_bool, int),
         ('automaticQuestions', 'integer', True, to.lax_bool, int),
         ('automatic_questions_errors', 'integer', True, to.lax_bool, int),
-        ('cache_days', 'integer', 70, int, int),
+        ('cache_days', 'integer', 365, int, int),
         ('delay_answers_onthefly', 'integer', 0, int, int),
         ('delay_answers_stored_ours', 'integer', 0, int, int),
         ('delay_answers_stored_theirs', 'integer', 0, int, int),

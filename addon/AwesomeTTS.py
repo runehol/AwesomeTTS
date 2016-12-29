@@ -28,7 +28,6 @@ Need help or more information? Visit one of these places...
 - https://ankiweb.net/shared/info/301952613       User Reviews
 """
 
-import os
 from sys import stderr
 
 __all__ = []
@@ -43,66 +42,8 @@ if __name__ == "__main__":
     exit(1)
 
 
-# Begin temporary migration code from Beta 10 and older (unless noted)
-
-def os_call(callee, *args, **kwargs):
-    """Call the function with the given arguments, ignoring OSError."""
-
-    try:
-        callee(*args, **kwargs)
-    except OSError:
-        pass
-
-_PKG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'awesometts')
-
-for _filename in ['logger.py', 'logger.pyc', 'logger.pyo',  # dropped for 1.5
-                  'main.py', 'main.pyc', 'main.pyo',
-                  'util.py', 'util.pyc', 'util.pyo']:
-    os_call(os.unlink, os.path.join(_PKG, _filename))
-
-for _directory, _rmdir, _filenames in [
-        ('designer', True, [
-            'configurator.ui', 'filegenerator.ui', 'massgenerator.ui',
-        ]),
-        ('forms', True, [
-            'configurator.py', 'configurator.pyc', 'configurator.pyo',
-            'filegenerator.py', 'filegenerator.pyc', 'filegenerator.pyo',
-            'massgenerator.py', 'massgenerator.pyc', 'massgenerator.pyo',
-            '__init__.py', '__init__.pyc', '__init__.pyo',
-        ]),
-        ('service', False, [
-            'sapi5.js',   # for 1.0 thru 1.2
-            'sapi5.vbs',  # for Beta 11 and older
-        ]),
-        ('services', True, [
-            'ekho.py', 'ekho.pyc', 'ekho.pyo',
-            'espeak.py', 'espeak.pyc', 'espeak.pyo',
-            'Google.py', 'Google.pyc', 'Google.pyo',
-            'sapi5.py', 'sapi5.pyc', 'sapi5.pyo', 'sapi5.vbs',
-            'say.py', 'say.pyc', 'say.pyo',
-            '__init__.py', '__init__.pyc', '__init__.pyo',
-        ]),
-        ('tools', True, [
-            'build_ui.sh',
-        ]),
-]:
-    for _filename in _filenames:
-        os_call(os.unlink, os.path.join(_PKG, _directory, _filename))
-
-    if _rmdir:
-        os_call(os.rmdir, os.path.join(_PKG, _directory))
-
-os_call(
-    os.rename,
-    os.path.join(_PKG, 'conf.db'),
-    os.path.join(_PKG, 'config.db'),
-)
-
-# End temporary migration code
-
-
 # n.b. Import is intentionally placed down here so that Python processes it
-# after *after* any package migration steps above (e.g. module renames) occur.
+# only if the module check above is not tripped.
 
 import awesometts  # noqa, pylint:disable=wrong-import-position
 

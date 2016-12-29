@@ -25,14 +25,14 @@ then
     exit 1
 fi
 
-target=$1
+target=${1%/}
 
 case $target in
-    */addons*)
+    */addons)
         ;;
 
     *)
-        echo 'Expected "/addons" to appear somewhere in target path.' 1>&2
+        echo 'Expected target path to end in "/addons".' 1>&2
         exit 1
 esac
 

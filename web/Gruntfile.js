@@ -48,6 +48,13 @@ module.exports = function (grunt) {
 
     var doWatch = grunt.cli.tasks.indexOf('watch') !== -1;
 
+    // By default, the `gae:update` task uses `gcloud app deploy` directly
+    // rather than using `appcfg.py update` via the `grunt-gae` module. If you
+    // do have the older Google App Engine SDK w/ `appcfg.py` installed and
+    // you want to use that instead, you can pass the `--no-gcloud` flag when
+    // running `grunt deploy`.
+    var USE_GCLOUD_DEPLOYMENT = !grunt.option('no-gcloud');
+
     var SITEMAP = (function getSubtree(nodes, urlBase, parent) {
         var prev;
 
@@ -436,10 +443,17 @@ module.exports = function (grunt) {
             'X-UA-Compatible': 'IE=edge',
         };
 
-        var BASICS = {application: 'ankiatts', version: 'local',
-          runtime: 'python27', api_version: '1', threadsafe: true,
-          automatic_scaling: {max_idle_instances: 1},
-          default_expiration: '1d'};
+        var BASICS = {
+            runtime: 'python27',
+            api_version: '1',
+            threadsafe: true,
+            automatic_scaling: {max_idle_instances: 1},
+            default_expiration: '1d',
+        };
+        if (!USE_GCLOUD_DEPLOYMENT) {
+            BASICS.application = 'ankiatts';
+            BASICS.version = 'local';
+        }
 
         var INDICES = '/' + gaeRegex(
             SITEMAP.
@@ -692,6 +706,23 @@ module.exports = function (grunt) {
             options: {version: '<%= grunt.option("version") || "test" %>'},
         },
     };
+
+    if (USE_GCLOUD_DEPLOYMENT) {
+        grunt.task.registerTask('gae:update', function () {
+            var done = this.async();
+
+            var process = require('child_process').exec(
+                'gcloud app deploy build/app.yaml ' +
+                '--no-promote ' +
+                '--quiet ' +
+                '--project ankiatts ' +
+                '--version ' + grunt.config.get('gae.update.options.version'),
+                function (error, stdout, stderr) { done(!error); }
+            );
+            process.stdout.on('data', grunt.log.write);
+            process.stderr.on('data', grunt.log.error);
+        });
+    }
 
 
     // Watcher (watch) ///////////////////////////////////////////////////////

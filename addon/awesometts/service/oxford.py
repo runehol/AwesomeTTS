@@ -46,12 +46,12 @@ class OxfordLister(HTMLParser):
         self.prev_tag = ""
 
     def handle_starttag(self, tag, attrs):
-        if tag == "audio" and self.prev_tag == "a":            
+        if tag == "audio" and self.prev_tag == "a":
             snd = [v for k, v in attrs if k == "src"]
             if snd:
                 self.sounds.extend(snd)
-        if tag == "a" and ("class","speaker") in attrs:     
-            self.prev_tag = tag 
+        if tag == "a" and ("class", "speaker") in attrs:
+            self.prev_tag = tag
 
 
 class Oxford(Service):

@@ -61,18 +61,27 @@ class Festival(Service):
         self.cli_call('text2wave', '--help')
 
         import os
-        base_dir = '/usr/share/festival/voices'
-        self._voice_list = [
+
+        def listdir(path):
+            """try os.listdir() but return [] if exception"""
+            try:
+                return os.listdir(path)
+            except OSError:
+                return []
+
+        base_dirs = ['/usr/share/festival/voices',
+                     '/usr/local/share/festival/voices']
+        self._voice_list = list(set(
             (voice_dir, "%s (%s)" % (voice_dir, lang_dir))
-            for lang_dir in sorted(os.listdir(base_dir))
+            for base_dir in base_dirs
+            for lang_dir in sorted(listdir(base_dir))
             if os.path.isdir(os.path.join(base_dir, lang_dir))
-            for voice_dir in sorted(os.listdir(os.path.join(base_dir,
-                                                            lang_dir)))
+            for voice_dir in sorted(listdir(os.path.join(base_dir, lang_dir)))
             if os.path.isdir(os.path.join(base_dir, lang_dir, voice_dir))
-        ]
+        ))
 
         if not self._voice_list:
-            raise EnvironmentError("No usable voices found in %s" % base_dir)
+            raise EnvironmentError("No usable voices found")
 
     def desc(self):
         """

@@ -20,9 +20,10 @@
 Service implementation for Wiktionary single word pronunciations
 """
 
+import re
+
 from .base import Service
 from .common import Trait
-import re
 
 __all__ = ['Wiktionary']
 
@@ -49,20 +50,20 @@ class Wiktionary(Service):
 
     # In order of size as of Nov 6 2016
     _LANGUAGE_CODES = {
-        'en' : 'English', 'mg' : 'Malagasy', 'fr' : 'French',
-        'sh' : 'Serbo-Croatian', 'es' : 'Spanish', 'zh' : 'Chinese',
-        'ru' : 'Russian', 'lt' : 'Lithuanian', 'de' : 'German',
-        'nl' : 'Dutch', 'sv' : 'Swedish', 'pl' : 'Polish',
-        'ku' : 'Kurdish', 'el' : 'Greek', 'it' : 'Italian',
-        'ta' : 'Tamil', 'tr' : 'Turkish', 'hu' : 'Hungarian',
-        'fi' : 'Finnish', 'ko' : 'Korean', 'io' : 'Ido',
-        'kn' : 'Kannada', 'vi' : 'Vietnamese', 'ca' : 'Catalan',
-        'pt' : 'Portuguese', 'chr' : 'Cherokee', 'sr' : 'Serbian',
-        'hi' : 'Hindi', 'ja' : 'Japanese', 'hy' : 'Armenian',
-        'ro' : 'Romanian', 'no' : 'Norwegian', 'th' : 'Thai',
-        'ml' : 'Malayalam', 'id' : 'Indonesian', 'et' : 'Estonian',
-        'uz' : 'Uzbek', 'li' : 'Limburgish', 'my' : 'Burmese',
-        'or' : 'Oriya', 'te' : 'Telugu', 
+        'en': 'English', 'mg': 'Malagasy', 'fr': 'French',
+        'sh': 'Serbo-Croatian', 'es': 'Spanish', 'zh': 'Chinese',
+        'ru': 'Russian', 'lt': 'Lithuanian', 'de': 'German',
+        'nl': 'Dutch', 'sv': 'Swedish', 'pl': 'Polish',
+        'ku': 'Kurdish', 'el': 'Greek', 'it': 'Italian',
+        'ta': 'Tamil', 'tr': 'Turkish', 'hu': 'Hungarian',
+        'fi': 'Finnish', 'ko': 'Korean', 'io': 'Ido',
+        'kn': 'Kannada', 'vi': 'Vietnamese', 'ca': 'Catalan',
+        'pt': 'Portuguese', 'chr': 'Cherokee', 'sr': 'Serbian',
+        'hi': 'Hindi', 'ja': 'Japanese', 'hy': 'Armenian',
+        'ro': 'Romanian', 'no': 'Norwegian', 'th': 'Thai',
+        'ml': 'Malayalam', 'id': 'Indonesian', 'et': 'Estonian',
+        'uz': 'Uzbek', 'li': 'Limburgish', 'my': 'Burmese',
+        'or': 'Oriya', 'te': 'Telugu',
     }
 
     def __init__(self, *args, **kwargs):
@@ -86,14 +87,15 @@ class Wiktionary(Service):
         """
         Provides access to different language versions of Wiktionary.
         """
-        
+
         return [
             dict(
                 key='voice',
                 label="Voice",
                 values=[(code, "%s" % (name))
-                        for code, name in sorted(self._LANGUAGE_CODES.items(), key=lambda x : x[1])],
-                transform=lambda x : x,
+                        for code, name in sorted(self._LANGUAGE_CODES.items(),
+                                                 key=lambda x: x[1])],
+                transform=lambda x: x,
             ),
         ]
 
@@ -149,10 +151,10 @@ class Wiktionary(Service):
         # multiple pronunciations, but since there is no trivial
         # way to choose between them, this should be good enough
         # for now.
-        m = re.search("//.*\\.ogg", webpage)
-        if not m:
+        matcher = re.search("//.*\\.ogg", webpage)
+        if not matcher:
             raise IOError("Wiktionary doesn't have any audio for this input.")
-        oggurl = "https:" + m.group(0)
+        oggurl = "https:" + matcher.group(0)
 
         ogg_path = self.path_temp('ogg')
         wav_path = self.path_temp('wav')

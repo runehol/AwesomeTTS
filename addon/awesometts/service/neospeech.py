@@ -31,7 +31,9 @@ __all__ = ['NeoSpeech']
 
 VOICES = [('en-GB', 'male', "Hugh", 33), ('en-GB', 'female', "Bridget", 4),
           ('en-US', 'male', "James", 10), ('en-US', 'male', "Paul", 1),
-          ('en-US', 'female', "Ashley", 14), ('en-US', 'female', "Julie", 3),
+          ('en-US', 'female', "Ashley", 14),
+          ('en-US', 'female', "Beth", 35),
+          ('en-US', 'female', "Julie", 3),
           ('en-US', 'female', "Kate", 2), ('es-MX', 'male', "Francisco", 31),
           ('es-MX', 'female', "Gloria", 32), ('es-MX', 'female', "Violeta", 5),
           ('fr-CA', 'female', "Chloe", 13), ('ja', 'male', "Ryo", 28),

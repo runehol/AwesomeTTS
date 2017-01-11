@@ -68,6 +68,12 @@ X_FOR_THIS_TAG_MSG = 'The "%s" %s specified by this tag does not exist:\n' \
 # ALTERNATIVELY, if examination of the tag or playback queue turns out to not
 # work out so well, checking sound.hasSound() could become two checkbox
 # options on the "On-the-Fly Mode" tab for both question and answer sides.
+#
+# TODO. Add a configuration option like this:
+#
+#     Questions / Fronts of Cards
+#         [ ] Automatically play on-the-fly <tts> tags
+#             [ ] ... unless a [sound] is present
 
 
 class Reviewer(object):

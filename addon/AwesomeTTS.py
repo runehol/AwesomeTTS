@@ -24,7 +24,7 @@ Need help or more information? Visit one of these places...
 
 - https://ankiatts.appspot.com                    Documentation
 - https://anki.tenderapp.com/discussions/add-ons  Support Forum
-- https://github.com/AwesomeTTS/AwesomeTTS        Source, Issues, Pulls
+- https://github.com/AwesomeTTS/AwesomeTTS        Source, Pulls
 - https://ankiweb.net/shared/info/301952613       User Reviews
 """
 

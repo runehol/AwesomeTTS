@@ -23,6 +23,7 @@ Service classes for AwesomeTTS
 from .common import Trait
 
 from .abair import Abair
+from .ariana import Ariana
 from .baidu import Baidu
 from .collins import Collins
 from .duden import Duden
@@ -54,6 +55,7 @@ __all__ = [
 
     # services
     'Abair',
+    'Ariana',
     'Baidu',
     'Collins',
     'Duden',
